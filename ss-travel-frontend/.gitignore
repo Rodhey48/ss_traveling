@@ -1,0 +1,10 @@
+# Logs
+node_modules
+/dist
+.env
+.env.local
+
+# .claude local files
+.claude/*.local.md
+.claude/*.local.json
+.claude/history/
