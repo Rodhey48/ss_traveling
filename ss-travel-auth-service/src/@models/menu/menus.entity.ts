@@ -29,6 +29,9 @@ export class MenusEntity extends BaseEntity {
     @Column({ type: 'varchar', nullable: false })
     name: string;
 
+    @Column({ type: 'boolean', default: true })
+    isActive: boolean;
+
     @Column({ type: 'varchar', nullable: true })
     url: string;
 

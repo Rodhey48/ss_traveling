@@ -17,4 +17,7 @@ export class RoleModuleEntity extends BaseEntity {
         onUpdate: 'CASCADE',
     })
     module: ModulesEntity;
+
+    @Column({ default: true, type: 'boolean' })
+    isActive: boolean;
 }

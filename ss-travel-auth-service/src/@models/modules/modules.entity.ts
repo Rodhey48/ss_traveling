@@ -8,6 +8,9 @@ export class ModulesEntity extends BaseEntity {
     @Column({ nullable: false })
     name: string;
 
+    @Column({ type: 'boolean', default: true })
+    isActive: boolean;
+
     @Column({ nullable: true })
     type: string;
 

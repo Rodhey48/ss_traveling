@@ -16,7 +16,7 @@ export class UsersEntity extends BaseEntity {
     @Column({ type: 'varchar', unique: true, nullable: true })
     email: string;
 
-    @Column({ type: 'varchar', unique: true })
+    @Column({ type: 'varchar', unique: true, nullable: true })
     nip: string;
 
     @Column({ type: 'varchar', nullable: true, unique: true })
@@ -30,6 +30,9 @@ export class UsersEntity extends BaseEntity {
 
     @Column({ type: 'timestamp', nullable: true })
     lastLogin: Date;
+
+    @Column({ type: 'boolean', default: false })
+    isActive: boolean;
 
     @Column({ type: 'boolean', default: true })
     isPasswordChanged: boolean;

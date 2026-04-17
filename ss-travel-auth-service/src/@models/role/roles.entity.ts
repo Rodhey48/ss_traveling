@@ -23,6 +23,9 @@ export class RolesEntity extends BaseEntity {
     @Column({ type: 'varchar', nullable: false })
     name: string;
 
+    @Column({ type: 'boolean', default: true })
+    isActive: boolean;
+
     @Column({ type: 'varchar', nullable: true })
     description: string;
 

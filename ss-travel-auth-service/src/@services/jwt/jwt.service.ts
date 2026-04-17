@@ -3,9 +3,9 @@ import * as jwt from 'jsonwebtoken';
 
 @Injectable()
 export class JWTService {
-    createToken(payload: any, expiresIn: string = '180d') {
+    createToken(payload: any, expiresIn: string | number = '180d') {
         const secretOrKey = process.env.JWT_KEY || 'secret';
-        return jwt.sign(payload, secretOrKey, { expiresIn });
+        return jwt.sign(payload, secretOrKey, { expiresIn: expiresIn as any });
     }
 
     verifyToken(token: string) {

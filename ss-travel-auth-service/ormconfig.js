@@ -10,7 +10,10 @@ const connectionSource = new DataSource({
   database: process.env.DB_NAME,
   entities: ['dist/**/*.entity.js'],
   migrationsTableName: 'migrations_history',
-  migrations: ['dist/src/@configs/database/migrations/*.js'],
+  migrations: [
+    'dist/src/@configs/database/migrations/*.js',
+    'dist/src/@configs/database/seeding/*.js'
+  ],
   synchronize: false,
 });
 
