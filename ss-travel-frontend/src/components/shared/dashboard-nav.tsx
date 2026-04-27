@@ -1,4 +1,4 @@
-import { Icons } from '@/components/ui/icons';
+import { Icons, getIcon } from '@/components/ui/icons';
 import { cn } from '@/lib/utils';
 import type { NavItem } from '@/types';
 import { Dispatch, SetStateAction } from 'react';
@@ -34,7 +34,7 @@ export default function DashboardNav({
     <nav className="grid items-start gap-2">
       <TooltipProvider>
         {items.map((item, index) => {
-          const Icon = Icons[item.icon as keyof typeof Icons] || Icons.arrowRight;
+          const Icon = getIcon(item.icon || '');
           return (
             item.href && (
               <Tooltip key={index}>

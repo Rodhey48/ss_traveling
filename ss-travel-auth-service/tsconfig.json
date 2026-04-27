@@ -10,19 +10,7 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
-    "ignoreDeprecations": "6.0",
     "incremental": true,
-    "paths": {
-      "@models": ["src/@models"],
-      "@guards": ["src/@guards"],
-      "@enums": ["src/@enums"],
-      "@interfaces": ["src/@interfaces"],
-      "@services": ["src/@services"],
-      "@decorators": ["src/@decorators"],
-      "@core": ["src/@core"],
-      "@common": ["src/@common"],
-      "@config": ["src/@config"]
-    },
     "skipLibCheck": true,
     "strictNullChecks": false,
     "noImplicitAny": false,
@@ -30,6 +18,21 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "moduleResolution": "Node",
-    "allowJs": true
-  }
+    "paths": {
+      "@models": ["./src/@models"],
+      "@models/*": ["./src/@models/*"],
+      "@guards/*": ["./src/@guards/*"],
+      "@enums": ["./src/@enums"],
+      "@enums/*": ["./src/@enums/*"],
+      "@interfaces": ["./src/@interfaces"],
+      "@interfaces/*": ["./src/@interfaces/*"],
+      "@services/*": ["./src/@services/*"],
+      "@decorators/*": ["./src/@decorators/*"],
+      "@core/*": ["./src/@core/*"],
+      "@common/*": ["./src/@common/*"],
+      "@configs/*": ["./src/@configs/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
 }

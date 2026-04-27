@@ -1,0 +1,1 @@
+- [User Management & RBAC Completion](user-management-rbac-completion-2026-04-27.md) — Implementation details of CRUD and permissions matrix.

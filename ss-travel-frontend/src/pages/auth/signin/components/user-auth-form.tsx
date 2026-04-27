@@ -20,7 +20,7 @@ import { AuthService } from '@/services/auth.service';
 import type { UserLoginInfo } from '@/types';
 
 const formSchema = z.object({
-  identifier: z.string().email({ message: 'Masukkan alamat email yang valid' }),
+  identifier: z.string().min(3, { message: 'Masukkan email atau NIP yang valid' }),
   password: z
     .string()
     .min(6, { message: 'Kata sandi harus minimal 6 karakter' }),
@@ -50,11 +50,13 @@ export default function UserAuthForm() {
     try {
       const response = await AuthService.login(data);
       localStorage.setItem('token', response.data.token);
+      localStorage.setItem('menus', JSON.stringify(response.data.menus));
       const user: UserLoginInfo = {
         id: response.data.user.id,
         name: response.data.user.name,
         email: response.data.user.email,
-        nip: response.data.user.nip
+        nip: response.data.user.nip,
+        roles: response.data.user.roles
       };
 
       localStorage.setItem('user', JSON.stringify(user));
@@ -70,8 +72,8 @@ export default function UserAuthForm() {
 
         if (status === 404) {
           setErrorFields({
-            identifier: 'Email atau kata sandi salah.',
-            password: 'Email atau kata sandi salah.'
+            identifier: 'Email/NIP atau kata sandi salah.',
+            password: 'Email/NIP atau kata sandi salah.'
           });
         } else if (status === 400) {
           setErrorFields({
@@ -96,11 +98,11 @@ export default function UserAuthForm() {
             name="identifier"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>Email atau NIP</FormLabel>
                 <FormControl>
                   <Input
-                    type="email"
-                    placeholder="Masukkan email Anda..."
+                    type="text"
+                    placeholder="Masukkan email atau NIP Anda..."
                     disabled={loading}
                     className={errorFields.identifier ? 'border-red-500' : ''}
                     {...field}

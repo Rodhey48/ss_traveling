@@ -13,6 +13,7 @@ export const AuthService = {
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('menus');
     window.location.href = '/login';
   }
 };

@@ -11,8 +11,8 @@ const connectionSource = new DataSource({
   entities: ['dist/**/*.entity.js'],
   migrationsTableName: 'migrations_history',
   migrations: [
-    'dist/src/@configs/database/migrations/*.js',
-    'dist/src/@configs/database/seeding/*.js'
+    'dist/@configs/database/migrations/*.js',
+    'dist/@configs/database/seeding/*.js'
   ],
   synchronize: false,
 });

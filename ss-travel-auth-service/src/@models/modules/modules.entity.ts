@@ -5,27 +5,27 @@ import { RoleModuleEntity } from '../role/role_module.entity';
 
 @Entity('modules')
 export class ModulesEntity extends BaseEntity {
-    @Column({ nullable: false })
-    name: string;
+  @Column({ nullable: false })
+  name: string;
 
-    @Column({ type: 'boolean', default: true })
-    isActive: boolean;
+  @Column({ type: 'boolean', default: true })
+  isActive: boolean;
 
-    @Column({ nullable: true })
-    type: string;
+  @Column({ nullable: true })
+  type: string;
 
-    @Column({ type: 'text', nullable: true })
-    description: string;
+  @Column({ type: 'text', nullable: true })
+  description: string;
 
-    @OneToMany(() => MenusEntity, (menu) => menu.module, {
-        cascade: true,
-        onDelete: 'CASCADE',
-    })
-    menus: MenusEntity[];
+  @OneToMany(() => MenusEntity, (menu) => menu.module, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
+  menus: MenusEntity[];
 
-    @OneToMany(() => RoleModuleEntity, (role) => role.module, {
-        cascade: true,
-        onDelete: 'CASCADE',
-    })
-    roles: RoleModuleEntity[];
+  @OneToMany(() => RoleModuleEntity, (role) => role.module, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
+  roles: RoleModuleEntity[];
 }

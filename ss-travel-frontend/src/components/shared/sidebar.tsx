@@ -1,5 +1,4 @@
 import DashboardNav from '@/components/shared/dashboard-nav';
-import { navItems } from '@/constants/data';
 import { useSidebar } from '@/hooks/use-sidebar';
 import { useTheme } from '@/hooks/use-theme';
 import { cn } from '@/lib/utils';
@@ -14,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { UserLoginInfo } from '@/types';
+import type { UserLoginInfo, NavItem, BackendMenu } from '@/types';
 
 type SidebarProps = {
   className?: string;
@@ -26,12 +25,30 @@ export default function Sidebar({ className }: SidebarProps) {
   const [status, setStatus] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [user, setUser] = useState<UserLoginInfo | null>(null);
+  const [menus, setMenus] = useState<NavItem[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
+    const storedMenus = localStorage.getItem('menus');
+
     if (storedUser) {
       setUser(JSON.parse(storedUser));
+    }
+
+    if (storedMenus) {
+      try {
+        const parsedMenus: BackendMenu[] = JSON.parse(storedMenus);
+        const mappedMenus: NavItem[] = parsedMenus.map((menu) => ({
+          title: menu.name,
+          href: menu.url,
+          icon: menu.icon,
+          label: menu.name
+        }));
+        setMenus(mappedMenus);
+      } catch (error) {
+        console.error('Error parsing menus from localStorage', error);
+      }
     }
   }, []);
 
@@ -80,7 +97,7 @@ export default function Sidebar({ className }: SidebarProps) {
         <div className="space-y-4 py-4">
           <div className="px-2 py-2">
             <div className="mt-3 space-y-1">
-              <DashboardNav items={navItems} />
+              <DashboardNav items={menus} />
             </div>
           </div>
         </div>

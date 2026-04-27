@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger, ValidationPipe } from '@nestjs/common';
-import proxy from 'express-http-proxy';
+const proxy = require('express-http-proxy');
 import { Request } from 'express';
 
 async function bootstrap() {
@@ -27,13 +27,13 @@ async function bootstrap() {
   const financeUrl = process.env.FINANCE_SERVICE_URL || 'http://localhost:3002';
 
   app.use('/auth-api', proxy(authUrl, {
-    proxyReqPathResolver: (req: Request) => {
+    proxyReqPathResolver: (req: any) => {
       return req.url; // Forward same path
     }
   }));
 
   app.use('/finance-api', proxy(financeUrl, {
-    proxyReqPathResolver: (req: Request) => {
+    proxyReqPathResolver: (req: any) => {
       return req.url;
     }
   }));

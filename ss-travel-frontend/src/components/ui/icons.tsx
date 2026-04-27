@@ -92,3 +92,20 @@ export const Icons = {
   ),
   check: Check
 };
+
+export const getIcon = (iconName: string): Icon => {
+  const mapping: Record<string, keyof typeof Icons> = {
+    'cil-speedometer': 'dashboard',
+    'cil-user': 'user',
+    'cil-settings': 'settings',
+    'cil-people': 'employee',
+    'cil-notes': 'post',
+    'cil-file': 'page',
+    'cil-cursor': 'kanban',
+    'cil-basket': 'billing',
+    'cil-bell': 'warning'
+  };
+
+  const key = mapping[iconName] || (iconName as keyof typeof Icons);
+  return Icons[key] || Icons.arrowRight;
+};

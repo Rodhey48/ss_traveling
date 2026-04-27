@@ -1,8 +1,8 @@
 import DashboardNav from '@/components/shared/dashboard-nav';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { navItems } from '@/constants/data';
-import type { Dispatch, SetStateAction } from 'react';
+import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import type { NavItem, BackendMenu } from '@/types';
 
 type TMobileSidebarProps = {
   className?: string;
@@ -14,6 +14,27 @@ export default function MobileSidebar({
   setSidebarOpen,
   sidebarOpen
 }: TMobileSidebarProps) {
+  const [menus, setMenus] = useState<NavItem[]>([]);
+
+  useEffect(() => {
+    const storedMenus = localStorage.getItem('menus');
+
+    if (storedMenus) {
+      try {
+        const parsedMenus: BackendMenu[] = JSON.parse(storedMenus);
+        const mappedMenus: NavItem[] = parsedMenus.map((menu) => ({
+          title: menu.name,
+          href: menu.url,
+          icon: menu.icon,
+          label: menu.name
+        }));
+        setMenus(mappedMenus);
+      } catch (error) {
+        console.error('Error parsing menus from localStorage', error);
+      }
+    }
+  }, [sidebarOpen]);
+
   return (
     <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
       <SheetContent side="left" className="bg-background !px-0">
@@ -23,7 +44,7 @@ export default function MobileSidebar({
               SS TRAVEL
             </Link>
             <div className="space-y-1 px-2">
-              <DashboardNav items={navItems} setOpen={setSidebarOpen} isMobileNav={true} />
+              <DashboardNav items={menus} setOpen={setSidebarOpen} isMobileNav={true} />
             </div>
           </div>
         </div>
