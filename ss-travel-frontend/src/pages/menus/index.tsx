@@ -65,8 +65,16 @@ export default function MenusPage() {
   const handleSubmit = async (data: MenuFormData) => {
     try {
       setSubmitting(true);
-      // Clean up parentId if "none"
-      const payload = { ...data, parentId: data.parentId === 'none' ? undefined : data.parentId };
+      // Clean up parentId if "none" and parse availableActions string to array if needed
+      const availableActions = typeof data.availableActions === 'string' 
+        ? (data.availableActions as string).split(',').map(s => s.trim()).filter(s => s !== '')
+        : data.availableActions;
+
+      const payload = { 
+        ...data, 
+        parentId: (!data.parentId || data.parentId === 'none' || data.parentId === '') ? undefined : data.parentId,
+        availableActions
+      };
       
       if (selectedMenu) {
         await MenuService.update(selectedMenu.id, payload);
@@ -90,8 +98,9 @@ export default function MenusPage() {
   };
 
   const MenuRow = ({ menu, level = 0 }: { menu: BackendMenu; level?: number }) => {
+    if (!menu) return null;
     const isExpanded = expanded[menu.id];
-    const hasChildren = menu.children && menu.children.length > 0;
+    const hasChildren = Array.isArray(menu.children) && menu.children.length > 0;
 
     return (
       <>
@@ -107,7 +116,7 @@ export default function MenusPage() {
               {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
             </button>
             {menu.icon && renderIcon(menu.icon)}
-            <span className="font-medium">{menu.name}</span>
+            <span className="font-medium">{menu.name || 'Unnamed Menu'}</span>
             <span className="ml-3 text-xs text-muted-foreground bg-accent px-2 py-0.5 rounded">
               {menu.url || '#'}
             </span>

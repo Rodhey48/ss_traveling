@@ -76,10 +76,12 @@ export default function RoleModal({
                 menuId: node.id,
                 menuName: node.name,
                 level: level,
+                availableActions: node.availableActions || [],
                 isRead: existing?.isRead ?? false,
                 isCreate: existing?.isCreate ?? false,
                 isUpdate: existing?.isUpdate ?? false,
                 isDelete: existing?.isDelete ?? false,
+                actions: existing?.actions || {},
               });
               if (node.children) flatten(node.children, level + 1);
             });
@@ -109,20 +111,35 @@ export default function RoleModal({
     }
   }, [role, form, isOpen, replace]);
 
-  const handleCheckboxChange = (index: number, field: string, value: boolean) => {
+  const handleCheckboxChange = (index: number, field: string, value: boolean, actionName?: string) => {
     const current = form.getValues(`permissions.${index}`);
-    const updated = { ...current, [field]: value };
+    let updated = { ...current };
 
-    // Smart logic: If Create/Update/Delete is checked, Read MUST be checked
-    if ((field === 'isCreate' || field === 'isUpdate' || field === 'isDelete') && value === true) {
-      updated.isRead = true;
-    }
-    
-    // If Read is unchecked, everything else MUST be unchecked
-    if (field === 'isRead' && value === false) {
-      updated.isCreate = false;
-      updated.isUpdate = false;
-      updated.isDelete = false;
+    if (actionName) {
+      // Handle custom action
+      updated.actions = { ...current.actions, [actionName]: value };
+      if (value === true) updated.isRead = true; // Auto read if action checked
+    } else {
+      // Handle CRUD
+      updated[field] = value;
+
+      // Smart logic: If Create/Update/Delete is checked, Read MUST be checked
+      if ((field === 'isCreate' || field === 'isUpdate' || field === 'isDelete') && value === true) {
+        updated.isRead = true;
+      }
+      
+      // If Read is unchecked, everything else MUST be unchecked
+      if (field === 'isRead' && value === false) {
+        updated.isCreate = false;
+        updated.isUpdate = false;
+        updated.isDelete = false;
+        // Also uncheck all custom actions
+        if (updated.actions) {
+          const resetActions = { ...updated.actions };
+          Object.keys(resetActions).forEach(k => resetActions[k] = false);
+          updated.actions = resetActions;
+        }
+      }
     }
 
     update(index, updated);
@@ -177,18 +194,19 @@ export default function RoleModal({
                 <Table>
                   <TableHeader className="bg-muted/50">
                     <TableRow>
-                      <TableHead className="w-[300px]">Menu Hierarchy</TableHead>
-                      <TableHead className="text-center w-[100px]">Read</TableHead>
-                      <TableHead className="text-center w-[100px]">Create</TableHead>
-                      <TableHead className="text-center w-[100px]">Update</TableHead>
-                      <TableHead className="text-center w-[100px]">Delete</TableHead>
+                      <TableHead className="w-[250px]">Menu Hierarchy</TableHead>
+                      <TableHead className="text-center w-[80px]">Read</TableHead>
+                      <TableHead className="text-center w-[80px]">Create</TableHead>
+                      <TableHead className="text-center w-[80px]">Update</TableHead>
+                      <TableHead className="text-center w-[80px]">Delete</TableHead>
+                      <TableHead className="">Custom Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {fields.map((field, index) => (
                       <TableRow key={field.id} className="hover:bg-accent/30">
                         <TableCell 
-                          className="font-medium"
+                          className="font-medium text-xs"
                           style={{ paddingLeft: `${(field as any).level * 24 + 16}px` }}
                         >
                           {(field as any).menuName}
@@ -216,6 +234,30 @@ export default function RoleModal({
                             checked={form.watch(`permissions.${index}.isDelete`)}
                             onCheckedChange={(v) => handleCheckboxChange(index, 'isDelete', v as boolean)}
                           />
+                        </TableCell>
+                        <TableCell className="min-w-[200px]">
+                          <div className="max-h-[100px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-muted-foreground/20">
+                            <div className="flex flex-wrap gap-1.5">
+                              {(field as any).availableActions?.map((action: string) => (
+                                <div 
+                                  key={action} 
+                                  className="flex items-center space-x-1 bg-muted/50 border border-border/50 px-2 py-0.5 rounded transition-colors hover:bg-muted"
+                                >
+                                  <span className="text-[9px] font-bold uppercase tracking-tight text-muted-foreground leading-none">
+                                    {action}
+                                  </span>
+                                  <Checkbox
+                                    className="h-3 w-3 rounded-[2px]"
+                                    checked={(form.watch(`permissions.${index}.actions`) || {})[action] ?? false}
+                                    onCheckedChange={(v) => handleCheckboxChange(index, 'actions', v as boolean, action)}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                            {(!field as any).availableActions?.length && (
+                              <span className="text-[10px] text-muted-foreground italic">-</span>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

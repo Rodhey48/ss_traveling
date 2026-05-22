@@ -30,6 +30,9 @@ export class RolePermissionDto {
 
   @IsBoolean()
   isDelete: boolean;
+
+  @IsOptional()
+  actions: Record<string, boolean>;
 }
 
 export class UpdateRoleDto extends CreateRoleDto {}

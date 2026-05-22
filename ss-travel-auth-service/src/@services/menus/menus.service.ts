@@ -41,13 +41,22 @@ export class MenusService {
         isCreate: false,
         isUpdate: false,
         isDelete: false,
+        actions: {},
       };
+
+      const newActions = { ...existing.actions };
+      if (rm.actions) {
+        Object.keys(rm.actions).forEach((key) => {
+          newActions[key] = newActions[key] || rm.actions[key];
+        });
+      }
 
       permissionsMap.set(menuId, {
         isRead: existing.isRead || rm.isRead,
         isCreate: existing.isCreate || rm.isCreate,
         isUpdate: existing.isUpdate || rm.isUpdate,
         isDelete: existing.isDelete || rm.isDelete,
+        actions: newActions,
       });
     });
 
@@ -179,6 +188,7 @@ export class MenusService {
       isActive: dto.isActive,
       isWeb: dto.isWeb,
       isMobile: dto.isMobile,
+      availableActions: dto.availableActions,
     });
 
     if (dto.parentId) {

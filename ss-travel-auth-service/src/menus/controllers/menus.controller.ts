@@ -31,14 +31,14 @@ export class MenusController {
   }
 
   @Post()
-  @Roles('SUPERADMIN')
+  @Roles('SUPERADMIN', 'ADMIN')
   @ApiOperation({ summary: 'Create a new menu' })
   async create(@Body() dto: CreateMenuDto): Promise<ResponseInterface> {
     return this.menusService.create(dto);
   }
 
   @Put(':id')
-  @Roles('SUPERADMIN')
+  @Roles('SUPERADMIN', 'ADMIN')
   @ApiOperation({ summary: 'Update a menu' })
   async update(
     @Param('id') id: string,
@@ -48,7 +48,7 @@ export class MenusController {
   }
 
   @Delete(':id')
-  @Roles('SUPERADMIN')
+  @Roles('SUPERADMIN', 'ADMIN')
   @ApiOperation({ summary: 'Delete a menu' })
   async remove(@Param('id') id: string): Promise<ResponseInterface> {
     return this.menusService.remove(id);

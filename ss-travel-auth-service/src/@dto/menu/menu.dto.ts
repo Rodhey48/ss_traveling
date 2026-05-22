@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 
 export class CreateMenuDto {
   @ApiProperty()
@@ -30,6 +37,11 @@ export class CreateMenuDto {
   @IsOptional()
   @IsUUID()
   moduleId?: string;
+
+  @ApiProperty({ required: false, type: [String] })
+  @IsOptional()
+  @IsArray()
+  availableActions?: string[];
 
   @ApiProperty({ default: true })
   @IsOptional()

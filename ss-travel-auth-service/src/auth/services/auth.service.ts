@@ -83,6 +83,49 @@ export class AuthService {
     }
   }
 
+  async getMe(userId: string): Promise<ResponseInterface> {
+    try {
+      const foundUser = await this.userRepo
+        .createQueryBuilder('user')
+        .leftJoinAndSelect('user.roles', 'roles', 'roles.isActive = true')
+        .leftJoinAndSelect('roles.role', 'role', 'role.isActive = true')
+        .where('user.id = :userId AND user.isActive = true', { userId })
+        .getOne();
+
+      if (!foundUser) {
+        throw new NotFoundException({
+          message: 'User not found',
+          status: false,
+        });
+      }
+
+      const roleIds = foundUser.roles.map((ur) => ur.role.id);
+      const roles = foundUser.roles.map((ur) => ({
+        id: ur.role.id,
+        name: ur.role.name,
+      }));
+      const menus = await this.menusService.findMenusByRole(roleIds);
+
+      return {
+        status: true,
+        message: 'Profile fetched successfully',
+        data: {
+          user: {
+            name: foundUser.name,
+            id: foundUser.id,
+            email: foundUser.email,
+            nip: foundUser.nip,
+            roles,
+          },
+          menus,
+        },
+      };
+    } catch (error) {
+      this.logger.error(`GetMe error: ${error.message}`);
+      throw new InternalServerErrorException(INTERNAL_SERVER_ERROR_MESSAGE);
+    }
+  }
+
   async login(payload: LoginUserDTO, res: Response): Promise<any> {
     try {
       const foundUser = await this.userRepo

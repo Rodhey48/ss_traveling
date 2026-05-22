@@ -65,6 +65,9 @@ export class MenusEntity extends BaseEntity {
   @Column({ default: false })
   isIndent: boolean;
 
+  @Column({ type: 'jsonb', nullable: true })
+  availableActions: string[];
+
   @Column({ nullable: true })
   parentClass: string;
 

@@ -95,6 +95,7 @@ export interface RolePermission {
   isCreate: boolean;
   isUpdate: boolean;
   isDelete: boolean;
+  actions?: Record<string, boolean>;
 }
 
 export interface RoleFormData {
@@ -106,6 +107,7 @@ export interface RoleFormData {
     isCreate: boolean;
     isUpdate: boolean;
     isDelete: boolean;
+    actions?: Record<string, boolean>;
   }[];
 }
 

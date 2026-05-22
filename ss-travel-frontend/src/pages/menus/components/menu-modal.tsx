@@ -25,6 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { X } from 'lucide-react';
 import type { BackendMenu, MenuFormData } from '@/types';
 
 interface MenuModalProps {
@@ -54,6 +56,7 @@ export default function MenuModal({
       isActive: true,
       isWeb: true,
       isMobile: false,
+      availableActions: [],
     },
   });
 
@@ -69,6 +72,7 @@ export default function MenuModal({
           isActive: menu.isActive,
           isWeb: menu.isWeb,
           isMobile: menu.isMobile,
+          availableActions: menu.availableActions || [],
         });
       } else {
         form.reset({
@@ -80,6 +84,7 @@ export default function MenuModal({
           isActive: true,
           isWeb: true,
           isMobile: false,
+          availableActions: [],
         });
       }
     }
@@ -117,6 +122,53 @@ export default function MenuModal({
                   <FormControl>
                     <Input placeholder="Dashboard" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="availableActions"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Available Custom Actions</FormLabel>
+                  <div className="flex flex-wrap gap-2 mb-2 min-h-[40px] p-2 border rounded-md bg-background focus-within:ring-1 focus-within:ring-ring">
+                    {Array.isArray(field.value) && field.value.map((tag, index) => (
+                      <Badge key={index} variant="secondary" className="flex items-center gap-1 py-1 px-2">
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newTags = [...field.value];
+                            newTags.splice(index, 1);
+                            field.onChange(newTags);
+                          }}
+                          className="hover:text-destructive"
+                        >
+                          <X size={12} />
+                        </button>
+                      </Badge>
+                    ))}
+                    <input
+                      className="flex-1 bg-transparent outline-none text-sm min-w-[120px]"
+                      placeholder="Type and press Enter or Comma..."
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ',') {
+                          e.preventDefault();
+                          const val = e.currentTarget.value.trim().replace(',', '');
+                          if (val && !field.value?.includes(val)) {
+                            field.onChange([...(field.value || []), val]);
+                            e.currentTarget.value = '';
+                          }
+                        } else if (e.key === 'Backspace' && !e.currentTarget.value && field.value?.length > 0) {
+                          const newTags = [...field.value];
+                          newTags.pop();
+                          field.onChange(newTags);
+                        }
+                      }}
+                    />
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}

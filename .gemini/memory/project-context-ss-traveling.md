@@ -19,9 +19,10 @@ Transform manual operations of SS Traveling (Bus rental, AKAP, Karoseri, Gas Sta
 - **Package Manager**: Yarn.
 
 ## Recent Progress (2026-05-22)
-- **Auth System Perfection**:
+- **Auth System Perfection & Hybrid Permissions**:
   - Implemented hierarchical Menu Management with recursive fetching.
   - Upgraded RBAC with a smart hierarchical permission matrix.
+  - **Implemented Hybrid Action-based Permissions**: Allows defining custom actions (e.g., `approve`, `export`) per menu using JSONB columns.
   - Standardized microservice documentation and instructions in `.gemini/`.
   - Auth Service and Frontend Management UI are now fully stable and feature-complete.
 

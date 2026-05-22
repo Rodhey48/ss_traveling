@@ -62,6 +62,7 @@ export class RolesService {
           isCreate: perm.isCreate,
           isUpdate: perm.isUpdate,
           isDelete: perm.isDelete,
+          actions: perm.actions || {},
         });
       });
       await this.roleMenusRepository.save(roleMenus);
@@ -98,6 +99,7 @@ export class RolesService {
           isCreate: perm.isCreate,
           isUpdate: perm.isUpdate,
           isDelete: perm.isDelete,
+          actions: perm.actions || {},
         });
       });
       

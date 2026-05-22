@@ -25,7 +25,7 @@ import * as Models from './@models';
         entities: Object.values(Models).filter(
           (val) => typeof val === 'function',
         ),
-        synchronize: true, // Hanya untuk development awal, nanti kita gunakan Migrations
+        synchronize: false, // Gunakan Migrations untuk perubahan skema
       }),
     }),
     AuthModule,
