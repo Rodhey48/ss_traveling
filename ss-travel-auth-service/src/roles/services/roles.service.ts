@@ -54,21 +54,17 @@ export class RolesService {
     const savedRole = await this.rolesRepository.save(role);
 
     if (dto.permissions && dto.permissions.length > 0) {
-      for (const perm of dto.permissions) {
-        const menu = await this.menusRepository.findOne({ where: { id: perm.menuId } });
-        if (menu) {
-          await this.roleMenusRepository.save(
-            new RoleMenusEntity({
-              role: savedRole,
-              menu,
-              isRead: perm.isRead,
-              isCreate: perm.isCreate,
-              isUpdate: perm.isUpdate,
-              isDelete: perm.isDelete,
-            }),
-          );
-        }
-      }
+      const roleMenus = dto.permissions.map((perm) => {
+        return new RoleMenusEntity({
+          role: savedRole,
+          menu: { id: perm.menuId } as any,
+          isRead: perm.isRead,
+          isCreate: perm.isCreate,
+          isUpdate: perm.isUpdate,
+          isDelete: perm.isDelete,
+        });
+      });
+      await this.roleMenusRepository.save(roleMenus);
     }
 
     return {
@@ -90,22 +86,23 @@ export class RolesService {
     const updatedRole = await this.rolesRepository.save(role);
 
     if (dto.permissions) {
-      // Clear old permissions and sync new ones
+      // Clear old permissions
       await this.roleMenusRepository.delete({ role: { id } });
-      for (const perm of dto.permissions) {
-        const menu = await this.menusRepository.findOne({ where: { id: perm.menuId } });
-        if (menu) {
-          await this.roleMenusRepository.save(
-            new RoleMenusEntity({
-              role: updatedRole,
-              menu,
-              isRead: perm.isRead,
-              isCreate: perm.isCreate,
-              isUpdate: perm.isUpdate,
-              isDelete: perm.isDelete,
-            }),
-          );
-        }
+      
+      // Bulk insert new permissions
+      const roleMenus = dto.permissions.map((perm) => {
+        return new RoleMenusEntity({
+          role: updatedRole,
+          menu: { id: perm.menuId } as any,
+          isRead: perm.isRead,
+          isCreate: perm.isCreate,
+          isUpdate: perm.isUpdate,
+          isDelete: perm.isDelete,
+        });
+      });
+      
+      if (roleMenus.length > 0) {
+        await this.roleMenusRepository.save(roleMenus);
       }
     }
 

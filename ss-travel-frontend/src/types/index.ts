@@ -32,12 +32,26 @@ export interface UserLoginInfo {
 export interface BackendMenu {
   id: string;
   name: string;
-  url: string;
-  icon: string;
+  url?: string;
+  icon?: string;
   sequence: number;
   isWeb: boolean;
+  isMobile: boolean;
   isActive: boolean;
+  parentId?: string;
+  parent?: BackendMenu;
   children?: BackendMenu[];
+}
+
+export interface MenuFormData {
+  name: string;
+  url?: string;
+  icon?: string;
+  sequence?: number;
+  parentId?: string;
+  isActive?: boolean;
+  isWeb?: boolean;
+  isMobile?: boolean;
 }
 
 export interface LoginResponseData {

@@ -4,7 +4,7 @@ node_modules
 .env
 .env.local
 
-# .claude local files
-.claude/*.local.md
-.claude/*.local.json
-.claude/history/
+# .gemini local files
+.gemini/*.local.md
+.gemini/*.local.json
+.gemini/history/

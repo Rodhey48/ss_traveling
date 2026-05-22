@@ -1,6 +1,6 @@
 node_modules
 /dist
 .env
-.claude/*.local.md
-.claude/*.local.json
-.claude/history/
+.gemini/*.local.md
+.gemini/*.local.json
+.gemini/history/
