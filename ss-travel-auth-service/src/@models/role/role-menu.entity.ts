@@ -35,6 +35,6 @@ export class RoleMenusEntity extends BaseEntity {
   @Column({ default: true, type: 'boolean' })
   isDelete: boolean;
 
-  @Column({ default: true, type: 'boolean' })
+  @Column({ default: true, type: 'boolean', name: 'is_active' })
   isActive: boolean;
 }

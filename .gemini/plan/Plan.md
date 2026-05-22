@@ -1,9 +1,9 @@
 # Master Plan
 
-## Phase 1: Infrastructure (In Progress)
+## Phase 1: Infrastructure & Auth (Completed)
 - [x] API Gateway.
-- [x] Auth Service.
-- [x] Frontend Shell.
+- [x] Auth Service (User, Role, Hierarchical Menus).
+- [x] Frontend Shell & Management UI.
 
 ## Phase 2: Core Features (Next)
 - [ ] Fleet Management (Kendaraan).

@@ -18,6 +18,6 @@ export class RoleModuleEntity extends BaseEntity {
   })
   module: ModulesEntity;
 
-  @Column({ default: true, type: 'boolean' })
+  @Column({ default: true, type: 'boolean', name: 'is_active' })
   isActive: boolean;
 }

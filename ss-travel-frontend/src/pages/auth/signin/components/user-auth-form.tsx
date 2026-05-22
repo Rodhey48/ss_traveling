@@ -1,4 +1,5 @@
 import { useRouter } from '@/hooks/use-router';
+import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
@@ -104,7 +105,10 @@ export default function UserAuthForm() {
                     type="text"
                     placeholder="Masukkan email atau NIP Anda..."
                     disabled={loading}
-                    className={errorFields.identifier ? 'border-red-500' : ''}
+                    className={cn(
+                      'text-zinc-900',
+                      errorFields.identifier ? 'border-red-500' : ''
+                    )}
                     {...field}
                   />
                 </FormControl>
@@ -130,7 +134,10 @@ export default function UserAuthForm() {
                       type={showPassword ? 'text' : 'password'}
                       placeholder="Masukkan kata sandi..."
                       disabled={loading}
-                      className={errorFields.password ? 'border-red-500' : ''}
+                      className={cn(
+                        'text-zinc-900',
+                        errorFields.password ? 'border-red-500' : ''
+                      )}
                       {...field}
                     />
                     <button

@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
@@ -16,6 +17,7 @@ import { ResponseInterface } from '@interfaces';
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
   constructor(
     @InjectRepository(UsersEntity)
     private usersRepository: Repository<UsersEntity>,
@@ -26,31 +28,43 @@ export class UsersService {
   ) {}
 
   async findAll(
-    page: number = 1,
-    limit: number = 10,
+    page: any = 1,
+    limit: any = 10,
     search: string = '',
   ): Promise<ResponseInterface> {
-    const skip = (page - 1) * limit;
-    const [users, total] = await this.usersRepository.findAndCount({
-      where: search
-        ? [{ name: Like(`%${search}%`) }, { email: Like(`%${search}%`) }]
-        : {},
-      relations: ['roles', 'roles.role'],
-      skip,
-      take: limit,
-      order: { createdAt: 'DESC' },
-    });
+    try {
+      const p = Number(page) || 1;
+      const l = Number(limit) || 10;
+      const skip = (p - 1) * l;
+      const [users, total] = await this.usersRepository.findAndCount({
+        where: search
+          ? [
+              { name: Like(`%${search}%`) },
+              { email: Like(`%${search}%`) },
+              { nip: Like(`%${search}%`) },
+            ]
+          : {},
+        relations: ['roles', 'roles.role'],
+        skip,
+        take: l,
+        order: { createdAt: 'DESC' },
+      });
 
-    return {
-      status: true,
-      message: 'Users fetched successfully',
-      data: {
-        users,
-        total,
-        page,
-        limit,
-      },
-    };
+      return {
+        status: true,
+        message: 'Users fetched successfully',
+        data: {
+          data: users,
+          total,
+          page: p,
+          limit: l,
+        },
+      };
+
+    } catch (error) {
+      this.logger.error(`Error fetching users: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   async findOne(id: string): Promise<ResponseInterface> {
@@ -86,7 +100,7 @@ export class UsersService {
       nip: dto.nip,
       phone: dto.phone,
       type: dto.type,
-      isActive: true,
+      isActive: dto.isActive ?? true,
     });
 
     const savedUser = await this.usersRepository.save(user);

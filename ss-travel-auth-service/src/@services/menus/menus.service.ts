@@ -32,7 +32,26 @@ export class MenusService {
       })
       .getMany();
 
-    const accessibleMenuIds = roleMenus.map((rm) => rm.menu.id);
+    // Agregasi permission per menuId
+    const permissionsMap = new Map<string, any>();
+    roleMenus.forEach((rm) => {
+      const menuId = rm.menu.id;
+      const existing = permissionsMap.get(menuId) || {
+        isRead: false,
+        isCreate: false,
+        isUpdate: false,
+        isDelete: false,
+      };
+
+      permissionsMap.set(menuId, {
+        isRead: existing.isRead || rm.isRead,
+        isCreate: existing.isCreate || rm.isCreate,
+        isUpdate: existing.isUpdate || rm.isUpdate,
+        isDelete: existing.isDelete || rm.isDelete,
+      });
+    });
+
+    const accessibleMenuIds = Array.from(permissionsMap.keys());
 
     // Ambil semua menu yang aktif
     const allMenus = await this.menuRepo.find({
@@ -42,12 +61,13 @@ export class MenusService {
     });
 
     // Bangun tree yang hanya menyertakan menu yang bisa diakses (dan parent-nya)
-    return this.buildMenuTree(allMenus, accessibleMenuIds);
+    return this.buildMenuTree(allMenus, accessibleMenuIds, permissionsMap);
   }
 
   private buildMenuTree(
     allMenus: MenusEntity[],
     accessibleMenuIds: string[],
+    permissionsMap: Map<string, any>,
     parentId: string | null = null,
   ): any[] {
     const tree = [];
@@ -59,8 +79,16 @@ export class MenusService {
       const nodeChildren = this.buildMenuTree(
         allMenus,
         accessibleMenuIds,
+        permissionsMap,
         menu.id,
       );
+
+      const perms = permissionsMap.get(menu.id) || {
+        isRead: false,
+        isCreate: false,
+        isUpdate: false,
+        isDelete: false,
+      };
 
       // Menu dimasukkan ke tree jika:
       // 1. Menu itu sendiri punya akses langsung, ATAU
@@ -68,6 +96,7 @@ export class MenusService {
       if (accessibleMenuIds.includes(menu.id) || nodeChildren.length > 0) {
         tree.push({
           ...menu,
+          ...perms,
           children: nodeChildren.length > 0 ? nodeChildren : undefined,
         });
       }

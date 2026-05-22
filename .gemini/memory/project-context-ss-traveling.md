@@ -18,14 +18,18 @@ Transform manual operations of SS Traveling (Bus rental, AKAP, Karoseri, Gas Sta
 - **Frontend**: React / Next.js.
 - **Package Manager**: Yarn.
 
-## Recent Progress (2026-04-27)
+## Recent Progress (2026-05-22)
+- **Auth System Perfection**:
+  - Implemented hierarchical Menu Management with recursive fetching.
+  - Upgraded RBAC with a smart hierarchical permission matrix.
+  - Standardized microservice documentation and instructions in `.gemini/`.
+  - Auth Service and Frontend Management UI are now fully stable and feature-complete.
+
+## Previous Progress (2026-04-27)
 - **ss-travel-auth-service Fixes**:
-  - Resolved build errors in `tsconfig.json` (invalid `ignoreDeprecations`, `baseUrl` deprecation, and `moduleResolution`).
-  - Fixed `eslint.config.mjs` ESM compatibility (`import.meta.dirname`).
-  - Corrected missing `Column` decorator in `RoleModuleEntity`.
-  - Fixed `InitialSeeding.ts` import paths using fixed path aliases.
-  - Cleaned up accidental `.js` files generated in `src/`.
-  - Current state: `nest build` is successful.
+  - Resolved build errors in `tsconfig.json` and fixed ESLint ESM compatibility.
+  - Corrected entity decorators and seeding paths.
+  - Initial implementation of User and Role CRUD.
 
 ## Key Modules
 - **Finance Service**: Phase 1 priority. Focus on double-entry bookkeeping, COA, and General Ledger.

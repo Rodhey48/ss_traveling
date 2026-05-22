@@ -31,7 +31,7 @@ export class UsersEntity extends BaseEntity {
   @Column({ type: 'timestamp', nullable: true })
   lastLogin: Date;
 
-  @Column({ type: 'boolean', default: false })
+  @Column({ type: 'boolean', default: false, name: 'is_active' })
   isActive: boolean;
 
   @Column({ type: 'boolean', default: true })

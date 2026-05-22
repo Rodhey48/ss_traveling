@@ -14,8 +14,10 @@ import RoleModal from './components/role-modal';
 import { RoleService } from '@/services/role.service';
 import type { Role, RoleFormData } from '@/types';
 import { toast } from 'sonner';
+import { usePermission } from '@/hooks/use-permission';
 
 export default function RolesPage() {
+  const { isCreate, isUpdate } = usePermission();
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -76,19 +78,21 @@ export default function RolesPage() {
           title="Role & Permissions"
           description="Manage user roles and their access levels (RBAC)."
         />
-        <Button onClick={handleCreate}>
-          <Plus className="mr-2 h-4 w-4" /> Add Role
-        </Button>
+        {isCreate && (
+          <Button onClick={handleCreate}>
+            <Plus className="mr-2 h-4 w-4" /> Add Role
+          </Button>
+        )}
       </div>
 
-      <div className="rounded-md border">
+      <div className="rounded-md border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Role Name</TableHead>
               <TableHead>Description</TableHead>
               <TableHead>Menus Assigned</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              {isUpdate && <TableHead className="text-right">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -107,15 +111,17 @@ export default function RolesPage() {
                   </TableCell>
                   <TableCell>{role.description || '-'}</TableCell>
                   <TableCell>{role.menus?.length || 0} Menus</TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEdit(role)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
+                  {isUpdate && (
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEdit(role)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             ) : (

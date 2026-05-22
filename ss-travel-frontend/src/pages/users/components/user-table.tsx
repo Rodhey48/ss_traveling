@@ -15,11 +15,21 @@ interface UserTableProps {
   users: User[];
   onEdit: (user: User) => void;
   onDelete: (id: string) => void;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
-export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
+export default function UserTable({ 
+  users, 
+  onEdit, 
+  onDelete,
+  canUpdate = true,
+  canDelete = true 
+}: UserTableProps) {
+  const showActions = canUpdate || canDelete;
+
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border bg-card">
       <Table>
         <TableHeader>
           <TableRow>
@@ -28,11 +38,11 @@ export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
             <TableHead>NIP</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            {showActions && <TableHead className="text-right">Actions</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users.length > 0 ? (
+          {users && users.length > 0 ? (
             users.map((user) => (
               <TableRow key={user.id}>
                 <TableCell className="font-medium">{user.name}</TableCell>
@@ -44,30 +54,36 @@ export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
                     {user.isActive ? 'Active' : 'Inactive'}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onEdit(user)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => onDelete(user.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
+                {showActions && (
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      {canUpdate && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onEdit(user)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {canDelete && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => onDelete(user.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                )}
               </TableRow>
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={6} className="h-24 text-center">
+              <TableCell colSpan={showActions ? 6 : 5} className="h-24 text-center">
                 No users found.
               </TableCell>
             </TableRow>

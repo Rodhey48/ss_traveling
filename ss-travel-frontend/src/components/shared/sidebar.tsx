@@ -39,12 +39,16 @@ export default function Sidebar({ className }: SidebarProps) {
     if (storedMenus) {
       try {
         const parsedMenus: BackendMenu[] = JSON.parse(storedMenus);
-        const mappedMenus: NavItem[] = parsedMenus.map((menu) => ({
+        
+        const mapMenuToNavItem = (menu: BackendMenu): any => ({
           title: menu.name,
-          href: menu.url,
+          href: menu.url || '',
           icon: menu.icon,
-          label: menu.name
-        }));
+          label: menu.name,
+          items: menu.children ? menu.children.map(mapMenuToNavItem) : []
+        });
+
+        const mappedMenus: any[] = parsedMenus.map(mapMenuToNavItem);
         setMenus(mappedMenus);
       } catch (error) {
         console.error('Error parsing menus from localStorage', error);
@@ -67,20 +71,21 @@ export default function Sidebar({ className }: SidebarProps) {
   return (
     <nav
       className={cn(
-        `relative z-10 hidden h-screen flex-none px-3 md:block`,
+        `hidden h-screen flex-none bg-secondary px-3 md:block`,
         status && 'duration-500',
         !isMinimized ? 'w-72' : 'w-[80px]',
         className
       )}
     >
+
       <div
         className={cn(
-          'flex items-center px-0 py-4 md:px-2',
+          'flex items-center px-0 py-1 md:px-2',
           isMinimized ? 'flex-col justify-center' : 'justify-between'
         )}
       >
         {!isMinimized && (
-          <div className="flex items-center text-xl font-bold tracking-widest text-[#1cb85a]">
+          <div className="flex h-20 items-center text-xl font-bold tracking-widest text-[#1cb85a]">
             SS TRAVEL
           </div>
         )}

@@ -8,6 +8,8 @@ import {
   Param,
   Query,
   UseGuards,
+  DefaultValuePipe,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from '../services/users.service';
@@ -30,8 +32,8 @@ export class UsersController {
   @ApiOperation({ summary: 'Get all users with pagination and search' })
   @ApiResponse({ status: 200, description: 'Return all users.' })
   async findAll(
-    @Query('page') page: number,
-    @Query('limit') limit: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
     @Query('search') search: string,
   ): Promise<ResponseInterface> {
     return this.usersService.findAll(page, limit, search);

@@ -31,7 +31,7 @@ export default function AppRouter() {
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="roles" element={<RolesPage />} />
-        <Route path="menus" element={<MenusPage />} />
+        <Route path="menu-management" element={<MenusPage />} />
         {/* Add more protected routes here */}
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

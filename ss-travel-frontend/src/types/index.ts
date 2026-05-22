@@ -41,6 +41,10 @@ export interface BackendMenu {
   parentId?: string;
   parent?: BackendMenu;
   children?: BackendMenu[];
+  isRead: boolean;
+  isCreate: boolean;
+  isUpdate: boolean;
+  isDelete: boolean;
 }
 
 export interface MenuFormData {

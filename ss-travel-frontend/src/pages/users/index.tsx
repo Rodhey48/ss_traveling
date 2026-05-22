@@ -8,8 +8,10 @@ import UserModal from './components/user-modal';
 import { UserService } from '@/services/user.service';
 import type { User, UserFormData } from '@/types';
 import { toast } from 'sonner';
+import { usePermission } from '@/hooks/use-permission';
 
 export default function UsersPage() {
+  const { isCreate, isUpdate, isDelete } = usePermission();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -83,9 +85,11 @@ export default function UsersPage() {
           title="User Management"
           description="Manage system users and their roles."
         />
-        <Button onClick={handleCreate}>
-          <Plus className="mr-2 h-4 w-4" /> Add User
-        </Button>
+        {isCreate && (
+          <Button onClick={handleCreate}>
+            <Plus className="mr-2 h-4 w-4" /> Add User
+          </Button>
+        )}
       </div>
 
       <div className="flex items-center space-x-2">
@@ -104,6 +108,8 @@ export default function UsersPage() {
         users={users}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        canUpdate={isUpdate}
+        canDelete={isDelete}
       />
 
       <UserModal

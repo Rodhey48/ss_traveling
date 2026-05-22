@@ -7,8 +7,10 @@ import type { BackendMenu, MenuFormData } from '@/types';
 import { toast } from 'sonner';
 import MenuModal from './components/menu-modal';
 import * as Icons from 'lucide-react';
+import { usePermission } from '@/hooks/use-permission';
 
 export default function MenusPage() {
+  const { isCreate, isUpdate, isDelete } = usePermission();
   const [menus, setMenus] = useState<BackendMenu[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -116,12 +118,16 @@ export default function MenusPage() {
             )}
           </div>
           <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(menu)}>
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(menu.id)}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {isUpdate && (
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(menu)}>
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
+            {isDelete && (
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(menu.id)}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
         {hasChildren && isExpanded && (
@@ -142,9 +148,11 @@ export default function MenusPage() {
           title="Menu Management"
           description="Manage the hierarchical application navigation structure."
         />
-        <Button onClick={handleCreate}>
-          <Plus className="mr-2 h-4 w-4" /> Add Menu
-        </Button>
+        {isCreate && (
+          <Button onClick={handleCreate}>
+            <Plus className="mr-2 h-4 w-4" /> Add Menu
+          </Button>
+        )}
       </div>
 
       <div className="rounded-md border bg-card">

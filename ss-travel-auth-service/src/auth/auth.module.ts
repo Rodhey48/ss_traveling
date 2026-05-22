@@ -11,7 +11,7 @@ import {
 import { UtilService } from '../@common';
 import { JWTService } from '../@services/jwt/jwt.service';
 import { BcryptService } from '../@services/bcrypt/bcrypt.service';
-import { MenusService } from '../@services/menus/menus.service';
+import { MenusModule } from '../menus/menus.module';
 
 @Module({
   imports: [
@@ -21,6 +21,7 @@ import { MenusService } from '../@services/menus/menus.service';
       UserRolesEntity,
       RoleMenusEntity,
     ]),
+    MenusModule,
   ],
   controllers: [AuthController],
   providers: [
@@ -28,7 +29,6 @@ import { MenusService } from '../@services/menus/menus.service';
     UtilService,
     JWTService,
     BcryptService,
-    MenusService,
   ],
   exports: [AuthService],
 })
