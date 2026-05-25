@@ -43,6 +43,11 @@ export class CreateMenuDto {
   @IsArray()
   availableActions?: string[];
 
+  @ApiProperty({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  title?: boolean;
+
   @ApiProperty({ default: true })
   @IsOptional()
   @IsBoolean()

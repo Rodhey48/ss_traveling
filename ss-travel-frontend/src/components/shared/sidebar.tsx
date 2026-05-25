@@ -34,6 +34,7 @@ export default function Sidebar({ className }: SidebarProps) {
           href: menu.url || '',
           icon: menu.icon,
           label: menu.name,
+          isParentGroup: menu.title,
           items: menu.children ? menu.children.map(mapMenuToNavItem) : []
         });
 

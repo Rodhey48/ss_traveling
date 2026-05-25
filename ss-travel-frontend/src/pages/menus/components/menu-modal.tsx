@@ -38,6 +38,7 @@ interface MenuModalProps {
   menu?: BackendMenu | null;
   menus: BackendMenu[];
   loading?: boolean;
+  fixedParentId?: string | null;
 }
 
 interface MenuOption {
@@ -53,6 +54,7 @@ export default function MenuModal({
   menu,
   menus,
   loading,
+  fixedParentId,
 }: MenuModalProps) {
   const form = useForm<MenuFormData>({
     defaultValues: {
@@ -65,6 +67,7 @@ export default function MenuModal({
       isWeb: true,
       isMobile: false,
       availableActions: [],
+      title: false,
     },
   });
 
@@ -81,6 +84,7 @@ export default function MenuModal({
           isWeb: menu.isWeb,
           isMobile: menu.isMobile,
           availableActions: menu.availableActions || [],
+          title: menu.title || false,
         });
       } else {
         form.reset({
@@ -88,15 +92,16 @@ export default function MenuModal({
           url: '',
           icon: '',
           sequence: 0,
-          parentId: '',
+          parentId: fixedParentId || '',
           isActive: true,
           isWeb: true,
           isMobile: false,
           availableActions: [],
+          title: false,
         });
       }
     }
-  }, [menu, form, isOpen]);
+  }, [menu, form, isOpen, fixedParentId]);
 
   // Flatten menus for select, but exclude self and children to avoid circularity
   const flattenMenus = (list: BackendMenu[], level = 0): MenuOption[] => {
@@ -111,15 +116,18 @@ export default function MenuModal({
   };
 
   const menuOptions = flattenMenus(menus);
+  const selectedParentName = fixedParentId ? menus.find(m => m.id === fixedParentId)?.name : null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-212.5 p-0 overflow-hidden border-border shadow-2xl">
         <div className="bg-primary/5 px-6 py-4 border-b border-border">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-primary">{menu ? 'Edit Menu' : 'Tambah Menu Baru'}</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-primary">
+              {menu ? 'Edit Menu' : fixedParentId ? `Tambah Sub-Menu di "${selectedParentName}"` : 'Tambah Menu Utama'}
+            </DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              {menu ? 'Perbarui detail menu yang sudah ada untuk aplikasi Anda.' : 'Silakan lengkapi formulir di bawah ini untuk membuat entri menu baru.'}
+              {menu ? 'Perbarui detail menu yang sudah ada.' : 'Lengkapi formulir untuk membuat menu baru.'}
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -136,7 +144,7 @@ export default function MenuModal({
                     <FormItem>
                       <FormLabel className="font-semibold text-foreground">Nama Menu</FormLabel>
                       <FormControl>
-                        <Input placeholder="Contoh: Dashboard, Pengaturan..." className="h-11" {...field} />
+                        <Input placeholder="Contoh: Dashboard, Master Data..." className="h-11" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -186,6 +194,7 @@ export default function MenuModal({
                         onValueChange={field.onChange}
                         defaultValue={field.value}
                         value={field.value}
+                        disabled={!menu}
                       >
                         <FormControl>
                           <SelectTrigger className="h-11">
@@ -201,6 +210,11 @@ export default function MenuModal({
                           ))}
                         </SelectContent>
                       </Select>
+                      {!menu && (
+                        <p className="text-[10px] text-muted-foreground mt-1 italic">
+                          Parent dikunci otomatis berdasarkan tombol yang Anda klik.
+                        </p>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -265,6 +279,28 @@ export default function MenuModal({
                         />
                       </div>
                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-6 p-4 bg-secondary/30 rounded-xl border border-border">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center space-x-3 space-y-0 cursor-pointer">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className="size-5"
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="font-bold cursor-pointer text-base text-primary">Jadikan Parent (Grup Menu)</FormLabel>
+                        <p className="text-xs text-muted-foreground">Jika aktif, menu ini hanya akan membuka daftar sub-menu tanpa pindah halaman.</p>
+                      </div>
                     </FormItem>
                   )}
                 />

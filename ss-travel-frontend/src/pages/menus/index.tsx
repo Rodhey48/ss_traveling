@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import Heading from '@/components/shared/heading';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit, Trash2, ChevronRight, ChevronDown, LayoutGrid } from 'lucide-react';
+import { Plus, Edit, Trash2, ChevronRight, ChevronDown, LayoutGrid, PlusCircle } from 'lucide-react';
 import { MenuService } from '@/services/menu.service';
 import type { BackendMenu, MenuFormData } from '@/types';
 import { toast } from 'sonner';
 import MenuModal from './components/menu-modal';
-import * as Icons from 'lucide-react';
+import { getIcon } from '@/components/ui/icons';
 import { usePermission } from '@/hooks/use-permission';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 export default function MenusPage() {
   const { isCreate, isUpdate, isDelete } = usePermission();
@@ -15,6 +17,7 @@ export default function MenusPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedMenu, setSelectedMenu] = useState<BackendMenu | null>(null);
+  const [fixedParentId, setFixedParentId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
@@ -26,7 +29,7 @@ export default function MenusPage() {
         setMenus(response.data);
       }
     } catch (error) {
-      toast.error('Failed to fetch menus');
+      toast.error('Gagal mengambil data menu');
     } finally {
       setLoading(false);
     }
@@ -40,24 +43,32 @@ export default function MenusPage() {
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleCreate = () => {
+  const handleCreateMainMenu = () => {
     setSelectedMenu(null);
+    setFixedParentId(null);
+    setIsModalOpen(true);
+  };
+
+  const handleCreateChild = (parentId: string) => {
+    setSelectedMenu(null);
+    setFixedParentId(parentId);
     setIsModalOpen(true);
   };
 
   const handleEdit = (menu: BackendMenu) => {
     setSelectedMenu(menu);
+    setFixedParentId(null);
     setIsModalOpen(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this menu? Children will also be affected if any.')) {
+    if (confirm('Apakah Anda yakin ingin menghapus menu ini? Semua sub-menu di dalamnya juga akan terhapus.')) {
       try {
         await MenuService.remove(id);
-        toast.success('Menu deleted successfully');
+        toast.success('Menu berhasil dihapus');
         fetchMenus();
       } catch (error) {
-        toast.error('Failed to delete menu');
+        toast.error('Gagal menghapus menu');
       }
     }
   };
@@ -65,36 +76,32 @@ export default function MenusPage() {
   const handleSubmit = async (data: MenuFormData) => {
     try {
       setSubmitting(true);
-      // Clean up parentId if "none" and parse availableActions string to array if needed
-      const availableActions = typeof data.availableActions === 'string' 
-        ? (data.availableActions as string).split(',').map(s => s.trim()).filter(s => s !== '')
-        : data.availableActions;
-
+      
       const payload = { 
         ...data, 
         parentId: (!data.parentId || data.parentId === 'none' || data.parentId === '') ? undefined : data.parentId,
-        availableActions
       };
       
       if (selectedMenu) {
         await MenuService.update(selectedMenu.id, payload);
-        toast.success('Menu updated successfully');
+        toast.success('Menu berhasil diperbarui');
       } else {
         await MenuService.create(payload);
-        toast.success('Menu created successfully');
+        toast.success('Menu berhasil dibuat');
       }
       setIsModalOpen(false);
       fetchMenus();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Something went wrong');
+      toast.error(error.response?.data?.message || 'Terjadi kesalahan sistem');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const renderIcon = (iconName: string) => {
-    const Icon = (Icons as any)[iconName] || Icons.HelpCircle;
-    return <Icon className="h-4 w-4 mr-2 text-muted-foreground" />;
+  const renderIcon = (iconName?: string) => {
+    if (!iconName) return null;
+    const Icon = getIcon(iconName);
+    return <Icon className="h-4 w-4 mr-2 text-primary" />;
   };
 
   const MenuRow = ({ menu, level = 0 }: { menu: BackendMenu; level?: number }) => {
@@ -105,42 +112,84 @@ export default function MenusPage() {
     return (
       <>
         <div 
-          className="group flex items-center py-2 px-4 border-b hover:bg-accent/50 transition-colors"
+          className={cn(
+            "group flex items-center py-2.5 px-4 border-b hover:bg-accent/40 transition-all",
+            menu.title && "bg-primary/[0.02]"
+          )}
           style={{ paddingLeft: `${level * 24 + 16}px` }}
         >
-          <div className="flex items-center flex-1">
+          <div className="flex items-center flex-1 min-w-0">
             <button 
               onClick={() => toggleExpand(menu.id)}
-              className={`p-1 mr-1 rounded hover:bg-accent ${!hasChildren && 'invisible'}`}
+              className={cn(
+                "p-1 mr-1 rounded hover:bg-accent transition-colors",
+                !hasChildren && "invisible"
+              )}
             >
               {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
             </button>
-            {menu.icon && renderIcon(menu.icon)}
-            <span className="font-medium">{menu.name || 'Unnamed Menu'}</span>
-            <span className="ml-3 text-xs text-muted-foreground bg-accent px-2 py-0.5 rounded">
-              {menu.url || '#'}
-            </span>
-            {!menu.isActive && (
-              <span className="ml-2 text-[10px] uppercase font-bold text-destructive bg-destructive/10 px-1.5 rounded">
-                Inactive
+            
+            <div className="flex items-center min-w-0 gap-2">
+              {renderIcon(menu.icon)}
+              <span className={cn(
+                "font-medium truncate",
+                menu.title && "text-primary font-bold"
+              )}>
+                {menu.name}
               </span>
-            )}
+              
+              <div className="flex items-center gap-1.5 shrink-0">
+                {menu.title && (
+                  <Badge variant="outline" className="text-[10px] h-4 px-1 bg-primary/5 text-primary border-primary/20">GROUP</Badge>
+                )}
+                <span className="text-[10px] text-muted-foreground bg-secondary px-1.5 py-0.5 rounded border">
+                  {menu.url || '#'}
+                </span>
+                {!menu.isActive && (
+                  <Badge variant="destructive" className="text-[10px] h-4 px-1">NON-AKTIF</Badge>
+                )}
+              </div>
+            </div>
           </div>
-          <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+
+          <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {isCreate && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 text-primary hover:bg-primary/10" 
+                title="Tambah Sub-Menu"
+                onClick={() => handleCreateChild(menu.id)}
+              >
+                <PlusCircle className="h-4 w-4" />
+              </Button>
+            )}
             {isUpdate && (
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(menu)}>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 hover:bg-accent" 
+                title="Edit Menu"
+                onClick={() => handleEdit(menu)}
+              >
                 <Edit className="h-4 w-4" />
               </Button>
             )}
             {isDelete && (
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(menu.id)}>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 text-destructive hover:bg-destructive/10" 
+                title="Hapus Menu"
+                onClick={() => handleDelete(menu.id)}
+              >
                 <Trash2 className="h-4 w-4" />
               </Button>
             )}
           </div>
         </div>
         {hasChildren && isExpanded && (
-          <div>
+          <div className="bg-muted/10">
             {menu.children?.map((child) => (
               <MenuRow key={child.id} menu={child} level={level + 1} />
             ))}
@@ -154,28 +203,31 @@ export default function MenusPage() {
     <div className="flex flex-col space-y-4">
       <div className="flex items-center justify-between">
         <Heading
-          title="Menu Management"
-          description="Manage the hierarchical application navigation structure."
+          title="Manajemen Menu"
+          description="Atur struktur navigasi aplikasi secara hierarkis dengan mudah."
         />
         {isCreate && (
-          <Button onClick={handleCreate}>
-            <Plus className="mr-2 h-4 w-4" /> Add Menu
+          <Button onClick={handleCreateMainMenu} className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20">
+            <Plus className="mr-2 h-4 w-4" /> Tambah Menu Utama
           </Button>
         )}
       </div>
 
-      <div className="rounded-md border bg-card">
-        <div className="flex items-center py-3 px-4 border-b bg-muted/50 font-semibold text-sm">
-          <LayoutGrid className="h-4 w-4 mr-2" />
-          <span>Menu Structure (Drag & Drop Coming Soon)</span>
+      <div className="rounded-xl border bg-card overflow-hidden shadow-sm">
+        <div className="flex items-center py-3.5 px-4 border-b bg-muted/50 font-semibold text-sm">
+          <LayoutGrid className="h-4 w-4 mr-2 text-primary" />
+          <span>Struktur Hirarki Menu</span>
         </div>
         <div className="flex flex-col">
           {loading ? (
-            <div className="p-8 text-center text-muted-foreground">Loading menu structure...</div>
+            <div className="p-12 text-center text-muted-foreground animate-pulse">Memuat struktur menu...</div>
           ) : menus.length > 0 ? (
             menus.map((menu) => <MenuRow key={menu.id} menu={menu} />)
           ) : (
-            <div className="p-8 text-center text-muted-foreground">No menus found. Click "Add Menu" to get started.</div>
+            <div className="p-12 text-center text-muted-foreground flex flex-col items-center gap-3">
+              <LayoutGrid className="h-10 w-10 opacity-10" />
+              <p>Belum ada menu yang dibuat. Klik "Tambah Menu Utama" untuk memulai.</p>
+            </div>
           )}
         </div>
       </div>
@@ -187,6 +239,7 @@ export default function MenusPage() {
         menu={selectedMenu}
         menus={menus}
         loading={submitting}
+        fixedParentId={fixedParentId}
       />
     </div>
   );

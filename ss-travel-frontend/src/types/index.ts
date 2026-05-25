@@ -27,6 +27,7 @@ export interface UserLoginInfo {
   role?: string;
   token?: string;
   menus?: BackendMenu[];
+  roles?: any[];
 }
 
 export interface BackendMenu {
@@ -46,6 +47,7 @@ export interface BackendMenu {
   isUpdate: boolean;
   isDelete: boolean;
   availableActions?: string[];
+  title: boolean;
 }
 
 export interface MenuFormData {
@@ -58,6 +60,7 @@ export interface MenuFormData {
   isWeb?: boolean;
   isMobile?: boolean;
   availableActions?: string[];
+  title?: boolean;
 }
 
 export interface LoginResponseData {
@@ -135,6 +138,7 @@ export interface NavItem {
   icon?: string;
   label?: string;
   description?: string;
+  isParentGroup?: boolean;
 }
 
 export interface NavItemWithChildren extends NavItem {
