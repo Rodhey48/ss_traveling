@@ -1,4 +1,4 @@
-import { Entity, Column, OneToMany, BeforeInsert } from 'typeorm';
+import { Entity, Column, OneToMany, BeforeInsert, BeforeUpdate } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { BaseEntity } from '../base.entity';
 import { UserRolesEntity } from './user-roles.entity';
@@ -22,7 +22,7 @@ export class UsersEntity extends BaseEntity {
   @Column({ type: 'varchar', nullable: true, unique: true })
   phone: string;
 
-  @Column({ type: 'varchar' })
+  @Column({ type: 'varchar', select: false })
   password: string;
 
   @Column({ type: 'varchar', nullable: true })
@@ -40,14 +40,18 @@ export class UsersEntity extends BaseEntity {
   @Column({ type: 'enum', enum: ['admin', 'employee', 'user'], default: 'employee' })
   type: 'admin' | 'employee' | 'user';
 
+  @Column({ type: 'varchar', nullable: true })
+  avatar: string;
+
   @OneToMany(() => UserRolesEntity, (roles: UserRolesEntity) => roles.user, {
     cascade: true,
   })
   roles: UserRolesEntity[];
 
   @BeforeInsert()
+  @BeforeUpdate()
   async hashPassword() {
-    if (this.password) {
+    if (this.password && !this.password.startsWith('$2b$')) {
       this.password = await bcrypt.hash(this.password, 10);
     }
   }

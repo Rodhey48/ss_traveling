@@ -56,7 +56,7 @@ export class AuthService {
     foundUser.password = await this.bcryptService.createHashPassword(
       payload.password,
     );
-    foundUser.isPasswordChanged = false;
+    foundUser.isPasswordChanged = true; // Registered with their own password
 
     const role = await this.roleRepo.findOne({ where: { name: 'Employee' } });
     if (!role) {
@@ -99,11 +99,11 @@ export class AuthService {
         });
       }
 
-      const roleIds = foundUser.roles.map((ur) => ur.role.id);
       const roles = foundUser.roles.map((ur) => ({
         id: ur.role.id,
         name: ur.role.name,
       }));
+      const roleIds = foundUser.roles.map((ur) => ur.role.id);
       const menus = await this.menusService.findMenusByRole(roleIds);
 
       return {
@@ -115,6 +115,9 @@ export class AuthService {
             id: foundUser.id,
             email: foundUser.email,
             nip: foundUser.nip,
+            phone: foundUser.phone,
+            avatar: foundUser.avatar,
+            isPasswordChanged: foundUser.isPasswordChanged,
             roles,
           },
           menus,
@@ -160,11 +163,11 @@ export class AuthService {
         });
       }
 
-      const roleIds = foundUser.roles.map((ur) => ur.role.id);
       const roles = foundUser.roles.map((ur) => ({
         id: ur.role.id,
         name: ur.role.name,
       }));
+      const roleIds = foundUser.roles.map((ur) => ur.role.id);
       const menus = await this.menusService.findMenusByRole(roleIds);
 
       const tokenLogin = crypto
@@ -197,6 +200,9 @@ export class AuthService {
             id: foundUser.id,
             email: foundUser.email,
             nip: foundUser.nip,
+            phone: foundUser.phone,
+            avatar: foundUser.avatar,
+            isPasswordChanged: foundUser.isPasswordChanged,
             roles,
           },
           token,

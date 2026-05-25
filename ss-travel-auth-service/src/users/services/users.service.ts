@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -13,7 +14,9 @@ import {
 } from '@models';
 import { CreateUserDto } from './../../@dto/user/create-user.dto';
 import { UpdateUserDto } from './../../@dto/user/update-user.dto';
+import { ChangePasswordDto, UpdateProfileDto } from './../../@dto/user/profile.dto';
 import { ResponseInterface } from '@interfaces';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -96,11 +99,13 @@ export class UsersService {
     const user = new UsersEntity({
       name: dto.name,
       email: dto.email,
-      password: dto.password,
+      password: dto.password || '123456', // Default password
       nip: dto.nip,
       phone: dto.phone,
-      type: dto.type,
+      type: dto.type as any,
       isActive: dto.isActive ?? true,
+      isPasswordChanged: dto.isPasswordChanged ?? false,
+      avatar: dto.avatar,
     });
 
     const savedUser = await this.usersRepository.save(user);
@@ -131,7 +136,6 @@ export class UsersService {
     }
 
     if (dto.password) {
-      // hashPassword hook will handle it if we use save() on entity instance
       user.password = dto.password;
     }
 
@@ -142,6 +146,8 @@ export class UsersService {
       phone: dto.phone ?? user.phone,
       type: dto.type ?? user.type,
       isActive: dto.isActive ?? user.isActive,
+      isPasswordChanged: dto.isPasswordChanged ?? user.isPasswordChanged,
+      avatar: dto.avatar ?? user.avatar,
     });
 
     const updatedUser = await this.usersRepository.save(user);
@@ -179,6 +185,43 @@ export class UsersService {
     return {
       status: true,
       message: 'User soft-deleted successfully',
+    };
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto): Promise<ResponseInterface> {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    Object.assign(user, dto);
+    const updated = await this.usersRepository.save(user);
+
+    return {
+      status: true,
+      message: 'Profile updated successfully',
+      data: updated,
+    };
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDto): Promise<ResponseInterface> {
+    const user = await this.usersRepository.findOne({ 
+      where: { id: userId },
+      select: ['id', 'password'] 
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    // If oldPassword is provided, verify it
+    if (dto.oldPassword) {
+      const isMatch = await bcrypt.compare(dto.oldPassword, user.password);
+      if (!isMatch) throw new BadRequestException('Password lama tidak sesuai');
+    }
+
+    user.password = dto.newPassword;
+    user.isPasswordChanged = true; // Set to true after change
+    await this.usersRepository.save(user);
+
+    return {
+      status: true,
+      message: 'Password changed successfully',
     };
   }
 }

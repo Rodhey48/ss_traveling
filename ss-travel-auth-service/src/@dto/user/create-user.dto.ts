@@ -1,36 +1,51 @@
-import { IsArray, IsBoolean, IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsBoolean, IsEmail, IsEnum, IsOptional, IsString, IsArray } from 'class-validator';
 
 export class CreateUserDto {
-  @IsNotEmpty()
+  @ApiProperty()
   @IsString()
   name: string;
 
-  @IsNotEmpty()
+  @ApiProperty()
   @IsEmail()
   email: string;
 
-  @IsNotEmpty()
-  @IsString()
-  @MinLength(6)
-  password: string;
-
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
-  nip: string;
+  password?: string;
 
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
-  phone: string;
+  nip?: string;
 
+  @ApiProperty({ required: false })
   @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @ApiProperty({ enum: ['admin', 'employee', 'user'], default: 'employee' })
   @IsEnum(['admin', 'employee', 'user'])
-  type: 'admin' | 'employee' | 'user';
+  type: string;
 
-  @IsOptional()
-  @IsArray()
-  roleIds: string[];
-
+  @ApiProperty({ default: true })
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiProperty({ default: true })
+  @IsOptional()
+  @IsBoolean()
+  isPasswordChanged?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  avatar?: string;
+
+  @ApiProperty({ required: false, type: [String] })
+  @IsOptional()
+  @IsArray()
+  roleIds?: string[];
 }

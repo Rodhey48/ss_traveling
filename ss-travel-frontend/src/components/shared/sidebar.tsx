@@ -13,6 +13,8 @@ import {
   Sun
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import ProfileModal from './profile-modal';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 type SidebarProps = {
   className?: string;
@@ -24,6 +26,7 @@ export default function Sidebar({ className }: SidebarProps) {
   const { theme, setTheme } = useTheme();
   const [status, setStatus] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [navItems, setNavItems] = useState<NavItem[]>([]);
 
   useEffect(() => {
@@ -87,7 +90,7 @@ export default function Sidebar({ className }: SidebarProps) {
       </div>
 
       <div className="flex h-[calc(100vh-100px)] flex-col justify-between">
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-4 overflow-y-auto custom-scrollbar">
           <div className="px-2 py-2">
             <div className="mt-3 space-y-1">
               <DashboardNav items={navItems} />
@@ -95,20 +98,24 @@ export default function Sidebar({ className }: SidebarProps) {
           </div>
         </div>
 
-        <div className="relative p-3">
+        <div className="relative p-3 border-t border-border/50">
           <button
-            className="flex w-full items-center rounded-lg bg-secondary p-2 hover:bg-accent transition-colors"
+            className="flex w-full items-center rounded-xl bg-background/50 backdrop-blur-sm p-2 hover:bg-accent transition-all duration-300 shadow-sm border border-border/40"
             onClick={() => setShowDropdown(!showDropdown)}
           >
-            <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 font-bold text-primary">
-              {user ? user.name.charAt(0).toUpperCase() : 'U'}
-            </div>
+            <Avatar className="size-10 border border-primary/20 shadow-sm">
+              <AvatarImage src={user?.avatar} />
+              <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                {user ? user.name.charAt(0).toUpperCase() : 'U'}
+              </AvatarFallback>
+            </Avatar>
+            
             {!isMinimized && (
-              <div className="ml-3 flex-1 text-left">
-                <p className="font-semibold text-foreground truncate">
+              <div className="ml-3 flex-1 text-left overflow-hidden">
+                <p className="font-bold text-sm text-foreground truncate">
                   {user ? user.name : 'User Name'}
                 </p>
-                <p className="text-xs text-muted-foreground truncate">
+                <p className="text-[11px] text-muted-foreground truncate opacity-80">
                   {user ? user.email : 'user@example.com'}
                 </p>
               </div>
@@ -116,35 +123,60 @@ export default function Sidebar({ className }: SidebarProps) {
           </button>
 
           {showDropdown && (
-            <div className="absolute bottom-16 left-0 w-full rounded-lg border bg-background p-2 shadow-lg animate-in fade-in slide-in-from-bottom-2">
-              <button className="flex w-full items-center gap-2 rounded-lg p-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground">
-                <Sparkles className="size-4" /> Profile
+            <div className="absolute bottom-20 left-0 w-[calc(100%+0px)] mx-3 -ml-0 rounded-2xl border border-border/50 bg-background/95 backdrop-blur-md p-2 shadow-2xl animate-in fade-in slide-in-from-bottom-4 z-50">
+              <div className="px-2 py-1.5 mb-2 border-b border-border/50">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Akun Saya</p>
+              </div>
+              <button 
+                className="flex w-full items-center gap-3 rounded-xl p-2.5 text-sm text-foreground hover:bg-primary/10 hover:text-primary transition-all group"
+                onClick={() => {
+                  setIsProfileOpen(true);
+                  setShowDropdown(false);
+                }}
+              >
+                <div className="p-1.5 rounded-lg bg-primary/5 group-hover:bg-primary/10 transition-colors">
+                  <Sparkles className="size-4" />
+                </div>
+                <span className="font-medium">Profil & Keamanan</span>
               </button>
-              <button className="flex w-full items-center gap-2 rounded-lg p-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground">
-                <Settings className="size-4" /> Setting
+              
+              <button className="flex w-full items-center gap-3 rounded-xl p-2.5 text-sm text-foreground hover:bg-accent transition-all group">
+                <div className="p-1.5 rounded-lg bg-secondary/50 group-hover:bg-secondary transition-colors">
+                  <Settings className="size-4" />
+                </div>
+                <span className="font-medium">Pengaturan</span>
               </button>
+
               <button
-                className="flex w-full items-center gap-2 rounded-lg p-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground"
+                className="flex w-full items-center gap-3 rounded-xl p-2.5 text-sm text-foreground hover:bg-accent transition-all group"
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               >
-                {theme === 'dark' ? (
-                  <Sun className="size-4" />
-                ) : (
-                  <Moon className="size-4" />
-                )}
-                {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                <div className="p-1.5 rounded-lg bg-secondary/50 group-hover:bg-secondary transition-colors">
+                  {theme === 'dark' ? <Sun className="size-4 text-amber-500" /> : <Moon className="size-4 text-blue-500" />}
+                </div>
+                <span className="font-medium">{theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}</span>
               </button>
-              <hr className="my-2 border-border" />
+
+              <div className="my-2 border-t border-border/50" />
+              
               <button
-                className="flex w-full items-center gap-2 rounded-lg p-2 text-sm text-destructive hover:bg-destructive/10"
+                className="flex w-full items-center gap-3 rounded-xl p-2.5 text-sm text-destructive hover:bg-destructive/10 transition-all group"
                 onClick={handleLogout}
               >
-                <LogOut className="size-4" /> Log Out
+                <div className="p-1.5 rounded-lg bg-destructive/5 group-hover:bg-destructive/10 transition-colors">
+                  <LogOut className="size-4" />
+                </div>
+                <span className="font-bold">Keluar Aplikasi</span>
               </button>
             </div>
           )}
         </div>
       </div>
+
+      <ProfileModal 
+        isOpen={isProfileOpen} 
+        onClose={() => setIsProfileOpen(false)} 
+      />
     </nav>
   );
 }

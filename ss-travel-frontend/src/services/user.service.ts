@@ -41,4 +41,14 @@ export const UserService = {
     );
     return response.data;
   },
+
+  updateProfile: async (data: Partial<UserFormData>): Promise<BaseResponse<User>> => {
+    const response = await api.put<BaseResponse<User>>('/auth-api/users/profile', data);
+    return response.data;
+  },
+
+  changePassword: async (data: { newPassword: string; oldPassword?: string }): Promise<BaseResponse<void>> => {
+    const response = await api.put<BaseResponse<void>>('/auth-api/users/change-password', data);
+    return response.data;
+  }
 };

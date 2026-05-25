@@ -6,6 +6,7 @@ import ThemeProvider from '@/hooks/use-theme';
 import { SidebarProvider } from '@/hooks/use-sidebar';
 import { AuthProvider } from '@/hooks/use-auth';
 import SyncProvider from './sync-provider';
+import ForceChangePasswordModal from '@/components/shared/force-change-password-modal';
 
 export default function AppProvider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
@@ -16,7 +17,10 @@ export default function AppProvider({ children }: { children: ReactNode }) {
         <AuthProvider>
           <SidebarProvider>
             <BrowserRouter>
-              <SyncProvider>{children}</SyncProvider>
+              <SyncProvider>
+                {children}
+                <ForceChangePasswordModal />
+              </SyncProvider>
             </BrowserRouter>
           </SidebarProvider>
         </AuthProvider>

@@ -24,10 +24,13 @@ export interface UserLoginInfo {
   name: string;
   email: string;
   nip?: string;
+  phone?: string;
   role?: string;
   token?: string;
   menus?: BackendMenu[];
   roles?: any[];
+  avatar?: string;
+  isPasswordChanged?: boolean;
 }
 
 export interface BackendMenu {
@@ -80,6 +83,9 @@ export interface User {
   phone?: string;
   type: 'admin' | 'employee' | 'user';
   isActive: boolean;
+  isPasswordChanged: boolean;
+  avatar?: string;
+  lastLogin?: string;
   createdAt: string;
   updatedAt: string;
   roles?: any[];
@@ -125,6 +131,8 @@ export interface UserFormData {
   type: 'admin' | 'employee' | 'user';
   roleIds?: string[];
   isActive?: boolean;
+  isPasswordChanged?: boolean;
+  avatar?: string;
 }
 
 /**
