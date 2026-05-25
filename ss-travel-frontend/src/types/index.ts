@@ -45,6 +45,7 @@ export interface BackendMenu {
   isCreate: boolean;
   isUpdate: boolean;
   isDelete: boolean;
+  availableActions?: string[];
 }
 
 export interface MenuFormData {
@@ -56,6 +57,7 @@ export interface MenuFormData {
   isActive?: boolean;
   isWeb?: boolean;
   isMobile?: boolean;
+  availableActions?: string[];
 }
 
 export interface LoginResponseData {

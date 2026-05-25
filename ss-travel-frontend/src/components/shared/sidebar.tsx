@@ -1,9 +1,10 @@
 import DashboardNav from '@/components/shared/dashboard-nav';
+import { useAuth } from '@/hooks/use-auth';
 import { useSidebar } from '@/hooks/use-sidebar';
 import { useTheme } from '@/hooks/use-theme';
 import { cn } from '@/lib/utils';
+import type { BackendMenu, NavItem } from '@/types';
 import {
-  Bell,
   ChevronLeft,
   LogOut,
   Moon,
@@ -12,8 +13,6 @@ import {
   Sun
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import type { UserLoginInfo, NavItem, BackendMenu } from '@/types';
 
 type SidebarProps = {
   className?: string;
@@ -21,25 +20,15 @@ type SidebarProps = {
 
 export default function Sidebar({ className }: SidebarProps) {
   const { isMinimized, toggle } = useSidebar();
+  const { user, menus: authMenus, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const [status, setStatus] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [user, setUser] = useState<UserLoginInfo | null>(null);
-  const [menus, setMenus] = useState<NavItem[]>([]);
-  const navigate = useNavigate();
+  const [navItems, setNavItems] = useState<NavItem[]>([]);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    const storedMenus = localStorage.getItem('menus');
-
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-
-    if (storedMenus) {
+    if (authMenus) {
       try {
-        const parsedMenus: BackendMenu[] = JSON.parse(storedMenus);
-        
         const mapMenuToNavItem = (menu: BackendMenu): any => ({
           title: menu.name,
           href: menu.url || '',
@@ -48,13 +37,13 @@ export default function Sidebar({ className }: SidebarProps) {
           items: menu.children ? menu.children.map(mapMenuToNavItem) : []
         });
 
-        const mappedMenus: any[] = parsedMenus.map(mapMenuToNavItem);
-        setMenus(mappedMenus);
+        const mappedMenus: any[] = authMenus.map(mapMenuToNavItem);
+        setNavItems(mappedMenus);
       } catch (error) {
-        console.error('Error parsing menus from localStorage', error);
+        console.error('Error mapping menus to nav items', error);
       }
     }
-  }, []);
+  }, [authMenus]);
 
   const handleToggle = () => {
     setStatus(true);
@@ -63,9 +52,7 @@ export default function Sidebar({ className }: SidebarProps) {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login');
+    logout();
   };
 
   return (
@@ -73,7 +60,7 @@ export default function Sidebar({ className }: SidebarProps) {
       className={cn(
         `hidden h-screen flex-none bg-secondary px-3 md:block`,
         status && 'duration-500',
-        !isMinimized ? 'w-72' : 'w-[80px]',
+        !isMinimized ? 'w-72' : 'w-20',
         className
       )}
     >
@@ -102,7 +89,7 @@ export default function Sidebar({ className }: SidebarProps) {
         <div className="space-y-4 py-4">
           <div className="px-2 py-2">
             <div className="mt-3 space-y-1">
-              <DashboardNav items={menus} />
+              <DashboardNav items={navItems} />
             </div>
           </div>
         </div>

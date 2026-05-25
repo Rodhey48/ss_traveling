@@ -1,63 +1,51 @@
-import {
-  AlertTriangle,
-  ArrowRight,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  CircuitBoardIcon,
-  Command,
-  CreditCard,
-  File,
-  FileText,
-  HelpCircle,
-  Image,
-  Laptop,
-  LayoutDashboardIcon,
-  Loader2,
-  LogIn,
-  Moon,
-  MoreVertical,
-  Pizza,
-  Plus,
-  Settings,
-  SunMedium,
-  Trash,
-  User,
-  User2Icon,
-  UserX2Icon,
-  X
-} from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import type { LucideIcon, LucideProps } from 'lucide-react';
 
 export type Icon = LucideIcon;
 
+// Filter out non-icon components from LucideIcons
+const filteredLucideIcons = Object.keys(LucideIcons).reduce((acc, key) => {
+  if (
+    key !== 'Icon' && 
+    key !== 'createLucideIcon' && 
+    key !== 'LucideIcon' && 
+    key !== 'LucideProps' && 
+    key !== 'icons' && 
+    /^[A-Z][a-zA-Z0-9]+$/.test(key)
+  ) {
+    (acc as any)[key] = (LucideIcons as any)[key];
+  }
+  return acc;
+}, {});
+
 export const Icons = {
-  dashboard: LayoutDashboardIcon,
-  logo: Command,
-  login: LogIn,
-  close: X,
-  profile: User2Icon,
-  spinner: Loader2,
-  kanban: CircuitBoardIcon,
-  chevronLeft: ChevronLeft,
-  chevronRight: ChevronRight,
-  trash: Trash,
-  employee: UserX2Icon,
-  post: FileText,
-  page: File,
-  media: Image,
-  settings: Settings,
-  billing: CreditCard,
-  ellipsis: MoreVertical,
-  add: Plus,
-  warning: AlertTriangle,
-  user: User,
-  arrowRight: ArrowRight,
-  help: HelpCircle,
-  pizza: Pizza,
-  sun: SunMedium,
-  moon: Moon,
-  laptop: Laptop,
+  ...filteredLucideIcons,
+  dashboard: LucideIcons.LayoutDashboardIcon,
+  logo: LucideIcons.Command,
+  login: LucideIcons.LogIn,
+  close: LucideIcons.X,
+  profile: LucideIcons.User2Icon,
+  spinner: LucideIcons.Loader2,
+  kanban: LucideIcons.CircuitBoardIcon,
+  chevronLeft: LucideIcons.ChevronLeft,
+  chevronRight: LucideIcons.ChevronRight,
+  trash: LucideIcons.Trash,
+  employee: LucideIcons.UserX2Icon,
+  post: LucideIcons.FileText,
+  page: LucideIcons.File,
+  media: LucideIcons.Image,
+  settings: LucideIcons.Settings,
+  billing: LucideIcons.CreditCard,
+  ellipsis: LucideIcons.MoreVertical,
+  add: LucideIcons.Plus,
+  warning: LucideIcons.AlertTriangle,
+  user: LucideIcons.User,
+  arrowRight: LucideIcons.ArrowRight,
+  help: LucideIcons.HelpCircle,
+  pizza: LucideIcons.Pizza,
+  sun: LucideIcons.SunMedium,
+  moon: LucideIcons.Moon,
+  laptop: LucideIcons.Laptop,
   gitHub: ({ ...props }: LucideProps) => (
     <svg
       aria-hidden="true"
@@ -90,10 +78,18 @@ export const Icons = {
       ></path>
     </svg>
   ),
-  check: Check
+  check: LucideIcons.Check
 };
 
 export const getIcon = (iconName: string): Icon => {
+  if (!iconName) return Icons.arrowRight;
+
+  // 1. Try exact match in Icons
+  if ((Icons as any)[iconName]) {
+    return (Icons as any)[iconName];
+  }
+
+  // 2. Try mapping for legacy CoreUI icons
   const mapping: Record<string, keyof typeof Icons> = {
     'cil-speedometer': 'dashboard',
     'cil-user': 'user',
@@ -106,6 +102,18 @@ export const getIcon = (iconName: string): Icon => {
     'cil-bell': 'warning'
   };
 
-  const key = mapping[iconName] || (iconName as keyof typeof Icons);
-  return Icons[key] || Icons.arrowRight;
+  const mappedKey = mapping[iconName];
+  if (mappedKey && Icons[mappedKey]) {
+    return Icons[mappedKey] as Icon;
+  }
+
+  // 3. Try to find by case-insensitive Lucide name
+  const lucideName = Object.keys(filteredLucideIcons).find(
+    (key) => key.toLowerCase() === iconName.toLowerCase()
+  );
+  if (lucideName) {
+    return (filteredLucideIcons as any)[lucideName];
+  }
+
+  return Icons.arrowRight;
 };

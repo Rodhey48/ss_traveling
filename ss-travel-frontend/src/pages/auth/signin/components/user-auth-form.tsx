@@ -1,4 +1,5 @@
 import { useRouter } from '@/hooks/use-router';
+import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff } from 'lucide-react';
@@ -32,6 +33,7 @@ type UserFormValue = z.infer<typeof formSchema>;
 
 export default function UserAuthForm() {
   const router = useRouter();
+  const { setAuthData } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errorFields, setErrorFields] = useState<{
@@ -51,7 +53,7 @@ export default function UserAuthForm() {
     try {
       const response = await AuthService.login(data);
       localStorage.setItem('token', response.data.token);
-      localStorage.setItem('menus', JSON.stringify(response.data.menus));
+      
       const user: UserLoginInfo = {
         id: response.data.user.id,
         name: response.data.user.name,
@@ -60,7 +62,11 @@ export default function UserAuthForm() {
         roles: response.data.user.roles
       };
 
-      localStorage.setItem('user', JSON.stringify(user));
+      setAuthData({
+        user,
+        menus: response.data.menus
+      });
+
       toast.success('Login Berhasil', {
         description: 'Anda akan dialihkan ke dashboard.'
       });

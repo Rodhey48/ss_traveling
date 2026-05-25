@@ -1,18 +1,17 @@
 import { useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useAuth } from '@/hooks/use-auth';
 import type { BackendMenu } from '@/types';
 
 export function usePermission() {
   const location = useLocation();
   const currentPath = location.pathname;
+  const { menus } = useAuth();
 
   const permissions = useMemo(() => {
-    const storedMenus = localStorage.getItem('menus');
-    if (!storedMenus) return { isRead: false, isCreate: false, isUpdate: false, isDelete: false, actions: {} };
+    if (!menus || menus.length === 0) return { isRead: false, isCreate: false, isUpdate: false, isDelete: false, actions: {} };
 
     try {
-      const menus: BackendMenu[] = JSON.parse(storedMenus);
-      
       // Helper to find menu by path recursively
       const findMenu = (list: BackendMenu[]): BackendMenu | null => {
         if (!Array.isArray(list)) return null;
@@ -42,7 +41,7 @@ export function usePermission() {
     }
 
     return { isRead: false, isCreate: false, isUpdate: false, isDelete: false, actions: {} };
-  }, [currentPath]);
+  }, [currentPath, menus]);
 
   return permissions;
 }

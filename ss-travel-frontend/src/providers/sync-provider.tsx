@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 const SYNC_INTERVAL = 5 * 60 * 1000;
 
 export default function SyncProvider({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, setAuthData } = useAuth();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const syncData = async () => {
@@ -15,11 +15,10 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
     try {
       const response = await AuthService.getMe();
       if (response.status) {
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        localStorage.setItem('menus', JSON.stringify(response.data.menus));
-        // Note: We don't trigger a full page reload to avoid breaking UX.
-        // Hooks like usePermission and useSidebar will pick up changes on next render
-        // or during the next route transition.
+        setAuthData({
+          user: response.data.user,
+          menus: response.data.menus
+        });
       }
     } catch (error) {
       console.error('Background sync failed', error);

@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import ThemeProvider from '@/hooks/use-theme';
 import { SidebarProvider } from '@/hooks/use-sidebar';
+import { AuthProvider } from '@/hooks/use-auth';
 import SyncProvider from './sync-provider';
 
 export default function AppProvider({ children }: { children: ReactNode }) {
@@ -12,11 +13,13 @@ export default function AppProvider({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider defaultTheme="system" storageKey="ss-travel-theme">
       <QueryClientProvider client={queryClient}>
-        <SidebarProvider>
-          <BrowserRouter>
-            <SyncProvider>{children}</SyncProvider>
-          </BrowserRouter>
-        </SidebarProvider>
+        <AuthProvider>
+          <SidebarProvider>
+            <BrowserRouter>
+              <SyncProvider>{children}</SyncProvider>
+            </BrowserRouter>
+          </SidebarProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );
