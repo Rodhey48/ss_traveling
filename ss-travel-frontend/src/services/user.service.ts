@@ -50,5 +50,15 @@ export const UserService = {
   changePassword: async (data: { newPassword: string; oldPassword?: string }): Promise<BaseResponse<void>> => {
     const response = await api.put<BaseResponse<void>>('/auth-api/users/change-password', data);
     return response.data;
+  },
+
+  resetUserPassword: async (userId: string, data: { newPassword: string; adminPassword: string }): Promise<BaseResponse<void>> => {
+    const response = await api.put<BaseResponse<void>>(`/auth-api/users/${userId}/reset-password`, data);
+    return response.data;
+  },
+
+  toggleStatus: async (userId: string): Promise<BaseResponse<{ isActive: boolean }>> => {
+    const response = await api.put<BaseResponse<{ isActive: boolean }>>(`/auth-api/users/${userId}/toggle-status`);
+    return response.data;
   }
 };

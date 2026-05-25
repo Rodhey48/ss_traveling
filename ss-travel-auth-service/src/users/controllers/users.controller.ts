@@ -19,7 +19,7 @@ import { RolesGuard } from '../../@guards/roles/roles.guard';
 import { Roles } from '../../@guards/roles/roles.decorator';
 import { CreateUserDto } from './../../@dto/user/create-user.dto';
 import { UpdateUserDto } from './../../@dto/user/update-user.dto';
-import { ChangePasswordDto, UpdateProfileDto } from './../../@dto/user/profile.dto';
+import { ChangePasswordDto, UpdateProfileDto, ResetUserPasswordDto } from './../../@dto/user/profile.dto';
 import { ResponseInterface, RequestInterface } from '@interfaces';
 
 @ApiTags('Users')
@@ -58,6 +58,26 @@ export class UsersController {
     @Body() dto: ChangePasswordDto,
   ): Promise<ResponseInterface> {
     return this.usersService.changePassword(req.user.id, dto);
+  }
+
+  // Admin Reset User Password
+  @Put(':id/reset-password')
+  @Roles('SUPERADMIN', 'ADMIN')
+  @ApiOperation({ summary: 'Reset a user password by Admin' })
+  async resetUserPassword(
+    @Req() req: RequestInterface,
+    @Param('id') targetUserId: string,
+    @Body() dto: ResetUserPasswordDto,
+  ): Promise<ResponseInterface> {
+    return this.usersService.resetUserPassword(req.user.id, targetUserId, dto);
+  }
+
+  // Admin Toggle User Status (Active/Inactive)
+  @Put(':id/toggle-status')
+  @Roles('SUPERADMIN', 'ADMIN')
+  @ApiOperation({ summary: 'Toggle user active/inactive status' })
+  async toggleStatus(@Param('id') id: string): Promise<ResponseInterface> {
+    return this.usersService.toggleStatus(id);
   }
 
   @Get(':id')

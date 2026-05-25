@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -14,7 +15,7 @@ import {
 } from '@models';
 import { CreateUserDto } from './../../@dto/user/create-user.dto';
 import { UpdateUserDto } from './../../@dto/user/update-user.dto';
-import { ChangePasswordDto, UpdateProfileDto } from './../../@dto/user/profile.dto';
+import { ChangePasswordDto, UpdateProfileDto, ResetUserPasswordDto } from './../../@dto/user/profile.dto';
 import { ResponseInterface } from '@interfaces';
 import * as bcrypt from 'bcrypt';
 
@@ -145,8 +146,8 @@ export class UsersService {
       nip: dto.nip ?? user.nip,
       phone: dto.phone ?? user.phone,
       type: dto.type ?? user.type,
-      isActive: dto.isActive ?? user.isActive,
-      isPasswordChanged: dto.isPasswordChanged ?? user.isPasswordChanged,
+      isActive: dto.isActive !== undefined ? dto.isActive : user.isActive,
+      isPasswordChanged: dto.isPasswordChanged !== undefined ? dto.isPasswordChanged : user.isPasswordChanged,
       avatar: dto.avatar ?? user.avatar,
     });
 
@@ -179,12 +180,14 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
+    // Toggle active status or just set false? User requested "active/inactive" feature.
+    // Usually remove is soft-delete, but let's stick to setting inactive.
     user.isActive = false;
     await this.usersRepository.save(user);
 
     return {
       status: true,
-      message: 'User soft-deleted successfully',
+      message: 'User deactivated successfully',
     };
   }
 
@@ -209,19 +212,58 @@ export class UsersService {
     });
     if (!user) throw new NotFoundException('User not found');
 
-    // If oldPassword is provided, verify it
     if (dto.oldPassword) {
       const isMatch = await bcrypt.compare(dto.oldPassword, user.password);
       if (!isMatch) throw new BadRequestException('Password lama tidak sesuai');
     }
 
     user.password = dto.newPassword;
-    user.isPasswordChanged = true; // Set to true after change
+    user.isPasswordChanged = true;
     await this.usersRepository.save(user);
 
     return {
       status: true,
       message: 'Password changed successfully',
+    };
+  }
+
+  async resetUserPassword(adminId: string, targetUserId: string, dto: ResetUserPasswordDto): Promise<ResponseInterface> {
+    // 1. Verify Admin Password
+    const admin = await this.usersRepository.findOne({ 
+      where: { id: adminId },
+      select: ['id', 'password'] 
+    });
+    if (!admin) throw new NotFoundException('Admin not found');
+
+    const isAdminMatch = await bcrypt.compare(dto.adminPassword, admin.password);
+    if (!isAdminMatch) throw new ForbiddenException('Password Admin tidak valid');
+
+    // 2. Find Target User
+    const targetUser = await this.usersRepository.findOne({ where: { id: targetUserId } });
+    if (!targetUser) throw new NotFoundException('User tidak ditemukan');
+
+    // 3. Reset Password and Force Change
+    targetUser.password = dto.newPassword;
+    targetUser.isPasswordChanged = false; // Force change on next login
+    await this.usersRepository.save(targetUser);
+
+    return {
+      status: true,
+      message: 'User password has been reset successfully',
+    };
+  }
+
+  async toggleStatus(id: string): Promise<ResponseInterface> {
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user) throw new NotFoundException('User not found');
+
+    user.isActive = !user.isActive;
+    await this.usersRepository.save(user);
+
+    return {
+      status: true,
+      message: `User is now ${user.isActive ? 'Active' : 'Inactive'}`,
+      data: { isActive: user.isActive }
     };
   }
 }

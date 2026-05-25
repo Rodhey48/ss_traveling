@@ -29,3 +29,14 @@ export class ChangePasswordDto {
   @IsOptional()
   oldPassword?: string;
 }
+
+export class ResetUserPasswordDto {
+  @ApiProperty()
+  @IsString()
+  @MinLength(6, { message: 'Password baru minimal 6 karakter' })
+  newPassword: string;
+
+  @ApiProperty()
+  @IsString()
+  adminPassword: string;
+}
