@@ -1,24 +1,24 @@
-import axios from 'axios';
-import type { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-import { toast } from 'sonner';
+import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
+import axios from "axios";
+import { toast } from "sonner";
 
 // Extend AxiosRequestConfig to support 'silent' flag
-declare module 'axios' {
+declare module "axios" {
   export interface AxiosRequestConfig {
     silent?: boolean;
   }
 }
 
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000/';
+const baseURL = import.meta.env.VITE_API_URL || "http://localhost:3000/";
 
-const getToken = () => localStorage.getItem('token');
+const getToken = () => localStorage.getItem("token");
 
 const api = axios.create({
   baseURL: baseURL,
   timeout: 60000,
   headers: {
-    'Content-Type': 'application/json'
-  }
+    "Content-Type": "application/json",
+  },
 });
 
 api.interceptors.request.use(
@@ -29,7 +29,7 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 let isLoggingOut = false;
@@ -38,15 +38,15 @@ const handleLogout = () => {
   if (isLoggingOut) return;
   isLoggingOut = true;
 
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
 
-  toast.error('Sesi Berakhir', {
-    description: 'Silakan login kembali.'
+  toast.error("Sesi Berakhir", {
+    description: "Silakan login kembali.",
   });
 
   setTimeout(() => {
-    window.location.href = '/login';
+    window.location.href = "/login";
   }, 1000);
 };
 
@@ -58,11 +58,11 @@ api.interceptors.response.use(
     if (error.response) {
       const { status, data } = error.response;
 
-      let errorMessage = 'Terjadi kesalahan pada server.';
-      if (typeof data?.message === 'string') {
+      let errorMessage = "Terjadi kesalahan pada server.";
+      if (typeof data?.message === "string") {
         errorMessage = data.message;
       } else if (Array.isArray(data?.message)) {
-        errorMessage = data.message.join(', ');
+        errorMessage = data.message.join(", ");
       }
 
       if (status === 401) {
@@ -70,21 +70,29 @@ api.interceptors.response.use(
       } else if (!isSilent) {
         switch (status) {
           case 400:
-            toast.error('🚨 Bad Request', { description: errorMessage });
+            toast.error("🚨 Bad Request", { description: errorMessage });
             break;
           case 403:
-            toast.error('⛔ Forbidden', {
-              description: 'Anda tidak memiliki izin untuk melakukan tindakan ini.'
+            const missingPerms = data?.missing;
+            const description =
+              missingPerms && Array.isArray(missingPerms)
+                ? `Butuh akses: ${missingPerms.join(", ")}`
+                : errorMessage ||
+                  "Anda tidak memiliki izin untuk melakukan tindakan ini.";
+
+            toast.error("⛔ Akses Ditolak", {
+              description: description,
+              duration: 5000,
             });
             break;
           case 404:
-            toast.error('🔍 Not Found', {
-              description: 'Data tidak ditemukan atau endpoint salah.'
+            toast.error("🔍 Not Found", {
+              description: "Data tidak ditemukan atau endpoint salah.",
             });
             break;
           case 500:
-            toast.error('💥 Server Error', {
-              description: 'Terjadi kesalahan internal pada server.'
+            toast.error("💥 Server Error", {
+              description: "Terjadi kesalahan internal pada server.",
             });
             break;
           default:
@@ -93,24 +101,25 @@ api.interceptors.response.use(
       }
     } else if (error.request) {
       if (!isSilent) {
-        if (error.code === 'ECONNABORTED') {
-          toast.error('⏳ Timeout', {
-            description: 'Server tidak merespons dalam waktu yang ditentukan.'
+        if (error.code === "ECONNABORTED") {
+          toast.error("⏳ Timeout", {
+            description: "Server tidak merespons dalam waktu yang ditentukan.",
           });
         } else {
-          toast.error('❌ Network Error', {
-            description: 'Tidak dapat terhubung ke server. Periksa koneksi internet.'
+          toast.error("❌ Network Error", {
+            description:
+              "Tidak dapat terhubung ke server. Periksa koneksi internet.",
           });
         }
       }
     } else {
       if (!isSilent) {
-        toast.error('⚙️ Request Error', { description: error.message });
+        toast.error("⚙️ Request Error", { description: error.message });
       }
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;

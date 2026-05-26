@@ -12,4 +12,5 @@ export interface UserLoggedInterface {
   ppu?: any;
   position?: any;
   token?: string;
+  permissions?: string[];
 }

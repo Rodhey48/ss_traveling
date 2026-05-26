@@ -1,23 +1,25 @@
+import { RequirePermissions } from '@guards/permissions/permissions.decorator';
+import { PermissionsGuard } from '@guards/permissions/permissions.guard';
+import { ResponseInterface } from '@interfaces';
 import {
+  Body,
   Controller,
   Get,
+  Param,
   Post,
   Put,
-  Body,
-  Param,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { RolesService } from '../services/roles.service';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../@guards/roles/roles.guard';
-import { Roles } from '../../@guards/roles/roles.decorator';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreateRoleDto, UpdateRoleDto } from '../../@dto/role/role.dto';
-import { ResponseInterface } from '@interfaces';
+import { Roles } from '../../@guards/roles/roles.decorator';
+import { RolesGuard } from '../../@guards/roles/roles.guard';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RolesService } from '../services/roles.service';
 
 @ApiTags('Roles & Permissions')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
 @Controller('roles')
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
@@ -45,14 +47,22 @@ export class RolesController {
 
   @Post()
   @Roles('SUPERADMIN', 'ADMIN')
-  @ApiOperation({ summary: 'Create a new role with permissions' })
+  @RequirePermissions('Role:create') // Contoh permission spesifik untuk membuat role
+  @ApiOperation({
+    summary:
+      'Create a new role with permissions, needs permission "Role:create"',
+  })
   async create(@Body() dto: CreateRoleDto): Promise<ResponseInterface> {
     return this.rolesService.create(dto);
   }
 
   @Put(':id')
   @Roles('SUPERADMIN', 'ADMIN')
-  @ApiOperation({ summary: 'Update a role and its permissions' })
+  @RequirePermissions('Role:update') // Contoh permission spesifik untuk mengupdate role
+  @ApiOperation({
+    summary:
+      'Update a role and its permissions, needs permission "Role:update"',
+  })
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateRoleDto,

@@ -1,3 +1,6 @@
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -6,12 +9,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Edit, Trash2, KeyRound, UserCheck, UserX } from 'lucide-react';
-import type { User } from '@/types';
 import { cn } from '@/lib/utils';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import type { User } from '@/types';
+import { Edit, KeyRound, Trash2, UserCheck, UserX } from 'lucide-react';
 
 interface UserTableProps {
   users: User[];
@@ -25,9 +25,9 @@ interface UserTableProps {
   canToggle?: boolean;
 }
 
-export default function UserTable({ 
-  users, 
-  onEdit, 
+export default function UserTable({
+  users,
+  onEdit,
   onDelete,
   onResetPassword,
   onToggleStatus,
@@ -43,7 +43,7 @@ export default function UserTable({
       <Table>
         <TableHeader className="bg-muted/50">
           <TableRow>
-            <TableHead className="w-[300px]">User Info</TableHead>
+            <TableHead className="w-75">User Info</TableHead>
             <TableHead>NIP</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Status</TableHead>
@@ -78,7 +78,7 @@ export default function UserTable({
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <Badge 
+                  <Badge
                     variant={user.isActive ? 'success' : 'destructive'}
                     className="text-[10px] font-bold"
                   >

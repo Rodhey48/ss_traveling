@@ -1,24 +1,26 @@
+import { RequirePermissions } from '@guards/permissions/permissions.decorator';
+import { PermissionsGuard } from '@guards/permissions/permissions.guard';
+import { ResponseInterface } from '@interfaces';
 import {
+  Body,
   Controller,
+  Delete,
   Get,
+  Param,
   Post,
   Put,
-  Delete,
-  Body,
-  Param,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { MenusService } from './../../@services/menus/menus.service';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../@guards/roles/roles.guard';
-import { Roles } from '../../@guards/roles/roles.decorator';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreateMenuDto, UpdateMenuDto } from '../../@dto/menu/menu.dto';
-import { ResponseInterface } from '@interfaces';
+import { Roles } from '../../@guards/roles/roles.decorator';
+import { RolesGuard } from '../../@guards/roles/roles.guard';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { MenusService } from '../services/menus.service';
 
 @ApiTags('Menus Management')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
 @Controller('menus')
 export class MenusController {
   constructor(private readonly menusService: MenusService) {}
@@ -32,14 +34,20 @@ export class MenusController {
 
   @Post()
   @Roles('SUPERADMIN', 'ADMIN')
-  @ApiOperation({ summary: 'Create a new menu' })
+  @RequirePermissions('Menu:create') // Contoh permission spesifik untuk membuat menu
+  @ApiOperation({
+    summary: 'Create a new menu, needs permission "Menu:create"',
+  })
   async create(@Body() dto: CreateMenuDto): Promise<ResponseInterface> {
     return this.menusService.create(dto);
   }
 
   @Put(':id')
   @Roles('SUPERADMIN', 'ADMIN')
-  @ApiOperation({ summary: 'Update a menu' })
+  @RequirePermissions('Menu:update') // Contoh permission spesifik untuk mengupdate menu
+  @ApiOperation({
+    summary: 'Update a menu, needs permission "Menu:update"',
+  })
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateMenuDto,
@@ -49,7 +57,10 @@ export class MenusController {
 
   @Delete(':id')
   @Roles('SUPERADMIN', 'ADMIN')
-  @ApiOperation({ summary: 'Delete a menu' })
+  @RequirePermissions('Menu:delete') // Contoh permission spesifik untuk menghapus menu
+  @ApiOperation({
+    summary: 'Delete a menu, needs permission "Menu:delete"',
+  })
   async remove(@Param('id') id: string): Promise<ResponseInterface> {
     return this.menusService.remove(id);
   }

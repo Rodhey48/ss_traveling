@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -15,14 +14,14 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { toast } from 'sonner';
 import { UserService } from '@/services/user.service';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import * as z from 'zod';
 
 const forcePasswordSchema = z.object({
   newPassword: z.string().min(6, 'Password baru minimal 6 karakter'),
@@ -72,7 +71,7 @@ export default function ForceChangePasswordModal() {
 
   return (
     <Dialog open={isOpen}>
-      <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden border-none shadow-2xl" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+      <DialogContent className="sm:max-w-112.5 p-0 overflow-hidden border-none shadow-2xl" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
         <div className="bg-amber-500/10 px-6 py-8 flex flex-col items-center text-center gap-4">
           <div className="p-4 bg-amber-500 rounded-full text-white shadow-lg shadow-amber-500/20">
             <ShieldCheck size={32} />

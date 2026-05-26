@@ -1,9 +1,9 @@
+import { MenusEntity, ModulesEntity, RoleMenusEntity } from '@models';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { MenusController } from './controllers/menus.controller';
-import { MenusService } from './../@services/menus/menus.service';
-import { MenusEntity, RoleMenusEntity, ModulesEntity } from '@models';
 import { JWTService } from './../@services/jwt/jwt.service';
+import { MenusController } from './controllers/menus.controller';
+import { MenusService } from './services/menus.service';
 
 @Module({
   imports: [

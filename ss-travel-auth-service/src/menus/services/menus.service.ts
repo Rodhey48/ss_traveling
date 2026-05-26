@@ -1,10 +1,9 @@
+import { ResponseInterface } from '@interfaces';
 import { MenusEntity, ModulesEntity, RoleMenusEntity } from '@models';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import * as _ from 'lodash';
 import { CreateMenuDto, UpdateMenuDto } from '../../@dto/menu/menu.dto';
-import { ResponseInterface } from '@interfaces';
 
 @Injectable()
 export class MenusService {
@@ -224,5 +223,42 @@ export class MenusService {
       status: true,
       message: 'Menu deleted successfully',
     };
+  }
+
+  async getPermissionsByRoles(roleIds: string[]): Promise<string[]> {
+    if (!roleIds || roleIds.length === 0) {
+      return [];
+    }
+
+    const roleMenus = await this.roleMenuRepo
+      .createQueryBuilder('roleMenu')
+      .leftJoinAndSelect('roleMenu.menu', 'menu')
+      .where('roleMenu.role IN (:...roleIds) AND roleMenu.isActive = true', {
+        roleIds,
+      })
+      .getMany();
+
+    const permissionsSet = new Set<string>();
+
+    roleMenus.forEach((rm) => {
+      // Gunakan aclName sebagai identifier utama, fallback ke name
+      const baseName = rm.menu.aclName || rm.menu.name;
+
+      if (rm.isRead) permissionsSet.add(baseName + ':read');
+      if (rm.isCreate) permissionsSet.add(baseName + ':create');
+      if (rm.isUpdate) permissionsSet.add(baseName + ':update');
+      if (rm.isDelete) permissionsSet.add(baseName + ':delete');
+
+      if (rm.actions) {
+        Object.keys(rm.actions).forEach((action) => {
+          if (rm.actions[action]) {
+            // Gunakan nama action asli dari database
+            permissionsSet.add(baseName + ':' + action);
+          }
+        });
+      }
+    });
+
+    return Array.from(permissionsSet);
   }
 }

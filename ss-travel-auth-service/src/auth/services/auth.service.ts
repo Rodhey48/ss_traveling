@@ -7,16 +7,16 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import * as crypto from 'crypto';
+import { Response } from 'express';
 import { Repository } from 'typeorm';
-import { LoginUserDTO, RegisterUserDTO } from '../dto/auth.dto';
+import { INTERNAL_SERVER_ERROR_MESSAGE } from '../../@common';
+import { ResponseInterface, UserLoggedInterface } from '../../@interfaces';
 import { RolesEntity, UserRolesEntity, UsersEntity } from '../../@models';
 import { BcryptService } from '../../@services/bcrypt/bcrypt.service';
 import { JWTService } from '../../@services/jwt/jwt.service';
-import { ResponseInterface, UserLoggedInterface } from '../../@interfaces';
-import { INTERNAL_SERVER_ERROR_MESSAGE } from '../../@common';
-import { MenusService } from '../../@services/menus/menus.service';
-import * as crypto from 'crypto';
-import { Response } from 'express';
+import { MenusService } from '../../menus/services/menus.service';
+import { LoginUserDTO, RegisterUserDTO } from '../dto/auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -34,6 +34,11 @@ export class AuthService {
     private menusService: MenusService,
   ) {}
 
+  /**
+   * Register a new user
+   * @param payload RegisterUserDTO
+   * @returns Promise<ResponseInterface>
+   */
   async register(payload: RegisterUserDTO): Promise<ResponseInterface> {
     const foundUser = await this.userRepo.findOne({
       where: { email: payload.email, nip: payload.nip },
@@ -83,6 +88,11 @@ export class AuthService {
     }
   }
 
+  /**
+   * Get user profile
+   * @param userId string
+   * @returns Promise<ResponseInterface>
+   */
   async getMe(userId: string): Promise<ResponseInterface> {
     try {
       const foundUser = await this.userRepo
@@ -129,6 +139,12 @@ export class AuthService {
     }
   }
 
+  /**
+   *
+   * @param payload
+   * @param res
+   * @returns
+   */
   async login(payload: LoginUserDTO, res: Response): Promise<any> {
     try {
       const foundUser = await this.userRepo
@@ -170,6 +186,9 @@ export class AuthService {
       const roleIds = foundUser.roles.map((ur) => ur.role.id);
       const menus = await this.menusService.findMenusByRole(roleIds);
 
+      const permissions =
+        await this.menusService.getPermissionsByRoles(roleIds);
+
       const tokenLogin = crypto
         .randomBytes(15)
         .toString('hex')
@@ -181,6 +200,7 @@ export class AuthService {
         email: foundUser.email,
         nip: foundUser.nip,
         role: roles,
+        permissions: permissions, // TAMBAHKAN INI
         token: tokenLogin,
       };
 

@@ -1,30 +1,36 @@
+import { RequirePermissions } from '@guards/permissions/permissions.decorator';
+import { PermissionsGuard } from '@guards/permissions/permissions.guard';
+import { RequestInterface, ResponseInterface } from '@interfaces';
 import {
+  Body,
   Controller,
+  DefaultValuePipe,
+  Delete,
   Get,
+  Param,
+  ParseIntPipe,
   Post,
   Put,
-  Delete,
-  Body,
-  Param,
   Query,
-  UseGuards,
-  DefaultValuePipe,
-  ParseIntPipe,
   Req,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { UsersService } from '../services/users.service';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../@guards/roles/roles.guard';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../../@guards/roles/roles.decorator';
+import { RolesGuard } from '../../@guards/roles/roles.guard';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { UsersService } from '../services/users.service';
 import { CreateUserDto } from './../../@dto/user/create-user.dto';
+import {
+  ChangePasswordDto,
+  ResetUserPasswordDto,
+  UpdateProfileDto,
+} from './../../@dto/user/profile.dto';
 import { UpdateUserDto } from './../../@dto/user/update-user.dto';
-import { ChangePasswordDto, UpdateProfileDto, ResetUserPasswordDto } from './../../@dto/user/profile.dto';
-import { ResponseInterface, RequestInterface } from '@interfaces';
 
 @ApiTags('Users')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -63,7 +69,11 @@ export class UsersController {
   // Admin Reset User Password
   @Put(':id/reset-password')
   @Roles('SUPERADMIN', 'ADMIN')
-  @ApiOperation({ summary: 'Reset a user password by Admin' })
+  @RequirePermissions('User:PermissionUser.reset') // Contoh permission spesifik untuk reset password
+  @ApiOperation({
+    summary:
+      'Reset a user password by Admin, needs permission "User:PermissionUser.reset"',
+  })
   async resetUserPassword(
     @Req() req: RequestInterface,
     @Param('id') targetUserId: string,
@@ -75,7 +85,11 @@ export class UsersController {
   // Admin Toggle User Status (Active/Inactive)
   @Put(':id/toggle-status')
   @Roles('SUPERADMIN', 'ADMIN')
-  @ApiOperation({ summary: 'Toggle user active/inactive status' })
+  @RequirePermissions('User:PermissionUser.status') // Contoh permission spesifik untuk toggle status
+  @ApiOperation({
+    summary:
+      'Toggle user active/inactive status, needs permission "User:PermissionUser.status"',
+  })
   async toggleStatus(@Param('id') id: string): Promise<ResponseInterface> {
     return this.usersService.toggleStatus(id);
   }
@@ -89,14 +103,22 @@ export class UsersController {
 
   @Post()
   @Roles('SUPERADMIN', 'ADMIN')
-  @ApiOperation({ summary: 'Create a new user' })
-  async create(@Body() createUserDto: CreateUserDto): Promise<ResponseInterface> {
+  @RequirePermissions('User:create') // Contoh permission spesifik untuk membuat user
+  @ApiOperation({
+    summary: 'Create a new user, needs permission "User:create"',
+  })
+  async create(
+    @Body() createUserDto: CreateUserDto,
+  ): Promise<ResponseInterface> {
     return this.usersService.create(createUserDto);
   }
 
   @Put(':id')
   @Roles('SUPERADMIN', 'ADMIN')
-  @ApiOperation({ summary: 'Update an existing user' })
+  @RequirePermissions('User:update') // Contoh permission spesifik untuk mengupdate user
+  @ApiOperation({
+    summary: 'Update an existing user, needs permission "User:update"',
+  })
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
@@ -106,7 +128,10 @@ export class UsersController {
 
   @Delete(':id')
   @Roles('SUPERADMIN', 'ADMIN')
-  @ApiOperation({ summary: 'Soft delete a user' })
+  @RequirePermissions('User:delete') // Contoh permission spesifik untuk menghapus user
+  @ApiOperation({
+    summary: 'Soft delete a user, needs permission "User:delete"',
+  })
   async remove(@Param('id') id: string): Promise<ResponseInterface> {
     return this.usersService.remove(id);
   }

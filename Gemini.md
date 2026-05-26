@@ -52,3 +52,12 @@ This project uses a microservices architecture with multiple sub-projects. All s
 - **UI Components:** Follows Shadcn UI patterns.
 - **Type Safety:** Use `import type` for type-only imports.
 - **Components:** Keep components small, focused, and organized within `src/components`.
+
+## 🛡 Security & Authorization (Distributed Authorization SOP)
+
+1.  **Enriched JWT**: Information permissions flows via JWT payload (permissions field).
+2.  **Naming Convention**: Format `aclName:action` (e.g., `User:read`, `Finance:approve`) synced with database `aclName`.
+3.  **Security Guards**: Use `JwtAuthGuard` and `PermissionsGuard` (and `RolesGuard` if needed) at Controller or Method level.
+4.  **Otorisasi Decorator**: Use `@RequirePermissions('...')` for granular access control.
+5.  **Swagger Documentation**: Include permission requirements in `@ApiOperation({ summary: '... (Needs permission: X)' })`.
+6.  **Transparent Error**: Denied access returns a detailed list of `missing` permissions.
