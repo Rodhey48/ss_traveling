@@ -1,6 +1,7 @@
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import axios from "axios";
 import { toast } from "sonner";
+import { storage } from "./storage";
 
 // Manual lightweight UUID generator
 const generateUUID = () => {
@@ -26,16 +27,16 @@ const baseURL = import.meta.env.VITE_API_URL || "http://localhost:3000/";
 
 // Utility for Device ID
 export const getDeviceId = () => {
-  let deviceId = localStorage.getItem("deviceId");
+  let deviceId = storage.get("deviceId");
   if (!deviceId) {
     deviceId = generateUUID();
-    localStorage.setItem("deviceId", deviceId);
+    storage.set("deviceId", deviceId);
   }
   return deviceId;
 };
 
-const getToken = () => localStorage.getItem("token");
-const getRefreshToken = () => localStorage.getItem("refreshToken");
+const getToken = () => storage.get("token");
+const getRefreshToken = () => storage.get("refreshToken");
 
 const api = axios.create({
   baseURL: baseURL,
@@ -79,10 +80,10 @@ const processQueue = (error: any, token: string | null = null) => {
 };
 
 const handleLogout = (reason = "Sesi Berakhir") => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("refreshToken");
-  localStorage.removeItem("user");
-  localStorage.removeItem("menus");
+  storage.remove("token");
+  storage.remove("refreshToken");
+  storage.remove("user");
+  storage.remove("menus");
 
   toast.error(reason, {
     description: "Silakan login kembali.",
@@ -134,8 +135,8 @@ api.interceptors.response.use(
         const { token: newToken, refreshToken: newRefreshToken } = resp.data.data;
 
         // Simpan token baru
-        localStorage.setItem("token", newToken);
-        localStorage.setItem("refreshToken", newRefreshToken);
+        storage.set("token", newToken);
+        storage.set("refreshToken", newRefreshToken);
 
         // DELAY 3 DETIK sesuai permintaan
         await sleep(3000);
@@ -163,7 +164,7 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // 3. Standar Error Handling (jukan bukan 401 pertama kali)
+    // 3. Standard Error Handling
     if (error.response) {
       const { status, data } = error.response;
       let errorMessage = data?.message || "Terjadi kesalahan pada server.";

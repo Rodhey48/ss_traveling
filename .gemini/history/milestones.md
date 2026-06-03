@@ -2,11 +2,13 @@
 
 ## Phase 1: Infrastructure & Auth (Completed)
 
-### 2026-06-03: Security Hardening & Session Integrity (Access/Refresh Token)
+### 2026-06-03: Security Hardening & Session Integrity (Triple-Lock Auth)
 - **Token Rotation Architecture**: Implemented a robust Access/Refresh token system. Access Token (1h, stateless) for performance, Refresh Token (7d, stateful) for session continuity.
 - **Single Device Login (SDL)**: Introduced `sessionToken` validation in the backend. New logins automatically invalidate previous sessions on other devices.
 - **Stateless Fingerprint Validation**: Integrated device fingerprinting (hash of `deviceId` + `User-Agent`) into the JWT payload. Requests are validated statelessly in `JwtAuthGuard` against client headers (`x-device-id`).
-- **Auto-Refresh Interceptor**: Developed a sophisticated Axios interceptor that handles 401 errors, performs background token refresh with a 3-second delay, queues concurrent requests, and handles graceful logout on retry failure.
+- **Encrypted LocalStorage**: Integrated `secure-ls` with AES encryption and LZ compression to safeguard tokens and user data in the browser. Developed a centralized `storage` utility for consistent encryption/decryption.
+- **Robust Auto-Refresh Interceptor**: Optimized the Axios interceptor to handle concurrent requests, implement a 3-second delay for stability, and ensure seamless retry with refreshed credentials.
+- **Background Sync Stabilization**: Fixed a critical bug where background synchronization (`/auth/me`) was inadvertently clearing session tokens from storage.
 - **Entity & DTO Synchronization**: Refactored `UsersEntity` and Auth DTOs to support new security columns (`session_token`, `refresh_token`, `last_origin`) with strict data exclusion (`select: false`).
 
 ### 2026-05-26: Distributed Authorization & Local-First Stability

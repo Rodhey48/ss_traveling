@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import type { UserLoginInfo, BackendMenu } from '@/types';
+import { storage } from '@/lib/storage';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -26,25 +27,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [menus, setMenus] = useState<BackendMenu[]>([]);
 
   const loadStoredData = useCallback(() => {
-    const token = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-    const storedMenus = localStorage.getItem('menus');
+    const token = storage.get('token');
+    const storedUser = storage.get('user');
+    const storedMenus = storage.get('menus');
 
     if (token) {
       setIsAuthenticated(true);
       if (storedUser) {
-        try {
-          setUser(JSON.parse(storedUser));
-        } catch (e) {
-          console.error('Failed to parse user from localStorage', e);
-        }
+        setUser(storedUser);
       }
       if (storedMenus) {
-        try {
-          setMenus(JSON.parse(storedMenus));
-        } catch (e) {
-          console.error('Failed to parse menus from localStorage', e);
-        }
+        setMenus(storedMenus);
       }
     } else {
       setIsAuthenticated(false);
@@ -58,22 +51,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loadStoredData();
   }, [loadStoredData]);
 
-  const setAuthData = useCallback((data: { user: UserLoginInfo; menus: BackendMenu[]; token: string; refreshToken: string }) => {
+  const setAuthData = useCallback((data: { 
+    user: UserLoginInfo; 
+    menus: BackendMenu[]; 
+    token?: string; 
+    refreshToken?: string 
+  }) => {
     setUser(data.user);
     setMenus(data.menus);
     setIsAuthenticated(true);
     
-    if (data.token) localStorage.setItem('token', data.token);
-    if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    localStorage.setItem('menus', JSON.stringify(data.menus));
+    // Only store tokens if they are actually provided in the payload
+    if (data.token) storage.set('token', data.token);
+    if (data.refreshToken) storage.set('refreshToken', data.refreshToken);
+    
+    storage.set('user', data.user);
+    storage.set('menus', data.menus);
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
-    localStorage.removeItem('menus');
+    storage.remove('token');
+    storage.remove('refreshToken');
+    storage.remove('user');
+    storage.remove('menus');
     setIsAuthenticated(false);
     setUser(null);
     setMenus([]);

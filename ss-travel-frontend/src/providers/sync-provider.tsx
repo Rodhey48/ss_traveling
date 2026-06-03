@@ -17,8 +17,9 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
       if (response.status) {
         setAuthData({
           user: response.data.user,
-          menus: response.data.menus
-        });
+          menus: response.data.menus,
+          // We don't pass token/refreshToken here to avoid overwriting them
+        } as any);
       }
     } catch (error) {
       console.error('Background sync failed', error);

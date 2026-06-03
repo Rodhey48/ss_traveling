@@ -1,5 +1,6 @@
 import api from '@/lib/axiosClient';
 import type { BaseResponse, LoginResponseData } from '@/types';
+import { storage } from '@/lib/storage';
 
 export const AuthService = {
   login: async (data: any): Promise<BaseResponse<LoginResponseData>> => {
@@ -18,9 +19,10 @@ export const AuthService = {
     return response.data;
   },
   logout: () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('menus');
+    storage.remove('token');
+    storage.remove('refreshToken');
+    storage.remove('user');
+    storage.remove('menus');
     window.location.href = '/login';
   }
 };
