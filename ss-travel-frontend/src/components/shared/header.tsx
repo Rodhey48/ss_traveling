@@ -31,7 +31,7 @@ export default function Header() {
             to="/"
             className="flex items-center gap-2 md:hidden"
           >
-            <span className="text-lg font-bold tracking-tight text-[#1cb85a]">SS TRAVEL</span>
+            <span className="text-lg font-bold tracking-tight text-[#1cb85a]">{import.meta.env.VITE_APP_NAME}</span>
           </Link>
         </div>
 

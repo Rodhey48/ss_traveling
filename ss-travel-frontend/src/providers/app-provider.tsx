@@ -12,7 +12,7 @@ export default function AppProvider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
 
   return (
-    <ThemeProvider defaultTheme="system" storageKey="ss-travel-theme">
+    <ThemeProvider defaultTheme="system" storageKey={import.meta.env.VITE_THEME_STORAGE_KEY}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <SidebarProvider>

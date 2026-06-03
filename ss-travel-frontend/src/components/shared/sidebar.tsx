@@ -63,7 +63,7 @@ export default function Sidebar({ className }: SidebarProps) {
       >
         {!isMinimized && (
           <div className="flex h-20 items-center text-xl font-bold tracking-widest text-[#1cb85a]">
-            SS TRAVEL
+            {import.meta.env.VITE_APP_NAME}
           </div>
         )}
         <ChevronLeft

@@ -9,7 +9,7 @@ try {
   ls = new SecureLSConstructor({ 
     encodingType: "aes", 
     isCompression: true,
-    encryptionSecret: import.meta.env.VITE_STORAGE_SECRET || "ss-travel-key-2026" 
+    encryptionSecret: import.meta.env.VITE_STORAGE_SECRET
   });
 } catch (error) {
   console.error("Failed to initialize SecureLS, using fallback:", error);
