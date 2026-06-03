@@ -5,6 +5,7 @@ import {
   InternalServerErrorException,
   Logger,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as crypto from 'crypto';
@@ -140,21 +141,25 @@ export class AuthService {
   }
 
   /**
-   *
-   * @param payload
-   * @param res
-   * @returns
+   * Login user
+   * @param payload LoginUserDTO
+   * @param res Response
+   * @param userAgent string
+   * @returns Promise<any>
    */
-  async login(payload: LoginUserDTO, res: Response): Promise<any> {
+  async login(
+    payload: LoginUserDTO,
+    res: Response,
+    userAgent: string,
+  ): Promise<any> {
     try {
       const foundUser = await this.userRepo
         .createQueryBuilder('user')
+        .addSelect('user.password') // Kita butuh password untuk verifikasi
         .leftJoinAndSelect('user.roles', 'roles', 'roles.isActive = true')
         .leftJoinAndSelect('roles.role', 'role', 'role.isActive = true')
-        .leftJoinAndSelect('role.menus', 'menus', 'menus.isActive = true')
-        .leftJoinAndSelect('menus.menu', 'menu', 'menu.isActive = true')
         .where(
-          '(user.isActive = true AND user.email = :identifier) OR (user.isActive = true AND user.nip = :identifier)',
+          '((user.isActive = true AND user.email = :identifier) OR (user.isActive = true AND user.nip = :identifier))',
           {
             identifier: payload.identifier,
           },
@@ -185,14 +190,15 @@ export class AuthService {
       }));
       const roleIds = foundUser.roles.map((ur) => ur.role.id);
       const menus = await this.menusService.findMenusByRole(roleIds);
-
       const permissions =
         await this.menusService.getPermissionsByRoles(roleIds);
 
-      const tokenLogin = crypto
-        .randomBytes(15)
-        .toString('hex')
-        .substring(0, 20);
+      // 1. Generate Session Token (UUID) & Fingerprint
+      const sessionToken = crypto.randomUUID();
+      const fingerprint = crypto
+        .createHash('sha256')
+        .update(payload.deviceId + userAgent)
+        .digest('hex');
 
       const userData: UserLoggedInterface = {
         id: foundUser.id,
@@ -200,13 +206,22 @@ export class AuthService {
         email: foundUser.email,
         nip: foundUser.nip,
         role: roles,
-        permissions: permissions, // TAMBAHKAN INI
-        token: tokenLogin,
+        permissions: permissions,
+        sid: sessionToken,
+        fingerprint: fingerprint, // Tambahkan fingerprint ke payload Access Token
       };
 
-      const token = this.jwtService.createToken(userData);
+      // 2. Generate Tokens
+      const accessToken = this.jwtService.createToken(userData);
+      const refreshToken = this.jwtService.createRefreshToken({
+        sid: sessionToken,
+        fingerprint: fingerprint,
+      });
 
-      foundUser.token = tokenLogin;
+      // 3. Update User Session & Device Info in DB
+      foundUser.sessionToken = sessionToken;
+      foundUser.refreshToken = refreshToken; // Kita simpan untuk validasi nanti
+      foundUser.lastOrigin = fingerprint;
       foundUser.lastLogin = new Date();
       await this.userRepo.save(foundUser);
 
@@ -225,7 +240,8 @@ export class AuthService {
             isPasswordChanged: foundUser.isPasswordChanged,
             roles,
           },
-          token,
+          token: accessToken,
+          refreshToken,
           menus,
         },
       });
@@ -241,6 +257,105 @@ export class AuthService {
       throw new InternalServerErrorException({
         message: 'An error occurred during login',
         status: false,
+      });
+    }
+  }
+
+  /**
+   * Refresh Token logic
+   * @param oldRefreshToken string
+   * @param deviceId string
+   * @param userAgent string
+   * @returns Promise<ResponseInterface>
+   */
+  async refreshToken(
+    oldRefreshToken: string,
+    deviceId: string,
+    userAgent: string,
+  ): Promise<ResponseInterface> {
+    try {
+      // 1. Verify Refresh Token signature & exp
+      const payload: any = this.jwtService.verifyRefreshToken(oldRefreshToken);
+
+      // 2. Find User by session ID (sid)
+      const user = await this.userRepo
+        .createQueryBuilder('user')
+        .addSelect([
+          'user.refreshToken',
+          'user.sessionToken',
+          'user.lastOrigin',
+        ])
+        .leftJoinAndSelect('user.roles', 'roles', 'roles.isActive = true')
+        .leftJoinAndSelect('roles.role', 'role', 'role.isActive = true')
+        .where('user.sessionToken = :sid AND user.isActive = true', {
+          sid: payload.sid,
+        })
+        .getOne();
+
+      if (!user) {
+        throw new UnauthorizedException({ message: 'Invalid session' });
+      }
+
+      // 3. Validate Single Device & Origin Fingerprint
+      const currentFingerprint = crypto
+        .createHash('sha256')
+        .update(deviceId + userAgent)
+        .digest('hex');
+
+      if (
+        user.refreshToken !== oldRefreshToken ||
+        user.lastOrigin !== currentFingerprint ||
+        payload.fingerprint !== currentFingerprint
+      ) {
+        // Keamanan: Jika terdeteksi anomali, hapus sesi agar user harus login ulang
+        user.sessionToken = null;
+        user.refreshToken = null;
+        await this.userRepo.save(user);
+        throw new UnauthorizedException({
+          message: 'Security anomaly detected',
+        });
+      }
+
+      // 4. Generate New Session & Tokens (Update Permissions)
+      const newSessionToken = crypto.randomUUID();
+      const roleIds = user.roles.map((ur) => ur.role.id);
+      const permissions =
+        await this.menusService.getPermissionsByRoles(roleIds);
+
+      const userData: UserLoggedInterface = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        nip: user.nip,
+        role: user.roles.map((ur) => ({ id: ur.role.id, name: ur.role.name })),
+        permissions: permissions,
+        sid: newSessionToken,
+        fingerprint: currentFingerprint, // INI YANG TADI KURANG
+      };
+
+      const newAccessToken = this.jwtService.createToken(userData);
+      const newRefreshToken = this.jwtService.createRefreshToken({
+        sid: newSessionToken,
+        fingerprint: currentFingerprint,
+      });
+
+      // 5. Save New Session to DB
+      user.sessionToken = newSessionToken;
+      user.refreshToken = newRefreshToken;
+      await this.userRepo.save(user);
+
+      return {
+        status: true,
+        message: 'Token refreshed successfully',
+        data: {
+          token: newAccessToken,
+          refreshToken: newRefreshToken,
+        },
+      };
+    } catch (error) {
+      this.logger.error(`RefreshToken error: ${error.message}`);
+      throw new UnauthorizedException({
+        message: 'Session expired or invalid',
       });
     }
   }

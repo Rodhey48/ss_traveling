@@ -2,28 +2,27 @@
 
 ## Phase 1: Infrastructure & Auth (Completed)
 
-### 2026-05-26: Distributed Authorization & End-to-End Permission Transparency
-- **Enriched JWT Payload**: Integrated granular permissions (format aclName:action) directly into the JWT payload during login, enabling zero-network authorization for other services.
-- **PermissionsGuard & Decorator**: Implemented a smart PermissionsGuard and @RequirePermissions decorator in the backend.
-- **Action-based Error Reporting**: Refactored the guard to return a detailed missing field in 403 Forbidden responses, specifying exactly which permissions are required.
-- **Frontend Error Interceptor**: Updated axiosClient.ts to capture backend permission errors and display them in the toast (Sonner) description for clear admin feedback.
-- **Architecture SOP**: Established a new project standard for endpoint security combining Role-based and Permission-based access.
+### 2026-06-03: Security Hardening & Session Integrity (Access/Refresh Token)
+- **Token Rotation Architecture**: Implemented a robust Access/Refresh token system. Access Token (1h, stateless) for performance, Refresh Token (7d, stateful) for session continuity.
+- **Single Device Login (SDL)**: Introduced `sessionToken` validation in the backend. New logins automatically invalidate previous sessions on other devices.
+- **Stateless Fingerprint Validation**: Integrated device fingerprinting (hash of `deviceId` + `User-Agent`) into the JWT payload. Requests are validated statelessly in `JwtAuthGuard` against client headers (`x-device-id`).
+- **Auto-Refresh Interceptor**: Developed a sophisticated Axios interceptor that handles 401 errors, performs background token refresh with a 3-second delay, queues concurrent requests, and handles graceful logout on retry failure.
+- **Entity & DTO Synchronization**: Refactored `UsersEntity` and Auth DTOs to support new security columns (`session_token`, `refresh_token`, `last_origin`) with strict data exclusion (`select: false`).
+
+### 2026-05-26: Distributed Authorization & Local-First Stability
+- **Architecture Pivot**: Adopted a "Distributed but Independent" authorization strategy. Logic is implemented locally in each service to avoid monorepo dependency complexities while maintaining a unified security standard.
+- **Enriched JWT Payload**: Refactored AuthService and MenusService to include granular permission strings (format aclName:action) directly in the JWT payload.
+- **Granular PermissionsGuard**: Implemented a local PermissionsGuard and @RequirePermissions decorator that provides detailed feedback on missing permissions during 403 Forbidden errors.
+- **Full Controller Integration**: Standardized Users, Menus, and Roles controllers with the new authorization SOP (Dual-layer: Roles + Permissions).
+- **Frontend Error Interceptor**: Updated axiosClient.ts to display specific missing permissions in toast notifications, improving admin UX and transparency.
 
 ### 2026-05-25: Menu Management UX & Global State Robustness
-- **Interactive Icon Picker**: Developed a high-performance, searchable icon gallery with 1,400+ Lucide icons, featuring lazy loading and mouse wheel support.
-- **Contextual Menu Creation**: Refactored the Menu Management UI to support "Main Menu" and "Sub-Menu" creation paths, automatically locking parent assignments to reduce user error.
-- **Folder-like Group Menus**: Repurposed the title boolean field to mark menus as "Groups." These menus act as folders that toggle child visibility without triggering page redirection.
-- **Global Auth State (Context)**: Migrated local state management to a unified AuthContext, ensuring Sidebar, Mobile Sidebar, and Permissions react in real-time to background synchronization.
-- **Responsive UI Overhaul**: Widen the menu management forms to a 2-column layout and enforced strict theme consistency for perfect Dark Mode support.
+- **Interactive Icon Picker**: Developed a high-performance, searchable icon gallery with 1,400+ Lucide icons.
+- **Contextual Menu Creation**: Refactored Menu Management UI to support smart parent assignments.
+- **Folder-like Group Menus**: Implemented non-redirecting "Group" menus using the title field.
+- **Global Auth State (Context)**: Migrated local state to a unified AuthContext for real-time UI reactions.
 
 ### 2026-05-22: Auth System Perfection & Hybrid Permissions
-- **Hierarchical Menu Management**: Implemented recursive tree fetching in backend and hierarchical UI in frontend (Menus Page).
-- **Hybrid Action-based Permissions**: Added support for dynamic, non-CRUD permissions (e.g., approve, export) using JSONB in PostgreSQL.
-- **Dynamic Permission Sync**: Implemented background synchronization (/auth/me endpoint) to refresh permissions without user logout.
-- **UI/UX Refactoring**: Aligned the dashboard layout and components with the "floating" aesthetic of the reference project (Absensi).
-- **Stability Fixes**: Resolved various frontend runtime crashes using defensive programming and fixed backend pagination bugs.
-
-### 2026-04-27: User Management & RBAC Initial Implementation
-- Implemented core CRUD for Users and Roles.
-- Integrated JWT authentication and basic RolesGuard.
-- Established basic Sidebar navigation based on role.
+- **Hierarchical Menu Management**: Implemented recursive tree fetching and UI.
+- **Hybrid Action-based Permissions**: Added support for dynamic JSONB permissions (approve, export, etc.).
+- **Dynamic Permission Sync**: Implemented background synchronization via /auth/me.

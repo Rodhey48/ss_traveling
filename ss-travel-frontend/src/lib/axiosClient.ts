@@ -2,16 +2,40 @@ import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import axios from "axios";
 import { toast } from "sonner";
 
-// Extend AxiosRequestConfig to support 'silent' flag
+// Manual lightweight UUID generator
+const generateUUID = () => {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
+
+// Delay helper
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Extend AxiosRequestConfig to support 'silent' and retry flags
 declare module "axios" {
   export interface AxiosRequestConfig {
     silent?: boolean;
+    _retry?: boolean;
   }
 }
 
 const baseURL = import.meta.env.VITE_API_URL || "http://localhost:3000/";
 
+// Utility for Device ID
+export const getDeviceId = () => {
+  let deviceId = localStorage.getItem("deviceId");
+  if (!deviceId) {
+    deviceId = generateUUID();
+    localStorage.setItem("deviceId", deviceId);
+  }
+  return deviceId;
+};
+
 const getToken = () => localStorage.getItem("token");
+const getRefreshToken = () => localStorage.getItem("refreshToken");
 
 const api = axios.create({
   baseURL: baseURL,
@@ -21,27 +45,46 @@ const api = axios.create({
   },
 });
 
+// Request Interceptor
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = getToken();
+    const deviceId = getDeviceId();
+
     if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers.set("Authorization", `Bearer ${token}`);
     }
+
+    if (config.headers) {
+      config.headers.set("x-device-id", deviceId);
+    }
+
     return config;
   },
   (error) => Promise.reject(error),
 );
 
-let isLoggingOut = false;
+let isRefreshing = false;
+let failedQueue: any[] = [];
 
-const handleLogout = () => {
-  if (isLoggingOut) return;
-  isLoggingOut = true;
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
 
+const handleLogout = (reason = "Sesi Berakhir") => {
   localStorage.removeItem("token");
+  localStorage.removeItem("refreshToken");
   localStorage.removeItem("user");
+  localStorage.removeItem("menus");
 
-  toast.error("Sesi Berakhir", {
+  toast.error(reason, {
     description: "Silakan login kembali.",
   });
 
@@ -50,71 +93,97 @@ const handleLogout = () => {
   }, 1000);
 };
 
+// Response Interceptor
 api.interceptors.response.use(
   (response: AxiosResponse) => response,
-  (error) => {
-    const isSilent = error.config?.silent === true;
+  async (error) => {
+    const originalRequest = error.config;
+    const isSilent = originalRequest?.silent === true;
 
-    if (error.response) {
-      const { status, data } = error.response;
-
-      let errorMessage = "Terjadi kesalahan pada server.";
-      if (typeof data?.message === "string") {
-        errorMessage = data.message;
-      } else if (Array.isArray(data?.message)) {
-        errorMessage = data.message.join(", ");
+    // 1. Handle 401 Unauthorized (Trigger Refresh)
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.set("Authorization", `Bearer ${token}`);
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
       }
 
-      if (status === 401) {
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      const refreshToken = getRefreshToken();
+      const deviceId = getDeviceId();
+
+      if (!refreshToken) {
         handleLogout();
-      } else if (!isSilent) {
+        return Promise.reject(error);
+      }
+
+      try {
+        // Panggil Refresh API menggunakan instance axios murni
+        const resp = await axios.post(`${baseURL}auth-api/auth/refresh`, {
+          refreshToken,
+          deviceId,
+        });
+
+        const { token: newToken, refreshToken: newRefreshToken } = resp.data.data;
+
+        // Simpan token baru
+        localStorage.setItem("token", newToken);
+        localStorage.setItem("refreshToken", newRefreshToken);
+
+        // DELAY 3 DETIK sesuai permintaan
+        await sleep(3000);
+
+        processQueue(null, newToken);
+        isRefreshing = false;
+
+        // Pasang token baru dan retry request awal
+        originalRequest.headers.set("Authorization", `Bearer ${newToken}`);
+        originalRequest.headers.set("x-device-id", deviceId);
+        
+        return api(originalRequest);
+
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        isRefreshing = false;
+        handleLogout("Sesi kedaluwarsa, silakan login ulang.");
+        return Promise.reject(refreshError);
+      }
+    }
+
+    // 2. Jika retry GAGAL LAGI (masuk ke sini dengan _retry: true)
+    if (error.response && originalRequest._retry) {
+      handleLogout("Gagal memverifikasi akses baru.");
+      return Promise.reject(error);
+    }
+
+    // 3. Standar Error Handling (jukan bukan 401 pertama kali)
+    if (error.response) {
+      const { status, data } = error.response;
+      let errorMessage = data?.message || "Terjadi kesalahan pada server.";
+
+      if (!isSilent) {
         switch (status) {
           case 400:
             toast.error("🚨 Bad Request", { description: errorMessage });
             break;
           case 403:
-            const missingPerms = data?.missing;
-            const description =
-              missingPerms && Array.isArray(missingPerms)
-                ? `Butuh akses: ${missingPerms.join(", ")}`
-                : errorMessage ||
-                  "Anda tidak memiliki izin untuk melakukan tindakan ini.";
-
-            toast.error("⛔ Akses Ditolak", {
-              description: description,
-              duration: 5000,
-            });
-            break;
-          case 404:
-            toast.error("🔍 Not Found", {
-              description: "Data tidak ditemukan atau endpoint salah.",
-            });
+            toast.error("⛔ Akses Ditolak", { description: "Izin tidak cukup." });
             break;
           case 500:
-            toast.error("💥 Server Error", {
-              description: "Terjadi kesalahan internal pada server.",
-            });
+            toast.error("💥 Server Error", { description: "Kesalahan internal." });
             break;
           default:
-            toast.error(`⚠️ Error ${status}`, { description: errorMessage });
+            if (status !== 401) {
+              toast.error(`⚠️ Error ${status}`, { description: errorMessage });
+            }
         }
-      }
-    } else if (error.request) {
-      if (!isSilent) {
-        if (error.code === "ECONNABORTED") {
-          toast.error("⏳ Timeout", {
-            description: "Server tidak merespons dalam waktu yang ditentukan.",
-          });
-        } else {
-          toast.error("❌ Network Error", {
-            description:
-              "Tidak dapat terhubung ke server. Periksa koneksi internet.",
-          });
-        }
-      }
-    } else {
-      if (!isSilent) {
-        toast.error("⚙️ Request Error", { description: error.message });
       }
     }
 

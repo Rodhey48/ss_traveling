@@ -6,7 +6,7 @@ interface AuthContextType {
   loading: boolean;
   user: UserLoginInfo | null;
   menus: BackendMenu[];
-  setAuthData: (data: { user: UserLoginInfo; menus: BackendMenu[] }) => void;
+  setAuthData: (data: { user: UserLoginInfo; menus: BackendMenu[]; token: string; refreshToken: string }) => void;
   logout: () => void;
 }
 
@@ -58,16 +58,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loadStoredData();
   }, [loadStoredData]);
 
-  const setAuthData = useCallback((data: { user: UserLoginInfo; menus: BackendMenu[] }) => {
+  const setAuthData = useCallback((data: { user: UserLoginInfo; menus: BackendMenu[]; token: string; refreshToken: string }) => {
     setUser(data.user);
     setMenus(data.menus);
     setIsAuthenticated(true);
+    
+    if (data.token) localStorage.setItem('token', data.token);
+    if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
     localStorage.setItem('user', JSON.stringify(data.user));
     localStorage.setItem('menus', JSON.stringify(data.menus));
   }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     localStorage.removeItem('menus');
     setIsAuthenticated(false);

@@ -8,11 +8,12 @@ import {
   UseGuards,
   UsePipes,
   ValidationPipe,
+  Headers,
 } from '@nestjs/common';
-import { ApiOperation, ApiTags, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiOperation, ApiTags, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { AuthService } from '../services/auth.service';
 import { LoginUserDTO, RegisterUserDTO } from '../dto/auth.dto';
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RequestInterface } from '@interfaces';
 
@@ -33,8 +34,33 @@ export class AuthController {
   @ApiOperation({ summary: 'Login user' })
   @ApiResponse({ status: 200, description: 'Login successful.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  async login(@Body() body: LoginUserDTO, @Res() res: Response) {
-    return this.authService.login(body, res);
+  async login(
+    @Body() body: LoginUserDTO,
+    @Res() res: Response,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.authService.login(body, res, userAgent);
+  }
+
+  @Post('refresh')
+  @ApiOperation({ summary: 'Refresh Access Token using Refresh Token' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        refreshToken: { type: 'string' },
+        deviceId: { type: 'string' },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Token refreshed successfully.' })
+  @ApiResponse({ status: 401, description: 'Invalid refresh token.' })
+  async refresh(
+    @Body('refreshToken') refreshToken: string,
+    @Body('deviceId') deviceId: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.authService.refreshToken(refreshToken, deviceId, userAgent);
   }
 
   @Get('me')

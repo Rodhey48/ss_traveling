@@ -13,4 +13,6 @@ export interface UserLoggedInterface {
   position?: any;
   token?: string;
   permissions?: string[];
+  sid?: string;
+  fingerprint?: string;
 }

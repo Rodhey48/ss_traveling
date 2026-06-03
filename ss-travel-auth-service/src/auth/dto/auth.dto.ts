@@ -29,6 +29,11 @@ export class LoginUserDTO {
   @IsOptional()
   @ApiProperty({ example: 'employee', required: false })
   type?: string;
+
+  @IsNotEmpty({ message: "deviceId can't be empty" })
+  @IsString({ message: 'deviceId must be a string' })
+  @ApiProperty({ example: 'uuid-device-123' })
+  deviceId: string;
 }
 
 export class ChangePasswordDto {

@@ -25,8 +25,14 @@ export class UsersEntity extends BaseEntity {
   @Column({ type: 'varchar', select: false })
   password: string;
 
-  @Column({ type: 'varchar', nullable: true })
-  token: string;
+  @Column({ type: 'varchar', select: false, nullable: true, name: 'session_token' })
+  sessionToken: string;
+
+  @Column({ type: 'text', select: false, nullable: true, name: 'refresh_token' })
+  refreshToken: string;
+
+  @Column({ type: 'varchar', nullable: true, name: 'last_origin' })
+  lastOrigin: string;
 
   @Column({ type: 'timestamp', nullable: true })
   lastLogin: Date;

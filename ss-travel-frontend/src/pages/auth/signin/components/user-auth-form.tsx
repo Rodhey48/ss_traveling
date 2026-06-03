@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { AuthService } from '@/services/auth.service';
+import { getDeviceId } from '@/lib/axiosClient';
 import type { UserLoginInfo } from '@/types';
 
 const formSchema = z.object({
@@ -51,20 +52,33 @@ export default function UserAuthForm() {
     setErrorFields({});
 
     try {
-      const response = await AuthService.login(data);
-      localStorage.setItem('token', response.data.token);
+      // 1. Get Device ID and inject into login payload
+      const deviceId = getDeviceId();
+      const loginPayload = { ...data, deviceId };
+
+      const response = await AuthService.login(loginPayload);
+
+      // Pastikan data ada sebelum diproses
+      if (!response || !response.data) {
+        throw new Error('Respons server tidak valid');
+      }
+
+      const payload = response.data;
       
       const user: UserLoginInfo = {
-        id: response.data.user.id,
-        name: response.data.user.name,
-        email: response.data.user.email,
-        nip: response.data.user.nip,
-        roles: response.data.user.roles
+        id: payload.user.id,
+        name: payload.user.name,
+        email: payload.user.email,
+        nip: payload.user.nip,
+        roles: payload.user.roles
       };
 
+      // 2. Store all tokens and user data via AuthContext
       setAuthData({
         user,
-        menus: response.data.menus
+        menus: payload.menus,
+        token: payload.token,
+        refreshToken: payload.refreshToken
       });
 
       toast.success('Login Berhasil', {
@@ -86,7 +100,13 @@ export default function UserAuthForm() {
           setErrorFields({
             password: 'Kata sandi salah.'
           });
+        } else if (status === 401) {
+          toast.error('Login Gagal', {
+            description: error.response.data?.message || 'Kredensial salah.'
+          });
         }
+      } else {
+        toast.error('Gagal terhubung ke server');
       }
     } finally {
       setLoading(false);

@@ -69,6 +69,7 @@ export interface MenuFormData {
 export interface LoginResponseData {
   user: UserLoginInfo;
   token: string;
+  refreshToken: string;
   menus: BackendMenu[];
 }
 
