@@ -1,2 +1,3 @@
 - [Project Context: SS Traveling](project-context-ss-traveling.md) — ERP goals, architecture, and tech stack overview.
+- [Core Features & Architecture](core-features-architecture.md) — Technical summary of implemented features, data models, and security flows.
 - [Project Milestones](../history/milestones.md) — Timeline of major technical achievements and feature completions.

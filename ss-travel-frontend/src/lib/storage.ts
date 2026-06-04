@@ -5,11 +5,18 @@ const SecureLSConstructor = (SecureLS as any).default || SecureLS;
 
 let ls: any;
 
+const secret = import.meta.env.VITE_STORAGE_SECRET;
+if (!secret) {
+  console.warn("VITE_STORAGE_SECRET is missing! Storage might fail to decrypt existing data.");
+}
+
 try {
   ls = new SecureLSConstructor({ 
     encodingType: "aes", 
     isCompression: true,
-    encryptionSecret: import.meta.env.VITE_STORAGE_SECRET
+    // We use a fallback secret to prevent null pointer errors, 
+    // though decryption will still fail if the original secret was different.
+    encryptionSecret: secret || "ss-travel-fallback-secret-2026"
   });
 } catch (error) {
   console.error("Failed to initialize SecureLS, using fallback:", error);
@@ -17,7 +24,11 @@ try {
     set: (key: string, value: any) => localStorage.setItem(key, JSON.stringify(value)),
     get: (key: string) => {
       const val = localStorage.getItem(key);
-      return val ? JSON.parse(val) : null;
+      try {
+        return val ? JSON.parse(val) : null;
+      } catch {
+        return val;
+      }
     },
     remove: (key: string) => localStorage.removeItem(key),
     removeAll: () => localStorage.clear()

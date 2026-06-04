@@ -302,11 +302,20 @@ export class AuthService {
         .update(deviceId + userAgent)
         .digest('hex');
 
-      if (
-        user.refreshToken !== oldRefreshToken ||
-        user.lastOrigin !== currentFingerprint ||
-        payload.fingerprint !== currentFingerprint
-      ) {
+      const isTokenMatch = user.refreshToken === oldRefreshToken;
+      const isLastOriginMatch = user.lastOrigin === currentFingerprint;
+      const isPayloadFingerprintMatch = payload.fingerprint === currentFingerprint;
+
+      if (!isTokenMatch || !isLastOriginMatch || !isPayloadFingerprintMatch) {
+        this.logger.error(`Security anomaly details for user ${user.id}: 
+          - Token match: ${isTokenMatch}
+          - Origin match (DB): ${isLastOriginMatch}
+          - Fingerprint match (Payload): ${isPayloadFingerprintMatch}
+          - Sent deviceId: ${deviceId}
+          - Stored SID: ${user.sessionToken}
+          - Payload SID: ${payload.sid}
+        `);
+        
         // Keamanan: Jika terdeteksi anomali, hapus sesi agar user harus login ulang
         user.sessionToken = null;
         user.refreshToken = null;
@@ -330,7 +339,7 @@ export class AuthService {
         role: user.roles.map((ur) => ({ id: ur.role.id, name: ur.role.name })),
         permissions: permissions,
         sid: newSessionToken,
-        fingerprint: currentFingerprint, // INI YANG TADI KURANG
+        fingerprint: currentFingerprint,
       };
 
       const newAccessToken = this.jwtService.createToken(userData);
@@ -353,6 +362,9 @@ export class AuthService {
         },
       };
     } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
       this.logger.error(`RefreshToken error: ${error.message}`);
       throw new UnauthorizedException({
         message: 'Session expired or invalid',

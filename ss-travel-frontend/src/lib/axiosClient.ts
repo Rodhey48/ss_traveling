@@ -25,12 +25,13 @@ declare module "axios" {
 
 const baseURL = import.meta.env.VITE_API_URL;
 
-// Utility for Device ID
+// Utility for Device ID (Fixed: Use plain localStorage for absolute stability of fingerprint)
 export const getDeviceId = () => {
-  let deviceId = storage.get("deviceId");
+  let deviceId = localStorage.getItem("ss_device_id");
   if (!deviceId) {
+    console.warn("Device ID not found in storage, generating new one...");
     deviceId = generateUUID();
-    storage.set("deviceId", deviceId);
+    localStorage.setItem("ss_device_id", deviceId);
   }
   return deviceId;
 };
@@ -79,19 +80,21 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
-const handleLogout = (reason = "Sesi Berakhir") => {
+const handleLogout = (reason = "Sesi Berakhir", detail = "") => {
+  console.error(`LOGOUT TRIGGERED: ${reason} | Detail: ${detail}`);
+  
   storage.remove("token");
   storage.remove("refreshToken");
   storage.remove("user");
   storage.remove("menus");
 
   toast.error(reason, {
-    description: "Silakan login kembali.",
+    description: detail || "Silakan login kembali.",
   });
 
   setTimeout(() => {
     window.location.href = "/login";
-  }, 1000);
+  }, 1500);
 };
 
 // Response Interceptor
@@ -121,16 +124,22 @@ api.interceptors.response.use(
       const deviceId = getDeviceId();
 
       if (!refreshToken) {
-        handleLogout();
+        handleLogout("Sesi Habis", "Refresh token tidak ditemukan.");
         return Promise.reject(error);
       }
 
       try {
+        console.log("Token expired. Attempting to refresh...");
+        
         // Panggil Refresh API menggunakan instance axios murni
         const resp = await axios.post(`${baseURL}auth-api/auth/refresh`, {
           refreshToken,
           deviceId,
         });
+
+        if (!resp.data?.data) {
+          throw new Error("Invalid response from refresh server");
+        }
 
         const { token: newToken, refreshToken: newRefreshToken } = resp.data.data;
 
@@ -139,6 +148,7 @@ api.interceptors.response.use(
         storage.set("refreshToken", newRefreshToken);
 
         // DELAY 3 DETIK sesuai permintaan
+        console.log("Refresh success. Waiting 3s before retry...");
         await sleep(3000);
 
         processQueue(null, newToken);
@@ -148,19 +158,24 @@ api.interceptors.response.use(
         originalRequest.headers.set("Authorization", `Bearer ${newToken}`);
         originalRequest.headers.set("x-device-id", deviceId);
         
+        console.log("Retrying original request with new token.");
         return api(originalRequest);
 
-      } catch (refreshError) {
+      } catch (refreshError: any) {
+        console.error("Auto-refresh process failed:", refreshError);
         processQueue(refreshError, null);
         isRefreshing = false;
-        handleLogout("Sesi kedaluwarsa, silakan login ulang.");
+        
+        const errorMsg = refreshError.response?.data?.message || refreshError.message || "Gagal memperbarui sesi.";
+        handleLogout("Sesi Tidak Valid", errorMsg);
         return Promise.reject(refreshError);
       }
     }
 
     // 2. Jika retry GAGAL LAGI (masuk ke sini dengan _retry: true)
     if (error.response && originalRequest._retry) {
-      handleLogout("Gagal memverifikasi akses baru.");
+      const errorDetail = `Retry failed with status ${error.response.status}`;
+      handleLogout("Gagal Verifikasi", errorDetail);
       return Promise.reject(error);
     }
 

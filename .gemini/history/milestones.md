@@ -2,6 +2,11 @@
 
 ## Phase 1: Infrastructure & Auth (Completed)
 
+### 2026-06-04: Session Binding Stability & Security Anomaly Resolution
+- **Device ID Standardization**: Resolved an issue where users were unexpectedly logged out due to "Security Anomaly" errors. The root cause was storing the `deviceId` in encrypted storage, which could trigger a re-generation if decryption failed. Moved `deviceId` to plain `localStorage` for absolute fingerprint stability across sessions and browser restarts.
+- **Enhanced Security Logging**: Added granular server-side logging in `AuthService.refreshToken` to track token, origin, and fingerprint matches, enabling rapid diagnosis of session binding issues.
+- **Robust Error Interceptor**: Refined the frontend Axios interceptor with detailed error reporting to distinguish between missing tokens, failed refresh calls, and retry failures.
+
 ### 2026-06-03: Security Hardening & Session Integrity (Triple-Lock Auth)
 - **Token Rotation Architecture**: Implemented a robust Access/Refresh token system. Access Token (1h, stateless) for performance, Refresh Token (7d, stateful) for session continuity.
 - **Single Device Login (SDL)**: Introduced `sessionToken` validation in the backend. New logins automatically invalidate previous sessions on other devices.
