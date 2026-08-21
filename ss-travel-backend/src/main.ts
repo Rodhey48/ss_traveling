@@ -25,6 +25,16 @@ async function bootstrap() {
     .setVersion('1.0')
     .addTag('Auth')
     .addBearerAuth()
+    .addGlobalParameters({
+      name: 'x-device-id',
+      in: 'header',
+      required: false,
+      description: 'Device ID used for security fingerprint validation',
+      schema: {
+        type: 'string',
+        default: 'uuid-device-123',
+      },
+    })
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
