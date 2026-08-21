@@ -1,6 +1,0 @@
-node_modules
-/dist
-.env
-.gemini/*.local.md
-.gemini/*.local.json
-.gemini/history/

@@ -1,24 +1,24 @@
 import axiosClient from '@/lib/axiosClient';
-import type { BackendMenu, MenuFormData } from '@/types';
+import type { MenuFormData } from '@/types';
 
 export const MenuService = {
   getTree: async () => {
-    const response = await axiosClient.get('auth-api/menus/tree');
+    const response = await axiosClient.get('api/menus/tree');
     return response.data;
   },
 
   create: async (data: MenuFormData) => {
-    const response = await axiosClient.post('auth-api/menus', data);
+    const response = await axiosClient.post('api/menus', data);
     return response.data;
   },
 
   update: async (id: string, data: MenuFormData) => {
-    const response = await axiosClient.put(`auth-api/menus/${id}`, data);
+    const response = await axiosClient.put(`api/menus/${id}`, data);
     return response.data;
   },
 
   remove: async (id: string) => {
-    const response = await axiosClient.delete(`auth-api/menus/${id}`);
+    const response = await axiosClient.delete(`api/menus/${id}`);
     return response.data;
   },
 };

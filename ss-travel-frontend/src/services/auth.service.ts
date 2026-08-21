@@ -4,16 +4,16 @@ import { storage } from '@/lib/storage';
 
 export const AuthService = {
   login: async (data: any): Promise<BaseResponse<LoginResponseData>> => {
-    // Gateway points to auth-service via /auth-api prefix
+    // Points to monolith auth endpoint under /api prefix
     const response = await api.post<BaseResponse<LoginResponseData>>(
-      '/auth-api/auth/login',
+      '/api/auth/login',
       data
     );
     return response.data;
   },
   getMe: async (): Promise<BaseResponse<LoginResponseData>> => {
     const response = await api.get<BaseResponse<LoginResponseData>>(
-      '/auth-api/auth/me',
+      '/api/auth/me',
       { silent: true } // Don't show global error toast if background sync fails
     );
     return response.data;

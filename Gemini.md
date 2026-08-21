@@ -4,25 +4,18 @@ This file provides guidance to gemini Code (gemini.ai/code) when working with co
 
 ## 🚀 Development Commands
 
-This project uses a microservices architecture with multiple sub-projects. All services use **Yarn** as the package manager.
+This project uses a monolithic backend architecture and a single frontend client. All services use **Yarn** as the package manager.
 
-### Authentication Service (`ss-travel-auth-service`)
+### Monolithic Backend (`ss-travel-backend`)
 
-- **Start (Dev):** `cd ss-travel-auth-service && yarn start:dev`
-- **Build:** `cd ss-travel-auth-service && yarn build`
-- **Lint:** `cd ss-travel-auth-service && yarn lint`
-- **Test:** `cd ss-travel-auth-service && yarn test` (Unit) or `yarn test:e2e` (E2E)
+- **Start (Dev):** `cd ss-travel-backend && yarn start:dev`
+- **Build:** `cd ss-travel-backend && yarn build`
+- **Lint:** `cd ss-travel-backend && yarn lint`
+- **Test:** `cd ss-travel-backend && yarn test` (Unit) or `yarn test:e2e` (E2E)
 - **Database Migrations:**
   - Run: `yarn migration:run`
   - Generate: `yarn migration:generate`
   - Create: `yarn migration:create`
-
-### API Gateway (`ss-travel-gateway`)
-
-- **Start (Dev):** `cd ss-travel-gateway && yarn start:dev`
-- **Build:** `cd ss-travel-gateway && yarn build`
-- **Lint:** `cd ss-travel-gateway && yarn lint`
-- **Test:** `cd ss-travel-gateway && yarn test`
 
 ### Frontend (`ss-travel-frontend`)
 
@@ -34,13 +27,12 @@ This project uses a microservices architecture with multiple sub-projects. All s
 
 ### System Overview
 
-- **Pattern:** Microservices (Event-Driven) with a central API Gateway.
+- **Pattern:** Monolithic Backend Architecture.
 - **Backend:** NestJS with TypeORM (Data Mapper Pattern) and PostgreSQL.
 - **Frontend:** React (Vite) with Tailwind CSS and Shadcn UI.
-- **Communication:** External via API Gateway; Internal via RabbitMQ (planned).
-- **Auth:** Centralized Identity Service using JWT + RBAC.
+- **Auth:** Centralized Identity management using JWT + RBAC directly handled in the monolith.
 
-### Backend Structure (`ss-travel-auth-service`, `ss-travel-gateway`)
+### Backend Structure (`ss-travel-backend`)
 
 - **Modular Architecture:** Logic is organized into feature modules.
 - **Source Layout:** Uses prefixed directories (e.g., `@models`, `@services`, `@dto`, `@configs`) for shared logic within the service.

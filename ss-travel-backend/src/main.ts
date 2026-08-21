@@ -7,6 +7,9 @@ async function bootstrap() {
   const logger = new Logger('Main');
   const app = await NestFactory.create(AppModule);
 
+  app.enableCors();
+  app.setGlobalPrefix('api');
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -17,18 +20,18 @@ async function bootstrap() {
 
   // Swagger Configuration
   const config = new DocumentBuilder()
-    .setTitle('SS Traveling - Auth Service')
-    .setDescription('The Identity & Access Management API for SS Traveling ERP')
+    .setTitle('SS Traveling ERP API')
+    .setDescription('The monolithic core API for SS Traveling ERP')
     .setVersion('1.0')
     .addTag('Auth')
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+  SwaggerModule.setup('api/docs', app, document);
 
-  const port = process.env.PORT || 3001;
+  const port = process.env.PORT || 3000;
   await app.listen(port);
-  logger.log(`Auth Service is running on: http://localhost:${port}`);
-  logger.log(`Swagger documentation: http://localhost:${port}/docs`);
+  logger.log(`Monolithic Backend is running on: http://localhost:${port}`);
+  logger.log(`Swagger documentation: http://localhost:${port}/api/docs`);
 }
 bootstrap();

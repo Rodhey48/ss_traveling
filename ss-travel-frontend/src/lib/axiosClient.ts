@@ -132,7 +132,7 @@ api.interceptors.response.use(
         console.log("Token expired. Attempting to refresh...");
         
         // Panggil Refresh API menggunakan instance axios murni
-        const resp = await axios.post(`${baseURL}auth-api/auth/refresh`, {
+        const resp = await axios.post(`${baseURL}api/auth/refresh`, {
           refreshToken,
           deviceId,
         });
