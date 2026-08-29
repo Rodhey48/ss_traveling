@@ -2,6 +2,9 @@ import { Entity, Column, OneToMany, BeforeInsert, BeforeUpdate } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { BaseEntity } from '../base.entity';
 import { UserRolesEntity } from './user-roles.entity';
+import { UserPositionsEntity } from './user-positions.entity';
+import { LogingEntity } from '@models/loging/loging-history.entity';
+import { TransactionEntity } from '@models/transaction/transaction.entity';
 
 @Entity('users')
 export class UsersEntity extends BaseEntity {
@@ -49,10 +52,33 @@ export class UsersEntity extends BaseEntity {
   @Column({ type: 'varchar', nullable: true })
   avatar: string;
 
+  @OneToMany(() => LogingEntity, (loging) => loging.user, {
+    cascade: true,
+  })
+  loging: LogingEntity
+
   @OneToMany(() => UserRolesEntity, (roles: UserRolesEntity) => roles.user, {
     cascade: true,
   })
   roles: UserRolesEntity[];
+
+  @OneToMany(
+      () => TransactionEntity,
+      (transaction) => transaction.user,
+      {
+          cascade: true,
+      },
+  )
+  transaction: TransactionEntity[];
+
+  @OneToMany(
+    () => UserPositionsEntity,
+    (positions: UserPositionsEntity) => positions.user,
+    {
+      cascade: true,
+    },
+  )
+  positions: UserPositionsEntity[];
 
   @BeforeInsert()
   @BeforeUpdate()

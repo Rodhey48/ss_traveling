@@ -30,6 +30,6 @@ import { MenusModule } from '../menus/menus.module';
     JWTService,
     BcryptService,
   ],
-  exports: [AuthService],
+  exports: [AuthService, JWTService],
 })
 export class AuthModule {}

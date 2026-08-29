@@ -58,7 +58,7 @@ export class RolesController {
 
   @Put(':id')
   @Roles('SUPERADMIN', 'ADMIN')
-  @RequirePermissions('Role:update') // Contoh permission spesifik untuk mengupdate role
+  // @RequirePermissions('Role:update') // Contoh permission spesifik untuk mengupdate role
   @ApiOperation({
     summary:
       'Update a role and its permissions, needs permission "Role:update"',

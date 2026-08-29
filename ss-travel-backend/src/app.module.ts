@@ -6,6 +6,7 @@ import { UsersModule } from './users/users.module';
 import { RolesModule } from './roles/roles.module';
 import { MenusModule } from './menus/menus.module';
 import * as Models from './@models';
+import { TransactionModule } from './transaction/transaction.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import * as Models from './@models';
     UsersModule,
     RolesModule,
     MenusModule,
+    TransactionModule
   ],
 })
 export class AppModule {}
