@@ -7,6 +7,7 @@ import MenusPage from '@/pages/menus';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import { ProtectedRoute } from './protected-route';
 import { GuestRoute } from './guest-route';
+import TransactionPage from '@/pages/transaction';
 
 export default function AppRouter() {
   return (
@@ -30,6 +31,7 @@ export default function AppRouter() {
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="users" element={<UsersPage />} />
+        <Route path="transaction" element={<TransactionPage />} />
         <Route path="roles" element={<RolesPage />} />
         <Route path="menu-management" element={<MenusPage />} />
         {/* Add more protected routes here */}

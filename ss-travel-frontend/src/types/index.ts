@@ -74,6 +74,28 @@ export interface LoginResponseData {
 }
 
 /**
+ * --- TRANSACTION TYPES ---
+ */
+export interface Transaction {
+  id: string;
+  date: string;
+  transactionDetail?: string;
+  amount?: string;
+  category: 'expenses' | 'income';
+  subCategory?: string;
+  sourceAccount?: string;
+  status?: string;
+  referenceNumber?: string;
+  tax?: string;
+  transactionReceipt?: string;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+
+
+/**
  * --- USER TYPES ---
  */
 export interface User {

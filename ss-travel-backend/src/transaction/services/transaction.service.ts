@@ -19,10 +19,7 @@ export class TransactionService {
         private readonly transactionRepository: Repository<TransactionEntity>,
     ) {}
 
-    async findAll(
-        filter: FilterTransactionDto,
-        userId: string,
-    ) {
+    async findAll(filter: FilterTransactionDto) {
         const {
             category,
             subCategory,
@@ -36,35 +33,16 @@ export class TransactionService {
             limit = 10,
         } = filter;
 
-        const qb = this.transactionRepository
-            .createQueryBuilder("transaction")
-            .where("transaction.userId = :userId", { userId });
+        const qb = this.transactionRepository.createQueryBuilder("transaction");
 
-        if (category) {
-            qb.andWhere("transaction.category = :category", { category });
-        }
-
-        if (subCategory) {
-            qb.andWhere("transaction.subCategory = :subCategory", { subCategory });
-        }
-
-        if (status) {
-            qb.andWhere("transaction.status = :status", { status });
-        }
-
-        if (paymentMethod) {
-            qb.andWhere("transaction.paymentMethod = :paymentMethod", { paymentMethod });
-        }
-
-        if (sourceAccount) {
-            qb.andWhere("transaction.sourceAccount = :sourceAccount", { sourceAccount });
-        }
+        if (category) qb.andWhere("transaction.category = :category", { category });
+        if (subCategory) qb.andWhere("transaction.subCategory = :subCategory", { subCategory });
+        if (status) qb.andWhere("transaction.status = :status", { status });
+        if (paymentMethod) qb.andWhere("transaction.paymentMethod = :paymentMethod", { paymentMethod });
+        if (sourceAccount) qb.andWhere("transaction.sourceAccount = :sourceAccount", { sourceAccount });
 
         if (startDate && endDate) {
-            qb.andWhere("transaction.date BETWEEN :startDate AND :endDate", {
-                startDate,
-                endDate,
-            });
+            qb.andWhere("transaction.date BETWEEN :startDate AND :endDate", { startDate, endDate });
         } else if (startDate) {
             qb.andWhere("transaction.date >= :startDate", { startDate });
         } else if (endDate) {
@@ -85,8 +63,10 @@ export class TransactionService {
         const [data, total] = await qb.getManyAndCount();
 
         return {
-            data,
-            meta: {
+            status: true,
+            message: "Transaction berhasil diambil",
+            data: {
+                data,
                 total,
                 page: Number(page),
                 limit: Number(limit),
@@ -114,7 +94,11 @@ export class TransactionService {
             );
         }
 
-        return transaction;
+        return {
+            status: true,
+            message: "Transaction berhasil diambil",
+            data: transaction,
+        };
     }
 
     async create(
@@ -128,7 +112,13 @@ export class TransactionService {
             },
         });
 
-        return this.transactionRepository.save(transaction);
+        const saved = await this.transactionRepository.save(transaction);
+
+        return {
+            status: true,
+            message: "Transaction berhasil dibuat",
+            data: saved,
+        };
     }
 
     async update(
@@ -136,22 +126,29 @@ export class TransactionService {
         payload: UpdateTransactionDto,
         userId: string,
     ) {
-        const transaction = await this.findOne(id, userId);
+        const { data: transaction } = await this.findOne(id, userId);
 
         Object.assign(transaction, payload);
 
-        return this.transactionRepository.save(transaction);
+        const saved = await this.transactionRepository.save(transaction);
+
+        return {
+            status: true,
+            message: "Transaction berhasil diperbarui",
+            data: saved,
+        };
     }
 
     async delete(
         id: string,
         userId: string,
     ) {
-        const transaction = await this.findOne(id, userId);
+        const { data: transaction } = await this.findOne(id, userId);
 
         await this.transactionRepository.remove(transaction);
 
         return {
+            status: true,
             message: "Transaction berhasil dihapus",
         };
     }

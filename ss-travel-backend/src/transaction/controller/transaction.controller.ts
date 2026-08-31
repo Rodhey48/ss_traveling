@@ -35,8 +35,7 @@ export class TransactionController {
         @Query() filter: FilterTransactionDto,
     ) {
         return this.transactionService.findAll(
-            filter,
-            req.user.id,
+            filter
         );
     }
 
