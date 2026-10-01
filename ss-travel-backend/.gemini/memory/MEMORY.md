@@ -1,0 +1,4 @@
+- [Project Context: SS Traveling](project-context-ss-traveling.md) — ERP goals, architecture, and tech stack overview.
+- [Core Features & Architecture](core-features-architecture.md) — Technical summary of implemented features, data models, and security flows.
+- [Auth Specification & FE Guide](../plan/AUTH_SPECIFICATION_AND_FE_GUIDE.md) — Dual-Strategy Auth (HttpOnly Cookie + Bearer), Machine-Readable Error Codes, and Axios integration guide.
+- [Project Milestones](../history/milestones.md) — Timeline of major technical achievements and feature completions.

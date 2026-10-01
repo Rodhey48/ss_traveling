@@ -1,0 +1,10 @@
+{
+  "folders": [
+	{
+		"path": "../.."
+	}
+],
+  "settings": {
+    "js/ts.tsdk.path": "SS_travel/ss-travel-auth-service/node_modules/typescript/lib"
+  }
+}
