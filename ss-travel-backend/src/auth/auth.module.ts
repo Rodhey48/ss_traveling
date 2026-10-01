@@ -24,12 +24,7 @@ import { MenusModule } from '../menus/menus.module';
     MenusModule,
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    UtilService,
-    JWTService,
-    BcryptService,
-  ],
+  providers: [AuthService, UtilService, JWTService, BcryptService],
   exports: [AuthService],
 })
 export class AuthModule {}

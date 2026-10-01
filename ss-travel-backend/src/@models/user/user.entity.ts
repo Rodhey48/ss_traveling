@@ -25,10 +25,20 @@ export class UsersEntity extends BaseEntity {
   @Column({ type: 'varchar', select: false })
   password: string;
 
-  @Column({ type: 'varchar', select: false, nullable: true, name: 'session_token' })
+  @Column({
+    type: 'varchar',
+    select: false,
+    nullable: true,
+    name: 'session_token',
+  })
   sessionToken: string;
 
-  @Column({ type: 'text', select: false, nullable: true, name: 'refresh_token' })
+  @Column({
+    type: 'text',
+    select: false,
+    nullable: true,
+    name: 'refresh_token',
+  })
   refreshToken: string;
 
   @Column({ type: 'varchar', nullable: true, name: 'last_origin' })
@@ -43,7 +53,11 @@ export class UsersEntity extends BaseEntity {
   @Column({ type: 'boolean', default: true })
   isPasswordChanged: boolean;
 
-  @Column({ type: 'enum', enum: ['admin', 'employee', 'user'], default: 'employee' })
+  @Column({
+    type: 'enum',
+    enum: ['admin', 'employee', 'user'],
+    default: 'employee',
+  })
   type: 'admin' | 'employee' | 'user';
 
   @Column({ type: 'varchar', nullable: true })

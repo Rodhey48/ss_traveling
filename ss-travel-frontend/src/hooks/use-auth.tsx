@@ -1,14 +1,20 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import type { UserLoginInfo, BackendMenu } from '@/types';
 import { storage } from '@/lib/storage';
+import { AuthService } from '@/services/auth.service';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   loading: boolean;
   user: UserLoginInfo | null;
   menus: BackendMenu[];
-  setAuthData: (data: { user: UserLoginInfo; menus: BackendMenu[]; token: string; refreshToken: string }) => void;
-  logout: () => void;
+  setAuthData: (data: { 
+    user: UserLoginInfo; 
+    menus: BackendMenu[]; 
+    token?: string; 
+    refreshToken?: string 
+  }) => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -17,7 +23,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   menus: [],
   setAuthData: () => {},
-  logout: () => {},
+  logout: async () => {},
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -28,14 +34,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loadStoredData = useCallback(() => {
     const token = storage.get('token');
+    const refreshToken = storage.get('refreshToken');
     const storedUser = storage.get('user');
     const storedMenus = storage.get('menus');
 
-    if (token) {
+    // Pengguna terautentikasi jika terdapat sesi user & token/refresh token
+    if (storedUser && (refreshToken || token)) {
       setIsAuthenticated(true);
-      if (storedUser) {
-        setUser(storedUser);
-      }
+      setUser(storedUser);
       if (storedMenus) {
         setMenus(storedMenus);
       }
@@ -61,7 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setMenus(data.menus);
     setIsAuthenticated(true);
     
-    // Only store tokens if they are actually provided in the payload
+    // Simpan token jika disertakan dalam respons
     if (data.token) storage.set('token', data.token);
     if (data.refreshToken) storage.set('refreshToken', data.refreshToken);
     
@@ -69,15 +75,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     storage.set('menus', data.menus);
   }, []);
 
-  const logout = useCallback(() => {
-    storage.remove('token');
-    storage.remove('refreshToken');
-    storage.remove('user');
-    storage.remove('menus');
+  const logout = useCallback(async () => {
     setIsAuthenticated(false);
     setUser(null);
     setMenus([]);
-    window.location.href = '/login';
+    await AuthService.logout();
   }, []);
 
   const value = useMemo(

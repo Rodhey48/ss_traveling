@@ -89,7 +89,7 @@ export class RolesService {
     if (dto.permissions) {
       // Clear old permissions
       await this.roleMenusRepository.delete({ role: { id } });
-      
+
       // Bulk insert new permissions
       const roleMenus = dto.permissions.map((perm) => {
         return new RoleMenusEntity({
@@ -102,7 +102,7 @@ export class RolesService {
           actions: perm.actions || {},
         });
       });
-      
+
       if (roleMenus.length > 0) {
         await this.roleMenusRepository.save(roleMenus);
       }

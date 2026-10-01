@@ -50,6 +50,7 @@ export interface BackendMenu {
   isUpdate: boolean;
   isDelete: boolean;
   availableActions?: string[];
+  actions?: Record<string, boolean>;
   title: boolean;
 }
 

@@ -10,10 +10,19 @@ import {
   ValidationPipe,
   Headers,
 } from '@nestjs/common';
-import { ApiOperation, ApiTags, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiTags,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { AuthService } from '../services/auth.service';
-import { LoginUserDTO, RegisterUserDTO } from '../dto/auth.dto';
-import { Response, Request } from 'express';
+import {
+  LoginUserDTO,
+  RegisterUserDTO,
+  RefreshTokenDto,
+} from '../dto/auth.dto';
+import { Response } from 'express';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RequestInterface } from '@interfaces';
 
@@ -43,24 +52,36 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @UsePipes(new ValidationPipe({ whitelist: true }))
   @ApiOperation({ summary: 'Refresh Access Token using Refresh Token' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        refreshToken: { type: 'string' },
-        deviceId: { type: 'string' },
-      },
-    },
-  })
   @ApiResponse({ status: 200, description: 'Token refreshed successfully.' })
   @ApiResponse({ status: 401, description: 'Invalid refresh token.' })
   async refresh(
-    @Body('refreshToken') refreshToken: string,
-    @Body('deviceId') deviceId: string,
+    @Body() payload: RefreshTokenDto,
     @Headers('user-agent') userAgent: string,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    return this.authService.refreshToken(refreshToken, deviceId, userAgent);
+    return this.authService.refreshToken(
+      payload.refreshToken,
+      payload.deviceId,
+      userAgent,
+      res,
+    );
+  }
+
+  @Post('logout')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Logout user, invalidate active session in DB, and clear cookie',
+  })
+  @ApiResponse({ status: 200, description: 'Logout successful.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  async logout(
+    @Req() req: RequestInterface,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.authService.logout(req.user.id, res);
   }
 
   @Get('me')

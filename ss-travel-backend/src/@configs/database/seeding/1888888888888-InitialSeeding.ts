@@ -143,7 +143,9 @@ export class SeedInitialData1888888888888 implements MigrationInterface {
       });
     }
     // USER only gets AUTH and FLEET
-    const userModules = modules.filter(m => m.name === 'AUTH' || m.name === 'FLEET');
+    const userModules = modules.filter(
+      (m) => m.name === 'AUTH' || m.name === 'FLEET',
+    );
     for (const mod of userModules) {
       await queryRunner.manager.insert('role_modules', {
         id: uuidv4(),
@@ -267,7 +269,16 @@ export class SeedInitialData1888888888888 implements MigrationInterface {
     }
 
     // 7. Assign Menus to Roles
-    const assignMenu = async (roleId, menuId, permissions = { isRead: true, isCreate: true, isUpdate: true, isDelete: true }) => {
+    const assignMenu = async (
+      roleId,
+      menuId,
+      permissions = {
+        isRead: true,
+        isCreate: true,
+        isUpdate: true,
+        isDelete: true,
+      },
+    ) => {
       await queryRunner.manager.insert('role-menus', {
         id: uuidv4(),
         role: { id: roleId },
@@ -282,7 +293,14 @@ export class SeedInitialData1888888888888 implements MigrationInterface {
     }
 
     // ADMIN gets most
-    const adminMenuNames = ['Dashboard', 'Fleet Management', 'Finance', 'User Management', 'Users', 'Settings'];
+    const adminMenuNames = [
+      'Dashboard',
+      'Fleet Management',
+      'Finance',
+      'User Management',
+      'Users',
+      'Settings',
+    ];
     for (const name of adminMenuNames) {
       const id = menuMap.get(name);
       if (id) await assignMenu(adminRole?.id, id);
@@ -291,14 +309,26 @@ export class SeedInitialData1888888888888 implements MigrationInterface {
     const adminReadOnly = ['Roles', 'Modules'];
     for (const name of adminReadOnly) {
       const id = menuMap.get(name);
-      if (id) await assignMenu(adminRole?.id, id, { isRead: true, isCreate: false, isUpdate: false, isDelete: false });
+      if (id)
+        await assignMenu(adminRole?.id, id, {
+          isRead: true,
+          isCreate: false,
+          isUpdate: false,
+          isDelete: false,
+        });
     }
 
     // USER gets limited
     const userMenuNames = ['Dashboard', 'Fleet Management', 'Settings'];
     for (const name of userMenuNames) {
       const id = menuMap.get(name);
-      if (id) await assignMenu(userRole?.id, id, { isRead: true, isCreate: false, isUpdate: false, isDelete: false });
+      if (id)
+        await assignMenu(userRole?.id, id, {
+          isRead: true,
+          isCreate: false,
+          isUpdate: false,
+          isDelete: false,
+        });
     }
   }
 

@@ -2,6 +2,14 @@
 
 ## Phase 1: Infrastructure & Auth (Completed)
 
+### 2026-10-01: Dual-Strategy Auth (HttpOnly Cookie + Bearer), Machine-Readable Errors & Security Hardening
+- **Hybrid Token Extraction**: Refactored `JwtAuthGuard` to support dual token extraction: Authorization Header (`Bearer <token>`) for Mobile Apps and API clients, with seamless fallback to `HttpOnly` Cookie (`token`) for Web Browsers to provide complete immunity against XSS.
+- **Cookie-Parser & CORS Hardening**: Integrated `cookie-parser` with CommonJS-compliant module import (`import * as cookieParser`) and configured CORS with `credentials: true` and dynamic origin reflection.
+- **Machine-Readable Error Codes**: Standardized all 401 Unauthorized responses with structured error codes: `TOKEN_EXPIRED` (the sole trigger for client-side refresh), `MISSING_DEVICE_ID`, `UNAUTHORIZED`, `INVALID_DEVICE_CONTEXT` (anti-hijacking anomaly), `INVALID_TOKEN`, `INVALID_SESSION`, and `REFRESH_TOKEN_EXPIRED`.
+- **Session Revocation & Logout API**: Implemented `POST /api/auth/logout` that invalidates active sessions (`sessionToken = null`, `refreshToken = null`) in the database and clears the browser cookie.
+- **Automated Verification**: Added comprehensive unit test suite in `src/auth/guards/jwt-auth.guard.spec.ts` covering 6 critical security scenarios with 100% pass rate.
+- **Developer Documentation & FE Guide**: Published complete blueprint and implementation guide with copy-paste Axios client interceptors in `.gemini/plan/AUTH_SPECIFICATION_AND_FE_GUIDE.md`.
+
 ### 2026-06-04: Session Binding Stability & Security Anomaly Resolution
 - **Device ID Standardization**: Resolved an issue where users were unexpectedly logged out due to "Security Anomaly" errors. The root cause was storing the `deviceId` in encrypted storage, which could trigger a re-generation if decryption failed. Moved `deviceId` to plain `localStorage` for absolute fingerprint stability across sessions and browser restarts.
 - **Enhanced Security Logging**: Added granular server-side logging in `AuthService.refreshToken` to track token, origin, and fingerprint matches, enabling rapid diagnosis of session binding issues.

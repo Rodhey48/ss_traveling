@@ -32,16 +32,26 @@ export class RolesGuard implements CanActivate {
     }
 
     if (!user.role || !Array.isArray(user.role)) {
-      this.logger.warn(`RolesGuard: User ${user.email} has no valid roles array`);
+      this.logger.warn(
+        `RolesGuard: User ${user.email} has no valid roles array`,
+      );
       throw new ForbiddenException('User has no assigned roles');
     }
 
-    const userRoleNames = user.role.map((r: any) => typeof r === 'string' ? r : r.name);
-    const hasRole = userRoleNames.some((roleName) => roleGuard.includes(roleName));
+    const userRoleNames = user.role.map((r: any) =>
+      typeof r === 'string' ? r : r.name,
+    );
+    const hasRole = userRoleNames.some((roleName) =>
+      roleGuard.includes(roleName),
+    );
 
     if (!hasRole) {
-      this.logger.warn(`RolesGuard: User ${user.email} with roles [${userRoleNames}] tried to access resource requiring [${roleGuard}]`);
-      throw new ForbiddenException('You do not have the required role to access this resource');
+      this.logger.warn(
+        `RolesGuard: User ${user.email} with roles [${userRoleNames}] tried to access resource requiring [${roleGuard}]`,
+      );
+      throw new ForbiddenException(
+        'You do not have the required role to access this resource',
+      );
     }
 
     return true;

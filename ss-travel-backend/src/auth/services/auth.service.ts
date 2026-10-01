@@ -225,6 +225,9 @@ export class AuthService {
       foundUser.lastLogin = new Date();
       await this.userRepo.save(foundUser);
 
+      // Set httpOnly cookie for web browser clients
+      res.cookie('token', accessToken, this.getCookieOptions());
+
       return res.status(200).json({
         status: true,
         message: 'Login success',
@@ -262,16 +265,32 @@ export class AuthService {
   }
 
   /**
+   * Helper for consistent cookie options
+   */
+  private getCookieOptions(maxAgeMs = 1000 * 60 * 60) {
+    const isProd = process.env.NODE_ENV === 'production';
+    return {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: (isProd ? 'none' : 'lax') as 'none' | 'lax',
+      maxAge: maxAgeMs,
+      path: '/',
+    };
+  }
+
+  /**
    * Refresh Token logic
    * @param oldRefreshToken string
    * @param deviceId string
    * @param userAgent string
+   * @param res Response (optional, for setting/clearing cookies)
    * @returns Promise<ResponseInterface>
    */
   async refreshToken(
     oldRefreshToken: string,
     deviceId: string,
     userAgent: string,
+    res?: Response,
   ): Promise<ResponseInterface> {
     try {
       // 1. Verify Refresh Token signature & exp
@@ -293,7 +312,12 @@ export class AuthService {
         .getOne();
 
       if (!user) {
-        throw new UnauthorizedException({ message: 'Invalid session' });
+        if (res) res.clearCookie('token', { path: '/' });
+        throw new UnauthorizedException({
+          statusCode: 401,
+          errorCode: 'INVALID_SESSION',
+          message: 'Invalid session or user not found',
+        });
       }
 
       // 3. Validate Single Device & Origin Fingerprint
@@ -304,7 +328,8 @@ export class AuthService {
 
       const isTokenMatch = user.refreshToken === oldRefreshToken;
       const isLastOriginMatch = user.lastOrigin === currentFingerprint;
-      const isPayloadFingerprintMatch = payload.fingerprint === currentFingerprint;
+      const isPayloadFingerprintMatch =
+        payload.fingerprint === currentFingerprint;
 
       if (!isTokenMatch || !isLastOriginMatch || !isPayloadFingerprintMatch) {
         this.logger.error(`Security anomaly details for user ${user.id}: 
@@ -315,13 +340,16 @@ export class AuthService {
           - Stored SID: ${user.sessionToken}
           - Payload SID: ${payload.sid}
         `);
-        
+
         // Keamanan: Jika terdeteksi anomali, hapus sesi agar user harus login ulang
         user.sessionToken = null;
         user.refreshToken = null;
         await this.userRepo.save(user);
+        if (res) res.clearCookie('token', { path: '/' });
         throw new UnauthorizedException({
-          message: 'Security anomaly detected',
+          statusCode: 401,
+          errorCode: 'INVALID_DEVICE_CONTEXT',
+          message: 'Security anomaly detected: device or fingerprint mismatch',
         });
       }
 
@@ -353,6 +381,11 @@ export class AuthService {
       user.refreshToken = newRefreshToken;
       await this.userRepo.save(user);
 
+      // Set refreshed token in cookie if res is provided
+      if (res) {
+        res.cookie('token', newAccessToken, this.getCookieOptions());
+      }
+
       return {
         status: true,
         message: 'Token refreshed successfully',
@@ -362,13 +395,50 @@ export class AuthService {
         },
       };
     } catch (error) {
+      if (res) res.clearCookie('token', { path: '/' });
       if (error instanceof UnauthorizedException) {
         throw error;
       }
       this.logger.error(`RefreshToken error: ${error.message}`);
       throw new UnauthorizedException({
-        message: 'Session expired or invalid',
+        statusCode: 401,
+        errorCode: 'REFRESH_TOKEN_EXPIRED',
+        message: 'Session expired or refresh token invalid',
       });
+    }
+  }
+
+  /**
+   * Logout user, invalidate active session in DB, and clear cookie
+   * @param userId string
+   * @param res Response
+   * @returns Promise<ResponseInterface>
+   */
+  async logout(userId: string, res: Response): Promise<ResponseInterface> {
+    try {
+      const user = await this.userRepo.findOne({ where: { id: userId } });
+      if (user) {
+        user.sessionToken = null;
+        user.refreshToken = null;
+        await this.userRepo.save(user);
+      }
+      if (res) {
+        res.clearCookie('token', { path: '/' });
+      }
+
+      return {
+        status: true,
+        message: 'Logout successful',
+      };
+    } catch (err: any) {
+      this.logger.error(`Logout error: ${err.message}`);
+      if (res) {
+        res.clearCookie('token', { path: '/' });
+      }
+      return {
+        status: true,
+        message: 'Logout completed',
+      };
     }
   }
 }

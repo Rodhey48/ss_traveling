@@ -47,7 +47,7 @@ export class RolesController {
 
   @Post()
   @Roles('SUPERADMIN', 'ADMIN')
-  @RequirePermissions('Role:create') // Contoh permission spesifik untuk membuat role
+  @RequirePermissions('Roles:create') // Contoh permission spesifik untuk membuat role
   @ApiOperation({
     summary:
       'Create a new role with permissions, needs permission "Role:create"',
@@ -58,7 +58,7 @@ export class RolesController {
 
   @Put(':id')
   @Roles('SUPERADMIN', 'ADMIN')
-  @RequirePermissions('Role:update') // Contoh permission spesifik untuk mengupdate role
+  @RequirePermissions('Roles:update') // Contoh permission spesifik untuk mengupdate role
   @ApiOperation({
     summary:
       'Update a role and its permissions, needs permission "Role:update"',

@@ -54,3 +54,22 @@ export class ResetPasswordDto {
   @ApiProperty({ example: 'ResetPass123' })
   newPassword: string;
 }
+
+export class RefreshTokenDto {
+  @IsNotEmpty({ message: "refreshToken can't be empty" })
+  @IsString({ message: 'refreshToken must be string' })
+  @ApiProperty({
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    description: 'Refresh token received during login or previous refresh',
+  })
+  refreshToken: string;
+
+  @IsNotEmpty({ message: "deviceId can't be empty" })
+  @IsString({ message: 'deviceId must be string' })
+  @ApiProperty({
+    example: 'uuid-device-123',
+    description:
+      'Stable client device ID (from browser storage or mobile OS id)',
+  })
+  deviceId: string;
+}

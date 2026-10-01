@@ -8,14 +8,14 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
-import {
-  UsersEntity,
-  UserRolesEntity,
-  RolesEntity,
-} from '@models';
+import { UsersEntity, UserRolesEntity, RolesEntity } from '@models';
 import { CreateUserDto } from './../../@dto/user/create-user.dto';
 import { UpdateUserDto } from './../../@dto/user/update-user.dto';
-import { ChangePasswordDto, UpdateProfileDto, ResetUserPasswordDto } from './../../@dto/user/profile.dto';
+import {
+  ChangePasswordDto,
+  UpdateProfileDto,
+  ResetUserPasswordDto,
+} from './../../@dto/user/profile.dto';
 import { ResponseInterface } from '@interfaces';
 import * as bcrypt from 'bcrypt';
 
@@ -64,7 +64,6 @@ export class UsersService {
           limit: l,
         },
       };
-
     } catch (error) {
       this.logger.error(`Error fetching users: ${error.message}`, error.stack);
       throw error;
@@ -113,7 +112,9 @@ export class UsersService {
 
     if (dto.roleIds && dto.roleIds.length > 0) {
       for (const roleId of dto.roleIds) {
-        const role = await this.rolesRepository.findOne({ where: { id: roleId } });
+        const role = await this.rolesRepository.findOne({
+          where: { id: roleId },
+        });
         if (role) {
           await this.userRolesRepository.save(
             new UserRolesEntity({ user: savedUser, role }),
@@ -147,7 +148,10 @@ export class UsersService {
       phone: dto.phone ?? user.phone,
       type: dto.type ?? user.type,
       isActive: dto.isActive !== undefined ? dto.isActive : user.isActive,
-      isPasswordChanged: dto.isPasswordChanged !== undefined ? dto.isPasswordChanged : user.isPasswordChanged,
+      isPasswordChanged:
+        dto.isPasswordChanged !== undefined
+          ? dto.isPasswordChanged
+          : user.isPasswordChanged,
       avatar: dto.avatar ?? user.avatar,
     });
 
@@ -157,7 +161,9 @@ export class UsersService {
       // Sync roles: remove old, add new
       await this.userRolesRepository.delete({ user: { id } });
       for (const roleId of dto.roleIds) {
-        const role = await this.rolesRepository.findOne({ where: { id: roleId } });
+        const role = await this.rolesRepository.findOne({
+          where: { id: roleId },
+        });
         if (role) {
           await this.userRolesRepository.save(
             new UserRolesEntity({ user: updatedUser, role }),
@@ -191,7 +197,10 @@ export class UsersService {
     };
   }
 
-  async updateProfile(userId: string, dto: UpdateProfileDto): Promise<ResponseInterface> {
+  async updateProfile(
+    userId: string,
+    dto: UpdateProfileDto,
+  ): Promise<ResponseInterface> {
     const user = await this.usersRepository.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
 
@@ -205,10 +214,13 @@ export class UsersService {
     };
   }
 
-  async changePassword(userId: string, dto: ChangePasswordDto): Promise<ResponseInterface> {
-    const user = await this.usersRepository.findOne({ 
+  async changePassword(
+    userId: string,
+    dto: ChangePasswordDto,
+  ): Promise<ResponseInterface> {
+    const user = await this.usersRepository.findOne({
       where: { id: userId },
-      select: ['id', 'password'] 
+      select: ['id', 'password'],
     });
     if (!user) throw new NotFoundException('User not found');
 
@@ -227,19 +239,29 @@ export class UsersService {
     };
   }
 
-  async resetUserPassword(adminId: string, targetUserId: string, dto: ResetUserPasswordDto): Promise<ResponseInterface> {
+  async resetUserPassword(
+    adminId: string,
+    targetUserId: string,
+    dto: ResetUserPasswordDto,
+  ): Promise<ResponseInterface> {
     // 1. Verify Admin Password
-    const admin = await this.usersRepository.findOne({ 
+    const admin = await this.usersRepository.findOne({
       where: { id: adminId },
-      select: ['id', 'password'] 
+      select: ['id', 'password'],
     });
     if (!admin) throw new NotFoundException('Admin not found');
 
-    const isAdminMatch = await bcrypt.compare(dto.adminPassword, admin.password);
-    if (!isAdminMatch) throw new ForbiddenException('Password Admin tidak valid');
+    const isAdminMatch = await bcrypt.compare(
+      dto.adminPassword,
+      admin.password,
+    );
+    if (!isAdminMatch)
+      throw new ForbiddenException('Password Admin tidak valid');
 
     // 2. Find Target User
-    const targetUser = await this.usersRepository.findOne({ where: { id: targetUserId } });
+    const targetUser = await this.usersRepository.findOne({
+      where: { id: targetUserId },
+    });
     if (!targetUser) throw new NotFoundException('User tidak ditemukan');
 
     // 3. Reset Password and Force Change
@@ -263,7 +285,7 @@ export class UsersService {
     return {
       status: true,
       message: `User is now ${user.isActive ? 'Active' : 'Inactive'}`,
-      data: { isActive: user.isActive }
+      data: { isActive: user.isActive },
     };
   }
 }

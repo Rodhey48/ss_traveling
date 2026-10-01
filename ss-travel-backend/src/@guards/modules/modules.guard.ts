@@ -32,15 +32,23 @@ export class ModulesGuard implements CanActivate {
     }
 
     if (!user.module || !Array.isArray(user.module)) {
-      this.logger.warn(`ModulesGuard: User ${user.email} has no valid modules array`);
+      this.logger.warn(
+        `ModulesGuard: User ${user.email} has no valid modules array`,
+      );
       throw new ForbiddenException('User has no assigned modules');
     }
 
-    const userModuleNames = user.module.map((m: any) => typeof m === 'string' ? m : m.name);
-    const hasModule = userModuleNames.some((moduleName) => moduleGuard.includes(moduleName));
+    const userModuleNames = user.module.map((m: any) =>
+      typeof m === 'string' ? m : m.name,
+    );
+    const hasModule = userModuleNames.some((moduleName) =>
+      moduleGuard.includes(moduleName),
+    );
 
     if (!hasModule) {
-      this.logger.warn(`ModulesGuard: User ${user.email} with modules [${userModuleNames}] tried to access resource requiring [${moduleGuard}]`);
+      this.logger.warn(
+        `ModulesGuard: User ${user.email} with modules [${userModuleNames}] tried to access resource requiring [${moduleGuard}]`,
+      );
       throw new ForbiddenException('You do not have access to this module');
     }
 

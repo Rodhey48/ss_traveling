@@ -2,36 +2,35 @@ import { useEffect, useRef } from 'react';
 import { AuthService } from '@/services/auth.service';
 import { useAuth } from '@/hooks/use-auth';
 
-// Sync every 5 minutes
+// Sync setiap 5 menit
 const SYNC_INTERVAL = 5 * 60 * 1000;
 
 export default function SyncProvider({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, setAuthData } = useAuth();
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const syncData = async () => {
     if (!isAuthenticated) return;
 
     try {
       const response = await AuthService.getMe();
-      if (response.status) {
+      if (response.status && response.data) {
         setAuthData({
           user: response.data.user,
           menus: response.data.menus,
-          // We don't pass token/refreshToken here to avoid overwriting them
-        } as any);
+        });
       }
     } catch (error) {
-      console.error('Background sync failed', error);
+      console.warn('[Sync] Background sync skipped or failed:', error);
     }
   };
 
   useEffect(() => {
     if (isAuthenticated) {
-      // Run sync immediately on mount/auth
+      // Jalankan sinkronisasi segera saat user terautentikasi / pertama kali mount
       syncData();
 
-      // Setup interval
+      // Pasang interval berkala
       intervalRef.current = setInterval(syncData, SYNC_INTERVAL);
     }
 

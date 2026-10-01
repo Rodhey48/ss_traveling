@@ -25,6 +25,7 @@ export class PermissionsGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest<RequestInterface>();
     const user = request.user;
+    // console.log('User Permissions:', user?.permissions);
 
     if (!user || !user.permissions) {
       throw new ForbiddenException({
