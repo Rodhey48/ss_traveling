@@ -1,5 +1,36 @@
 # Project Milestones: SS Traveling
 
+## Phase 2: Fleet Management, Operations (SPJ) & Accounting (In Design & Planning)
+
+### 2026-10-05: Harmonisasi Menyeluruh Blueprint v1.3 & Addendum v1.10
+- **Status Ganda SPJ Tunggal**: Menetapkan secara definitif pemisahan independen antara `operational_status` (`DRAFT`, `ISSUED`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`) dan `financial_status` (`PENDING_SETTLEMENT`, `UNDER_REVIEW`, `DISCREPANCY`, `SETTLED`). Menggantikan dan menyelaraskan seluruh draft status sebelumnya di Bab 8.2 dan Addendum v1.1.
+- **Standarisasi Akun Beban COA**: Memisahkan secara tegas COA akun Beban Layanan Makan Restoran Penumpang (`51102`), Beban Tol/Fasilitas (`521xx`), Beban Hak/Kompensasi Kru Bus (`531xx`: Uang Makan `53101`, Premi `53102`, Bonus Full Seat `53103`), serta Beban Keagenan & Jasa Koordinator (`541xx`: Komisi Agen `54101`, Uang Jasa Koordinator `54102`).
+- **Penyelesaian Kas Yogyakarta**: Menetapkan 2 SOP resmi untuk pergantian kru di Yogyakarta (Mekanisme A: Settlement cabang via BKM vs Mekanisme B: Handover estafet sisa UJ antar-kru dengan verifikasi akhir di pool Jakarta).
+- **Zonasi Koordinator & Bonus Full Seat Per-Leg**: Mengotomasi penentuan koordinator wilayah Barat (Berangkat) vs Timur (Pulang) dan evaluasi bonus okupansi 100% per-leg perjalanan.
+- **Integritas Setoran Kargo Bruto**: Penegasan kewajiban penyetoran 100% penerimaan kargo manual tanpa pemotongan pribadi oleh kru.
+
+### 2026-10-05: Blueprint Addendum v1.9 — Service Makan Restoran, Bonus Full Seat, Uang Koordinator & Klasifikasi Kargo
+- **Master Restoran Mitra (`restaurants`)**: Master data rumah makan rekanan untuk fasilitas service makan penumpang AKAP (tarif per pax, lokasi kota, dan metode penyelesaian: tunai via UJ kru vs tagihan bulanan kantor via AP vendor).
+- **Bonus Kru Full Seat (Okupansi 100%)**: Pemicu otomatis di SPJ saat seluruh kursi terisi penuh, menambahkan nominal bonus performa ke hak kompensasi kru (`crew_meal_payments`) yang bersumber dari kolom `full_seat_bonus` pada `crew_rate_rules`.
+- **Fee Koordinator Wilayah (`coordinator_fee_rules`)**: Aturan fee jasa koordinator lapangan Barat (Jabodetabek) dan Timur (Jogja/Jateng-DIY) berbasis jumlah penumpang (default Rp10.000/pax, dinamis dapat diubah di master) yang dicatat ke biaya SPJ `COORDINATOR_FEE`.
+- **Klasifikasi Kargo Manual (`spj_revenue_declarations`)**: Pemisahan tegas penerimaan paket bagasi bus ke dalam `CARGO_MOTORCYCLE` (sepeda motor) dan `CARGO_BOX` (kardus/titipan barang) dengan tarif yang diinput secara manual per resi/surat jalan.
+
+### 2026-10-05: Blueprint Addendum v1.8 — Standardisasi Kompensasi & Master Tarif Kru
+- **Master Rate Kru (`crew_rate_rules`)**: Menetapkan standar nominal Uang Makan (`meal_allowance`) dan Premi Ritase (`trip_incentive`) berjenjang berdasarkan peran (`DRIVER`, `CO_DRIVER`, `CONDUCTOR`) dan jenis penugasan (AKAP `PER_TRIP` vs Pariwisata `PER_DAY`).
+- **Otomasi Snapshot ke SPJ**: Saat kru ditugaskan pada `spj_crew_assignments`, sistem otomatis menarik dan menyalin permanen (*snapshot*) rate hak kru ke transaksi `crew_meal_payments` dengan dukungan *manual override* berizin supervisor.
+- **Pemisahan Finansial**: Hak kru dipisahkan secara tegas dari UJ operasional bus dan dibukukan ke akun beban akuntansi masing-masing (`Beban Uang Makan Kru` dan `Beban Premi Kru`).
+
+### 2026-10-05: Blueprint Addendum v1.7 — Pengelolaan Agen (Online vs Offline), Rute Asal/Zonasi & Komisi Penjualan
+- **Klasifikasi Agen (`agents`)**: Membedakan `OFFLINE` (loket terminal fisik) dan `ONLINE_OTA` (RedBus, Traveloka), atribut kota (`city`: `JAKARTA`, `YOGYAKARTA`, `ALL`), serta cara penyelesaian kas (`settlement_type`).
+- **Smart Filter Arah Rute**: Sistem otomatis memfilter pilihan agen sesuai arah leg SPJ (Jkt $\to$ Jogja hanya menampilkan agen Jakarta + OTA; Jogja $\to$ Jkt hanya agen Jogja + OTA) untuk mencegah kesalahan input manifest.
+- **Matriks Komisi Fleksibel (`agent_commission_rules`)**: Mendukung komisi flat per tiket maupun persentase potongan fee platform per kelas kursi.
+- **Pemisahan Finansial OTA vs Kru**: Kru bus terbebas dari beban setoran uang tiket OTA; tiket OTA dialokasikan langsung ke piutang AR OTA, sedangkan kru hanya menyetorkan penerimaan fisik tiket offline.
+
+### 2026-10-05: Blueprint Addendum v1.6 — Multi-Class Kursi, Dynamic Pricing & Integritas Keuangan
+- **Multi-Class Kursi per Bus (`vehicle_seat_classes`)**: Memfasilitasi konfigurasi kabin majemuk dalam 1 armada (misal: gabungan 4 kabin Sleeper + 20 kursi Luxury Seat 2-1) sekaligus bertindak sebagai *hard ceiling* kuota penumpang saat manifes/SPJ.
+- **Dynamic Seasonal Pricing (`fare_seasons` & `fare_matrix`)**: Memfasilitasi kalender tarif musiman (reguler, tuslah Lebaran, peak season liburan/weekend) dengan rentang tanggal berlaku dinamis.
+- **Price Snapshotting & Immutable Journals**: Menjamin 100% catatan keuangan masa lalu tetap abadi menggunakan harga saat transaksi dibuat, terlepas dari adanya perubahan harga master di masa depan.
+
 ## Phase 1: Infrastructure & Auth (Completed)
 
 ### 2026-10-01: Dual-Strategy Auth (HttpOnly Cookie + Bearer), Machine-Readable Errors & Security Hardening
