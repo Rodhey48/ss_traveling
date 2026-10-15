@@ -143,14 +143,12 @@ api.interceptors.response.use(
 
           // Panggil Refresh API menggunakan instance axios murni dengan withCredentials: true
           const resp = await axios.post(
-            `${baseURL}api/auth/refresh`,
+            `${baseURL}api/v1/auth/refresh`,
             {
               refreshToken,
               deviceId,
             },
-            {
-              withCredentials: true,
-            },
+            { withCredentials: true },
           );
 
           if (!resp.data?.data) {

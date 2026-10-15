@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import {
   Dialog,
@@ -45,8 +45,6 @@ export default function RoleModal({
   role,
   loading,
 }: RoleModalProps) {
-  const [menuTree, setMenuTree] = useState<BackendMenu[]>([]);
-
   const form = useForm<RoleFormData>({
     defaultValues: {
       name: '',
@@ -65,8 +63,6 @@ export default function RoleModal({
       try {
         const response = await MenuService.getTree();
         if (response.status) {
-          setMenuTree(response.data);
-          
           // Flatten tree for useFieldArray mapping
           const flatPermissions: any[] = [];
           const flatten = (nodes: BackendMenu[], level = 0) => {

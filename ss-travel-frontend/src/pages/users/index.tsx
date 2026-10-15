@@ -14,7 +14,6 @@ import { usePermission } from '@/hooks/use-permission';
 export default function UsersPage() {
   const { isCreate, isUpdate, isDelete, actions } = usePermission();
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
@@ -28,15 +27,12 @@ export default function UsersPage() {
 
   const fetchUsers = async () => {
     try {
-      setLoading(true);
       const response = await UserService.findAll({ search });
       if (response.status) {
         setUsers(response.data.data);
       }
     } catch (error) {
       toast.error('Gagal mengambil data user');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -76,7 +72,7 @@ export default function UsersPage() {
       try {
         await UserService.remove(id);
         toast.success('User berhasil dihapus');
-        fetchMenus();
+        fetchUsers();
       } catch (error) {
         toast.error('Gagal menghapus user');
       }

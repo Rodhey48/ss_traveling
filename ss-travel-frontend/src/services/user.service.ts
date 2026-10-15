@@ -8,19 +8,19 @@ export const UserService = {
     search?: string;
   }): Promise<BaseResponse<PaginatedData<User>>> => {
     const response = await api.get<BaseResponse<PaginatedData<User>>>(
-      '/api/users',
+      'api/v1/users',
       { params }
     );
     return response.data;
   },
 
   findOne: async (id: string): Promise<BaseResponse<User>> => {
-    const response = await api.get<BaseResponse<User>>(`/api/users/${id}`);
+    const response = await api.get<BaseResponse<User>>(`api/v1/users/${id}`);
     return response.data;
   },
 
   create: async (data: UserFormData): Promise<BaseResponse<User>> => {
-    const response = await api.post<BaseResponse<User>>('/api/users', data);
+    const response = await api.post<BaseResponse<User>>('api/v1/users', data);
     return response.data;
   },
 
@@ -29,7 +29,7 @@ export const UserService = {
     data: UserFormData
   ): Promise<BaseResponse<User>> => {
     const response = await api.put<BaseResponse<User>>(
-      `/api/users/${id}`,
+      `api/v1/users/${id}`,
       data
     );
     return response.data;
@@ -37,28 +37,28 @@ export const UserService = {
 
   remove: async (id: string): Promise<BaseResponse<void>> => {
     const response = await api.delete<BaseResponse<void>>(
-      `/api/users/${id}`
+      `api/v1/users/${id}`
     );
     return response.data;
   },
 
   updateProfile: async (data: Partial<UserFormData>): Promise<BaseResponse<User>> => {
-    const response = await api.put<BaseResponse<User>>('/api/users/profile', data);
+    const response = await api.put<BaseResponse<User>>('api/v1/users/profile', data);
     return response.data;
   },
 
   changePassword: async (data: { newPassword: string; oldPassword?: string }): Promise<BaseResponse<void>> => {
-    const response = await api.put<BaseResponse<void>>('/api/users/change-password', data);
+    const response = await api.put<BaseResponse<void>>('api/v1/users/change-password', data);
     return response.data;
   },
 
   resetUserPassword: async (userId: string, data: { newPassword: string; adminPassword: string }): Promise<BaseResponse<void>> => {
-    const response = await api.put<BaseResponse<void>>(`/api/users/${userId}/reset-password`, data);
+    const response = await api.put<BaseResponse<void>>(`api/v1/users/${userId}/reset-password`, data);
     return response.data;
   },
 
   toggleStatus: async (userId: string): Promise<BaseResponse<{ isActive: boolean }>> => {
-    const response = await api.put<BaseResponse<{ isActive: boolean }>>(`/api/users/${userId}/toggle-status`);
+    const response = await api.put<BaseResponse<{ isActive: boolean }>>(`api/v1/users/${userId}/toggle-status`);
     return response.data;
   }
 };

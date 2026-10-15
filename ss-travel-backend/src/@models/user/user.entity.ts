@@ -44,7 +44,7 @@ export class UsersEntity extends BaseEntity {
   @Column({ type: 'varchar', nullable: true, name: 'last_origin' })
   lastOrigin: string;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   lastLogin: Date;
 
   @Column({ type: 'boolean', default: false, name: 'is_active' })

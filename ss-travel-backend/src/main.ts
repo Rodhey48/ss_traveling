@@ -22,7 +22,7 @@ async function bootstrap() {
     allowedHeaders: 'Content-Type,Accept,Authorization,x-device-id',
   });
 
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api/v1');
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -51,11 +51,11 @@ async function bootstrap() {
     })
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  SwaggerModule.setup('api/v1/docs', app, document);
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  logger.log(`Monolithic Backend is running on: http://localhost:${port}`);
-  logger.log(`Swagger documentation: http://localhost:${port}/api/docs`);
+  logger.log(`Monolithic Backend is running on: http://localhost:${port}/api/v1`);
+  logger.log(`Swagger documentation: http://localhost:${port}/api/v1/docs`);
 }
 bootstrap();

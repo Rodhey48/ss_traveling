@@ -371,6 +371,8 @@ Akun header tidak boleh menerima jurnal. Hanya akun detail
     15101 Kendaraan / Armada Bus
     15102 Peralatan Bengkel & Pool
   16 Akumulasi Penyusutan Aset Tetap
+    16101 Akumulasi Penyusutan Armada Bus
+    16102 Akumulasi Penyusutan Peralatan Bengkel & Pool
 2 LIABILITAS
   21 Utang Usaha (AP)
     21101 Utang Vendor Restoran Mitra (Servis Makan Penumpang)
@@ -379,14 +381,22 @@ Akun header tidak boleh menerima jurnal. Hanya akun detail
   22 Utang Pihak Ketiga & Keagenan
     22101 Utang Komisi Agen Penjualan Tiket
     22102 Utang Jasa Koordinator Lapangan (Barat & Timur)
+    22103 Utang Komisi / Cashback Rekanan Wisata
   23 Utang Kompensasi Kru Operasional
     23101 Utang Uang Makan & Premi Ritase Kru
   24 Pendapatan Diterima di Muka (DP Sewa Wisata / Tiket Prabayar)
   25 Utang Pajak
+  26 Utang Jangka Panjang & Pembiayaan Armada
+    26101 Utang Bank / Leasing Armada Bus
+  27 Utang Pihak Berelasi / Pemegang Saham
+    27101 Utang Pemegang Saham / Talangan Modal Owner
 3 EKUITAS
   31 Modal Disetor
+    31101 Modal Disetor Pemilik / Investor
   32 Saldo Laba Ditahan
+    32101 Saldo Laba Ditahan Tahun Lalu
   33 Laba/Rugi Tahun Berjalan
+    33101 Laba / Rugi Periode Berjalan
 4 PENDAPATAN
   41 Pendapatan Tiket AKAP Reguler
   42 Pendapatan Sewa Bus Pariwisata / Charter
@@ -400,17 +410,51 @@ Akun header tidak boleh menerima jurnal. Hanya akun detail
     52101 Beban Tol / Top-up E-Toll Perjalanan
     52102 Beban Parkir, TPR, & Penyeberangan Ferry
     52103 Beban Cuci Bus & Perlengkapan Armada
+    52104 Beban Snack, Amenity, & Fasilitas Onboard Bus (Kopi, Teh, Wi-Fi, Baterai, Parfum)
   53 Beban Kompensasi & Hak Kru Operasional
-    53101 Beban Uang Makan Kru Bus
-    53102 Beban Premi / Insentif Ritase Kru
+    53101 Beban Uang Makan Kru Bus (SPJ)
+    53102 Beban Premi / Insentif Ritase Kru (SPJ)
     53103 Beban Bonus Full Seat Kru (Okupansi 100%)
+    53104 Beban Komisi / Insentif Kargo Kru
+    53105 Beban Uang Makan Standby Kru (Non-SPJ Garasi)
+    53106 Beban Insentif Langsir & Dinas Teknis Kru (Non-SPJ Bengkel/Karoseri)
   54 Beban Keagenan & Koordinator Lapangan
     54101 Beban Komisi Agen Penjualan Tiket
     54102 Beban Uang Jasa Koordinator Lapangan (Barat & Timur)
-  55 Beban Perawatan, Perbaikan, & Ban Armada
+    54103 Beban Komisi / Cashback Agen Rekanan Wisata
+  55 Beban Perawatan, Perbaikan, & Bengkel Armada
+    55101 Beban Servis & Perawatan Rutin Armada
+    55102 Beban Penggantian Suku Cadang (Sparepart)
+    55103 Beban Oli & Pelumas Mesin Bus
+    55104 Beban Ban Bus (Baru & Vulkanisir)
+    55105 Beban Perbaikan AC & Kelistrikan Bus
+    55106 Beban Karoseri, Bodi, & Pengecatan
   56 Beban Penyusutan Armada & Peralatan
-  57 Beban Umum, Administrasi, & Kantor
+    56101 Beban Penyusutan Armada Bus
+    56102 Beban Penyusutan Peralatan Bengkel & Pool
+  57 Beban Umum, Administrasi, & Pool
+    57101 Beban Legalitas, Pajak STNK, & KIR Armada
+    57102 Beban Asuransi Kendaraan & Jasa Raharja
+    57103 Beban Perlengkapan & Kebersihan Pool
+    57104 Beban Listrik, Air, & Internet Pool/Kantor
+    57105 Beban Gaji Karyawan Kantor & Manajemen
+    57106 Beban Gaji Mekanik & Teknisi Bengkel Pool
+    57107 Beban Upah Lembur Karyawan & Mekanik (Overtime)
+    57108 Beban Uang Makan & Konsumsi Staf Kantor/Garasi
+    57109 Beban Perjalanan Dinas & Transport Staf Kantor
+    57110 Beban ATK, Kertas, & Percetakan Dokumen
+    57111 Beban Retribusi Lingkungan & Keamanan Pool
   58 Beban Selisih Kas Operasional (Pasca Investigasi Kasir)
+    58101 Beban Selisih Kasir Pool (Dispensasi Perusahaan)
+  59 Beban Bunga & Biaya Keuangan
+    59101 Beban Bunga Pinjaman Bank / Leasing Armada
+    59102 Beban Administrasi Bank
+8 PENDAPATAN & BEBAN LAIN-LAIN (NON-OPERASIONAL)
+  81 Pendapatan Non-Operasional
+    81101 Pendapatan Bunga Bank & Jasa Giro
+    81102 Keuntungan Penjualan Aset Bus / Scrap Besi Tua
+  82 Beban Non-Operasional
+    82101 Kerugian Pelepasan / Penjualan Aset Bus
 ```
 
 Akun harus dikonfigurasi sesuai praktik akuntansi perusahaan. Hindari
@@ -2502,3 +2546,197 @@ Addendum ini merangkum dan mengunci konsistensi menyeluruh antar-seluruh bab dal
 2. **Hierarki Beban COA Jelas:** Akun servis makan restoran penumpang (`51102`), uang makan pribadi kru (`53101`), premi ritase (`53102`), bonus full seat (`53103`), dan jasa koordinator (`54102`) memiliki nomor akun dan pemisahan fungsi yang tegas, mencegah pencampuran biaya operasional dengan hak personalia.
 3. **Penyelesaian Kas Yogyakarta:** Mendukung 2 opsi resmi saat pergantian kru di Yogyakarta (Settlement Cabang Yogya via BKM baru vs Handover Saldo Estafet antar-kru), memberikan kepastian SOP bagi tim operasional lapangan.
 4. **Validasi Kuota Kursi Multi-Class:** Input manifest penumpang pada armada multi-class (Combi/Sleeper) wajib divalidasi tidak melebihi kapasitas fisik masing-masing kelas kursi (`vehicle_seat_classes`).
+
+---
+
+# Addendum v1.11 — Standardisasi RBAC, Multi-Role, Separation of Duties (SoD), dan Pintu Pengeluaran Non-SPJ
+Tanggal pembaruan: 5 Oktober 2026
+
+Addendum ini meresmikan struktur role pengguna, pemanfaatan multi-role, aturan pemisahan wewenang (Separation of Duties), dan penugasan tanggung jawab input pengeluaran non-SPJ:
+
+## 1. Konfirmasi Kapabilitas Multi-Role di Backend
+- **Arsitektur Multi-Role:** Backend NestJS (`ss-travel-backend`) telah mendukung 100% penugasan multi-role per user melalui tabel pivot `user_roles` (`UsersEntity` $\leftrightarrow$ `UserRolesEntity` $\leftrightarrow$ `RolesEntity`).
+- **Agregasi Izin (Union Permissions):** `MenusService.getPermissionsByRoles()` menggabungkan seluruh izin peran yang dimiliki user menjadi satu himpunan (*Set*). Pada level navigasi menu, permission di-merger menggunakan logika `OR` (jika salah satu role mengizinkan `isCreate` atau custom action, user otomatis memperoleh hak tersebut).
+- **Keputusan Desain:** Menhindari ledakan role baru (*role explosion*). Sistem menggunakan daftar role modular yang fokus pada fungsinya, dan pengguna dengan tanggung jawab ganda di lapangan cukup diberikan beberapa role sekaligus.
+
+## 2. Matriks Definisi Role Standar SS Traveling
+1. **`SUPER_ADMIN` (System Administrator):** Manajemen sistem global, user, role, permission, audit log.
+2. **`DIRECTOR` (Direksi / Owner):** Read-only dashboard eksekutif, analitik keuangan, posisi kas/bank, dan profitabilitas rute/armada.
+3. **`FINANCE_MANAGER` (Manajer Keuangan):** Otorisasi pengeluaran dan pembayaran besar, verifikasi sengketa selisih kas (`DISCREPANCY`), persetujuan tutup buku, dan pembukaan kembali periode fiskal (*Reopen Period*).
+4. **`ACCOUNTANT` (Akuntan / Finance Accounting):** Verifikasi settlement kas SPJ (`UNDER_REVIEW` $\to$ `SETTLED`), pembuatan & posting jurnal (`AccountingPostingService`), penyesuaian memorial (JV), rekonsiliasi bank, depresiasi aset, dan penutupan buku periode.
+5. **`FINANCE_AR_AP` (Staff Keuangan AR/AP):** Penerbitan invoice piutang charter/wisata & rekonsiliasi AR OTA; pencatatan tagihan vendor tempo (sparepart, karoseri, servis makan, BBM armada) dan penyiapan pembayaran AP.
+6. **`POOL_CASHIER` (Kasir Pool / Cabang):** Pencairan fisik Uang Jalan (BKK), penerimaan fisik setoran sisa UJ & kas bruto tiket/kargo kru (BKM), pengelolaan petty cash pool, serta mutasi kartu E-Toll pool.
+7. **`OPS_ADMIN` (Admin Operasional / Dispatcher):** Pembuatan draft & penerbitan SPJ (`ISSUED`), plotting unit armada & penugasan kru per leg, monitoring status perjalanan bus, dan pengajuan penambahan UJ darurat.
+8. **`FIELD_COORDINATOR` (Koordinator Lapangan / Korlap):** Validasi manifes fisik penumpang di titik kumpul terminal/agen, pengawasan kupon servis makan, dan input tanda terima kargo resi manual.
+9. **`CREW_DRIVER` (Pengemudi Bus / Driver):** Identitas kru di SPJ, penerima UJ jalan, pencatat nota BBM/Tol (via self-service), dan penyetor kas.
+10. **`CREW_CONDUCTOR` (Kondektur / Co-Driver):** Identitas kru di SPJ, pembantu operasional & pengelola barang bagasi/kargo di perjalanan.
+
+## 3. Aturan Pemisahan Wewenang (Separation of Duties - SoD)
+- **Kombinasi Diizinkan (Umum di Lapangan):**
+  - `OPS_ADMIN` + `FIELD_COORDINATOR` (Admin kantor yang merangkap pengawas keberangkatan terminal).
+  - `FINANCE_AR_AP` + `ACCOUNTANT` (Staff finance yang mengurus tagihan sekaligus membantu pembukuan jurnal harian).
+  - `CREW_DRIVER` + `FIELD_COORDINATOR` (Driver senior yang bertugas menjadi koordinator titik saat jadwal libur narik).
+- **Kombinasi Terlarang (Hard Anti-Fraud Conflict):**
+  - ❌ `OPS_ADMIN` + `POOL_CASHIER`: Pembuat SPJ dilarang merangkap kasir pencair uang jalan (mencegah SPJ fiktif dengan pencairan mandiri).
+  - ❌ `CREW_DRIVER` + `POOL_CASHIER`: Penerima UJ / penyetor uang dilarang menjadi kasir pool yang memverifikasi uang fisik.
+  - ❌ Pembuat transaksi dilarang menjadi *single approver* untuk pengajuan dokumennya sendiri di workflow approval.
+
+## 4. Pintu dan Tanggung Jawab Penginputan Pengeluaran Non-SPJ
+Biaya operasional yang tidak melekat pada satu nomor SPJ perjalanan bus dibagi ke dalam 3 pintu pencatatan:
+1. **Kas Kecil Pool (Petty Cash):**
+   - *Cakupan:* Sabun cuci bus, galon air, ATK pool, retribusi lingkungan, konsumsi piket, perbaikan kecil garasi.
+   - *Pintu Input:* `POOL_CASHIER` (atau `OPS_ADMIN` di cabang tanpa kasir khusus) via menu **Kas & Bank $\to$ Kas Keluar (`cash_transactions`)**.
+   - *Verifikasi:* Diverifikasi oleh `ACCOUNTANT` saat pengajuan penggantian dana kas kecil (*Petty Cash Replenishment*).
+2. **Tagihan Vendor Tempo / Perawatan Bengkel (AP Invoices):**
+   - *Cakupan:* Pembelian drum oli, ban bus, sparepart, servis karoseri, AC bus, atau tagihan bulanan rekanan.
+   - *Pintu Input:* `FINANCE_AR_AP` via menu **Utang Usaha $\to$ Tagihan Vendor (`ap_invoices`)**, dapat dialokasikan langsung ke `vehicle_id` bus terkait.
+   - *Persetujuan & Pembayaran:* Disetujui oleh `FINANCE_MANAGER` saat daftar jadwal bayar, dilunasi via transfer bank (`ap_payments`).
+3. **Legalitas Armada & Biaya Rutin Kantor (Bank Kantor Pusat):**
+   - *Cakupan:* Pajak tahunan STNK, uji KIR berkala, asuransi Jasa Raharja, perpanjangan izin trayek, sewa pool garasi, internet & listrik kantor.
+   - *Pintu Input:* `FINANCE_AR_AP` atau `ACCOUNTANT` dengan persetujuan wajib `FINANCE_MANAGER`, dibukukan via **`bank_transactions`** atau **`ap_invoices`**.
+
+---
+
+# Addendum v1.12 — Standardisasi Akun COA Pengeluaran Non-SPJ & Catatan Selisih Kupon Makan Per Leg
+Tanggal pembaruan: 14 Oktober 2026
+
+Addendum ini meresmikan penambahan spesifikasi teknis dan akuntansi terkunci:
+
+## 1. Rincian COA Beban Non-SPJ (Kelompok 55, 56, 57, dan 58)
+Seluruh pengeluaran di luar SPJ wajib dijurnal menggunakan akun COA spesifik:
+- **Kelompok 55 (Beban Perawatan & Bengkel Armada):**
+  - `55101` Beban Servis & Perawatan Rutin Armada
+  - `55102` Beban Penggantian Suku Cadang (Sparepart)
+  - `55103` Beban Oli & Pelumas Mesin Bus
+  - `55104` Beban Ban Bus (Baru & Vulkanisir)
+  - `55105` Beban Perbaikan AC & Kelistrikan Bus
+  - `55106` Beban Karoseri, Bodi, & Pengecatan
+  - *Aturan Wajib:* Transaksi kelompok 55 wajib menempelkan dimensi `vehicle_id` agar terakumulasi di riwayat pemeliharaan aset bus.
+- **Kelompok 56 (Beban Penyusutan Aset):**
+  - `56101` Beban Penyusutan Armada Bus
+  - `56102` Beban Penyusutan Peralatan Bengkel & Pool
+- **Kelompok 57 (Beban Umum, Administrasi, & Pool):**
+  - `57101` Beban Legalitas, Pajak STNK, & KIR Armada
+  - `57102` Beban Asuransi Kendaraan & Jasa Raharja
+  - `57103` Beban Perlengkapan & Kebersihan Pool
+  - `57104` Beban Listrik, Air, & Internet Pool/Kantor
+  - `57105` Beban Gaji Karyawan Tetap & Mekanik
+  - `57106` Beban ATK, Kertas, & Percetakan Dokumen
+  - `57107` Beban Konsumsi Staf & Lembur Garasi
+  - `57108` Beban Retribusi Lingkungan & Keamanan Pool
+- **Kelompok 58 (Beban Selisih Kasir):**
+  - `58101` Beban Selisih Kasir Pool (Dispensasi Perusahaan Pasca-Investigasi)
+
+## 2. Pencatatan Keterangan Selisih Kupon Makan per Leg SPJ
+- Pada tabel `spj_legs`, ditambahkan kolom:
+  - `meal_pax_count` (integer): Jumlah riil kupon/penumpang yang makan di rumah makan mitra.
+  - `meal_discrepancy_notes` (text): Keterangan wajib jika `meal_pax_count` berbeda dengan manifes kursi (contoh: *"2 penumpang tidur/puasa"* atau *"1 porsi tambahan untuk kru bantuan"*).
+- Catatan ini tersimpan permanen di SPJ dan otomatis ditampilkan di modul AP Invoices saat Finance AP memverifikasi invoice tagihan berkala dari restoran mitra.
+
+---
+
+# Addendum v1.13 — Tata Kelola Aset Tetap Armada, Saldo Awal Migrasi, Utang Leasing, dan Penyusutan
+Tanggal pembaruan: 15 Oktober 2026
+
+Addendum ini meresmikan tata kelola aset armada, penanganan saldo awal migrasi (10 bus), pembiayaan cicilan perbankan, dan otomasi penyusutan:
+
+## 1. Tata Kelola Saldo Awal Migrasi (*Cut-Off Opening Balance*)
+Pada saat *go-live* atau migrasi ke aplikasi, sistem tidak menarik riwayat masa lalu, melainkan menetapkan saldo awal (*Opening Balance*) per tanggal cut-off:
+- **Pendaftaran Master Armada (`vehicles` & `fixed_assets`)**:
+  - Seluruh 10 bus didaftarkan nomor lambung (`code`), plat nomor (`plate_number`), nama julukan (`nickname`), dan kelas kursi (`vehicle_seat_classes`).
+  - Nilai perolehan historis dan sisa nilai buku per tanggal cut-off didaftarkan ke tabel `fixed_assets`.
+- **Perlakuan 7 Unit Bus Lunas**:
+  - Dicatat sebagai aset tetap bersih: Debit `15101 Kendaraan / Armada Bus`, Kredit `31101 Modal Disetor Pemilik` (atau `32101 Saldo Laba Ditahan`).
+  - Tidak memiliki kewajiban utang perbankan. Beban bulanan di Laba Rugi murni berasal dari penyusutan rutin.
+- **Perlakuan 3 Unit Bus dalam Angsuran Bank / Leasing**:
+  - Dicatat nilai aset fisiknya: Debit `15101 Kendaraan / Armada Bus`.
+  - Dicatat sisa pokok pinjaman ke leasing/bank: Kredit `26101 Utang Bank / Leasing Armada Bus`.
+  - Porsi ekuitas yang telah terbentuk (uang muka DP lama & cicilan pokok yang sudah dibayar): Kredit `31101 Modal Disetor Pemilik`.
+
+## 2. Pemisahan Komponen Angsuran Bulanan Leasing
+Setiap pembayaran cicilan bulanan bus ke bank/leasing wajib dipisahkan menjadi 2 komponen dalam satu voucher pengeluaran bank (`bank_transactions` / `ap_payments`):
+1. **Pokok Pinjaman**: Didebitkan ke `26101 Utang Bank / Leasing Armada Bus` (mengurangi kewajiban di Neraca, **bukan beban Laba Rugi**).
+2. **Bunga Pinjaman**: Didebitkan ke `59101 Beban Bunga Pinjaman Bank / Leasing Armada` (diakui sebagai **beban pemotong Laba Rugi** periode berjalan).
+3. **Total Kas Keluar**: Dikreditkan ke `11104 Bank Operasional Perusahaan (BCA/Mandiri)`.
+
+## 3. Otomasi & Entry Point Pengelolaan Penyusutan Aset
+1. **Eksekusi Otomatis Bulanan (*Run Depreciation*)**:
+   - Tersedia di menu **Aset Tetap $\to$ Jalankan Penyusutan** atau terintegrasi pada checklist **Tutup Buku Bulanan**.
+   - Sistem mengkalkulasi depresiasi seluruh aset aktif berbasis metode garis lurus:
+     $$\text{Beban Depresiasi Bulanan} = \frac{\text{Nilai Perolehan} - \text{Nilai Residu}}{\text{Masa Manfaat (Bulan)}}$$
+   - Posting otomatis jurnal atomik:
+     - **Debit**: `56101 Beban Penyusutan Armada Bus`
+     - **Kredit**: `16101 Akumulasi Penyusutan Armada Bus`
+2. **Entry Point Penyesuaian & Update Aset (UI Action Endpoints)**:
+   - **Perpanjangan Umur / Revaluasi Pasca-Overhaul**: Form pembaruan masa manfaat bus setelah turun mesin atau pembaruan bodi karoseri besar-besaran, mendistribusikan sisa nilai buku ke umur baru.
+   - **Penurunan Nilai (*Impairment*)**: Penyesuaian nilai buku saat bus mengalami musibah/kerusakan berat permanen.
+   - **Pelepasan / Penjualan Bus (*Disposal*)**: Tombol aksi pelepasan aset saat bus dijual atau dibesituakan (*scrap*). Sistem menghentikan penyusutan otomatis dan membukukan selisih harga jual terhadap nilai buku ke `81102 Keuntungan Penjualan Aset Bus` atau `82101 Kerugian Pelepasan Aset Bus`.
+
+## 4. Penambahan Modal Pemilik (Tunai vs Non-Tunai / Inbreng)
+- **Modal Masuk Tunai / Transfer Bank**: Masuk via menu Kas & Bank (`bank_transactions`), menambah kas/bank (`11104`) dan mengkredit `31101 Modal Disetor Pemilik` (atau `27101 Utang Pemegang Saham` jika pinjaman talangan sementara), tanpa memengaruhi omzet operasional SPJ.
+- **Modal Masuk Non-Tunai (Inbreng Bus / Suku Cadang)**: Masuk via menu Akuntansi Jurnal Memorial (`journal_entries`), mendebit aset tetap (`15101`) atau persediaan bengkel (`14101`) berpasangan dengan modal disetor (`31101`).
+
+---
+
+# Addendum v1.14 — Tata Kelola Snack Penumpang & Fasilitas Onboard Bus (Metode Pembebanan Langsung Non-SPJ)
+Tanggal pembaruan: 15 Oktober 2026
+
+Addendum ini meresmikan tata kelola pengadaan makanan ringan (*snack*) penumpang dan perlengkapan fasilitas kabin bus:
+
+## 1. Latar Belakang & Realitas Operasional Lapangan
+- Pengadaan makanan ringan (kacang telur bal-balan 20kg, dus air mineral, cup minuman kemasan) dibeli secara grosir gelondongan oleh kantor/pool, lalu dibungkus ulang (*repacked*) oleh staf garasi secara taksiran perkiraan porsi ke dalam kotak snack.
+- Fasilitas penunjang kenyamanan penumpang di dalam kabin bus (teh, kopi sachet, gula, baterai mic karaoke, parfum semprot bus, kuota modem Wi-Fi) bersifat perlengkapan habis pakai berjalan (*onboard supplies*) yang tidak habis persis dalam satu ritase SPJ dan sering menyisakan stok di atas bus.
+- **Keputusan Desain:** Menolak konsep *Bill of Materials (BOM)* manufaktur dan menolak pembebanan sachet/gramatur di lembar SPJ perjalanan kru. Hal ini dilakukan untuk menjaga alur rekonsiliasi SPJ kasir tetap cepat, ringkas, dan fokus pada hal material (BBM, Tol, Servis Makan RM Mitra, Parkir/TPR, Setoran Kas Tiket/Kargo, dan Hak Kru).
+
+## 2. Prinsip Akuntansi: Metode Pembebanan Langsung (*Direct Expense Method*)
+- Seluruh pembelian barang konsumsi dan amenity kabin bus dicatat menggunakan **Metode Pembebanan Langsung** (*expensed upon purchase*), yaitu langsung diakui sebagai beban operasional saat transaksi belanja terjadi.
+- **Pintu Masuk Transaksi**:
+  - Dibelanjakan melalui **Kas Kecil Pool / Petty Cash (`cash_transactions`)** atau transfer bank operasional kantor.
+  - Diverifikasi oleh Accountant saat rekap/penggantian kas kecil pool (*Petty Cash Replenishment*).
+
+## 3. Pemetaan Akun Akuntansi & Dimensi Biaya
+- **Pemetaan Akun Jurnal**:
+  - **Debit**: `52104 Beban Snack, Amenity, & Fasilitas Onboard Bus` (masuk ke Laba Rugi periode belanja).
+  - **Kredit**: `11103 Kas Kecil Pool` (atau `11104 Bank Operasional Perusahaan` / `21102 Utang Vendor Sembako`).
+- **Penerapan Dimensi Analitik**:
+  - **Belanja Kolektif / Umum Pool** (kacang bal-balan, kopi sachet, baterai mic, teh, tisu): Cukup menempelkan Cost Center `Operasional Pool` tanpa mewajibkan dimensi armada `vehicle_id`.
+  - **Belanja Khusus Unit Tertentu** (misalnya paket data kuota modem Wi-Fi bus `SS-01` atau parfum khusus kabin Sleeper `SS-02`): Menempelkan Cost Center `Operasional Pool` beserta dimensi `vehicle_id` terkait agar riwayat biaya fasilitas per armada dapat ditinjau di laporan performa unit.
+
+---
+
+# Addendum v1.15 — Standardisasi Kompensasi Kru Standby/Langsir, Gaji Karyawan, Upah Lembur, & Dinas Luar Kantor
+Tanggal pembaruan: 15 Oktober 2026
+
+Addendum ini meresmikan tata kelola pengeluaran untuk kompensasi non-SPJ kru (standby dan langsir), pemisahan gaji karyawan kantor vs bengkel, upah lembur (*overtime*), serta perjalanan dinas staf kantor:
+
+## 1. Kompensasi Kru Non-SPJ di Pool Garasi & Perjalanan Teknis
+- **Uang Makan Standby Kru di Garasi (`53105`)**:
+  - Pengemudi dan kru cadangan yang terjadwal piket/standby di pool garasi (tidak sedang jalan dinas komersial membawa penumpang) berhak atas uang makan harian.
+  - **Prinsip Akuntansi:** Beban ini dikeluarkan melalui **Kas Kecil Pool (`cash_transactions`)** dan **DILARANG dimasukkan ke lembar SPJ mana pun**, menjaga margin kontribusi ritase bus tetap objektif.
+  - **Akun Jurnal:** Debit `53105 Beban Uang Makan Standby Kru (Non-SPJ Garasi)`, Kredit `11103 Kas Kecil Pool`.
+- **Insentif Langsir & Dinas Teknis Kru (`53106`)**:
+  - Tugas driver membawa armada kosongan (*deadhead / non-revenue trip*) untuk keperluan teknis: mengantar unit ke karoseri (perbaikan bodi/chasis baru), langsir bus ke bengkel rekanan, atau membawa bus uji berkala (KIR) ke Dishub.
+  - **Prinsip Akuntansi:** Diberikan uang saku/insentif tugas langsung dari Kas Kecil Pool atau transfer operasional kantor.
+  - **Dimensi Biaya Wajib:** Transaksi ini wajib menempelkan dimensi armada `vehicle_id` unit yang diantar, agar seluruh biaya mobilisasi perawatan armada terakumulasi di kartu histori unit tersebut.
+  - **Akun Jurnal:** Debit `53106 Beban Insentif Langsir & Dinas Teknis Kru (Non-SPJ Bengkel/Karoseri)` (dengan `vehicle_id`), Kredit `11103 Kas Kecil Pool` / `11104 Bank BCA Operasional`.
+
+## 2. Struktur Penggajian (Payroll) & Pemisahan Beban Personil
+- **Gaji Karyawan Kantor & Manajemen (`57105`)**:
+  - Gaji bulanan tetap untuk staf administrasi, operasional, kasir, finance AR/AP, koordinator lapangan, dan direksi/manajemen.
+  - Dicatat periodik tiap akhir bulan: Debit `57105 Beban Gaji Karyawan Kantor & Manajemen`, Kredit `11104 Bank Operasional Perusahaan` (atau `23xxx Utang Gaji Karyawan`).
+- **Gaji Mekanik & Teknisi Bengkel Pool (`57106`)**:
+  - Gaji bulanan tetap untuk kepala mekanik, montir mesin, tukang las, dan teknisi AC bus di garasi.
+  - Pemisahan akun ini memudahkan manajemen menganalisis rasio biaya pemeliharaan internal (*in-house maintenance cost*) terhadap total pengeluaran perusahaan.
+  - Akun Jurnal: Debit `57106 Beban Gaji Mekanik & Teknisi Bengkel Pool`, Kredit `11104 Bank Operasional Perusahaan`.
+
+## 3. Upah Lembur (*Overtime*), Konsumsi Piket, & Perjalanan Dinas Staf
+- **Upah Lembur Karyawan & Mekanik (`57107`)**:
+  - Diberikan saat teknisi bengkel lembur menyelesaikan perbaikan darurat armada malam hari atau saat staf kantor lembur melayani lonjakan penumpang di peak season (Lebaran/Nataru).
+  - Dihitung per jam atau flat harian berdasarkan form lembur yang disetujui Manajer/Kepala Bengkel.
+  - Akun Jurnal: Debit `57107 Beban Upah Lembur Karyawan & Mekanik (Overtime)`, Kredit `11103 Kas Kecil Pool` / `11104 Bank Operasional`.
+- **Uang Makan & Konsumsi Staf Garasi/Kantor (`57108`)**:
+  - Konsumsi makan siang staf kantor, air minum galon galon garasi, atau kopi piket malam mekanik.
+- **Perjalanan Dinas & Transport Staf Kantor (`57109`)**:
+  - Uang bensin, tiket transport, atau uang saku staf kantor saat dinas luar non-armada (misal: staf legal mengurus izin trayek ke Dishub pusat/daerah, staff finance ke perbankan, atau staf operasional menghadiri rapat Dishub/Organda).
+  - Akun Jurnal: Debit `57109 Beban Perjalanan Dinas & Transport Staf Kantor`, Kredit `11103 Kas Kecil Pool`.
+

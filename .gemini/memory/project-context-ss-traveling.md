@@ -1,44 +1,45 @@
 ---
 name: Project Context: SS Traveling
-description: Overview of the ERP SS Traveling project goals, architecture, and recent build fixes.
+description: Overview of the ERP SS Traveling project goals, architecture, and roadmap for Phase 3 implementation.
 type: project
 ---
 
 # Project Context: SS Traveling ERP
 
 ## Goals
-Transform manual operations of SS Traveling (Bus rental, AKAP, Karoseri, Gas Station, Warehouse) into a web-based ERP with a focus on auditability (SAP-style).
+Membangun sistem ERP komprehensif untuk SS Traveling Official (layanan Bus AKAP Tangerang-Yogya, Pariwisata/Charter Luxury Seat 2-1, Combi, Sleeper, Executive) yang mengintegrasikan manajemen armada, Surat Perintah Jalan (SPJ), kasir pool, serta akuntansi berbasis jurnal atomik (*Journal-First Accounting*) dengan auditabilitas tinggi (SAP-grade).
 
 ## Architecture & Tech Stack
-- **Architecture**: Microservices (Polyrepo) with API Gateway.
-- **Backend**: NestJS (TypeScript).
-- **ORM**: TypeORM (Data Mapper Pattern).
-- **Database**: PostgreSQL.
-- **Communication**: RabbitMQ for internal events.
-- **Frontend**: React / Next.js.
-- **Package Manager**: Yarn.
+- **Architecture**: Modular Monolith.
+- **Backend**: NestJS 10 (TypeScript) di `ss-travel-backend/`.
+- **ORM**: TypeORM 0.3.x (PostgreSQL).
+- **Frontend**: React + TypeScript + Vite di `ss-travel-frontend/`.
+- **Security & Auth**: Dual-Strategy Auth (`HttpOnly` Cookie untuk Web, Bearer Token untuk Mobile/API), Single Device Login (SDL), Stateless Device Fingerprinting (`x-device-id` + User-Agent), Machine-Readable Error Codes (401), dan RBAC dengan Separation of Duties (SoD).
 
-## Recent Progress (2026-05-22)
-- **Auth System Perfection & Hybrid Permissions**:
-  - Implemented hierarchical Menu Management with recursive fetching.
-  - Upgraded RBAC with a smart hierarchical permission matrix.
-  - **Implemented Hybrid Action-based Permissions**: Allows defining custom actions (e.g., `approve`, `export`) per menu using JSONB columns.
-  - Standardized microservice documentation and instructions in `.gemini/`.
-  - Auth Service and Frontend Management UI are now fully stable and feature-complete.
+## Status Fase Saat Ini (Per 15 Oktober 2026)
+- **Fase 1: Infrastructure & Auth**: [COMPLETED]
+  - Autentikasi hybrid stabil, RBAC dynamic menu hierarkis, JSONB action-based permissions.
+- **Fase 2: Design Verification & Specs**: [COMPLETED & LOCKED]
+  - Blueprint Keuangan v1.3 lengkap dengan Addendum v1.1 s.d. v1.15.
+  - Seluruh 4 Dokumen Test Case Skenario Bisnis & Akuntansi terkunci:
+    1. Skenario 1: Operasional Normal AKAP PP, Tagihan Servis Makan AP Berkala & Komisi Dinamis Kargo Kru.
+    2. Skenario 2: Sewa Wisata / Charter Multi-Day & B2B Partner Cashback.
+    3. Skenario 3: Anomali AKAP Breakdown, Penggantian Armada (`parent_spj_id`) & Estafet UJ.
+    4. Skenario 4: Rekonsiliasi Kasir Bermasalah, Musyawarah Kru & Resolusi Selisih Kas.
+- **Fase 3: Core Implementation**: [READY TO START]
+  - **Master Plan Terkunci**: Roadmap 10 tahap terdokumentasi lengkap di `.gemini/plan/Plan.md`.
+  - **Konfigurasi BE & FE Siap**: `decimal.js`, `MoneyHelper` (100% test passed), `timestamptz`, dan standardisasi API prefix `/api/v1` telah aktif dan diverifikasi.
+  - **Fokus Tahap 1**: Master Organisasi, Dimensi, & Armada Bus (`companies`, `business_units`, `cost_centers`, `profit_centers`, `vehicles`, `vehicle_seat_classes`, dan seeder 10 bus existing).
 
-## Previous Progress (2026-04-27)
-- **ss-travel-auth-service Fixes**:
-  - Resolved build errors in `tsconfig.json` and fixed ESLint ESM compatibility.
-  - Corrected entity decorators and seeding paths.
-  - Initial implementation of User and Role CRUD.
-
-## Key Modules
-- **Finance Service**: Phase 1 priority. Focus on double-entry bookkeeping, COA, and General Ledger.
-- **Auth Service**: Centralized JWT-based auth with RBAC (Roles, Menus, Permissions).
-
-## User Preferences
-- **Coding Pattern**: Reference project at `/home/rodhey/Documents/wira/Absensi/Absensi_BE`.
-- **Project Structure**: Uses `@models`, `@services`, `@configs`, `@guards` directories inside `src`.
-- **Auth Pattern**: Prefers a specific pattern involving `tokenLogin` validation in the DB and granular menu access.
-
-**Current Status**: `ss-travel-auth-service` build is stable. Ready to continue implementation (Database connection, further seeding, or controller/service logic).
+## Rencana Eksekusi Bertahap (Fase 3)
+Lihat rincian lengkap 10 tahap eksekusi di `.gemini/plan/Plan.md`:
+* Tahap 1: Master Organisasi, Dimensi, & Armada Bus (Entities & Seeder 10 Bus)
+* Tahap 2: Master Keuangan, Hierarki COA (Kelompok 1-8), & Kas/Bank (Entities & Seeder)
+* Tahap 3: Master Aturan Bisnis & Tarif Lapangan (Fare Matrix, Komisi, Rate Kru, Restoran)
+* Tahap 4: Accounting Core Engine (Jurnal, Lines, Posting Service Atomik, Idempotency)
+* Tahap 5: SPJ Life Cycle & Multi-Leg State Machine (Status Ganda & Penomoran Dokumen)
+* Tahap 6: Uang Jalan (UJ), Biaya SPJ, & Deklarasi Penerimaan (Multi-Line UJ & Anti-Netting)
+* Tahap 7: Kasir Pool, Settlement Kas Kru, & Resolusi Selisih (Skenario 1 & Skenario 4)
+* Tahap 8: Modul AR & AP (Tagihan Servis Makan Mitra, Kontrak Charter Wisata, Komisi Agen)
+* Tahap 9: Laporan Finansial, Trip Profitability (Margin), & Tutup Buku Bulanan
+* Tahap 10: Integrasi Frontend UI & E2E Verification
