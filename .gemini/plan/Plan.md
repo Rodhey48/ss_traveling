@@ -35,362 +35,262 @@
 
 ---
 
-## Phase 3: Core Implementation (Detailed 10-Stage Execution Roadmap)
+## Phase 3: Core Implementation (Vertical Slice Roadmap — BE + FE per Tahap)
 
-Setiap tahap di bawah ini mencakup siklus pengembangan penuh: **Model & Skema, DTO & Validasi, Service & Logika Bisnis, Controller & REST Endpoints, serta Pengujian (Unit Tests & Seeder)**.
-
----
-
-### 📌 Tahap 1: Master Organisasi, Dimensi, Armada Bus, & Pelanggan / CRM Leads
-* [ ] **Models & Entities (`src/@models/`)**:
-  * [ ] `companies`: Entitas hukum PT SS Traveling (`code`, `name`, `currency`, `timezone`).
-  * [ ] `business_units`: Unit usaha operasional (`AKAP`, `PARIWISATA`, `SHUTTLE`).
-  * [ ] `cost_centers`: Tempat terjadinya biaya (`Pool Ciputat`, `Bengkel Garasi`, `Kantor Pusat`).
-  * [ ] `profit_centers`: Unit analisis pendapatan per lini bisnis.
-  * [ ] `vehicles`: Data fisik armada bus (`code`/nomor lambung, `nickname`, `plate_number`, `vehicle_type`, `capacity`, `isActive`).
-  * [ ] `vehicle_seat_classes`: Konfigurasi multi-class kursi per bus (*Sleeper*, *Luxury 2-1*, *Executive*) sebagai batas fisik (*hard ceiling*) manifes.
-  * [ ] `customers`: Master pelanggan & database CRM leads penyewa wisata (`code`, `customer_type: CORPORATE/SCHOOL/TRAVEL_AGENT/COMMUNITY/INDIVIDUAL`, `institution_name`, `pic_name`, `phone`, `email`, `address`, `city`, `lead_source`, `customer_tier`, `last_trip_date`, `total_trips_count`, `special_notes`, `isActive`).
-* [ ] **DTOs & Validations (`src/@dto/`)**:
-  * [ ] `CreateCompanyDto`, `UpdateCompanyDto`
-  * [ ] `CreateBusinessUnitDto`, `UpdateBusinessUnitDto`
-  * [ ] `CreateCostCenterDto`, `UpdateCostCenterDto`
-  * [ ] `CreateProfitCenterDto`, `UpdateProfitCenterDto`
-  * [ ] `CreateVehicleDto`, `UpdateVehicleDto`, `VehicleQueryFilterDto`
-  * [ ] `CreateVehicleSeatClassDto`, `UpdateVehicleSeatClassDto`
-  * [ ] `CreateCustomerDto`, `UpdateCustomerDto`, `CustomerQueryFilterDto`
-* [ ] **Services & Domain Logic (`src/modules/`)**:
-  * [ ] `OrganizationService`: Pengelolaan unit bisnis, hierarki cost center, dan profit center.
-  * [ ] `VehiclesService`: Validasi nopol & kode lambung unik, pendaftaran multi-class kursi, kalkulasi kapasitas fisik total bus.
-  * [ ] `CustomersService`: Pengelolaan database prospek/leads, pencarian autocomplete nama/telepon, auto-update riwayat trip dan frekuensi sewa.
-* [ ] **Controllers & REST Endpoints (`src/modules/`)**:
-  * [ ] `GET/POST/PUT` `/api/v1/companies`
-  * [ ] `GET/POST/PUT` `/api/v1/business-units`
-  * [ ] `GET/POST/PUT` `/api/v1/cost-centers`
-  * [ ] `GET/POST/PUT` `/api/v1/profit-centers`
-  * [ ] `GET/POST/PUT/DELETE` `/api/v1/vehicles` (dengan filter paginasi & Swagger docs)
-  * [ ] `GET/POST/PUT` `/api/v1/vehicles/:id/seat-classes`
-  * [ ] `GET/POST/PUT/DELETE` `/api/v1/customers` (manajemen pelanggan & CRM filter leads)
-* [ ] **Database Seeder & Migration**:
-  * [ ] Migration skema tabel organisasi, armada, dan pelanggan/leads.
-  * [ ] Seeder: PT SS Traveling, Unit AKAP & Wisata, Cost Centers (Ciputat, Bengkel, Kantor).
-  * [ ] Seeder: 10 Unit Bus Existing SS Traveling (7 lunas, 3 cicilan leasing sesuai Addendum v1.13) lengkap dengan kursi Sleeper & Luxury 2-1.
-  * [ ] Seeder: Data awal pelanggan B2B (misal: PT Mitra Sejahtera Abadi, SMA 1 Tangerang).
-* [ ] **Automated Tests**:
-  * [ ] Unit test `VehiclesService` (validasi kapasitas multi-class, nopol duplikat).
-  * [ ] Unit test `CustomersService` (pencarian lead, update last trip).
-  * [ ] Unit test `OrganizationService`.
+Setiap tahap dikerjakan secara paralel per fitur (*Vertical Slice*): **Database $\to$ Backend API (DTO, Service, Controller, Unit Test) $\to$ Frontend UI (Halaman, Komponen, Service Client)** sehingga setiap tahap langsung menghasilkan fitur fungsional yang dapat dicoba di browser.
 
 ---
 
-### 📌 Tahap 2: Master Keuangan, Hierarki COA (Kelompok 1-8), & Kas/Bank
-* [ ] **Models & Entities (`src/@models/`)**:
-  * [ ] `accounts`: Chart of Accounts (COA) hierarkis (parent-child, code unik, `type`: ASSET/LIABILITY/EQUITY/REVENUE/EXPENSE, `normal_balance`: DEBIT/CREDIT, `is_postable`, `is_active`).
-  * [ ] `cash_accounts`: Kas fisik (`Kas Operasional Pool Ciputat`, `Kas Cabang Yogya`, `Kas Kecil Petty Cash`).
-  * [ ] `bank_accounts`: Rekening bank korporat (`Bank BCA Operasional`, `Bank Mandiri`).
-  * [ ] `fiscal_years` & `fiscal_periods`: Pengendalian kalender akuntansi bulanan (`OPEN`, `CLOSING`, `CLOSED`).
-  * [ ] `document_sequences`: Generator nomor dokumen anti-tabrakan berbasis row lock (`SPJ/AKP/YYMM/XXXX`, `SPJ/WIS/YYMM/XXXX`, `BKM`, `BKK`, `JV`).
-* [ ] **DTOs & Validations (`src/@dto/`)**:
-  * [ ] `CreateAccountDto`, `UpdateAccountDto`, `AccountQueryFilterDto`
-  * [ ] `CreateCashAccountDto`, `UpdateCashAccountDto`
-  * [ ] `CreateBankAccountDto`, `UpdateBankAccountDto`
-  * [ ] `CreateFiscalYearDto`, `CreateFiscalPeriodDto`
-* [ ] **Services & Domain Logic**:
-  * [ ] `AccountsService`: Validasi parent-child akun, pencegahan circular relation, penguncian akun header agar tidak bisa dijurnal (`is_postable=false`).
-  * [ ] `CashBankAccountsService`: Pengelolaan rekening korporat dan kasir pool penanggung jawab.
-  * [ ] `FiscalPeriodsService`: Validasi periode aktif dan pencegahan overlap tanggal periode.
-  * [ ] `DocumentSequenceService`: Algoritma penomoran transaksi concurrency-safe dengan pessimistic row lock.
-* [ ] **Controllers & REST Endpoints**:
-  * [ ] `GET/POST/PUT` `/api/v1/accounts` (dukungan kueri hierarki tree COA)
-  * [ ] `GET/POST/PUT` `/api/v1/cash-accounts`
-  * [ ] `GET/POST/PUT` `/api/v1/bank-accounts`
-  * [ ] `GET/POST/PUT` `/api/v1/fiscal-periods`
-* [ ] **Database Seeder & Migration**:
-  * [ ] Migration skema tabel COA, kas/bank, dan periode fiskal.
-  * [ ] Seeder: COA Standar Lengkap Perusahaan Bus (Akun 11101 s.d. 82101 sesuai Blueprint Bab 6.2).
-  * [ ] Seeder: Kas Pool Ciputat, Cabang Yogya, Kas Kecil, Bank BCA, serta Kalender Fiskal Aktif Tahun Berjalan.
-* [ ] **Automated Tests**:
-  * [ ] Unit test `AccountsService` (tree COA, postable validation).
-  * [ ] Unit test `DocumentSequenceService` (uji konkurensi penomoran dokumen).
+### 📌 Tahap 1: Master Organisasi, Dimensi, Armada Bus, & Pelanggan / CRM Leads (BE + FE)
+* [ ] **Backend Implementation (`ss-travel-backend`)**:
+  * [ ] **Models & Entities (`src/@models/`)**:
+    * [ ] `companies`: Entitas hukum PT SS Traveling (`code`, `name`, `currency`, `timezone`).
+    * [ ] `business_units`: Unit usaha operasional (`AKAP`, `PARIWISATA`, `SHUTTLE`).
+    * [ ] `cost_centers`: Tempat terjadinya biaya (`Pool Ciputat`, `Bengkel Garasi`, `Kantor Pusat`).
+    * [ ] `profit_centers`: Unit analisis pendapatan per lini bisnis.
+    * [ ] `vehicles`: Data fisik armada bus (`code`/nomor lambung, `nickname`, `plate_number`, `vehicle_type`, `capacity`, `isActive`).
+    * [ ] `vehicle_seat_classes`: Konfigurasi multi-class kursi per bus (*Sleeper*, *Luxury 2-1*, *Executive*) sebagai batas fisik (*hard ceiling*) manifes.
+    * [ ] `customers`: Master pelanggan & database CRM leads penyewa wisata (`code`, `customer_type`, `institution_name`, `pic_name`, `phone`, `email`, `address`, `city`, `lead_source`, `customer_tier`, `last_trip_date`, `total_trips_count`, `special_notes`, `isActive`).
+  * [ ] **DTOs & Validations (`src/@dto/`)**:
+    * [ ] DTO Organisasi: `CreateCompanyDto`, `CreateBusinessUnitDto`, `CreateCostCenterDto`, `CreateProfitCenterDto`.
+    * [ ] DTO Armada: `CreateVehicleDto`, `UpdateVehicleDto`, `CreateVehicleSeatClassDto`, `VehicleQueryFilterDto`.
+    * [ ] DTO Pelanggan: `CreateCustomerDto`, `UpdateCustomerDto`, `CustomerQueryFilterDto`.
+  * [ ] **Services & Domain Logic**:
+    * [ ] `OrganizationService`: Pengelolaan unit bisnis, hierarki cost center, dan profit center.
+    * [ ] `VehiclesService`: Validasi nopol & kode lambung unik, pendaftaran multi-class kursi, kalkulasi kapasitas fisik total bus.
+    * [ ] `CustomersService`: Pengelolaan database prospek/leads, pencarian autocomplete nama/telepon, auto-update riwayat trip dan frekuensi sewa.
+  * [ ] **Controllers & REST Endpoints**:
+    * [ ] `GET/POST/PUT` `/api/v1/companies`, `/api/v1/business-units`, `/api/v1/cost-centers`, `/api/v1/profit-centers`
+    * [ ] `GET/POST/PUT/DELETE` `/api/v1/vehicles`, `/api/v1/vehicles/:id/seat-classes`
+    * [ ] `GET/POST/PUT/DELETE` `/api/v1/customers`
+  * [ ] **Seeder & Migration**:
+    * [ ] Migration skema tabel organisasi, armada, dan pelanggan/leads.
+    * [ ] Seeder: PT SS Traveling, Unit AKAP & Wisata, Cost Centers (Ciputat, Bengkel, Kantor).
+    * [ ] Seeder: 10 Unit Bus Existing SS Traveling (7 lunas, 3 cicilan leasing sesuai Addendum v1.13) lengkap dengan kursi Sleeper & Luxury 2-1.
+    * [ ] Seeder: Data awal pelanggan B2B (misal: PT Mitra Sejahtera Abadi, SMA 1 Tangerang).
+  * [ ] **Automated Tests**:
+    * [ ] Unit test `VehiclesService` dan `CustomersService`.
+* [ ] **Frontend Implementation (`ss-travel-frontend`)**:
+  * [ ] **API Service Clients (`src/services/`)**:
+    * [ ] `vehicle.service.ts`: Panggilan API `/api/v1/vehicles` & seat classes.
+    * [ ] `customer.service.ts`: Panggilan API `/api/v1/customers`.
+    * [ ] `organization.service.ts`: Panggilan API unit bisnis & cost centers.
+  * [ ] **Pages & Components (`src/pages/`)**:
+    * [ ] Halaman **Manajemen Armada Bus (`/vehicles`)**: Tabel/Grid kartu armada, filter tipe bus, modal tambah/edit armada, dan form konfigurasi kursi multi-class (Sleeper vs Luxury).
+    * [ ] Halaman **Database Pelanggan & CRM Leads (`/customers`)**: Tabel prospek penyewa wisata, filter segmen (Sekolah, Korporat, Komunitas), status tier lead, dan riwayat trip sewa.
+    * [ ] Halaman **Pengaturan Organisasi & Cost Center (`/organization`)**.
 
 ---
 
-### 📌 Tahap 3: Master Aturan Bisnis & Tarif Lapangan
-* [ ] **Models & Entities (`src/@models/`)**:
-  * [ ] `fare_seasons`: Kalender musim tarif (`REGULER`, `TUSLAH_LEBARAN`, `LIBURAN_SEKOLAH`).
-  * [ ] `fare_matrix`: Matriks tarif dasar berversi (origin, destination, seat_class, amount, effective_date).
-  * [ ] `agents`: Master agen tiket offline loket terminal vs online OTA (RedBus, Traveloka) dengan filter kota (`JAKARTA`, `YOGYAKARTA`, `ALL`) dan cara penyelesaian kas.
-  * [ ] `agent_commission_rules`: Aturan komisi agen per kelas kursi (flat per pax atau persentase).
-  * [ ] `crew_rate_rules`: Standar uang makan (`meal_allowance`), premi ritase (`trip_incentive`), dan bonus full seat (`full_seat_bonus`) per peran kru (`DRIVER`, `CO_DRIVER`, `CONDUCTOR`) dengan tipe AKAP (`PER_TRIP`) vs Wisata (`PER_DAY`).
-  * [ ] `restaurants`: Master rumah makan mitra servis makan AKAP (tarif per pax, metode penyelesaian AP bulanan vs UJ).
-  * [ ] `coordinator_fee_rules`: Aturan fee koordinator wilayah Barat & Timur (default Rp10.000/pax).
-* [ ] **DTOs & Validations (`src/@dto/`)**:
-  * [ ] `CreateFareSeasonDto`, `CreateFareMatrixDto`
-  * [ ] `CreateAgentDto`, `CreateAgentCommissionRuleDto`
-  * [ ] `CreateCrewRateRuleDto`, `UpdateCrewRateRuleDto`
-  * [ ] `CreateRestaurantDto`, `UpdateRestaurantDto`
-  * [ ] `CreateCoordinatorFeeRuleDto`
-* [ ] **Services & Domain Logic**:
-  * [ ] `FareMatrixService`: Kalkulasi tarif tiket dinamis sesuai tanggal keberangkatan dan kelas kursi.
-  * [ ] `AgentsService`: Smart filter agen sesuai arah leg rute perjalanan (Jakarta vs Yogya) untuk mencegah salah input manifes.
-  * [ ] `CrewRatesService`: Aturan rate snapshotting hak kru ke SPJ.
-  * [ ] `RestaurantsService` & `CoordinatorFeeService`.
-* [ ] **Controllers & REST Endpoints**:
-  * [ ] `GET/POST/PUT` `/api/v1/fare-seasons`, `/api/v1/fare-matrix`
-  * [ ] `GET/POST/PUT` `/api/v1/agents`, `/api/v1/agents/:id/commission-rules`
-  * [ ] `GET/POST/PUT` `/api/v1/crew-rate-rules`
-  * [ ] `GET/POST/PUT` `/api/v1/restaurants`
-  * [ ] `GET/POST/PUT` `/api/v1/coordinator-fee-rules`
-* [ ] **Database Seeder & Migration**:
-  * [ ] Migration skema aturan tarif, agen, kompensasi kru, dan restoran.
-  * [ ] Seeder: Matriks 10 Role Standar SS Traveling (Addendum v1.11) pada tabel `roles`.
-  * [ ] Seeder: Matriks tarif awal Jakarta-Yogya, aturan komisi agen loket vs OTA, rate kompensasi kru, dan RM Taman Selera.
-* [ ] **Automated Tests**:
-  * [ ] Unit test `FareMatrixService` (penentuan tarif musiman & snapshotting).
-  * [ ] Unit test `AgentsService` (filter arah rute).
+### 📌 Tahap 2: Master Keuangan, Hierarki COA (Kelompok 1-8), & Kas/Bank (BE + FE)
+* [ ] **Backend Implementation (`ss-travel-backend`)**:
+  * [ ] **Models & Entities (`src/@models/`)**:
+    * [ ] `accounts`: COA hierarkis (parent-child, `is_postable`, `normal_balance`, `type`).
+    * [ ] `cash_accounts`: Kas fisik (`Kas Operasional Pool Ciputat`, `Kas Cabang Yogya`, `Kas Kecil Petty Cash`).
+    * [ ] `bank_accounts`: Rekening korporat (`Bank BCA Operasional`, `Bank Mandiri`).
+    * [ ] `fiscal_years` & `fiscal_periods`: Kalender akuntansi bulanan (`OPEN`, `CLOSING`, `CLOSED`).
+    * [ ] `document_sequences`: Generator nomor transaksi anti-tabrakan berbasis row lock.
+  * [ ] **DTOs & Validations**:
+    * [ ] `CreateAccountDto`, `UpdateAccountDto`, `AccountQueryFilterDto`.
+    * [ ] `CreateCashAccountDto`, `CreateBankAccountDto`, `CreateFiscalPeriodDto`.
+  * [ ] **Services & Controllers**:
+    * [ ] `AccountsService` & `AccountsController`: Validasi parent-child akun, pencegahan circular relation, kueri hierarki tree COA.
+    * [ ] `CashBankService` & `CashBankController`: Pengelolaan rekening korporat dan kasir pool penanggung jawab.
+    * [ ] `FiscalPeriodsService` & `FiscalPeriodsController`: Validasi periode aktif dan pencegahan overlap tanggal.
+    * [ ] `DocumentSequenceService`: Algoritma nomor transaksi concurrency-safe.
+  * [ ] **Seeder & Migration**:
+    * [ ] Migration skema tabel COA, kas/bank, dan periode fiskal.
+    * [ ] Seeder: COA Standar Lengkap Perusahaan Bus (Akun 11101 s.d. 82101 sesuai Blueprint Bab 6.2).
+    * [ ] Seeder: Kas Pool Ciputat, Cabang Yogya, Kas Kecil, Bank BCA, serta Kalender Fiskal Aktif Tahun Berjalan.
+  * [ ] **Automated Tests**:
+    * [ ] Unit test `AccountsService` dan `DocumentSequenceService`.
+* [ ] **Frontend Implementation (`ss-travel-frontend`)**:
+  * [ ] **API Service Clients (`src/services/`)**:
+    * [ ] `account.service.ts`: Panggilan API `/api/v1/accounts` (tree kueri).
+    * [ ] `cash-bank.service.ts`: Panggilan API `/api/v1/cash-accounts` & `/api/v1/bank-accounts`.
+    * [ ] `fiscal-period.service.ts`: Panggilan API `/api/v1/fiscal-periods`.
+  * [ ] **Pages & Components (`src/pages/`)**:
+    * [ ] Halaman **Bagan Akun / COA (`/accounts`)**: Tampilan visual pohon hierarki akun parent-child, badge tipe akun, indikator header vs postable, dan modal tambah/edit akun.
+    * [ ] Halaman **Kas & Rekening Bank (`/cash-bank`)**: Manajemen kas pool, kas kecil garasi, dan rekening korporat perusahaan.
+    * [ ] Halaman **Periode Fiskal Akuntansi (`/fiscal-periods`)**: Kalender akuntansi bulanan dan status periode (Open/Closed).
 
 ---
 
-### 📌 Tahap 4: Accounting Core Engine (Jantung ERP)
-* [ ] **Models & Entities (`src/@models/`)**:
-  * [ ] `journal_entries`: Header jurnal umum (`journal_no`, `journal_date`, `period_id`, `source_type`, `source_id`, `status: POSTED`, `reversal_of_id`).
-  * [ ] `journal_lines`: Baris debet & kredit dengan dimensi lengkap (`account_id`, `debit`, `credit`, `business_unit_id`, `cost_center_id`, `profit_center_id`, `spj_id`, `vehicle_id`, `counterparty_type`, `counterparty_id`).
-  * [ ] `accounting_events`: Jejak idempotensi transaksi posting (`source_type`, `source_id`, `event_type`, `idempotency_key`, `journal_entry_id`).
-* [ ] **DTOs & Validations (`src/@dto/`)**:
-  * [ ] `CreateManualJournalDto`, `JournalLineInputDto`
-  * [ ] `ReverseJournalDto`
-  * [ ] `JournalFilterQueryDto` (filter nomor jurnal, rentang tanggal, akun, dimensi trip/bus)
-* [ ] **Services & Domain Logic**:
-  * [ ] `AccountingPostingService`: Satu-satunya pintu pembuatan jurnal:
-    * Eksekusi transaksi atomik via `DataSource.transaction()`.
-    * Row lock dokumen sumber.
-    * Validasi akun aktif & `is_postable = true`.
-    * Validasi tanggal berada dalam periode akuntansi yang `OPEN`.
-    * Validasi keseimbangan mutlak Total Debet = Total Kredit menggunakan `MoneyHelper.isBalanced()`.
-    * Validasi idempotency key untuk mencegah posting ganda dari API/jaringan.
-  * [ ] `JournalReversalService`: Mekanisme pembatalan jurnal posted melalui pembuatan jurnal pembalik (*reversal*) otomatis dengan referensi `reversal_of_id`.
-* [ ] **Controllers & REST Endpoints**:
-  * [ ] `GET` `/api/v1/journals` (daftar jurnal terposting dengan paginasi & filter dimensi)
-  * [ ] `GET` `/api/v1/journals/:id` (detail jurnal dan rincian lines)
-  * [ ] `POST` `/api/v1/journals/manual` (pembuatan jurnal memorial berizin khusus)
-  * [ ] `POST` `/api/v1/journals/:id/reverse` (eksekusi reversal jurnal)
-* [ ] **Database Migration**:
-  * [ ] Migration tabel `journal_entries`, `journal_lines`, dan `accounting_events` dengan indeks FK dan unique constraint idempotency.
-* [ ] **Automated Tests**:
-  * [ ] Unit test `AccountingPostingService`:
-    * Sukses memposting jurnal seimbang debet = kredit.
-    * Menolak jurnal tidak seimbang (throw `JOURNAL_NOT_BALANCED`).
-    * Menolak posting pada periode `CLOSED` (throw `PERIOD_CLOSED`).
-    * Menolak posting pada akun header non-postable.
-    * Menolak posting duplikat dengan idempotency key yang sama.
-    * Sukses membuat jurnal reversal pembalik.
+### 📌 Tahap 3: Master Aturan Bisnis & Tarif Lapangan (BE + FE)
+* [ ] **Backend Implementation (`ss-travel-backend`)**:
+  * [ ] **Models & Entities (`src/@models/`)**:
+    * [ ] `fare_seasons`, `fare_matrix`: Kalender musim tarif & matriks tarif dinamis berversi.
+    * [ ] `agents`, `agent_commission_rules`: Master agen offline loket vs online OTA (RedBus, Traveloka), filter kota, dan aturan komisi berjenjang per kelas kursi.
+    * [ ] `crew_rate_rules`: Standar uang makan, premi ritase, dan bonus full seat kru (AKAP `PER_TRIP` vs Wisata `PER_DAY`).
+    * [ ] `restaurants`: Master rumah makan mitra servis makan AKAP.
+    * [ ] `coordinator_fee_rules`: Aturan fee koordinator wilayah Barat & Timur.
+  * [ ] **DTOs, Services, & Controllers**:
+    * [ ] `FareMatrixService`: Penentuan tarif tiket dinamis sesuai tanggal dan kelas kursi.
+    * [ ] `AgentsService`: Smart filter agen sesuai arah leg rute (Jakarta vs Yogya).
+    * [ ] `CrewRatesService`: Aturan rate snapshotting kompensasi kru.
+    * [ ] Controller untuk masing-masing master aturan dengan Swagger dan `@RequirePermissions`.
+  * [ ] **Seeder & Migration**:
+    * [ ] Migration tabel tarif, agen, komisi, kompensasi kru, dan restoran.
+    * [ ] Seeder: Matriks 10 Role Standar SS Traveling (Addendum v1.11) pada tabel `roles`.
+    * [ ] Seeder: Matriks tarif awal Jakarta-Yogya, komisi agen loket vs OTA, rate kompensasi kru, dan RM Taman Selera.
+  * [ ] **Automated Tests**:
+    * [ ] Unit test kalkulasi tarif musiman dan filter arah rute agen.
+* [ ] **Frontend Implementation (`ss-travel-frontend`)**:
+  * [ ] **API Service Clients (`src/services/`)**:
+    * [ ] `fare.service.ts`, `agent.service.ts`, `crew-rate.service.ts`, `restaurant.service.ts`.
+  * [ ] **Pages & Components (`src/pages/`)**:
+    * [ ] Halaman **Matriks Tarif & Musim Tiket (`/fares`)**: Pengaturan kalender musim (Reguler, Tuslah, Liburan) dan matriks harga tiket per kelas kursi.
+    * [ ] Halaman **Mitra Agen & Aturan Komisi (`/agents`)**: Pengelolaan agen loket fisik vs OTA, pengaturan komisi (flat per tiket vs persentase).
+    * [ ] Halaman **Standar Kompensasi Kru (`/crew-rates`)**: Tabel tarif uang makan & premi harian/ritase supir dan kondektur.
+    * [ ] Halaman **Restoran Mitra & Korlap (`/partners`)**: Manajemen rumah makan servis makan dan fee koordinator lapangan.
 
 ---
 
-### 📌 Tahap 5A: Perencanaan Jadwal Bus & Dispatch Plotting (`trip_schedules`)
-* [ ] **Models & Entities (`src/@models/`)**:
-  * [ ] `trip_schedules`: Dokumen rencana jadwal dinas bus (`schedule_no`, `service_type: AKAP/TOURISM`, `vehicle_id`, `planned_departure_at`, `planned_return_at`, `origin`, `destination`, `customer_id`, `pic_name`, `pic_phone`, `pickup_notes`, `itinerary_notes`, `planned_driver_1_id`, `planned_driver_2_id`, `planned_conductor_id`, `status: DRAFT/CONFIRMED/SPJ_ISSUED/COMPLETED/CANCELLED`, `spj_id`).
-* [ ] **DTOs & Validations (`src/@dto/`)**:
-  * [ ] `CreateTripScheduleDto` (rute, bus, rencana jam berangkat/pulang, kru, customer/lead wisata, titik jemput)
-  * [ ] `UpdateTripScheduleDto`
-  * [ ] `ScheduleConflictCheckDto` (cek irisan jadwal bus & kru)
-  * [ ] `TripScheduleQueryFilterDto` (filter tanggal, nopol bus, status jadwal, unit usaha)
-* [ ] **Services & Domain Logic (`src/modules/`)**:
-  * [ ] `TripSchedulesService`:
-    * Generator nomor jadwal unik `SCH/AKP/YYMM/XXXX` atau `SCH/WIS/YYMM/XXXX` via `DocumentSequenceService`.
-    * **Validasi Anti-Bentrok (*Overlap Conflict Validation*)**: Menolak plotting bus atau kru yang sama pada rentang waktu yang beririsan.
-    * **Peringatan Jeda Istirahat (*Rest Buffer Warning*)**: Alert jika jeda kepulangan armada dengan jadwal berikutnya kurang dari 3 jam.
-    * **Integrasi Otomatis Lead Penyewa**: Pendaftaran otomatis lead baru ke `customers` jika nomor telepon belum ada di database.
-    * **Aksi 1-Klik Generate SPJ**: Menyalin seluruh data matang jadwal ke dokumen `spjs` saat armada siap jalan di hari H.
-* [ ] **Controllers & REST Endpoints (`src/modules/`)**:
-  * [ ] `GET/POST/PUT` `/api/v1/trip-schedules`
-  * [ ] `GET` `/api/v1/trip-schedules/calendar` (data visualisasi timeline kalender/Gantt armada)
-  * [ ] `POST` `/api/v1/trip-schedules/:id/confirm` (mengunci jadwal & reservasi armada)
-  * [ ] `POST` `/api/v1/trip-schedules/:id/generate-spj` (menerbitkan SPJ dari jadwal)
-  * [ ] `POST` `/api/v1/trip-schedules/:id/cancel`
-* [ ] **Database Migration**:
-  * [ ] Migration tabel `trip_schedules`.
-* [ ] **Automated Tests**:
-  * [ ] Unit test `TripSchedulesService` (deteksi tabrakan jadwal bus & kru, buffer time warning, auto-lead).
+### 📌 Tahap 4: Accounting Core Engine & Jurnal Umum (BE + FE)
+* [ ] **Backend Implementation (`ss-travel-backend`)**:
+  * [ ] **Models & Entities (`src/@models/`)**:
+    * [ ] `journal_entries`, `journal_lines`, `accounting_events`.
+  * [ ] **DTOs & Validations**:
+    * [ ] `CreateManualJournalDto`, `JournalLineInputDto`, `ReverseJournalDto`, `JournalFilterQueryDto`.
+  * [ ] **Services & Domain Logic**:
+    * [ ] `AccountingPostingService`: Posting satu pintu via `DataSource.transaction()`, row lock, validasi akun postable & aktif, validasi periode terbuka, validasi debet=kredit dengan `MoneyHelper.isBalanced()`, dan proteksi idempotency key.
+    * [ ] `JournalReversalService`: Pembuatan jurnal pembalik (*reversal*) otomatis tanpa edit/hapus jurnal lama.
+  * [ ] **Controllers & REST Endpoints**:
+    * [ ] `GET` `/api/v1/journals`, `GET` `/api/v1/journals/:id`
+    * [ ] `POST` `/api/v1/journals/manual` (pembuatan jurnal memorial berizin khusus)
+    * [ ] `POST` `/api/v1/journals/:id/reverse` (eksekusi reversal jurnal)
+  * [ ] **Automated Tests**:
+    * [ ] Unit test posting jurnal seimbang, penolakan jurnal tak seimbang, proteksi periode closed, dan reversal.
+* [ ] **Frontend Implementation (`ss-travel-frontend`)**:
+  * [ ] **API Service Clients (`src/services/`)**:
+    * [ ] `journal.service.ts`: Panggilan API `/api/v1/journals`.
+  * [ ] **Pages & Components (`src/pages/`)**:
+    * [ ] Halaman **Daftar Jurnal Umum (`/journals`)**: Tabel jurnal terposting, filter rentang tanggal, filter akun, filter dimensi (SPJ/Bus), dan modal detail rincian baris debet-kredit.
+    * [ ] Modal **Entri Jurnal Memorial (`/journals/create`)**: Form pembuatan jurnal multi-line dengan kalkulator live debet-kredit balance indicator.
+    * [ ] Aksi **Reversal Jurnal**: Tombol reversal dengan dialog konfirmasi alasan pembatalan.
 
 ---
 
-### 📌 Tahap 5B: Eksekusi SPJ Life Cycle & Multi-Leg State Machine (`spjs`)
-* [ ] **Models & Entities (`src/@models/`)**:
-  * [ ] `spjs`: Dokumen Surat Perintah Jalan (`spj_no`, `service_type: AKAP/TOURISM`, `parent_spj_id`, `business_unit_id`, `operational_status`, `financial_status`, `issued_at`, `closed_at`).
-  * [ ] `spj_legs`: Segmen rute perjalanan (`sequence_no`, `direction: DEPARTURE/RETURN`, `origin`, `destination`, `meal_pax_count`, `meal_discrepancy_notes`, `status`).
-  * [ ] `spj_crew_assignments`: Penugasan kru fleksibel (2–4+ kru) per leg perjalanan (`crew_id`, `role: DRIVER/CO_DRIVER/CONDUCTOR`).
-* [ ] **DTOs & Validations (`src/@dto/`)**:
-  * [ ] `CreateSpjDto` (pilihan layanan AKAP/Wisata, armada bus, rute legs, kru, atau generated dari schedule_id)
-  * [ ] `UpdateSpjDto`, `AssignCrewDto`, `ReplaceCrewDto`
-  * [ ] `SpjQueryFilterDto` (filter status operasional, finansial, nopol bus, tanggal)
-* [ ] **Services & Domain Logic**:
-  * [ ] `SpjService`:
-    * Generator cerdas nomor dokumen `SPJ/AKP/YYMM/XXXX` atau `SPJ/WIS/YYMM/XXXX` via `DocumentSequenceService`.
-    * State machine `operational_status`: `DRAFT` $\to$ `ISSUED` $\to$ `IN_PROGRESS` $\to$ `COMPLETED` / `CANCELLED`.
-    * Validasi kapasitas: Memastikan total penumpang manifes tidak melebihi kapasitas fisik kelas kursi armada (`vehicle_seat_classes`).
-    * Validasi kru minimal: Wajib memiliki minimal 1 orang bertindak sebagai `DRIVER`.
-    * Otomasi Rate Snapshotting: Menyalin nilai uang makan dan premi dari `crew_rate_rules` ke `crew_meal_payments` saat penugasan.
-    * Alur Breakdown Darurat: Penautan `parent_spj_id` saat bus mogok dan penerbitan SPJ pengganti tanpa duplikasi omzet (Skenario 3).
-* [ ] **Controllers & REST Endpoints**:
-  * [ ] `GET` `/api/v1/spjs`, `GET` `/api/v1/spjs/:id`
-  * [ ] `POST` `/api/v1/spjs` (penerbitan dokumen SPJ baru)
-  * [ ] `POST` `/api/v1/spjs/:id/start` (keberangkatan armada $\to$ `IN_PROGRESS`)
-  * [ ] `POST` `/api/v1/spjs/:id/complete` (kedatangan di garasi $\to$ `COMPLETED`)
-  * [ ] `POST` `/api/v1/spjs/:id/replace-crew` (pergantian/pembatalan kru di tengah jalan)
-  * [ ] `POST` `/api/v1/spjs/:id/emergency-replace-vehicle` (penerbitan SPJ pengganti insiden)
-* [ ] **Database Migration**:
-  * [ ] Migration tabel `spjs`, `spj_legs`, dan `spj_crew_assignments`.
-* [ ] **Automated Tests**:
-  * [ ] Unit test transisi status state machine SPJ.
-  * [ ] Unit test validasi hard-limit kapasitas kursi dan kru minimal 1 Driver.
-  * [ ] Unit test penautan `parent_spj_id` (Skenario 3).
+### 📌 Tahap 5: Perencanaan Jadwal Bus & Eksekusi SPJ (BE + FE)
+* [ ] **Backend Implementation (`ss-travel-backend`)**:
+  * [ ] **Models & Entities (`src/@models/`)**:
+    * [ ] `trip_schedules`: Dokumen rencana jadwal dinas bus (`schedule_no`, `service_type`, `vehicle_id`, `planned_departure_at`, `planned_return_at`, `origin`, `destination`, `customer_id`, `pic_name`, `pic_phone`, `pickup_notes`, `planned_driver_1_id`, `planned_driver_2_id`, `planned_conductor_id`, `status`, `spj_id`).
+    * [ ] `spjs`: Dokumen Surat Perintah Jalan (`spj_no`, `service_type`, `parent_spj_id`, `operational_status`, `financial_status`).
+    * [ ] `spj_legs`, `spj_crew_assignments`.
+  * [ ] **Services & Domain Logic**:
+    * [ ] `TripSchedulesService`: Generator nomor jadwal, validasi anti-bentrok armada & kru (*Overlap Conflict*), peringatan buffer rest time (minimal 3 jam), auto-link customer/lead wisata, dan aksi 1-klik *Generate SPJ*.
+    * [ ] `SpjService`: State machine status operasional SPJ (`DRAFT` $\to$ `ISSUED` $\to$ `IN_PROGRESS` $\to$ `COMPLETED`), validasi kapasitas kursi, validasi minimal 1 Driver, snapshot rate hak kru, dan penautan darurat `parent_spj_id` (Skenario 3).
+  * [ ] **Controllers & REST Endpoints**:
+    * [ ] `GET/POST/PUT` `/api/v1/trip-schedules`, `/api/v1/trip-schedules/calendar`
+    * [ ] `POST` `/api/v1/trip-schedules/:id/confirm`, `/api/v1/trip-schedules/:id/generate-spj`
+    * [ ] `GET/POST` `/api/v1/spjs`, `/api/v1/spjs/:id/start`, `/api/v1/spjs/:id/complete`, `/api/v1/spjs/:id/replace-crew`
+  * [ ] **Automated Tests**:
+    * [ ] Unit test deteksi bentrok jadwal bus & kru, buffer time alert, dan transisi lifecycle SPJ.
+* [ ] **Frontend Implementation (`ss-travel-frontend`)**:
+  * [ ] **API Service Clients (`src/services/`)**:
+    * [ ] `trip-schedule.service.ts`, `spj.service.ts`.
+  * [ ] **Pages & Components (`src/pages/`)**:
+    * [ ] Halaman **Jadwal & Plotting Armada (`/schedules`)**: Visualisasi **Kalender Timeline Armada (Gantt Chart)** per bus `SS-01` s.d. `SS-10`, indikator warna status, peringatan jadwal bentrok / sisa istirahat mepet.
+    * [ ] Form **Booking Jadwal Wisata & AKAP Mingguan**: Input bus, kru, titik jemput/drop, dan pencarian instan nama/nomor WA penyewa (CRM auto-complete).
+    * [ ] Halaman **Operasional SPJ Dispatcher (`/spjs`)**: Monitoring bus aktif di jalan, tombol aksi 1-klik terbitkan SPJ dari jadwal, tombol keberangkatan (`IN_PROGRESS`), kepulangan (`COMPLETED`), dan pergantian kru darurat.
 
 ---
 
-### 📌 Tahap 6: Uang Jalan (UJ), Biaya SPJ, & Deklarasi Penerimaan
-* [ ] **Models & Entities (`src/@models/`)**:
-  * [ ] `spj_expenses`: Seluruh biaya perjalanan (BBM solar + liter + odometer, tol, parkir, cuci, retribusi terminal, penginapan).
-  * [ ] `spj_uj`: Amplop pertanggungjawaban UJ kru ($1:N$ per SPJ).
-  * [ ] `spj_uj_disbursements`: Baris pencairan dana UJ (multi-line: kas pool awal + transfer bank darurat).
-  * [ ] `spj_uj_expenses`: Alokasi nota pengeluaran operasional ke amplop UJ.
-  * [ ] `spj_uj_returns`: Pengembalian fisik sisa dana UJ ke laci kasir pool.
-  * [ ] `spj_uj_additional_requests`: Permintaan tambahan UJ di jalan.
-  * [ ] `spj_revenue_declarations`: Deklarasi penerimaan operasional (tiket langsung naik pool, kargo motor, kargo kardus).
-  * [ ] `crew_meal_payments`: Rincian hak kompensasi kru (uang makan, premi, bonus full seat, komisi kargo).
-* [ ] **DTOs & Validations (`src/@dto/`)**:
-  * [ ] `DisburseUjDto` (pilihan akun kas/bank, nominal, metode pencairan awal/tambahan)
-  * [ ] `CreateSpjExpenseDto` (kategori biaya, nominal, liter, odometer, bukti upload)
-  * [ ] `DeclareRevenueDto` (jenis penerimaan tiket/kargo, tarif bruto, komisi dinamis 20%)
-  * [ ] `ReturnUjDto`, `EarlyPayoutCrewDto` (pencairan sebagian premi di jalan)
-* [ ] **Services & Domain Logic**:
-  * [ ] `SpjUjService`:
-    * Multi-line disbursement: Akumulasi plafon UJ yang dipegang kru.
-    * Jurnal atomik pencairan UJ: Debit `13101 Uang Jalan Kru`, Kredit Kas/Bank.
-    * Estafet UJ (*UJ Rollover*): Pengalihan saldo sisa UJ antar-SPJ saat breakdown (Skenario 3).
-  * [ ] `SpjExpensesService`: Validasi nota fisik, pencatatan odometer, dan pemisahan sumber pembayaran (UJ vs Kas Kantor).
-  * [ ] `SpjRevenueService`: Prinsip Anti-Netting (setoran tunai tiket/kargo wajib 100% bruto dan dilarang dipotong mandiri di jalan).
-* [ ] **Controllers & REST Endpoints**:
-  * [ ] `GET/POST` `/api/v1/spjs/:id/uj/disburse`
-  * [ ] `POST` `/api/v1/spjs/:id/uj/expenses`
-  * [ ] `POST` `/api/v1/spjs/:id/uj/returns`
-  * [ ] `POST` `/api/v1/spjs/:id/uj/additional-requests`
-  * [ ] `GET/POST` `/api/v1/spjs/:id/expenses`
-  * [ ] `GET/POST` `/api/v1/spjs/:id/revenue-declarations`
-  * [ ] `POST` `/api/v1/spjs/:id/crew-payments/early-payout` (pencairan nafkah premi di jalan)
-* [ ] **Database Migration**:
-  * [ ] Migration tabel `spj_expenses`, `spj_uj`, `spj_uj_disbursements`, `spj_uj_expenses`, `spj_uj_returns`, `spj_revenue_declarations`, `crew_meal_payments`.
-* [ ] **Automated Tests**:
-  * [ ] Unit test multi-line UJ disbursement & jurnal debit UJ.
-  * [ ] Unit test UJ rollover antar-SPJ (Skenario 3).
-  * [ ] Unit test kalkulasi komisi dinamis kargo kru 20%.
+### 📌 Tahap 6: Uang Jalan (UJ), Biaya SPJ, & Deklarasi Penerimaan (BE + FE)
+* [ ] **Backend Implementation (`ss-travel-backend`)**:
+  * [ ] **Models & Entities (`src/@models/`)**:
+    * [ ] `spj_expenses` (BBM solar + liter + odometer, tol, parkir, retribusi).
+    * [ ] `spj_uj`, `spj_uj_disbursements` (multi-line), `spj_uj_expenses`, `spj_uj_returns`, `spj_uj_additional_requests`.
+    * [ ] `spj_revenue_declarations` (tiket tunai, kargo motor, kargo kardus dengan komisi dinamis kru 20%).
+    * [ ] `crew_meal_payments` (hak makan, premi, bonus full seat, komisi kargo).
+  * [ ] **Services & Domain Logic**:
+    * [ ] `SpjUjService`: Multi-line disbursement, pencatatan otomatis debit UJ `13101`, dan estafet UJ (*UJ Rollover*) saat breakdown (Skenario 3).
+    * [ ] `SpjExpensesService`: Validasi nota fisik & odometer.
+    * [ ] `SpjRevenueService`: Penegakan prinsip Anti-Netting kas bruto.
+  * [ ] **Controllers & Endpoints**:
+    * [ ] Endpoint pencairan UJ, pengajuan tambahan UJ, input biaya SPJ, dan deklarasi penerimaan tiket/kargo.
+  * [ ] **Automated Tests**:
+    * [ ] Unit test multi-line disbursement, UJ rollover, dan komisi dinamis kargo.
+* [ ] **Frontend Implementation (`ss-travel-frontend`)**:
+  * [ ] **API Service Clients (`src/services/`)**:
+    * [ ] `spj-finance.service.ts`: Panggilan API UJ, expenses, dan revenue declarations.
+  * [ ] **Pages & Components (`src/pages/`)**:
+    * [ ] Tab **Uang Jalan & Pengeluaran SPJ (`/spjs/:id/finance`)**: Form pencairan UJ bertahap (kasir/bank), rincian nota BBM (liter + foto odometer), tol, dan fasilitas perjalanan.
+    * [ ] Form **Deklarasi Penerimaan Kas Kru**: Form input tiket langsung naik pool dan resi kargo (pilihan kargo motor vs kardus + slider/preset persentase komisi kru 20%).
+    * [ ] Modal **Pencairan Nafkah Premi di Jalan (*Early Payout*)**: Form transfer uang keluarga kru di tengah tour wisata (Skenario 2).
 
 ---
 
-### 📌 Tahap 7: Meja Kasir Pool, Settlement Kas Kru, & Resolusi Selisih
-* [ ] **Models & Entities (`src/@models/`)**:
-  * [ ] `crew_cash_settlements`: Header verifikasi rekonsiliasi kasir pool per SPJ (`uj_status`, `revenue_status`, `status: SETTLED/DISCREPANCY`).
-  * [ ] `crew_cash_remittances`: Setoran fisik uang tunai ke kasir pool.
-  * [ ] `crew_cash_remittance_allocations`: Alokasi setoran ke deklarasi penerimaan tiket/kargo.
-  * [ ] `crew_cash_discrepancies`: Temuan selisih kas (kurang setor, nota BBM hilang, salah kembalian).
-* [ ] **DTOs & Validations (`src/@dto/`)**:
-  * [ ] `CreateCrewSettlementDto`
-  * [ ] `ProcessRemittanceDto`
-  * [ ] `RecordDiscrepancyDto` (catatan nota hilang, odometer, kronologi)
-  * [ ] `ResolveDiscrepancyDto` (putusan FM: `DISPENSASI_PERUSAHAAN` vs `KLAIM_KRU`)
-* [ ] **Services & Domain Logic**:
-  * [ ] `CashierSettlementService`:
-    * Gerbang Validasi: Settlement hanya sah jika `uj_status = BALANCED` dan `revenue_status = MATCHED` (atau `DISCREPANCY_RECORDED`).
-    * Lapis 1 Musyawarah Kru: Talangan mandiri antar-kru di meja kasir $\to$ fisik genap, status `MATCHED` tanpa catatan sengketa (Skenario 4 Kasus 1).
-    * Lapis 2 Jalur Sistemik: Nota BBM hilang dicatat di `crew_cash_discrepancies` $\to$ status `DISCREPANCY` (Skenario 4 Kasus 2).
-    * Otorisasi Finance Manager: Mengubah status selisih menjadi `RESOLVED` (Dispensasi `58101` atau Piutang Klaim Kru `12901`).
-    * Tutup Buku Unblocked: Pemanfaatan akun penampung neraca `11999` agar SPJ berselisih tidak menahan tutup periode.
-    * Jurnal Rekonsiliasi Akhir SPJ: Mengirimkan instruksi posting multi-line ke `AccountingPostingService` (menutup saldo UJ `13101` menjadi Rp 0, mengakui seluruh beban riil, pendapatan tiket/kargo, dan kas fisik masuk/keluar).
-* [ ] **Controllers & REST Endpoints**:
-  * [ ] `GET/POST` `/api/v1/spjs/:id/cash-settlement`
-  * [ ] `POST` `/api/v1/spjs/:id/cash-settlement/remit` (penerimaan setoran kasir pool)
-  * [ ] `POST` `/api/v1/spjs/:id/cash-settlement/verify` (verifikasi akhir & posting jurnal)
-  * [ ] `POST` `/api/v1/discrepancies/:id/resolve` (otorisasi keputusan Finance Manager)
-* [ ] **Database Migration**:
-  * [ ] Migration tabel `crew_cash_settlements`, `crew_cash_remittances`, `crew_cash_remittance_allocations`, `crew_cash_discrepancies`.
-* [ ] **Automated Tests**:
-  * [ ] Unit test rekonsiliasi normal AKAP PP (Skenario 1: jurnal imbang Rp 16.680.000, saldo UJ Rp 0).
-  * [ ] Unit test resolusi selisih kasir & dispensasi perusahaan (Skenario 4: jurnal imbang Rp 11.860.000).
+### 📌 Tahap 7: Meja Kasir Pool, Settlement Kas Kru, & Resolusi Selisih (BE + FE)
+* [ ] **Backend Implementation (`ss-travel-backend`)**:
+  * [ ] **Models & Entities (`src/@models/`)**:
+    * [ ] `crew_cash_settlements`, `crew_cash_remittances`, `crew_cash_remittance_allocations`, `crew_cash_discrepancies`.
+  * [ ] **Services & Domain Logic**:
+    * [ ] `CashierSettlementService`: Gerbang validasi UJ=BALANCED & Revenue=MATCHED/DISCREPANCY_RECORDED, alur musyawarah kru (Lapis 1) vs pencatatan sistemik (Lapis 2), otorisasi FM dispensasi `58101` vs klaim kru `12901`, penampung neraca `11999` (tutup buku unblocked), dan pengiriman instruksi posting jurnal rekonsiliasi SPJ ke `AccountingPostingService` (menutup saldo UJ `13101` menjadi Rp 0).
+  * [ ] **Controllers & Endpoints**:
+    * [ ] Endpoint meja kasir pool, verifikasi settlement, dan resolusi keputusan selisih Finance Manager.
+  * [ ] **Automated Tests**:
+    * [ ] Unit test simulasi Skenario 1 (normal imbang Rp 16.68jt) dan Skenario 4 (selisih nota hilang & dispensasi FM Rp 11.86jt).
+* [ ] **Frontend Implementation (`ss-travel-frontend`)**:
+  * [ ] **API Service Clients (`src/services/`)**:
+    * [ ] `cashier.service.ts`: Panggilan API meja kasir pool & resolusi selisih.
+  * [ ] **Pages & Components (`src/pages/`)**:
+    * [ ] Halaman **Meja Kasir Pool (`/cashier`)**: Antarmuka kasir pool saat bus tiba di garasi.
+    * [ ] Widget **Dua Kantong Kas Kru (Anti-Netting)**:
+      * Kantong 1: Pertanggungjawaban UJ (Plafon vs Nota vs Sisa Fisik Dikembalikan $\to$ Status UJ).
+      * Kantong 2: Setoran Bruto Penerimaan Tiket & Kargo (Target Manifes vs Uang Fisik Diserahkan $\to$ Status Setoran).
+    * [ ] Cetak **Bukti Kas Masuk (BKM) & Bukti Kas Keluar (BKK)** fisik kasir.
+    * [ ] Modal **Resolusi Selisih Kasir & Investigasi**: Layar otorisasi khusus Finance Manager untuk memeriksa data GPS dan memilih putusan (Dispensasi Perusahaan vs Klaim Gaji Kru).
 
 ---
 
-### 📌 Tahap 8: Modul Piutang (AR) & Utang (AP)
-* [ ] **Models & Entities (`src/@models/`)**:
-  * [ ] `ar_invoices`, `ar_invoice_lines`, `ar_receipts`, `ar_allocations`: Piutang sewa charter wisata, piutang AR OTA RedBus/Traveloka, pelunasan transfer bank.
-  * [ ] `ap_invoices`, `ap_invoice_lines`, `ap_payments`, `ap_allocations`: Utang vendor restoran servis makan mitra, tagihan bengkel rekanan/derek tol, utang komisi agen.
-* [ ] **DTOs & Validations (`src/@dto/`)**:
-  * [ ] `CreateArInvoiceDto`, `CreateArReceiptDto`, `AllocateArReceiptDto`
-  * [ ] `CreateApInvoiceDto`, `CreateApPaymentDto`, `AllocateApPaymentDto`
-  * [ ] `PullUnbilledSpjForRestaurantDto` (form tarik SPJ tagihan restoran)
-* [ ] **Services & Domain Logic**:
-  * [ ] `ApService`:
-    * Tagihan Servis Makan Restoran Mitra: Form tarik SPJ belum ditagih, validasi kupon makan riil vs manifes (`meal_pax_count`), proteksi anti-double billing, nol dampak ke UJ kas kru (Skenario 1).
-    * Tagihan Tempo Bengkel/Derek: Pengakuan utang vendor rekanan teratribusi ke `vehicle_id` bus yang rusak (Skenario 3).
-    * Pembayaran utang komisi agen offline/OTA & cashback rekanan B2B wisata (`54103`) via bank.
-  * [ ] `ArService`:
-    * Siklus Sewa Wisata: Penerimaan DP 30% ke liabilitas `24101 Pendapatan Diterima di Muka`, pelunasan invoice 70%, dan pelepasan DP menjadi Pendapatan Sewa `42101` saat SPJ completed (Skenario 2).
-* [ ] **Controllers & REST Endpoints**:
-  * [ ] `GET/POST/PUT` `/api/v1/ar/invoices`, `/api/v1/ar/invoices/:id/post`
-  * [ ] `POST` `/api/v1/ar/receipts`, `/api/v1/ar/receipts/:id/allocate`
-  * [ ] `GET/POST/PUT` `/api/v1/ap/invoices`, `/api/v1/ap/invoices/:id/post`
-  * [ ] `GET` `/api/v1/ap/invoices/unbilled-spjs/:restaurantId` (tarik SPJ belum ditagih RM)
-  * [ ] `POST` `/api/v1/ap/payments`, `/api/v1/ap/payments/:id/allocate`
-* [ ] **Database Migration**:
-  * [ ] Migration tabel `ar_invoices`, `ar_invoice_lines`, `ar_receipts`, `ar_allocations`, `ap_invoices`, `ap_invoice_lines`, `ap_payments`, `ap_allocations`.
-* [ ] **Automated Tests**:
-  * [ ] Unit test siklus DP & pelunasan piutang charter wisata (Skenario 2).
-  * [ ] Unit test penagihan servis makan mitra & anti-double billing (Skenario 1).
+### 📌 Tahap 8: Modul Piutang (AR) & Utang (AP) (BE + FE)
+* [ ] **Backend Implementation (`ss-travel-backend`)**:
+  * [ ] **Models & Entities (`src/@models/`)**:
+    * [ ] `ar_invoices`, `ar_invoice_lines`, `ar_receipts`, `ar_allocations`.
+    * [ ] `ap_invoices`, `ap_invoice_lines`, `ap_payments`, `ap_allocations`.
+  * [ ] **Services & Controllers**:
+    * [ ] `ApService`: Tagihan berkala servis makan restoran mitra (tarik SPJ belum ditagih, validasi kupon riil vs manifes `meal_pax_count`, anti-double bill, bebas beban kas kru), tagihan vendor bengkel/derek bus rusak (Skenario 3), dan pembayaran komisi agen.
+    * [ ] `ArService`: Siklus DP sewa wisata 30% (`24101`), pelunasan invoice 70%, AR OTA RedBus/Traveloka, dan pengakuan pendapatan sewa 100% saat SPJ completed.
+  * [ ] **Automated Tests**:
+    * [ ] Unit test siklus AR wisata (Skenario 2) dan tagihan servis makan AP berkala (Skenario 1).
+* [ ] **Frontend Implementation (`ss-travel-frontend`)**:
+  * [ ] **API Service Clients (`src/services/`)**:
+    * [ ] `ar.service.ts`, `ap.service.ts`.
+  * [ ] **Pages & Components (`src/pages/`)**:
+    * [ ] Halaman **Tagihan Vendor / AP Invoices (`/ap-invoices`)**: Daftar tagihan rekanan, form tagihan baru dengan fitur khusus modal **`[+ Tarik SPJ Belum Ditagih]`** untuk restoran mitra, input kupon riil, serta peringatan otomatis jika melebihi manifes.
+    * [ ] Halaman **Piutang Usaha / AR Invoices (`/ar-invoices`)**: Penerbitan invoice kontrak sewa wisata, invoice pelunasan, dan pencatatan penerimaan mutasi bank (alokasi pelunasan invoice).
+    * [ ] Dialog **Pembayaran Komisi Agen & Cashback Wisata B2B**: Eksekusi transfer bank atas hak agen dan mitra sewa bus.
 
 ---
 
-### 📌 Tahap 9: Laporan Finansial, Trip Profitability (Margin), & Tutup Buku
-* [ ] **DTOs & Validations (`src/@dto/`)**:
-  * [ ] `ReportFilterDto` (rentang tanggal, unit usaha, armada bus, rute)
-  * [ ] `PeriodCloseChecklistDto`
-* [ ] **Services & Domain Logic**:
-  * [ ] `FinancialReportsService`:
-    * Buku Besar (General Ledger) dan Neraca Saldo (Trial Balance) bersumber murni dari baris jurnal `POSTED`.
-    * Laporan Laba Rugi Perusahaan dan Laporan Neraca.
-  * [ ] `TripProfitabilityService`:
-    * Laporan Margin Kontribusi SPJ:
+### 📌 Tahap 9: Laporan Finansial, Trip Profitability (Margin), & Tutup Buku (BE + FE)
+* [ ] **Backend Implementation (`ss-travel-backend`)**:
+  * [ ] **Services & Controllers**:
+    * [ ] `FinancialReportsService`: Buku Besar (GL) & Neraca Saldo (Trial Balance) bersumber murni dari baris jurnal `POSTED`, Laporan Laba Rugi, dan Neraca.
+    * [ ] `TripProfitabilityService`: Laporan Margin Kontribusi SPJ:
       * Tampilan per Bus (`vehicle_id`): Isolasi kinerja aset individual (defisit bus rusak `SS-01` vs margin bus pengganti `SS-03` pada Skenario 3).
       * Tampilan per Kelompok Perjalanan (`journey_group_id`): Konsolidasi 1 perjalanan ekonomi utuh.
-  * [ ] `PeriodClosingService`:
-    * Checklist otomatis tutup buku (jurnal balance, kasir tuntas, rekonsiliasi kas/bank, selisih kasir `11999` tercatat).
-    * Penguncian status periode `CLOSED` (menolak mutlak posting baru) dan otorisasi `REOPEN`.
-* [ ] **Controllers & REST Endpoints**:
-  * [ ] `GET` `/api/v1/reports/general-ledger`
-  * [ ] `GET` `/api/v1/reports/trial-balance`
-  * [ ] `GET` `/api/v1/reports/income-statement`
-  * [ ] `GET` `/api/v1/reports/trip-profitability` (filter per bus vs per journey group)
-  * [ ] `POST` `/api/v1/fiscal-periods/:id/start-close`
-  * [ ] `POST` `/api/v1/fiscal-periods/:id/close`
-  * [ ] `POST` `/api/v1/fiscal-periods/:id/reopen`
-* [ ] **Automated Tests**:
-  * [ ] Unit test kalkulasi GL & Trial Balance.
-  * [ ] Unit test laporan margin kontribusi SPJ per bus vs journey group (Skenario 3).
-  * [ ] Unit test penguncian periode closed (menolak posting).
+    * [ ] `PeriodClosingService`: Checklist otomatis tutup buku bulanan, pengalihan selisih `11999`, penguncian periode `CLOSED`, dan otorisasi `REOPEN`.
+  * [ ] **Automated Tests**:
+    * [ ] Unit test kalkulasi GL, neraca saldo, margin trip, dan proteksi periode closed.
+* [ ] **Frontend Implementation (`ss-travel-frontend`)**:
+  * [ ] **API Service Clients (`src/services/`)**:
+    * [ ] `report.service.ts`.
+  * [ ] **Pages & Components (`src/pages/`)**:
+    * [ ] Halaman **Laporan Profitabilitas Trip (`/reports/trip-profitability`)**: Kartu ringkasan margin perjalanan bus, filter per nomor SPJ / rute / armada, tabel breakdown pendapatan vs beban langsung armada vs hak kru vs servis makan, serta toggle sudut pandang (Per Bus vs Per Kelompok Perjalanan).
+    * [ ] Halaman **Buku Besar & Neraca Saldo (`/reports/general-ledger`)**: Penelusuran mutasi per akun COA dengan drill-down langsung ke dokumen sumber.
+    * [ ] Halaman **Tutup Buku Bulanan (`/period-closing`)**: Wizard checklist penutupan buku (status jurnal balance, kasir tuntas, rekonsiliasi kas/bank, daftar SPJ berselisih di akun `11999`), tombol eksekusi *Kunci Periode*, dan otorisasi *Buka Kembali Periode*.
 
 ---
 
-### 📌 Tahap 10: Integrasi Frontend UI & E2E Verification
-* [ ] **Frontend Modules (`ss-travel-frontend/src/`)**:
-  * [ ] Master Data UI: Manajemen Armada Bus, Kelas Kursi, Agen Tiket, Restoran Mitra, COA, dan Aturan Tarif.
-  * [ ] SPJ Dispatcher UI: Form plotting SPJ, manifes penumpang multi-class, penugasan kru per leg.
-  * [ ] Meja Kasir Pool UI: Form pencairan UJ (BKK), form penerimaan setoran kas tiket/kargo (BKM), rekonsiliasi anti-netting, dan modal penyelesaian selisih kas.
-  * [ ] Finance AP/AR UI: Form tagihan servis makan mitra (modal tarik SPJ), tagihan kontrak sewa wisata, pelunasan transfer bank.
-  * [ ] Accounting UI: Buku besar, jurnal memorial, neraca saldo, checklist tutup buku bulanan, dashboard profitabilitas trip.
-* [ ] **Service Layer Frontend**:
-  * [ ] Pembaruan Axios service calls ke seluruh endpoint `/api/v1/...`.
-* [ ] **End-to-End Simulation Tests (4 Skenario Terkunci)**:
-  * [ ] E2E Skenario 1: AKAP PP Normal, Tagihan Restoran AP, Komisi Kargo Dinamis, Settlement Kasir Imbang Rp 16.68jt.
-  * [ ] E2E Skenario 2: Sewa Wisata 5 Hari, DP 30%, Early Payout Premi di Jalan, Pelunasan AR, Settlement Imbang Rp 27.075jt.
-  * [ ] E2E Skenario 3: Breakdown Tol Cipali, SPJ Pengganti (`parent_spj_id`), UJ Rollover, Isolasi Biaya Derek ke Bus Rusak, Laporan Ganda.
-  * [ ] E2E Skenario 4: Rekonsiliasi Kasir Bermasalah (Musyawarah Kru Talangan Tiket Rp 200rb vs Nota BBM Hilang Rp 300rb), Otorisasi FM Dispensasi `58101`, Tutup Buku Unblocked via `11999`.
-* [ ] **Final Deployment & Verification**:
-  * [ ] Backend & Frontend build 100% clean.
-  * [ ] Dokumentasi penggunaan sistem.
+### 📌 Tahap 10: E2E Simulation Testing & System Polish (Final Verification)
+* [ ] **Simulasi End-to-End Penuh di Browser**:
+  * [ ] **Simulasi Skenario 1**: Penerbitan Jadwal & SPJ AKAP PP Bus SS-01 $\to$ Pencairan UJ Rp 3.5jt $\to$ Penjualan Tiket Bruto & Kargo Motor Komisi 20% $\to$ Rekonsiliasi Kasir Pool (Kantong UJ Balanced Rp 0 + Kantong Setoran Matched) $\to$ Posting Jurnal SPJ Rp 16.68jt $\to$ Penagihan AP Servis Makan RM Taman Selera Subang $\to$ Cek Laporan Margin Trip (+Rp 6.57jt).
+  * [ ] **Simulasi Skenario 2**: Booking Sewa Wisata 5 Hari PT Mitra Sejahtera $\to$ DP 30% Rp 5.25jt $\to$ Penerbitan SPJ Wisata $\to$ Pencairan UJ Rp 6jt $\to$ Tambahan UJ Bank Rp 1jt $\to$ Early Payout Premi di Jalan Rp 800rb $\to$ Pelunasan AR 70% Rp 12.25jt $\to$ Settlement Kasir Pool $\to$ Pengakuan Pendapatan Accrual Rp 17.5jt & Jurnal Rp 27.075jt $\to$ Pembayaran Cashback Rekanan B2B Wisata Rp 300rb.
+  * [ ] **Simulasi Skenario 3**: AKAP Berangkat Bus SS-01 Mogok di KM 214 Tol Cipali $\to$ Penerbitan SPJ Pengganti Bus SS-03 (`parent_spj_id`) $\to$ UJ Rollover Rp 2jt $\to$ Derek Tol & Tagihan Bengkel Cirebon ke Bus SS-01 $\to$ Tiba di Yogya & Settlement $\to$ Cek Laporan Laba Rugi Ganda (Defisit SS-01 -Rp 5.5jt vs Margin SS-03 +Rp 4.215jt vs Margin Gabungan Perjalanan +Rp 2.715jt).
+  * [ ] **Simulasi Skenario 4**: SPJ Tiba di Kasir Pool $\to$ Kasus 1: Selisih Tiket Kurang Rp 200rb selesai via Musyawarah Kru di Meja Kasir (Status Matched) $\to$ Kasus 2: Struk BBM Hilang Rp 300rb dicatat transparan di `crew_cash_discrepancies` (`financial_status = DISCREPANCY`) $\to$ Investigasi GPS $\to$ Otorisasi FM Dispensasi Perusahaan `58101` $\to$ Jurnal SPJ Seimbang Rp 11.86jt $\to$ Eksekusi Tutup Buku Bulanan Unblocked via akun `11999`.
+* [ ] **Final System Polish**:
+  * [ ] Pemeriksaan keamanan, sanitize input, dan audit logging.
+  * [ ] Backend build & frontend build 100% bebas warning/error.
+  * [ ] Dokumentasi user manual lengkap.
