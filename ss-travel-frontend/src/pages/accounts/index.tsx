@@ -77,24 +77,7 @@ export default function AccountsPage() {
       if (treeRes?.data) {
         const tree = treeRes.data as AccountTreeNode[];
         setTreeAccounts(tree);
-
-        // Auto-expand top level (level 0 & 1) on initial load
-        setExpandedNodes((prev) => {
-          if (Object.keys(prev).length > 0) return prev; // keep user expanded state if re-fetching
-          const initial: Record<string, boolean> = {};
-          const walk = (nodes: AccountTreeNode[], depth = 0) => {
-            for (const n of nodes) {
-              if (depth <= 1) {
-                initial[n.id] = true;
-              }
-              if (n.children && n.children.length > 0) {
-                walk(n.children, depth + 1);
-              }
-            }
-          };
-          walk(tree, 0);
-          return initial;
-        });
+        // Default: semua cabang ditutup (collapsed) agar tampilan awal bersih dan rapi
       }
     } catch (err: any) {
       toast.error('Gagal memuat bagan akun (COA)', {
