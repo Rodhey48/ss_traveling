@@ -60,18 +60,8 @@ export default function AccountsPage() {
   const [parentForSubAccount, setParentForSubAccount] = useState<Account | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Expanded Tree nodes
-  const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({
-    '1': true,
-    '11': true,
-    '2': true,
-    '3': true,
-    '4': true,
-    '5': true,
-    '51': true,
-    '52': true,
-    '53': true,
-  });
+  // Expanded Tree nodes (keyed by node.id)
+  const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
 
   const fetchData = async () => {
     setLoading(true);
@@ -85,7 +75,26 @@ export default function AccountsPage() {
         setFlatAccounts(flatRes.data as Account[]);
       }
       if (treeRes?.data) {
-        setTreeAccounts(treeRes.data as AccountTreeNode[]);
+        const tree = treeRes.data as AccountTreeNode[];
+        setTreeAccounts(tree);
+
+        // Auto-expand top level (level 0 & 1) on initial load
+        setExpandedNodes((prev) => {
+          if (Object.keys(prev).length > 0) return prev; // keep user expanded state if re-fetching
+          const initial: Record<string, boolean> = {};
+          const walk = (nodes: AccountTreeNode[], depth = 0) => {
+            for (const n of nodes) {
+              if (depth <= 1) {
+                initial[n.id] = true;
+              }
+              if (n.children && n.children.length > 0) {
+                walk(n.children, depth + 1);
+              }
+            }
+          };
+          walk(tree, 0);
+          return initial;
+        });
       }
     } catch (err: any) {
       toast.error('Gagal memuat bagan akun (COA)', {
@@ -112,7 +121,6 @@ export default function AccountsPage() {
     const traverse = (nodes: AccountTreeNode[]) => {
       for (const node of nodes) {
         allIds[node.id] = true;
-        allIds[node.code] = true;
         if (node.children && node.children.length > 0) {
           traverse(node.children);
         }
@@ -229,25 +237,39 @@ export default function AccountsPage() {
     });
   }, [flatAccounts, search, typeFilter, postableFilter]);
 
+  // Helper to check if node or any descendant matches filter
+  const isNodeOrDescendantMatched = (node: AccountTreeNode): boolean => {
+    const matchSearch =
+      search === '' ||
+      node.code.toLowerCase().includes(search.toLowerCase()) ||
+      node.name.toLowerCase().includes(search.toLowerCase()) ||
+      (node.description && node.description.toLowerCase().includes(search.toLowerCase()));
+
+    const matchType = typeFilter === 'ALL' || node.type === typeFilter;
+    const matchPostable =
+      postableFilter === 'ALL' ||
+      (postableFilter === 'POSTABLE' && node.isPostable) ||
+      (postableFilter === 'HEADER' && !node.isPostable);
+
+    const selfMatch = matchSearch && matchType && matchPostable;
+    if (selfMatch) return true;
+
+    if (node.children && node.children.length > 0) {
+      return node.children.some((child) => isNodeOrDescendantMatched(child));
+    }
+
+    return false;
+  };
+
   // Recursive Tree Row Component
   const renderTreeNodes = (nodes: AccountTreeNode[], level = 0) => {
     return nodes.map((node) => {
       const hasChildren = node.children && node.children.length > 0;
-      const isExpanded = expandedNodes[node.id] || expandedNodes[node.code] || false;
+      // Strictly use node.id, and auto-expand matching branches if search is active
+      const isExpanded =
+        !!expandedNodes[node.id] || (search.trim() !== '' && hasChildren);
 
-      // Filter check for tree
-      const matchSearch =
-        search === '' ||
-        node.code.toLowerCase().includes(search.toLowerCase()) ||
-        node.name.toLowerCase().includes(search.toLowerCase());
-
-      const matchType = typeFilter === 'ALL' || node.type === typeFilter;
-      const matchPostable =
-        postableFilter === 'ALL' ||
-        (postableFilter === 'POSTABLE' && node.isPostable) ||
-        (postableFilter === 'HEADER' && !node.isPostable);
-
-      const isVisible = matchSearch && matchType && matchPostable;
+      const isVisible = isNodeOrDescendantMatched(node);
 
       return (
         <div key={node.id} className="flex flex-col">
@@ -262,12 +284,21 @@ export default function AccountsPage() {
               }`}
               style={{ paddingLeft: `${level * 24 + 12}px` }}
             >
-              <div className="flex items-center space-x-2 flex-1 min-w-0">
+              <div
+                className={`flex items-center space-x-2 flex-1 min-w-0 ${
+                  hasChildren ? 'cursor-pointer select-none' : ''
+                }`}
+                onClick={() => hasChildren && toggleExpand(node.id)}
+              >
                 {hasChildren ? (
                   <button
                     type="button"
-                    onClick={() => toggleExpand(node.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleExpand(node.id);
+                    }}
                     className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground"
+                    title={isExpanded ? 'Tutup cabang' : 'Buka cabang'}
                   >
                     {isExpanded ? (
                       <ChevronDown className="h-4 w-4" />
@@ -280,7 +311,7 @@ export default function AccountsPage() {
                 )}
 
                 {hasChildren ? (
-                  <Folder className="h-4 w-4 text-amber-500 shrink-0" />
+                  <Folder className={`h-4 w-4 ${isExpanded ? 'text-amber-600' : 'text-amber-500'} shrink-0`} />
                 ) : (
                   <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
                 )}
