@@ -73,44 +73,50 @@ Setiap tahap dikerjakan secara paralel per fitur (*Vertical Slice*): **Database 
 
 ---
 
-### 📌 Tahap 1: Master Organisasi, Dimensi, Armada Bus, & Pelanggan / CRM Leads (BE + FE)
-* [ ] **Backend Implementation (`ss-travel-backend`)**:
-  * [ ] **Models & Entities (`src/@models/`)**:
-    * [ ] `companies`: Entitas hukum PT SS Traveling (`code`, `name`, `currency`, `timezone`).
-    * [ ] `business_units`: Unit usaha operasional (`AKAP`, `PARIWISATA`, `SHUTTLE`).
-    * [ ] `cost_centers`: Tempat terjadinya biaya (`Pool Ciputat`, `Bengkel Garasi`, `Kantor Pusat`).
-    * [ ] `profit_centers`: Unit analisis pendapatan per lini bisnis.
-    * [ ] `vehicles`: Data fisik armada bus (`code`/nomor lambung, `nickname`, `plate_number`, `vehicle_type`, `capacity`, `isActive`).
-    * [ ] `vehicle_seat_classes`: Konfigurasi multi-class kursi per bus (*Sleeper*, *Luxury 2-1*, *Executive*) sebagai batas fisik (*hard ceiling*) manifes.
-    * [ ] `customers`: Master pelanggan & database CRM leads penyewa wisata (`code`, `customer_type`, `institution_name`, `pic_name`, `phone`, `email`, `address`, `city`, `lead_source`, `customer_tier`, `last_trip_date`, `total_trips_count`, `special_notes`, `isActive`).
-  * [ ] **DTOs & Validations (`src/@dto/`)**:
-    * [ ] DTO Organisasi: `CreateCompanyDto`, `CreateBusinessUnitDto`, `CreateCostCenterDto`, `CreateProfitCenterDto`.
-    * [ ] DTO Armada: `CreateVehicleDto`, `UpdateVehicleDto`, `CreateVehicleSeatClassDto`, `VehicleQueryFilterDto`.
-    * [ ] DTO Pelanggan: `CreateCustomerDto`, `UpdateCustomerDto`, `CustomerQueryFilterDto`.
-  * [ ] **Services & Domain Logic**:
-    * [ ] `OrganizationService`: Pengelolaan unit bisnis, hierarki cost center, dan profit center.
-    * [ ] `VehiclesService`: Validasi nopol & kode lambung unik, pendaftaran multi-class kursi, kalkulasi kapasitas fisik total bus.
-    * [ ] `CustomersService`: Pengelolaan database prospek/leads, pencarian autocomplete nama/telepon, auto-update riwayat trip dan frekuensi sewa.
-  * [ ] **Controllers & REST Endpoints**:
-    * [ ] `GET/POST/PUT` `/api/v1/companies`, `/api/v1/business-units`, `/api/v1/cost-centers`, `/api/v1/profit-centers`
-    * [ ] `GET/POST/PUT/DELETE` `/api/v1/vehicles`, `/api/v1/vehicles/:id/seat-classes`
-    * [ ] `GET/POST/PUT/DELETE` `/api/v1/customers`
-  * [ ] **Seeder & Migration**:
-    * [ ] Migration skema tabel organisasi, armada, dan pelanggan/leads.
-    * [ ] Seeder: PT SS Traveling, Unit AKAP & Wisata, Cost Centers (Ciputat, Bengkel, Kantor).
-    * [ ] Seeder: 10 Unit Bus Existing SS Traveling (7 lunas, 3 cicilan leasing sesuai Addendum v1.13) lengkap dengan kursi Sleeper & Luxury 2-1.
-    * [ ] Seeder: Data awal pelanggan B2B (misal: PT Mitra Sejahtera Abadi, SMA 1 Tangerang).
-  * [ ] **Automated Tests**:
-    * [ ] Unit test `VehiclesService` dan `CustomersService`.
-* [ ] **Frontend Implementation (`ss-travel-frontend`)**:
-  * [ ] **API Service Clients (`src/services/`)**:
-    * [ ] `vehicle.service.ts`: Panggilan API `/api/v1/vehicles` & seat classes.
-    * [ ] `customer.service.ts`: Panggilan API `/api/v1/customers`.
-    * [ ] `organization.service.ts`: Panggilan API unit bisnis & cost centers.
-  * [ ] **Pages & Components (`src/pages/`)**:
-    * [ ] Halaman **Manajemen Armada Bus (`/vehicles`)**: Tabel/Grid kartu armada, filter tipe bus, modal tambah/edit armada, dan form konfigurasi kursi multi-class (Sleeper vs Luxury).
-    * [ ] Halaman **Database Pelanggan & CRM Leads (`/customers`)**: Tabel prospek penyewa wisata, filter segmen (Sekolah, Korporat, Komunitas), status tier lead, dan riwayat trip sewa.
-    * [ ] Halaman **Pengaturan Organisasi & Cost Center (`/organization`)**.
+### 📌 Tahap 1: Master Organisasi, Dimensi, Armada Bus, & Pelanggan / CRM Leads (BE + FE) (Completed)
+* [x] **Backend Implementation (`ss-travel-backend`)**:
+  * [x] **Models & Entities (`src/@models/`)**:
+    * [x] `companies`: Entitas hukum PT SS Traveling (`code`, `name`, `currency`, `timezone`).
+    * [x] `business_units`: Unit usaha operasional (`AKAP`, `PARIWISATA`, `SHUTTLE`).
+    * [x] `cost_centers`: Tempat terjadinya biaya (`Pool Ciputat`, `Bengkel Garasi`, `Kantor Pusat`).
+    * [x] `profit_centers`: Unit analisis pendapatan per lini bisnis.
+    * [x] `seat_classes`: Master Data Standar Kelas Kursi (`id`, `company_id`, `code`, `name`, `default_layout`, `description`, `is_active`) sebagai *single source of truth* untuk konfigurasi armada dan matriks harga tiket (Addendum v1.17).
+    * [x] `vehicles`: Data fisik armada bus (`code`/nomor lambung, `nickname`, `plate_number`, `vehicle_type`, `capacity`, `isActive`).
+    * [x] `vehicle_images`: Galeri foto multi-image armada bus (1:N) dengan penanda foto sampul utama (`is_primary`) dan urutan galeri (`sequence`) untuk kesiapan etalase landing page publik SS Traveling (Addendum v1.18).
+    * [x] `vehicle_seat_classes`: Konfigurasi multi-class kursi per bus (*Sleeper*, *Luxury 2-1*, *Executive*) dengan relasi FK ke `seat_classes` sebagai batas fisik (*hard ceiling*) manifes.
+    * [x] `customers`: Master pelanggan & database CRM leads penyewa wisata (`code`, `customer_type`, `institution_name`, `pic_name`, `phone`, `email`, `address`, `city`, `lead_source`, `customer_tier`, `last_trip_date`, `total_trips_count`, `special_notes`, `isActive`).
+  * [x] **DTOs & Validations (`src/@dto/`)**:
+    * [x] DTO Organisasi: `CreateCompanyDto`, `CreateBusinessUnitDto`, `CreateCostCenterDto`, `CreateProfitCenterDto`.
+    * [x] DTO Kelas Kursi & Armada: `CreateSeatClassDto`, `UpdateSeatClassDto`, `CreateVehicleDto`, `UpdateVehicleDto`, `CreateVehicleSeatClassDto`, `CreateVehicleImageDto`, `VehicleQueryFilterDto`.
+    * [x] DTO Pelanggan: `CreateCustomerDto`, `UpdateCustomerDto`, `CustomerQueryFilterDto`.
+  * [x] **Services & Domain Logic**:
+    * [x] `OrganizationService`: Pengelolaan unit bisnis, hierarki cost center, dan profit center.
+    * [x] `VehiclesService`: Validasi nopol & kode lambung unik, CRUD master `seat_classes`, relasi multi-image `vehicle_images`, pendaftaran multi-class kursi terikat FK, kalkulasi kapasitas fisik total bus.
+    * [x] `CustomersService`: Pengelolaan database prospek/leads, pencarian autocomplete nama/telepon, auto-update riwayat trip dan frekuensi sewa.
+  * [x] **Controllers & REST Endpoints**:
+    * [x] `GET/POST/PUT` `/api/v1/companies`, `/api/v1/business-units`, `/api/v1/cost-centers`, `/api/v1/profit-centers`
+    * [x] `GET/POST/PUT/DELETE` `/api/v1/seat-classes` (Master Kelas Kursi)
+    * [x] `GET/POST/PUT/DELETE` `/api/v1/vehicles`, `/api/v1/vehicles/:id/seat-classes`, `/api/v1/vehicles/:id/images`
+    * [x] `GET/POST/PUT/DELETE` `/api/v1/customers`
+  * [x] **Seeder & Migration**:
+    * [x] Migration skema tabel organisasi, armada, dan pelanggan/leads (`1781000000000-create-org-fleet-customer.ts`).
+    * [x] Migration skema tabel `seat_classes`, relasi FK ke `vehicle_seat_classes`, dan seeder default 4 kelas kursi (`1781100000000-create-seat-classes.ts`).
+    * [x] Migration skema tabel `vehicle_images` dan seeder foto eksterior/interior 10 armada bus (`1781200000000-create-vehicle-images.ts`).
+    * [x] Seeder: PT SS Traveling, Unit AKAP & Wisata, Cost Centers (Ciputat, Bengkel, Kantor).
+    * [x] Seeder: 10 Unit Bus Existing SS Traveling (7 lunas, 3 cicilan leasing sesuai Addendum v1.13) lengkap dengan relasi ke master kursi Sleeper & Luxury 2-1 serta galeri foto.
+    * [x] Seeder: Data awal pelanggan B2B (misal: PT Mitra Sejahtera Abadi, SMA 1 Tangerang).
+  * [x] **Automated Tests**:
+    * [x] Unit test `VehiclesService` (termasuk seat classes & vehicle images) dan `CustomersService` (34 passed).
+* [x] **Frontend Implementation (`ss-travel-frontend`)**:
+  * [x] **API Service Clients (`src/services/`)**:
+    * [x] `vehicle.service.ts`: Panggilan API `/api/v1/vehicles` & `/api/v1/seat-classes` & gambar armada.
+    * [x] `customer.service.ts`: Panggilan API `/api/v1/customers`.
+    * [x] `organization.service.ts`: Panggilan API unit bisnis & cost centers.
+  * [x] **Pages & Components (`src/pages/`)**:
+    * [x] Halaman **Manajemen Armada Bus (`/vehicles`)**: Grid Kartu visual menampilkan foto cover bus modern, badge foto galeri, badge kepemilikan, modal tambah/edit armada dengan form galeri foto dan konfigurasi kursi ber-header, serta modal **Master Kelas Kursi**.
+    * [x] Modal **Detail Armada Bus (`VehicleDetailModal`)**: Muncul saat kartu bus diklik, menampilkan galeri foto besar resolusi tinggi dengan thumbnail selector, spesifikasi bodi/chasis, rincian kelas kursi & fasilitas kabin dari master data, dan badge kesiapan landing page.
+    * [x] Halaman **Database Pelanggan & CRM Leads (`/customers`)**: Tabel prospek penyewa wisata, filter segmen (Sekolah, Korporat, Komunitas), status tier lead, dan riwayat trip sewa.
+    * [x] Halaman **Pengaturan Organisasi & Cost Center (`/organization`)**.
 
 ---
 

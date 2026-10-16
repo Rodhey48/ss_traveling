@@ -4,6 +4,9 @@ import DashboardPage from '@/pages/dashboard';
 import UsersPage from '@/pages/users';
 import RolesPage from '@/pages/roles';
 import MenusPage from '@/pages/menus';
+import VehiclesPage from '@/pages/vehicles';
+import CustomersPage from '@/pages/customers';
+import OrganizationPage from '@/pages/organization';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import { ProtectedRoute } from './protected-route';
 import { GuestRoute } from './guest-route';
@@ -29,6 +32,9 @@ export default function AppRouter() {
       >
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="vehicles" element={<VehiclesPage />} />
+        <Route path="customers" element={<CustomersPage />} />
+        <Route path="organization" element={<OrganizationPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="roles" element={<RolesPage />} />
         <Route path="menu-management" element={<MenusPage />} />

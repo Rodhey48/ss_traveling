@@ -25,32 +25,58 @@ export class PermissionsGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest<RequestInterface>();
     const user = request.user;
-    // console.log('User Permissions:', user?.permissions);
 
-    if (!user || !user.permissions) {
+    if (!user) {
       throw new ForbiddenException({
         status: false,
-        message: 'Akses ditolak: Anda tidak memiliki permission apapun.',
-        missing_permissions: requiredPermissions,
+        message: 'Akses ditolak: Data pengguna tidak ditemukan.',
+        required: requiredPermissions,
       });
     }
 
-    // Cek apakah user memiliki SEMUA permission yang diminta (Bisa diubah jadi SOME jika ingin lebih longgar)
-    const hasPermission = requiredPermissions.every((perm) =>
-      user.permissions?.includes(perm),
+    // 1. SUPER_ADMIN selalu memiliki akses penuh (bypass permission check)
+    const isSuperAdmin = user.role?.some(
+      (r: any) =>
+        r.name === 'SUPER_ADMIN' ||
+        r.name === 'superadmin' ||
+        r.name?.toUpperCase() === 'SUPER_ADMIN',
+    );
+    if (isSuperAdmin) {
+      return true;
+    }
+
+    if (!user.permissions || user.permissions.length === 0) {
+      throw new ForbiddenException({
+        status: false,
+        message: 'Akses ditolak: Anda tidak memiliki permission apapun.',
+        required: requiredPermissions,
+        missing: requiredPermissions,
+      });
+    }
+
+    // 2. Case-Insensitive Permission Matching
+    const userPermSetLower = new Set(
+      user.permissions.map((p) => p.toLowerCase()),
+    );
+
+    const hasPermission = requiredPermissions.every(
+      (perm) =>
+        user.permissions.includes(perm) ||
+        userPermSetLower.has(perm.toLowerCase()),
     );
 
     if (!hasPermission) {
-      // Cari tahu spesifik permission mana yang kurang
       const missing = requiredPermissions.filter(
-        (p) => !user.permissions?.includes(p),
+        (p) =>
+          !user.permissions.includes(p) &&
+          !userPermSetLower.has(p.toLowerCase()),
       );
 
       throw new ForbiddenException({
         status: false,
         message: 'Akses ditolak: Anda tidak memiliki hak akses yang cukup.',
         required: requiredPermissions,
-        missing: missing, // <--- Ini menjawab permintaan Anda (Return error yang jelas butuh permission apa)
+        missing: missing,
       });
     }
 

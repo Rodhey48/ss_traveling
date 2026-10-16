@@ -161,3 +161,175 @@ export interface NavItemWithOptionalChildren extends NavItem {
 
 export type MainNavItem = NavItemWithOptionalChildren;
 export type SidebarNavItem = NavItemWithChildren;
+
+/**
+ * --- ORGANISASI & DIMENSI TYPES ---
+ */
+export interface Company {
+  id: string;
+  code: string;
+  name: string;
+  currency: string;
+  timezone: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  isActive: boolean;
+}
+
+export interface BusinessUnit {
+  id: string;
+  companyId?: string;
+  code: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+}
+
+export interface CostCenter {
+  id: string;
+  companyId?: string;
+  code: string;
+  name: string;
+  parentId?: string;
+  parent?: CostCenter;
+  children?: CostCenter[];
+  description?: string;
+  isActive: boolean;
+}
+
+export interface ProfitCenter {
+  id: string;
+  companyId?: string;
+  businessUnitId?: string;
+  businessUnit?: BusinessUnit;
+  code: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+}
+
+/**
+ * --- FLEET & VEHICLE TYPES ---
+ */
+export type VehicleType = 'BIG_BUS' | 'MEDIUM_BUS' | 'MINIBUS';
+export type OwnershipStatus = 'OWNED_PAID_OFF' | 'LEASING' | 'RENTAL';
+export type SeatClassName = 'SLEEPER' | 'LUXURY_2_1' | 'EXECUTIVE' | 'STANDARD';
+
+export interface SeatClass {
+  id: string;
+  companyId?: string;
+  code: string;
+  name: string;
+  defaultLayout?: string;
+  description?: string;
+  isActive: boolean;
+}
+
+export interface VehicleSeatClass {
+  id: string;
+  vehicleId: string;
+  seatClassId?: string;
+  seatClass?: SeatClass;
+  className: SeatClassName;
+  seatCapacity: number;
+  seatLayout?: string;
+  isActive: boolean;
+}
+
+export interface VehicleImage {
+  id: string;
+  vehicleId: string;
+  imageUrl: string;
+  caption?: string;
+  isPrimary: boolean;
+  sequence: number;
+  isActive: boolean;
+}
+
+export interface Vehicle {
+  id: string;
+  companyId?: string;
+  code: string;
+  nickname?: string;
+  plateNumber: string;
+  vehicleType: VehicleType;
+  chassisModel?: string;
+  bodyModel?: string;
+  ownershipStatus: OwnershipStatus;
+  capacity: number;
+  year?: number;
+  isActive: boolean;
+  seatClasses?: VehicleSeatClass[];
+  images?: VehicleImage[];
+}
+
+export interface VehicleFormData {
+  code: string;
+  nickname?: string;
+  plateNumber: string;
+  vehicleType: VehicleType;
+  chassisModel?: string;
+  bodyModel?: string;
+  ownershipStatus: OwnershipStatus;
+  capacity?: number;
+  year?: number;
+  isActive?: boolean;
+  seatClasses?: {
+    seatClassId?: string;
+    className: SeatClassName;
+    seatCapacity: number;
+    seatLayout?: string;
+  }[];
+  images?: {
+    imageUrl: string;
+    caption?: string;
+    isPrimary?: boolean;
+    sequence?: number;
+  }[];
+}
+
+/**
+ * --- CUSTOMER & CRM LEADS TYPES ---
+ */
+export type CustomerType = 'CORPORATE' | 'SCHOOL' | 'COMMUNITY' | 'INDIVIDUAL' | 'GOVERNMENT';
+export type LeadSource = 'DIRECT' | 'WHATSAPP' | 'INSTAGRAM' | 'WEBSITE' | 'REFERRAL';
+export type CustomerTier = 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM';
+
+export interface Customer {
+  id: string;
+  companyId?: string;
+  code: string;
+  customerType: CustomerType;
+  institutionName?: string;
+  picName: string;
+  phone: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  leadSource: LeadSource;
+  customerTier: CustomerTier;
+  lastTripDate?: string;
+  totalTripsCount: number;
+  specialNotes?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CustomerFormData {
+  code?: string;
+  customerType: CustomerType;
+  institutionName?: string;
+  picName: string;
+  phone: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  leadSource: LeadSource;
+  customerTier: CustomerTier;
+  specialNotes?: string;
+  isActive?: boolean;
+}
+

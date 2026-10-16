@@ -5,6 +5,9 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { RolesModule } from './roles/roles.module';
 import { MenusModule } from './menus/menus.module';
+import { OrganizationModule } from './organization/organization.module';
+import { VehiclesModule } from './vehicles/vehicles.module';
+import { CustomersModule } from './customers/customers.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import * as Models from './@models';
@@ -34,6 +37,9 @@ import * as Models from './@models';
     UsersModule,
     RolesModule,
     MenusModule,
+    OrganizationModule,
+    VehiclesModule,
+    CustomersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -2810,3 +2810,75 @@ Di bisnis pariwisata, penyewa adalah aset komersial jangka panjang dengan potens
 2. **Akumulasi Retargeting Marketing**:
    - Tim sales SS Traveling dapat memfilter database penyewa berdasarkan musim liburan (misal: menarik data seluruh sekolah yang pernah sewa di bulan Mei tahun lalu) untuk melakukan kampanye penawaran sewa *Study Tour* secara proaktif via WhatsApp.
 
+---
+
+# Addendum v1.17 — Standardisasi Master Data Kelas Kursi (`seat_classes`) & Integrasi Matriks Tarif Tiket
+Tanggal pembaruan: 16 Oktober 2026
+
+Addendum ini membakukan pemisahan Master Data Kelas Kursi (`seat_classes`) sebagai entitas tersendiri yang bertindak sebagai *single source of truth* bagi konfigurasi armada bus, kuota manifes, komisi agen, dan matriks harga tiket (`fare_matrix`).
+
+## 1. Latar Belakang & Filosofi Arsitektur
+Sebelumnya, nama kelas kursi (`class_name`) hanya disimpan sebagai string atau enum lokal di level plotting armada (`vehicle_seat_classes`). Hal ini memiliki kelemahan struktural:
+1. **Risiko Diskrepansi Harga Tiket**: Tanpa referential integrity ke master data, penentuan tarif tiket dinamis (`fare_matrix`) rawan gagal mencocokkan harga tiket antar-armada akibat perbedaan format penulisan.
+2. **Keterikatan Komisi Agen**: Aturan komisi agen (`agent_commission_rules`) memerlukan acuan ID kelas kursi yang sama dan terikat kuat (*referential integrity*).
+3. **Fleksibilitas Bisnis (Zero Hardcoding)**: Penambahan kelas armada baru di masa depan (misal: *Suites Family*, *Royal Class*) dapat dilakukan langsung oleh admin tanpa perlu mengubah kode program.
+
+## 2. Spesifikasi Tabel Master Kelas Kursi (`seat_classes`)
+
+| Kolom | Tipe Data | Keterangan & Validasi |
+| :--- | :--- | :--- |
+| `id` | `uuid` (PK) | Primary Key |
+| `company_id` | `uuid` (FK) | Relasi ke `companies` (Company Scope) |
+| `code` | `varchar(30)` | Kode unik baku sistem (`SLEEPER`, `LUXURY_2_1`, `EXECUTIVE`, `STANDARD`) |
+| `name` | `varchar(100)` | Nama tampilan resmi (`Sleeper Class`, `Luxury Seat 2-1`, `Executive Class`, `Standard Class`) |
+| `default_layout` | `varchar(50)` | Format denah standar bawaan (`1-1`, `2-1`, `2-2`) |
+| `description` | `text` | Deskripsi fasilitas kabin (AVOD, bantal, selimut, legrest, USB charger) |
+| `is_active` | `boolean` | Status keaktifan kelas kursi (default: `true`) |
+
+## 3. Relasi ke Armada Bus (`vehicle_seat_classes`)
+Tabel konfigurasi kursi armada bus (`vehicle_seat_classes`) kini memiliki relasi langsung:
+* Kolom Foreign Key: **`seat_class_id`** $\to$ merujuk ke **`seat_classes(id)`** dengan `ON DELETE RESTRICT`.
+* Proteksi Hapus: Master kelas kursi yang sedang digunakan oleh satu atau lebih armada bus dilarang dihapus dari sistem.
+* Di Frontend: Dropdown pilihan kelas kursi pada form armada bus ditarik secara dinamis dari endpoint `GET /api/v1/seat-classes`, bukan hardcoded.
+
+## 4. Integrasi ke Matriks Tarif Tiket (`fare_matrix` — Tahap 3)
+Pada Tahap 3 nanti, penentuan harga tiket dihitung berdasarkan formula kombinasi multi-dimensi:
+$$\text{Harga Tiket} = f(\text{Rute Asal-Tujuan}, \text{Musim Tarif / Tuslah}, \mathbf{seat\_class\_id})$$
+Saat tiket AKAP diterbitkan untuk bus multi-class (seperti `SS-01` yang memiliki kabin Sleeper dan Luxury):
+* Sistem mencocokkan `seat_class_id` kursi yang dipilih penumpang dengan `fare_matrix` aktif.
+* Harga tiket otomatis terisi akurat tanpa risiko salah input oleh agen loket atau dispatcher.
+
+---
+
+# Addendum v1.18 — Galeri Foto Multi-Image Armada Bus (`vehicle_images`) untuk Kesiapan Landing Page Publik SS Traveling
+Tanggal pembaruan: 16 Oktober 2026
+
+Addendum ini membakukan tata kelola galeri foto armada bus berbasis relasi *One-to-Many* (`vehicle_images`) yang terintegrasi langsung antara data ERP operasional dengan etalase website publik/landing page SS Traveling.
+
+## 1. Latar Belakang & Kebutuhan Komersial
+- Calon penyewa bus pariwisata maupun penumpang AKAP online membutuhkan gambaran visual yang nyata mengenai armada yang akan dinaiki (tampilan eksterior karoseri Jetbus/Avante, interior kabin sleeper, kursi legrest, bagasi motor, dan toilet).
+- Mengintegrasikan data foto bus langsung di ERP menjamin bahwa apa yang dipromosikan tim marketing di website publik selalu sinkron dengan kondisi armada riil di garasi pool.
+
+## 2. Spesifikasi Tabel Galeri Foto Armada (`vehicle_images`)
+
+| Kolom | Tipe Data | Keterangan & Validasi |
+| :--- | :--- | :--- |
+| `id` | `uuid` (PK) | Primary Key unik foto |
+| `vehicle_id` | `uuid` (FK) | Relasi wajib ke `vehicles(id)` dengan `ON DELETE CASCADE` |
+| `image_url` | `text` | Tautan URL gambar beresolusi tinggi (HTTPS / CDN / Cloud Storage) |
+| `caption` | `varchar(150)` | Keterangan foto (misal: *Tampak Depan Jetbus 5*, *Kabin Sleeper Pribadi*, *Interior Luxury 2-1*) |
+| `is_primary` | `boolean` | Penanda foto sampul utama (*Cover Image*) untuk thumbnail kartu & landing page |
+| `sequence` | `integer` | Urutan perputaran galeri / carousel foto (dimulai dari `0`) |
+| `is_active` | `boolean` | Status keaktifan foto |
+
+## 3. Aturan Bisnis & Integrasi Frontend
+1. **Foto Sampul Utama (*Primary Cover*)**:
+   - Setiap bus memiliki tepat 1 foto berstatus `is_primary = true`. Jika foto baru diset sebagai primary, sistem otomatis mereset status primary foto lama pada armada tersebut.
+   - Foto primary ditampilkan sebagai cover utama kartu armada di dashboard internal dan banner utama katalog landing page publik.
+2. **Modal Detail Bus Interaktif (`VehicleDetailModal`)**:
+   - Di dashboard admin/operasional, mengklik kartu armada bus akan membuka modal detail yang menyajikan:
+     - Banner foto beresolusi tinggi dengan thumbnail selector.
+     - Rincian spesifikasi fisik (Chasis, Karoseri, Tipe Bus, Tahun Rakit, Kepemilikan Lunas/Leasing).
+     - Rincian zona kelas kursi (*Multi-Class*) beserta fasilitas kabin yang bersumber dari master `seat_classes`.
+     - Badge penanda *Website Catalog Ready*.
+

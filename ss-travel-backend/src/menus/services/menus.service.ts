@@ -243,17 +243,31 @@ export class MenusService {
     roleMenus.forEach((rm) => {
       // Gunakan aclName sebagai identifier utama, fallback ke name
       const baseName = rm.menu.aclName || rm.menu.name;
+      const lowerBase = baseName.toLowerCase();
 
-      if (rm.isRead) permissionsSet.add(baseName + ':read');
-      if (rm.isCreate) permissionsSet.add(baseName + ':create');
-      if (rm.isUpdate) permissionsSet.add(baseName + ':update');
-      if (rm.isDelete) permissionsSet.add(baseName + ':delete');
+      if (rm.isRead) {
+        permissionsSet.add(baseName + ':read');
+        permissionsSet.add(lowerBase + ':read');
+      }
+      if (rm.isCreate) {
+        permissionsSet.add(baseName + ':create');
+        permissionsSet.add(lowerBase + ':create');
+      }
+      if (rm.isUpdate) {
+        permissionsSet.add(baseName + ':update');
+        permissionsSet.add(lowerBase + ':update');
+      }
+      if (rm.isDelete) {
+        permissionsSet.add(baseName + ':delete');
+        permissionsSet.add(lowerBase + ':delete');
+      }
 
       if (rm.actions) {
         Object.keys(rm.actions).forEach((action) => {
           if (rm.actions[action]) {
             // Gunakan nama action asli dari database
             permissionsSet.add(baseName + ':' + action);
+            permissionsSet.add(lowerBase + ':' + action);
           }
         });
       }

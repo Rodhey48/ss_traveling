@@ -2,6 +2,82 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-10-16: Stage 1 Feature Expansion — Customer Detail Modal & Preparation for SPJ Order History
+- **Modal Detail Pelanggan CRM (`CustomerDetailModal`)**:
+  - Diterapkan pada halaman `/customers`: Mengklik baris tabel pelanggan atau tombol mata (*Eye*) membuka modal detail yang komprehensif.
+  - Profil Klien & Penanggung Jawab (PIC): Menampilkan nama instansi, nama PIC panitia, nomor kontak WhatsApp (lengkap dengan tombol aksi langsung `Chat WA` via tautan `wa.me`), email penawaran, serta alamat lengkap titik kumpul penjemputan armada.
+  - Metrik Loyalitas CRM: Kartu ringkasan total frekuensi sewa wisata (`totalTripsCount`), tanggal sewa terakhir (`lastTripDate`), dan asal sumber prospek (`leadSource`).
+  - Preferensi Sewa Khusus: Menampilkan *special notes* (seperti bus langganan atau supir favorit).
+  - Seksi Riwayat Kontrak SPJ Wisata (*History Order*): Disiapkan wadah integrasi untuk otomatis menampilkan manifes nomor SPJ, armada yang ditugaskan, dan invoice pelunasan sewa begitu modul operasional SPJ diaktifkan pada **Tahap 5**.
+- **Verifikasi Kualitas Penuh**:
+  - Kompilasi TypeScript frontend `yarn build` lulus 100% tanpa error.
+
+### 2026-10-16: Stage 1 Feature Expansion — Galeri Foto Multi-Image Armada Bus (`vehicle_images`), Modal Detail Bus, & Blueprint Addendum v1.18 Locked
+- **Galeri Foto Multi-Image Armada (`vehicle_images`)**:
+  - Model & tabel `vehicle_images` terhubung *One-to-Many* (1:N) dengan `vehicles` (`onDelete: 'CASCADE'`).
+  - Atribut lengkap: `imageUrl`, `caption`, `is_primary` (penanda foto cover utama), `sequence` (urutan carousel), dan `is_active`.
+  - Migrasi `1781200000000-create-vehicle-images.ts` mengeksekusi skema dan men-seed foto eksterior modern (Jetbus 5) serta interior kabin mewah untuk seluruh 10 armada bus existing.
+  - Endpoint REST API: `POST /api/v1/vehicles/:id/images`, `DELETE /api/v1/vehicles/:id/images/:imageId` dan penanganan multi-image di form create/update vehicle.
+- **Kartu Armada Visual & Cover Showcase**:
+  - Kartu bus di `/vehicles` kini menampilkan foto cover beresolusi tinggi dengan rasio sinematik, badge nomor lambung & nopol melayang, serta badge indikator jumlah foto galeri (`X Foto`).
+  - Efek hover interaktif dan pointer mouse mengundang user untuk mengklik kartu.
+- **Modal Detail Armada Bus (`VehicleDetailModal`)**:
+  - Dialog modal mewah terbuka saat kartu bus diklik:
+    - Banner foto bus berukuran besar dengan *Thumbnail Selector* untuk beralih foto dengan mulus.
+    - Informasi spesifikasi fisik: Tipe bus, total kapasitas, tahun rakit, chasis mesin, karoseri bodi, dan status kepemilikan aset (Lunas / Leasing).
+    - Kartu rincian zona kelas kursi (*Multi-Class*): Menampilkan rincian kuota kursi, layout denah, dan deskripsi fasilitas kabin (AVOD, bantal, selimut, legrest, dsb.) bersumber dari master `seat_classes`.
+    - Badge penanda kesiapan katalog website (*Website Catalog Ready*).
+    - Tombol cepat untuk langsung beralih ke form *Edit Data Bus* (jika memiliki hak akses).
+- **Form Galeri Foto pada Tambah / Edit Bus (`VehicleModal`)**:
+  - Seksi baru: *Galeri Foto Armada (Landing Page Catalog)* untuk menambah URL gambar, keterangan foto (caption), dan tombol *Set Cover* untuk memilih foto sampul utama.
+- **Blueprint Addendum v1.18 Locked**:
+  - Menambahkan bab **Addendum v1.18 — Galeri Foto Multi-Image Armada Bus (`vehicle_images`) untuk Kesiapan Landing Page Publik SS Traveling** di `.gemini/blueprint/blueprint-sistem-keuangan-perusahaan-bus-v1.3.md`.
+- **Verifikasi Kualitas Penuh**:
+  - 34 unit test backend (termasuk mock suite baru image repository) lulus 100%.
+  - 6/6 E2E tests lulus 100%.
+  - Frontend `vite build` lulus 100% tanpa warning/error.
+
+### 2026-10-16: Stage 1 Refinement — Master Data Standar Kelas Kursi (`seat_classes`) & Blueprint Addendum v1.17 Locked
+- **Master Data Kelas Kursi Mandiri (`seat_classes`)**:
+  - Memisahkan master kelas kursi dari enum lokal menjadi entitas tersendiri (`seat_classes`) dengan atribut `id`, `company_id`, `code` (unik), `name`, `default_layout`, `description`, dan `is_active`.
+  - Mengintegrasikan relasi Foreign Key pada `vehicle_seat_classes.seat_class_id` dengan `ON DELETE RESTRICT` untuk mencegah inkonsistensi data saat penetapan matriks tarif tiket dan komisi agen.
+  - Seeder default 4 kelas kursi bawaan SS Traveling: `SLEEPER` (Sleeper Class, 1-1), `LUXURY_2_1` (Luxury Seat 2-1, 2-1), `EXECUTIVE` (Executive Class, 2-2), dan `STANDARD` (Standard Class, 2-2). Seluruh 10 armada otomatis terhubung ke master data baru.
+- **REST API Endpoints Lengkap**:
+  - `GET /api/v1/seat-classes`, `GET /api/v1/seat-classes/:id`, `POST /api/v1/seat-classes`, `PUT /api/v1/seat-classes/:id`, `DELETE /api/v1/seat-classes/:id` terproteksi RBAC dan Swagger documentation.
+- **Frontend Interaktif & Dinamis**:
+  - Form armada bus (`vehicle-modal.tsx`) kini menarik pilihan kelas kursi secara dinamis dari API master data (`VehicleService.getSeatClasses()`) dan mengisi otomatis format layout denah bawaan.
+  - Komponen modal baru **`SeatClassMasterModal`** (`/vehicles`) untuk mengelola, menambah, mengedit, dan menghapus master kelas kursi secara visual di antarmuka admin.
+- **Blueprint Addendum v1.17 Locked**:
+  - Menambahkan bab **Addendum v1.17 — Standardisasi Master Data Kelas Kursi (`seat_classes`) & Integrasi Matriks Tarif Tiket** di `.gemini/blueprint/blueprint-sistem-keuangan-perusahaan-bus-v1.3.md`.
+- **Verifikasi Kualitas Penuh**:
+  - Seluruh 34 unit test backend (termasuk mock suite baru untuk master kelas kursi) lulus 100%.
+  - 6/6 E2E tests lulus 100%.
+  - Frontend `vite build` 100% sukses tanpa warning atau error kompilasi.
+
+### 2026-10-16: Stage 1 Completed — Master Organisasi, Dimensi, Armada Bus (10 Unit), & Pelanggan / CRM Leads (BE + FE)
+- **Struktur Organisasi & Dimensi Multi-Entitas**:
+  - Model & tabel `companies` (PT SS Traveling Official, kode `SST`, currency `IDR`, timezone `Asia/Jakarta`).
+  - Unit Bisnis operasional: `AKAP` (Reguler PP Tangerang-Yogya), `WISATA` (Pariwisata / Charter), dan `SHUTTLE` (Bandara CGK/YIA).
+  - Cost Centers berhierarki: `CC-OPS-POOL` (Operasional Pool Ciputat), `CC-MNT-GARASI` (Bengkel Garasi & Pemeliharaan), dan `CC-ADM-HQ` (Administrasi Kantor Pusat).
+  - Profit Centers: `PC-AKAP` dan `PC-WISATA` untuk analisis margin kontribusi bisnis.
+- **10 Unit Armada Bus Existing & Konfigurasi Multi-Class Kursi (`vehicles` & `vehicle_seat_classes`)**:
+  - Terdaftar dan ter-seed lengkap: 7 bus lunas (`SS-01` s.d. `SS-07`) dan 3 bus leasing (`SS-08` s.d. `SS-10`).
+  - Fitur multi-class kursi terintegrasi (Sleeper 4 pax + Luxury 2-1 20 pax pada `SS-01`, `SS-08`, `SS-09`, Executive 28 pax pada `SS-03`, `SS-04`, `SS-10`, Suites 22 pax pada `SS-05`, dsb.).
+  - Total kapasitas kursi terhitung otomatis dari konfigurasi kelas kursi sebagai batas fisik (*hard ceiling*) tiket dan manifes.
+- **Database Pelanggan & CRM Leads Penyewa Wisata (`customers`)**:
+  - Master prospek terstruktur: segmen `CORPORATE`, `SCHOOL`, `COMMUNITY`, `GOVERNMENT`, dan `INDIVIDUAL`.
+  - Tiering komersial: `PLATINUM`, `GOLD`, `SILVER`, dan `BRONZE`.
+  - Auto-generate kode `CUST-XXXX` dan endpoint pencarian cepat `GET /api/v1/customers/autocomplete` untuk persiapan integrasi booking jadwal bus.
+- **Frontend UI Lengkap & Interaktif**:
+  - Halaman **Manajemen Armada Bus (`/vehicles`)**: Grid Kartu visual & Tabel view, badge status kepemilikan (Lunas vs Leasing), rincian kelas kursi, dan modal form tambah/edit dengan kalkulator dinamis kapasitas kursi.
+  - Halaman **Database Pelanggan & CRM Leads (`/customers`)**: Filter segmen, tiering, live search, kartu statistik, dan form tambah/edit.
+  - Halaman **Pengaturan Struktur Organisasi (`/organization`)**: Tab Profil Perusahaan, Unit Bisnis, Cost Center, dan Profit Center.
+  - Service clients (`vehicle.service.ts`, `customer.service.ts`, `organization.service.ts`) terstandarisasi tanpa leading slash sesuai aturan CORS.
+- **Verifikasi Kualitas Penuh**:
+  - 4 test suites unit test backend (32 tests) 100% lulus (termasuk `vehicles.service.spec.ts` dan `customers.service.spec.ts`).
+  - E2E tests backend 100% lulus.
+  - Build frontend Vite TypeScript 100% lulus bebas error.
+
 ### 2026-10-15: Stage 0 Completed — RBAC 11 Roles, 14 Test Users (Password Asd123), & Comprehensive Sidebar Menu Tree Seeded
 - **11 Role Standar Resmi**: Mendaftarkan role lengkap mencakup `SUPER_ADMIN`, `DIRECTOR`, `FINANCE_MANAGER`, `ACCOUNTANT`, `FINANCE_AR_AP`, `POOL_CASHIER`, `OPS_ADMIN`, `FIELD_COORDINATOR`, `CREW_DRIVER`, `CREW_CONDUCTOR`, dan `CREW_STEWARDESS` (Pramugari Bus).
 - **14 Akun Pengguna Testing Lapangan**: Menyiapkan akun siap uji dengan password seragam `Asd123` untuk Direktur (`director@`), Finance Manager (`finance.manager@`), Akuntan (`accountant@`), Kasir Pool (`cashier.ciputat@`), Dispatcher (`ops.admin@`), Korlap (`field.coordinator@`), 3 Pengemudi Driver (`driver.budi@`, `driver.joko@`, `driver.hendra@`), Kondektur (`conductor.anto@`), dan 2 Pramugari (`stewardess.siti@`, `stewardess.maya@`).
