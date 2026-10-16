@@ -11,6 +11,11 @@
 
 ## Phase 2: Fleet Management, Operations (SPJ) & Accounting (Design Completed & Locked)
 
+### 2026-10-15: Blueprint Addendum v1.16 Locked — Perencanaan Jadwal Bus (trip_schedules) sebagai Entry Point SPJ & Modul Leads CRM Penyewa Wisata (customers)
+- **Pemisahan Perencanaan vs Eksekusi**: Membakukan bahwa SPJ tidak dibuat mendadak dari nol, melainkan diterbitkan via aksi 1-klik dari dokumen jadwal dinas armada (`trip_schedules`).
+- **Validasi Anti-Bentrok & Jeda Istirahat (*Buffer Rest Time*)**: Mengunci aturan penolakan jadwal tumpang-tindih (*overlap conflict*) per bus dan per kru, serta alert buffer waktu istirahat armada/kru minimal 3 jam sebelum jadwal berikutnya.
+- **Database CRM Leads Penyewa Wisata (`customers`)**: Mengintegrasikan database penyewa bus pariwisata (Corporate, School, EO, Community) sebagai aset komersial jangka panjang (*Customer Lifetime Value*), dengan fitur auto-link dari form jadwal, pelacakan frekuensi sewa, dan filter retargeting sales musiman.
+
 ### 2026-10-15: Blueprint Addendum v1.15 Locked — Standardisasi Kompensasi Kru Standby/Langsir, Gaji Karyawan, Upah Lembur & Dinas Luar Kantor
 - **Kompensasi Kru Non-SPJ di Pool Garasi**: Mengunci pemisahan beban uang makan standby driver di garasi (`53105 Beban Uang Makan Standby Kru (Non-SPJ Garasi)`) yang dikeluarkan via Kas Kecil Pool dan dilarang masuk SPJ agar tidak mendistorsi margin ritase bus.
 - **Insentif Langsir & Dinas Teknis Kru (`53106`)**: Menetapkan akun `53106 Beban Insentif Langsir & Dinas Teknis Kru (Non-SPJ Bengkel/Karoseri)` untuk uang saku tugas driver mengantar bus kosong ke karoseri/bengkel/uji KIR, dengan kewajiban dimensi `vehicle_id` agar riwayat biaya perawatan unit terakumulasi utuh.

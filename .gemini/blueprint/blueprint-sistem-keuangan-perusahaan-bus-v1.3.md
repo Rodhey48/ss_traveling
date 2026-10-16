@@ -2740,3 +2740,73 @@ Addendum ini meresmikan tata kelola pengeluaran untuk kompensasi non-SPJ kru (st
   - Uang bensin, tiket transport, atau uang saku staf kantor saat dinas luar non-armada (misal: staf legal mengurus izin trayek ke Dishub pusat/daerah, staff finance ke perbankan, atau staf operasional menghadiri rapat Dishub/Organda).
   - Akun Jurnal: Debit `57109 Beban Perjalanan Dinas & Transport Staf Kantor`, Kredit `11103 Kas Kecil Pool`.
 
+---
+
+# Addendum v1.16 — Perencanaan Jadwal Bus (trip_schedules) sebagai Entry Point SPJ & Modul Leads CRM Penyewa Wisata (customers)
+Tanggal pembaruan: 15 Oktober 2026
+
+Addendum ini membakukan pemisahan antara **Fase Perencanaan (*Planning & Dispatch Scheduling*)** dan **Fase Eksekusi Operasional (*SPJ Execution*)**, serta mengintegrasikan database penyewa bus wisata ke dalam sistem **Customer Relationship Management (CRM Leads)** untuk retargeting komersial jangka panjang SS Traveling.
+
+## 1. Filosofi Bisnis: Pemisahan Perencanaan Jadwal vs Eksekusi SPJ
+- **Jadwal Bus (*trip_schedules*) sebagai Cetak Biru Rencana**:
+  - Untuk layanan AKAP Reguler, jadwal bus disusun mingguan (misal: jadwal dinas rolling armada Tangerang $\leftrightarrow$ Yogyakarta 1 minggu ke depan).
+  - Untuk layanan Pariwisata / Charter, jadwal dibuat berdasarkan pesanan kontrak sewa (booking masuk dari kantor/sales).
+- **Mencegah Armada & Kru Bentrok (*Overlap Conflict Prevention*)**:
+  - Sistem secara ketat menolak atau memperingatkan jika ada unit bus atau personel kru yang di-plot pada rentang waktu yang sama atau memiliki jeda istirahat (*buffer time*) terlalu mepet (rekomendasi minimal jeda 3 jam pasca-perjalanan untuk cuci bus, cek oli/ban mekanik, dan tidur kru).
+- **Penerbitan SPJ Menjadi "1-Klik" di Hari H Keberangkatan**:
+  - Saat jadwal telah berstatus `CONFIRMED` dan armada telah siap di pool garasi, Admin Dispatcher cukup menekan tombol aksi **`[Terbitkan SPJ]`**.
+  - Seluruh data perencanaan (armada bus, susunan kru, rute legs, titik jemput / drop, dan kontak panitia penyewa) otomatis disalin (*pre-populated*) ke lembar SPJ tanpa perlu konfirmasi manual berulang-ulang antar-divisi.
+
+## 2. Spesifikasi Entitas Jadwal Bus (`trip_schedules`)
+Tabel `trip_schedules` bertindak sebagai jangkar perencanaan sebelum SPJ lahir:
+
+| Kolom | Tipe Data | Deskripsi & Aturan Bisnis |
+| :--- | :--- | :--- |
+| `id` | `uuid` | Primary key unik dokumen jadwal |
+| `schedule_no` | `varchar` | Nomor jadwal unik (`SCH/AKP/YYMM/XXXX` atau `SCH/WIS/YYMM/XXXX`) berbasis `document_sequences` |
+| `service_type` | `enum` | Jenis layanan: `AKAP` atau `TOURISM` |
+| `vehicle_id` | `uuid` (FK) | Relasi wajib ke armada `vehicles` |
+| `planned_departure_at` | `timestamptz` | Rencana tanggal & jam berangkat |
+| `planned_return_at` | `timestamptz` | Rencana tanggal & jam tiba kembali di pool garasi |
+| `origin` | `varchar` | Kota/titik awal keberangkatan (misal: `Pool Ciputat Tangerang`) |
+| `destination` | `varchar` | Kota/titik tujuan akhir (misal: `DIY Yogyakarta & Sekitarnya`) |
+| `customer_id` | `uuid` (FK) | Relasi opsional/wajib wisata ke master pelanggan & leads `customers` |
+| `pic_name` | `varchar` | Nama penanggung jawab / panitia rombongan di lapangan |
+| `pic_phone` | `varchar` | Nomor HP/WhatsApp aktif penanggung jawab untuk koordinasi supir |
+| `pickup_notes` | `text` | Catatan titik jemput (misal: *Jemput jam 06.00 di Lobby Gedung B, Bintaro*) |
+| `itinerary_notes` | `text` | Catatan rute destinasi wisata (Candi Borobudur, Malioboro, Solo) |
+| `planned_driver_1_id` | `uuid` (FK) | Rencana penugasan Supir 1 (`users`) |
+| `planned_driver_2_id` | `uuid` (FK) | Rencana penugasan Supir 2 (`users`) |
+| `planned_conductor_id` | `uuid` (FK) | Rencana penugasan Kondektur / Helper (`users`) |
+| `status` | `enum` | Siklus: `DRAFT` $\to$ `CONFIRMED` $\to$ `SPJ_ISSUED` $\to$ `COMPLETED` (atau `CANCELLED`) |
+| `spj_id` | `uuid` (FK) | Tautan ke dokumen `spjs` saat jadwal berhasil diterbitkan menjadi SPJ |
+
+## 3. Spesifikasi Database Leads & CRM Penyewa Wisata (`customers`)
+Di bisnis pariwisata, penyewa adalah aset komersial jangka panjang dengan potensi sewa tahunan berulang (*Customer Lifetime Value*). Tabel `customers` dirancang tidak hanya untuk data penagihan faktur, melainkan juga sebagai pusat data prospek (*Leads Database*):
+
+| Kolom | Tipe Data | Deskripsi & Aturan Bisnis |
+| :--- | :--- | :--- |
+| `id` | `uuid` | Primary key |
+| `code` | `varchar` | Kode pelanggan unik (`CUST-0001`) |
+| `customer_type` | `enum` | Segmentasi pasar: `CORPORATE` (Kantor/Pabrik), `SCHOOL` (Sekolah/Kampus), `TRAVEL_AGENT` (Biro Mitra/EO), `COMMUNITY` (Majelis/Keluarga), `INDIVIDUAL` |
+| `institution_name` | `varchar` | Nama perusahaan, sekolah, atau instansi penyewa |
+| `pic_name` | `varchar` | Nama ketua panitia / kontak person |
+| `phone` | `varchar` | Nomor HP / WhatsApp utama untuk komunikasi sales & supir |
+| `email` | `varchar` | Email penawaran / invoice tagihan (opsional) |
+| `address` | `text` | Alamat instansi / domisili penjemputan |
+| `city` | `varchar` | Kota domisili penyewa (Tangerang, Jakarta, Depok, dll.) |
+| `lead_source` | `varchar` | Sumber prospek (WhatsApp Hotline, Instagram, Rekomendasi, Walk-in) |
+| `customer_tier` | `enum` | Level pelanggan: `NEW_LEAD`, `REGULAR_CUSTOMER`, `VIP_CORPORATE` |
+| `last_trip_date` | `date` | Tanggal terakhir kali menyewa armada SS Traveling (otomatis terupdate) |
+| `total_trips_count` | `integer` | Akumulasi total frekuensi sewa (otomatis bertambah saat SPJ selesai) |
+| `special_notes` | `text` | Preferensi khusus (contoh: *Selalu minta bus Luxury 2-1, supir Pak Hendra*) |
+| `is_active` | `boolean` | Status keaktifan pelanggan |
+
+## 4. Alur Integrasi Otomatis (Zero Extra Admin Effort)
+1. **Auto-Complete & Pendaftaran Lead Instan**:
+   - Saat staf operasional atau sales menginput booking wisata di form jadwal bus, staf mengetikkan nomor telepon/nama instansi.
+   - Jika sudah ada di database `customers`, profil lengkap otomatis muncul dan titik penjemputan tersalin.
+   - Jika pelanggan baru, sistem secara otomatis mendaftarkannya sebagai record baru di `customers` dengan status `NEW_LEAD`.
+2. **Akumulasi Retargeting Marketing**:
+   - Tim sales SS Traveling dapat memfilter database penyewa berdasarkan musim liburan (misal: menarik data seluruh sekolah yang pernah sewa di bulan Mei tahun lalu) untuk melakukan kampanye penawaran sewa *Study Tour* secara proaktif via WhatsApp.
+

@@ -41,7 +41,7 @@ Setiap tahap di bawah ini mencakup siklus pengembangan penuh: **Model & Skema, D
 
 ---
 
-### 📌 Tahap 1: Master Organisasi, Dimensi, & Armada Bus
+### 📌 Tahap 1: Master Organisasi, Dimensi, Armada Bus, & Pelanggan / CRM Leads
 * [ ] **Models & Entities (`src/@models/`)**:
   * [ ] `companies`: Entitas hukum PT SS Traveling (`code`, `name`, `currency`, `timezone`).
   * [ ] `business_units`: Unit usaha operasional (`AKAP`, `PARIWISATA`, `SHUTTLE`).
@@ -49,6 +49,7 @@ Setiap tahap di bawah ini mencakup siklus pengembangan penuh: **Model & Skema, D
   * [ ] `profit_centers`: Unit analisis pendapatan per lini bisnis.
   * [ ] `vehicles`: Data fisik armada bus (`code`/nomor lambung, `nickname`, `plate_number`, `vehicle_type`, `capacity`, `isActive`).
   * [ ] `vehicle_seat_classes`: Konfigurasi multi-class kursi per bus (*Sleeper*, *Luxury 2-1*, *Executive*) sebagai batas fisik (*hard ceiling*) manifes.
+  * [ ] `customers`: Master pelanggan & database CRM leads penyewa wisata (`code`, `customer_type: CORPORATE/SCHOOL/TRAVEL_AGENT/COMMUNITY/INDIVIDUAL`, `institution_name`, `pic_name`, `phone`, `email`, `address`, `city`, `lead_source`, `customer_tier`, `last_trip_date`, `total_trips_count`, `special_notes`, `isActive`).
 * [ ] **DTOs & Validations (`src/@dto/`)**:
   * [ ] `CreateCompanyDto`, `UpdateCompanyDto`
   * [ ] `CreateBusinessUnitDto`, `UpdateBusinessUnitDto`
@@ -56,9 +57,11 @@ Setiap tahap di bawah ini mencakup siklus pengembangan penuh: **Model & Skema, D
   * [ ] `CreateProfitCenterDto`, `UpdateProfitCenterDto`
   * [ ] `CreateVehicleDto`, `UpdateVehicleDto`, `VehicleQueryFilterDto`
   * [ ] `CreateVehicleSeatClassDto`, `UpdateVehicleSeatClassDto`
+  * [ ] `CreateCustomerDto`, `UpdateCustomerDto`, `CustomerQueryFilterDto`
 * [ ] **Services & Domain Logic (`src/modules/`)**:
   * [ ] `OrganizationService`: Pengelolaan unit bisnis, hierarki cost center, dan profit center.
   * [ ] `VehiclesService`: Validasi nopol & kode lambung unik, pendaftaran multi-class kursi, kalkulasi kapasitas fisik total bus.
+  * [ ] `CustomersService`: Pengelolaan database prospek/leads, pencarian autocomplete nama/telepon, auto-update riwayat trip dan frekuensi sewa.
 * [ ] **Controllers & REST Endpoints (`src/modules/`)**:
   * [ ] `GET/POST/PUT` `/api/v1/companies`
   * [ ] `GET/POST/PUT` `/api/v1/business-units`
@@ -66,12 +69,15 @@ Setiap tahap di bawah ini mencakup siklus pengembangan penuh: **Model & Skema, D
   * [ ] `GET/POST/PUT` `/api/v1/profit-centers`
   * [ ] `GET/POST/PUT/DELETE` `/api/v1/vehicles` (dengan filter paginasi & Swagger docs)
   * [ ] `GET/POST/PUT` `/api/v1/vehicles/:id/seat-classes`
+  * [ ] `GET/POST/PUT/DELETE` `/api/v1/customers` (manajemen pelanggan & CRM filter leads)
 * [ ] **Database Seeder & Migration**:
-  * [ ] Migration skema tabel organisasi dan armada.
+  * [ ] Migration skema tabel organisasi, armada, dan pelanggan/leads.
   * [ ] Seeder: PT SS Traveling, Unit AKAP & Wisata, Cost Centers (Ciputat, Bengkel, Kantor).
   * [ ] Seeder: 10 Unit Bus Existing SS Traveling (7 lunas, 3 cicilan leasing sesuai Addendum v1.13) lengkap dengan kursi Sleeper & Luxury 2-1.
+  * [ ] Seeder: Data awal pelanggan B2B (misal: PT Mitra Sejahtera Abadi, SMA 1 Tangerang).
 * [ ] **Automated Tests**:
   * [ ] Unit test `VehiclesService` (validasi kapasitas multi-class, nopol duplikat).
+  * [ ] Unit test `CustomersService` (pencarian lead, update last trip).
   * [ ] Unit test `OrganizationService`.
 
 ---
@@ -180,13 +186,41 @@ Setiap tahap di bawah ini mencakup siklus pengembangan penuh: **Model & Skema, D
 
 ---
 
-### 📌 Tahap 5: SPJ Life Cycle & Multi-Leg State Machine
+### 📌 Tahap 5A: Perencanaan Jadwal Bus & Dispatch Plotting (`trip_schedules`)
+* [ ] **Models & Entities (`src/@models/`)**:
+  * [ ] `trip_schedules`: Dokumen rencana jadwal dinas bus (`schedule_no`, `service_type: AKAP/TOURISM`, `vehicle_id`, `planned_departure_at`, `planned_return_at`, `origin`, `destination`, `customer_id`, `pic_name`, `pic_phone`, `pickup_notes`, `itinerary_notes`, `planned_driver_1_id`, `planned_driver_2_id`, `planned_conductor_id`, `status: DRAFT/CONFIRMED/SPJ_ISSUED/COMPLETED/CANCELLED`, `spj_id`).
+* [ ] **DTOs & Validations (`src/@dto/`)**:
+  * [ ] `CreateTripScheduleDto` (rute, bus, rencana jam berangkat/pulang, kru, customer/lead wisata, titik jemput)
+  * [ ] `UpdateTripScheduleDto`
+  * [ ] `ScheduleConflictCheckDto` (cek irisan jadwal bus & kru)
+  * [ ] `TripScheduleQueryFilterDto` (filter tanggal, nopol bus, status jadwal, unit usaha)
+* [ ] **Services & Domain Logic (`src/modules/`)**:
+  * [ ] `TripSchedulesService`:
+    * Generator nomor jadwal unik `SCH/AKP/YYMM/XXXX` atau `SCH/WIS/YYMM/XXXX` via `DocumentSequenceService`.
+    * **Validasi Anti-Bentrok (*Overlap Conflict Validation*)**: Menolak plotting bus atau kru yang sama pada rentang waktu yang beririsan.
+    * **Peringatan Jeda Istirahat (*Rest Buffer Warning*)**: Alert jika jeda kepulangan armada dengan jadwal berikutnya kurang dari 3 jam.
+    * **Integrasi Otomatis Lead Penyewa**: Pendaftaran otomatis lead baru ke `customers` jika nomor telepon belum ada di database.
+    * **Aksi 1-Klik Generate SPJ**: Menyalin seluruh data matang jadwal ke dokumen `spjs` saat armada siap jalan di hari H.
+* [ ] **Controllers & REST Endpoints (`src/modules/`)**:
+  * [ ] `GET/POST/PUT` `/api/v1/trip-schedules`
+  * [ ] `GET` `/api/v1/trip-schedules/calendar` (data visualisasi timeline kalender/Gantt armada)
+  * [ ] `POST` `/api/v1/trip-schedules/:id/confirm` (mengunci jadwal & reservasi armada)
+  * [ ] `POST` `/api/v1/trip-schedules/:id/generate-spj` (menerbitkan SPJ dari jadwal)
+  * [ ] `POST` `/api/v1/trip-schedules/:id/cancel`
+* [ ] **Database Migration**:
+  * [ ] Migration tabel `trip_schedules`.
+* [ ] **Automated Tests**:
+  * [ ] Unit test `TripSchedulesService` (deteksi tabrakan jadwal bus & kru, buffer time warning, auto-lead).
+
+---
+
+### 📌 Tahap 5B: Eksekusi SPJ Life Cycle & Multi-Leg State Machine (`spjs`)
 * [ ] **Models & Entities (`src/@models/`)**:
   * [ ] `spjs`: Dokumen Surat Perintah Jalan (`spj_no`, `service_type: AKAP/TOURISM`, `parent_spj_id`, `business_unit_id`, `operational_status`, `financial_status`, `issued_at`, `closed_at`).
   * [ ] `spj_legs`: Segmen rute perjalanan (`sequence_no`, `direction: DEPARTURE/RETURN`, `origin`, `destination`, `meal_pax_count`, `meal_discrepancy_notes`, `status`).
   * [ ] `spj_crew_assignments`: Penugasan kru fleksibel (2–4+ kru) per leg perjalanan (`crew_id`, `role: DRIVER/CO_DRIVER/CONDUCTOR`).
 * [ ] **DTOs & Validations (`src/@dto/`)**:
-  * [ ] `CreateSpjDto` (pilihan layanan AKAP/Wisata, armada bus, rute legs, kru)
+  * [ ] `CreateSpjDto` (pilihan layanan AKAP/Wisata, armada bus, rute legs, kru, atau generated dari schedule_id)
   * [ ] `UpdateSpjDto`, `AssignCrewDto`, `ReplaceCrewDto`
   * [ ] `SpjQueryFilterDto` (filter status operasional, finansial, nopol bus, tanggal)
 * [ ] **Services & Domain Logic**:
