@@ -171,7 +171,7 @@ export default function BankAccountModal({
 
           <div className="space-y-2">
             <Label htmlFor="accountId">
-              Akun Buku Besar (GL 11104) <span className="text-destructive">*</span>
+              Akun Buku Besar (GL Account) <span className="text-destructive">*</span>
             </Label>
             <Select
               value={formData.accountId}

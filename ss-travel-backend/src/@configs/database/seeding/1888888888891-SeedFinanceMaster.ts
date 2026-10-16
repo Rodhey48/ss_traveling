@@ -45,7 +45,7 @@ export class SeedFinanceMaster1888888888891 implements MigrationInterface {
       { code: '11101', name: 'Kas Operasional Pool (Ciputat/Jakarta)', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Kas fisik harian kasir garasi Ciputat' },
       { code: '11102', name: 'Kas Operasional Cabang (Yogyakarta)', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Kas fisik cabang perwakilan Yogya' },
       { code: '11103', name: 'Kas Kecil (Petty Cash Garasi)', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Kas kecil biaya harian operasional & mekanik bengkel' },
-      { code: '11104', name: 'Bank Operasional Perusahaan (BCA)', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Rekening giro korporat BCA utama operasional' },
+      { code: '11104', name: 'Bank Operasional Perusahaan', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Rekening bank operasional utama perusahaan' },
       { code: '11105', name: 'Kas Kartu Uang Elektronik (Pool E-Toll)', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Saldo kartu e-toll pool untuk perjalanan bus' },
       { code: '11999', name: 'Selisih Kas Operasional Sementara (Penampung Skenario 4)', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Akun penampung neraca selisih kas kasir belum investigasi agar tutup buku unblocked' },
 
