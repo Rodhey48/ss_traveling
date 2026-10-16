@@ -2,6 +2,13 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-10-15: Stage 0 Completed — RBAC 11 Roles, 14 Test Users (Password Asd123), & Comprehensive Sidebar Menu Tree Seeded
+- **11 Role Standar Resmi**: Mendaftarkan role lengkap mencakup `SUPER_ADMIN`, `DIRECTOR`, `FINANCE_MANAGER`, `ACCOUNTANT`, `FINANCE_AR_AP`, `POOL_CASHIER`, `OPS_ADMIN`, `FIELD_COORDINATOR`, `CREW_DRIVER`, `CREW_CONDUCTOR`, dan `CREW_STEWARDESS` (Pramugari Bus).
+- **14 Akun Pengguna Testing Lapangan**: Menyiapkan akun siap uji dengan password seragam `Asd123` untuk Direktur (`director@`), Finance Manager (`finance.manager@`), Akuntan (`accountant@`), Kasir Pool (`cashier.ciputat@`), Dispatcher (`ops.admin@`), Korlap (`field.coordinator@`), 3 Pengemudi Driver (`driver.budi@`, `driver.joko@`, `driver.hendra@`), Kondektur (`conductor.anto@`), dan 2 Pramugari (`stewardess.siti@`, `stewardess.maya@`).
+- **Pohon Navigasi Sidebar Komprehensif**: Mengonfigurasi pohon menu lengkap dengan ikon Lucide untuk Master Data & CRM (9 sub-menu), Jadwal & Operasional SPJ (2 sub-menu), Meja Kasir Pool (2 sub-menu), Keuangan & Akuntansi (6 sub-menu), dan Manajemen Sistem (3 sub-menu).
+- **Otorisasi Role-Menus Terpetakan**: Seluruh izin akses baca, buat, ubah, dan hapus telah dikonfigurasi per peran kerja sesuai Separation of Duties (SoD).
+- **Verifikasi E2E 100% Lolos**: Menjalankan pengujian integrasi E2E login multi-role dan penarikan pohon menu di `test/rbac-auth.e2e-spec.ts`.
+
 ### 2026-10-15: Backend & Frontend Configuration Alignment & Phase 3 Master Plan Locked
 - **Master Plan 10 Tahap Terkunci**: Membakukan roadmap eksekusi 10 tahap Fase 3 di `.gemini/plan/Plan.md` yang terstruktur berbasis dependensi arsitektur modular.
 - **Safe Decimal & MoneyHelper**: Menginstal `decimal.js` dan mengimplementasikan utilitas moneter terpusat `MoneyHelper` (`src/@common/helpers/money.helper.ts`) lengkap dengan 11 skenario unit test berstatus 100% lulus.

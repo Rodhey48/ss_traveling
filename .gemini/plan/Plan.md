@@ -41,6 +41,38 @@ Setiap tahap dikerjakan secara paralel per fitur (*Vertical Slice*): **Database 
 
 ---
 
+### 📌 Tahap 0: Fondasi RBAC, Matriks 11 Role Standar, User Testing, & Seeder Menu Sidebar (Completed)
+* [x] **Backend RBAC & Seeder Implementation (`ss-travel-backend`)**:
+  * [x] **Matriks 11 Role Standar Terdaftar**: `SUPER_ADMIN`, `DIRECTOR`, `FINANCE_MANAGER`, `ACCOUNTANT`, `FINANCE_AR_AP`, `POOL_CASHIER`, `OPS_ADMIN`, `FIELD_COORDINATOR`, `CREW_DRIVER`, `CREW_CONDUCTOR`, `CREW_STEWARDESS` (Pramugari Bus).
+  * [x] **14 Akun Pengguna Testing Siap Pakai** (Password seragam: `Asd123`):
+    * `superadmin@sstravel.com` (Super Admin, role: `SUPER_ADMIN`)
+    * `director@sstravel.com` (Pak Wira, role: `DIRECTOR`)
+    * `finance.manager@sstravel.com` (Pak Hendro, role: `FINANCE_MANAGER`)
+    * `accountant@sstravel.com` (Mbak Dewi, role: `ACCOUNTANT`)
+    * `finance.arap@sstravel.com` (Staff AR/AP, role: `FINANCE_AR_AP`)
+    * `cashier.ciputat@sstravel.com` (Mas Deni, role: `POOL_CASHIER`)
+    * `ops.admin@sstravel.com` (Dispatcher Ops, role: `OPS_ADMIN`)
+    * `field.coordinator@sstravel.com` (Korlap Barat, role: `FIELD_COORDINATOR`)
+    * `driver.budi@sstravel.com` (Pak Budi, role: `CREW_DRIVER`)
+    * `driver.joko@sstravel.com` (Pak Joko, role: `CREW_DRIVER`)
+    * `driver.hendra@sstravel.com` (Pak Hendra, role: `CREW_DRIVER`)
+    * `conductor.anto@sstravel.com` (Mas Anto, role: `CREW_CONDUCTOR`)
+    * `stewardess.siti@sstravel.com` (Mbak Siti, role: `CREW_STEWARDESS`)
+    * `stewardess.maya@sstravel.com` (Mbak Maya, role: `CREW_STEWARDESS`)
+  * [x] **Struktur Pohon Menu Sidebar Lengkap & Ikon Lucide Terpasang**:
+    * Dashboard (`/dashboard`)
+    * Master Data & CRM (`/vehicles`, `/customers`, `/accounts`, `/cash-bank`, `/fares`, `/agents`, `/partners`, `/fiscal-periods`, `/organization`)
+    * Jadwal & Operasional (`/schedules`, `/spjs`)
+    * Meja Kasir Pool (`/cashier`, `/petty-cash`)
+    * Keuangan & Akuntansi (`/ap-invoices`, `/ar-invoices`, `/journals`, `/reports/trip-profitability`, `/reports/general-ledger`, `/period-closing`)
+    * Manajemen Sistem (`/users`, `/roles`, `/menu-management`)
+  * [x] **Matriks Otorisasi Role-Menus Terpetakan Lengkap**:
+    * `SUPER_ADMIN`: 100% full akses CRUD ke seluruh menu.
+    * Pemetaan izin role lainnya sesuai SoD dan tupoksi operasional masing-masing.
+  * [x] **Automated Testing**: 5/5 skenario E2E test suite lulus di `test/rbac-auth.e2e-spec.ts`.
+
+---
+
 ### 📌 Tahap 1: Master Organisasi, Dimensi, Armada Bus, & Pelanggan / CRM Leads (BE + FE)
 * [ ] **Backend Implementation (`ss-travel-backend`)**:
   * [ ] **Models & Entities (`src/@models/`)**:

@@ -5,6 +5,8 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { RolesModule } from './roles/roles.module';
 import { MenusModule } from './menus/menus.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 import * as Models from './@models';
 
 @Module({
@@ -33,5 +35,7 @@ import * as Models from './@models';
     RolesModule,
     MenusModule,
   ],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}
