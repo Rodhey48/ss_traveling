@@ -368,7 +368,7 @@ export default function AccountsPage() {
             </div>
           )}
 
-          {hasChildren && isExpanded && renderTreeNodes(node.children, level + 1)}
+          {hasChildren && isExpanded && node.children && renderTreeNodes(node.children, level + 1)}
         </div>
       );
     });
