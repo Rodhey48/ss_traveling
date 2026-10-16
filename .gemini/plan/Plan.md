@@ -120,37 +120,37 @@ Setiap tahap dikerjakan secara paralel per fitur (*Vertical Slice*): **Database 
 
 ---
 
-### 📌 Tahap 2: Master Keuangan, Hierarki COA (Kelompok 1-8), & Kas/Bank (BE + FE)
-* [ ] **Backend Implementation (`ss-travel-backend`)**:
-  * [ ] **Models & Entities (`src/@models/`)**:
-    * [ ] `accounts`: COA hierarkis (parent-child, `is_postable`, `normal_balance`, `type`).
-    * [ ] `cash_accounts`: Kas fisik (`Kas Operasional Pool Ciputat`, `Kas Cabang Yogya`, `Kas Kecil Petty Cash`).
-    * [ ] `bank_accounts`: Rekening korporat (`Bank BCA Operasional`, `Bank Mandiri`).
-    * [ ] `fiscal_years` & `fiscal_periods`: Kalender akuntansi bulanan (`OPEN`, `CLOSING`, `CLOSED`).
-    * [ ] `document_sequences`: Generator nomor transaksi anti-tabrakan berbasis row lock.
-  * [ ] **DTOs & Validations**:
-    * [ ] `CreateAccountDto`, `UpdateAccountDto`, `AccountQueryFilterDto`.
-    * [ ] `CreateCashAccountDto`, `CreateBankAccountDto`, `CreateFiscalPeriodDto`.
-  * [ ] **Services & Controllers**:
-    * [ ] `AccountsService` & `AccountsController`: Validasi parent-child akun, pencegahan circular relation, kueri hierarki tree COA.
-    * [ ] `CashBankService` & `CashBankController`: Pengelolaan rekening korporat dan kasir pool penanggung jawab.
-    * [ ] `FiscalPeriodsService` & `FiscalPeriodsController`: Validasi periode aktif dan pencegahan overlap tanggal.
-    * [ ] `DocumentSequenceService`: Algoritma nomor transaksi concurrency-safe.
-  * [ ] **Seeder & Migration**:
-    * [ ] Migration skema tabel COA, kas/bank, dan periode fiskal.
-    * [ ] Seeder: COA Standar Lengkap Perusahaan Bus (Akun 11101 s.d. 82101 sesuai Blueprint Bab 6.2).
-    * [ ] Seeder: Kas Pool Ciputat, Cabang Yogya, Kas Kecil, Bank BCA, serta Kalender Fiskal Aktif Tahun Berjalan.
-  * [ ] **Automated Tests**:
-    * [ ] Unit test `AccountsService` dan `DocumentSequenceService`.
-* [ ] **Frontend Implementation (`ss-travel-frontend`)**:
-  * [ ] **API Service Clients (`src/services/`)**:
-    * [ ] `account.service.ts`: Panggilan API `/api/v1/accounts` (tree kueri).
-    * [ ] `cash-bank.service.ts`: Panggilan API `/api/v1/cash-accounts` & `/api/v1/bank-accounts`.
-    * [ ] `fiscal-period.service.ts`: Panggilan API `/api/v1/fiscal-periods`.
-  * [ ] **Pages & Components (`src/pages/`)**:
-    * [ ] Halaman **Bagan Akun / COA (`/accounts`)**: Tampilan visual pohon hierarki akun parent-child, badge tipe akun, indikator header vs postable, dan modal tambah/edit akun.
-    * [ ] Halaman **Kas & Rekening Bank (`/cash-bank`)**: Manajemen kas pool, kas kecil garasi, dan rekening korporat perusahaan.
-    * [ ] Halaman **Periode Fiskal Akuntansi (`/fiscal-periods`)**: Kalender akuntansi bulanan dan status periode (Open/Closed).
+### 📌 Tahap 2: Master Keuangan, Hierarki COA (Kelompok 1-8), & Kas/Bank (BE + FE) (Completed)
+* [x] **Backend Implementation (`ss-travel-backend`)**:
+  * [x] **Models & Entities (`src/@models/`)**:
+    * [x] `accounts`: COA hierarkis (parent-child, `is_postable`, `normal_balance`, `type`).
+    * [x] `cash_accounts`: Kas fisik (`Kas Operasional Pool Ciputat`, `Kas Cabang Yogya`, `Kas Kecil Petty Cash`).
+    * [x] `bank_accounts`: Rekening korporat (`Bank BCA Operasional`, `Bank Mandiri`).
+    * [x] `fiscal_years` & `fiscal_periods`: Kalender akuntansi bulanan (`OPEN`, `CLOSING`, `CLOSED`).
+    * [x] `document_sequences`: Generator nomor transaksi anti-tabrakan berbasis row lock.
+  * [x] **DTOs & Validations**:
+    * [x] `CreateAccountDto`, `UpdateAccountDto`, `AccountQueryFilterDto`.
+    * [x] `CreateCashAccountDto`, `CreateBankAccountDto`, `CreateFiscalPeriodDto`, `GenerateSequenceDto`.
+  * [x] **Services & Controllers**:
+    * [x] `AccountsService` & `AccountsController`: Validasi parent-child akun, pencegahan circular relation, kueri hierarki tree COA.
+    * [x] `CashBankService`, `CashAccountsController`, & `BankAccountsController`: Pengelolaan kasir pool penanggung jawab dan masking rekening bank.
+    * [x] `FiscalPeriodsService` & `FiscalPeriodsController`: Validasi periode aktif dan pencegahan overlap tanggal.
+    * [x] `DocumentSequenceService` & `DocumentSequenceController`: Algoritma nomor transaksi concurrency-safe.
+  * [x] **Seeder & Migration**:
+    * [x] Migration skema tabel COA, kas/bank, dan periode fiskal (`1781300000000-create-finance-master.ts`).
+    * [x] Seeder: COA Standar Lengkap Perusahaan Bus (Akun 11101 s.d. 82101 sesuai Blueprint Bab 6.2).
+    * [x] Seeder: Kas Pool Ciputat, Cabang Yogya, Kas Kecil, Bank BCA & Mandiri, serta Kalender Fiskal Aktif Tahun Berjalan (`1888888888891-SeedFinanceMaster.ts`).
+  * [x] **Automated Tests**:
+    * [x] Unit test `AccountsService` dan `DocumentSequenceService` (49 tests total passed).
+* [x] **Frontend Implementation (`ss-travel-frontend`)**:
+  * [x] **API Service Clients (`src/services/`)**:
+    * [x] `account.service.ts`: Panggilan API `/api/v1/accounts` (tree kueri).
+    * [x] `cash-bank.service.ts`: Panggilan API `/api/v1/cash-accounts` & `/api/v1/bank-accounts`.
+    * [x] `fiscal-period.service.ts`: Panggilan API `/api/v1/fiscal-periods`.
+  * [x] **Pages & Components (`src/pages/`)**:
+    * [x] Halaman **Bagan Akun / COA (`/accounts`)**: Tampilan visual pohon hierarki akun parent-child, badge tipe akun, indikator header vs postable, dan modal tambah/edit akun.
+    * [x] Halaman **Kas & Rekening Bank (`/cash-bank`)**: Manajemen kas pool, kas kecil garasi, dan rekening korporat perusahaan.
+    * [x] Halaman **Periode Fiskal Akuntansi (`/fiscal-periods`)**: Kalender akuntansi bulanan dan status periode (Open/Closed).
 
 ---
 

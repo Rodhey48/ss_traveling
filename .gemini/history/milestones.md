@@ -2,6 +2,30 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-10-16: Stage 2 Completed — Master Keuangan, Hierarki COA (Kelompok 1-8), Kas/Bank & Periode Fiskal (BE + FE)
+- **Bagan Akun Akuntansi / COA (`accounts`)**:
+  - Model & tabel `accounts` dengan hierarki parent-child, tipe (`ASSET`, `LIABILITY`, `EQUITY`, `REVENUE`, `EXPENSE`), saldo normal (`DEBIT`, `CREDIT`), dan indikator `is_postable`.
+  - Migrasi `1781300000000-create-finance-master.ts` & seeder `1888888888891-SeedFinanceMaster.ts` mengonfigurasi seluruh 55+ akun standar industri bus (Kelompok 11101 s.d. 82101 sesuai Blueprint Bab 6.2), termasuk akun penampung selisih kasir `11999` dan piutang klaim kru `12901` (Skenario 4).
+  - Backend `AccountsService` & `AccountsController`: Validasi kode unik, pencegahan circular relation antar-akun parent-child, kueri pohon hierarki dinamis, dan proteksi hapus jika memiliki sub-akun.
+- **Manajemen Kas & Rekening Bank Korporat (`cash_accounts` & `bank_accounts`)**:
+  - Rekening kas fisik (`cash_accounts`) terikat ke GL Account (`11101`, `11102`, `11103`), petugas kasir custodian, dan cost center (Pool Ciputat, Cabang Yogya, Kas Kecil Garasi).
+  - Rekening bank korporat (`bank_accounts`) terikat ke akun GL `11104` dengan proteksi masking otomatis pada nomor rekening publik (`account_number_masked`, misal `•••• •••• 4370`) untuk keamanan audit & privasi.
+- **Tahun & Periode Fiskal Bulanan (`fiscal_years` & `fiscal_periods`)**:
+  - Model & tabel kalender akuntansi bulanan (Januari s.d. Desember 2026) dengan status `OPEN`, `CLOSING`, `CLOSED`, dan `REOPENED`.
+  - Metode `findOpenPeriodForDate`: Memvalidasi tanggal transaksi jurnal secara ketat dan otomatis menolak posting transaksi pada periode yang berstatus `CLOSED`.
+  - Otomasi pembuatan 12 periode bulanan saat pembuatan tahun fiskal baru.
+- **Generator Nomor Transaksi Concurrency-Safe (`document_sequences`)**:
+  - Mengimplementasikan `DocumentSequenceService` dengan *pessimistic write lock* (`pessimistic_write`) pada tabel `document_sequences` untuk generator nomor transaksi atomik tanpa risiko duplikasi atau race condition (misal `SPJ/AKP/2610/0001`, `BKM/2610/0001`, `JV/2610/0001`).
+- **Frontend Interaktif & Lengkap (3 Halaman Baru)**:
+  - Halaman **Bagan Akun / COA (`/accounts`)**: Toggle visual antara **Pohon Hierarki (Tree View)** dengan cabang expandable dan **Daftar Tabel (Flat View)**, kartu statistik akun per kelompok, filter tipe akun, dan modal tambah/edit akun.
+  - Halaman **Kas & Rekening Bank (`/cash-bank`)**: Tab Kas Operasional Pool vs Tab Rekening Bank Korporat dengan tampilan kartu perbankan modern dan modal form CRUD lengkap.
+  - Halaman **Periode Fiskal Akuntansi (`/fiscal-periods`)**: Dropdown pemilih tahun fiskal, tabel 12 periode bulanan, status badge warna-warni, serta modal ubah status periode (kunci/tutup periode dan buka kembali dengan alasan wajib).
+  - Service clients (`account.service.ts`, `cash-bank.service.ts`, `fiscal-period.service.ts`) terstandarisasi tanpa leading slash sesuai aturan CORS.
+- **Verifikasi Kualitas Penuh**:
+  - 49 unit test backend (6 test suites) lulus 100% termasuk suite baru `accounts.service.spec.ts` dan `document-sequence.service.spec.ts`.
+  - 6/6 E2E tests lulus 100%.
+  - Frontend TypeScript `vite build` 100% sukses tanpa warning/error.
+
 ### 2026-10-16: Stage 1 Feature Expansion — Customer Detail Modal & Preparation for SPJ Order History
 - **Modal Detail Pelanggan CRM (`CustomerDetailModal`)**:
   - Diterapkan pada halaman `/customers`: Mengklik baris tabel pelanggan atau tombol mata (*Eye*) membuka modal detail yang komprehensif.

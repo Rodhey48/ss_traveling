@@ -333,3 +333,142 @@ export interface CustomerFormData {
   isActive?: boolean;
 }
 
+/**
+ * --- FINANCE MASTER & COA TYPES ---
+ */
+export type AccountType = 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE';
+export type NormalBalance = 'DEBIT' | 'CREDIT';
+
+export interface Account {
+  id: string;
+  companyId?: string;
+  code: string;
+  name: string;
+  type: AccountType;
+  normalBalance: NormalBalance;
+  parentId?: string;
+  parent?: Account;
+  children?: Account[];
+  isPostable: boolean;
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AccountTreeNode extends Account {
+  children?: AccountTreeNode[];
+}
+
+export interface AccountFormData {
+  code: string;
+  name: string;
+  type: AccountType;
+  normalBalance: NormalBalance;
+  parentId?: string;
+  isPostable?: boolean;
+  description?: string;
+  isActive?: boolean;
+}
+
+export interface CashAccount {
+  id: string;
+  companyId?: string;
+  code: string;
+  name: string;
+  accountId: string;
+  account?: Account;
+  custodianUserId?: string;
+  custodianUser?: User;
+  costCenterId?: string;
+  costCenter?: CostCenter;
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CashAccountFormData {
+  code: string;
+  name: string;
+  accountId: string;
+  custodianUserId?: string;
+  costCenterId?: string;
+  description?: string;
+  isActive?: boolean;
+}
+
+export interface BankAccount {
+  id: string;
+  companyId?: string;
+  code: string;
+  bankName: string;
+  accountName: string;
+  accountNumber: string;
+  accountNumberMasked: string;
+  accountId: string;
+  account?: Account;
+  currency: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BankAccountFormData {
+  code: string;
+  bankName: string;
+  accountName: string;
+  accountNumber: string;
+  accountId: string;
+  currency?: string;
+  description?: string;
+  isActive?: boolean;
+}
+
+export type FiscalYearStatus = 'OPEN' | 'CLOSED';
+export type FiscalPeriodStatus = 'OPEN' | 'CLOSING' | 'CLOSED' | 'REOPENED';
+
+export interface FiscalYear {
+  id: string;
+  companyId?: string;
+  year: number;
+  startDate: string;
+  endDate: string;
+  status: FiscalYearStatus;
+  isActive: boolean;
+  periods?: FiscalPeriod[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FiscalPeriod {
+  id: string;
+  fiscalYearId: string;
+  fiscalYear?: FiscalYear;
+  periodNo: number;
+  name: string;
+  startDate: string;
+  endDate: string;
+  status: FiscalPeriodStatus;
+  closedAt?: string;
+  closedBy?: string;
+  closedByUser?: User;
+  closeReason?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateFiscalYearFormData {
+  year: number;
+  startDate: string;
+  endDate: string;
+}
+
+export interface UpdatePeriodStatusFormData {
+  status: FiscalPeriodStatus;
+  reason?: string;
+}
+
+

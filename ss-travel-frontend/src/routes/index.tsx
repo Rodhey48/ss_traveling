@@ -7,6 +7,9 @@ import MenusPage from '@/pages/menus';
 import VehiclesPage from '@/pages/vehicles';
 import CustomersPage from '@/pages/customers';
 import OrganizationPage from '@/pages/organization';
+import AccountsPage from '@/pages/accounts';
+import CashBankPage from '@/pages/cash-bank';
+import FiscalPeriodsPage from '@/pages/fiscal-periods';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import { ProtectedRoute } from './protected-route';
 import { GuestRoute } from './guest-route';
@@ -35,6 +38,9 @@ export default function AppRouter() {
         <Route path="vehicles" element={<VehiclesPage />} />
         <Route path="customers" element={<CustomersPage />} />
         <Route path="organization" element={<OrganizationPage />} />
+        <Route path="accounts" element={<AccountsPage />} />
+        <Route path="cash-bank" element={<CashBankPage />} />
+        <Route path="fiscal-periods" element={<FiscalPeriodsPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="roles" element={<RolesPage />} />
         <Route path="menu-management" element={<MenusPage />} />

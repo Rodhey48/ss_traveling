@@ -8,6 +8,7 @@ import { MenusModule } from './menus/menus.module';
 import { OrganizationModule } from './organization/organization.module';
 import { VehiclesModule } from './vehicles/vehicles.module';
 import { CustomersModule } from './customers/customers.module';
+import { FinanceModule } from './finance/finance.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import * as Models from './@models';
@@ -40,6 +41,7 @@ import * as Models from './@models';
     OrganizationModule,
     VehiclesModule,
     CustomersModule,
+    FinanceModule,
   ],
   controllers: [AppController],
   providers: [AppService],
