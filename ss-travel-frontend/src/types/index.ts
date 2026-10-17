@@ -763,5 +763,116 @@ export interface CalculatedCoordinatorFeeResult {
   coordinatorName?: string;
 }
 
+/**
+ * --- JOURNAL & ACCOUNTING CORE TYPES ---
+ */
+export type JournalStatus = 'DRAFT' | 'POSTED' | 'REVERSED';
+
+export type JournalSourceType =
+  | 'MANUAL'
+  | 'SPJ'
+  | 'AR_INVOICE'
+  | 'AP_INVOICE'
+  | 'CASH_TRANSACTION'
+  | 'BANK_TRANSACTION'
+  | 'DEPRECIATION'
+  | 'PERIOD_CLOSING'
+  | 'SETTLEMENT';
+
+export interface JournalLine {
+  id: string;
+  journalEntryId: string;
+  lineNo: number;
+  accountId: string;
+  account?: Account;
+  debit: string | number;
+  credit: string | number;
+  description?: string;
+  businessUnitId?: string;
+  businessUnit?: BusinessUnit;
+  costCenterId?: string;
+  costCenter?: CostCenter;
+  profitCenterId?: string;
+  profitCenter?: ProfitCenter;
+  tripId?: string;
+  tripLegId?: string;
+  vehicleId?: string;
+  vehicle?: Vehicle;
+  counterpartyType?: string;
+  counterpartyId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface JournalEntry {
+  id: string;
+  companyId?: string;
+  journalNo: string;
+  journalDate: string;
+  periodId: string;
+  period?: FiscalPeriod;
+  sourceType: JournalSourceType;
+  sourceId?: string;
+  description: string;
+  status: JournalStatus;
+  postedAt?: string;
+  postedBy?: string;
+  postedByUser?: User;
+  reversalOfId?: string;
+  reversalOf?: JournalEntry;
+  totalDebit: string | number;
+  totalCredit: string | number;
+  lines?: JournalLine[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface JournalLineInputFormData {
+  accountId: string;
+  debit: string | number;
+  credit: string | number;
+  description?: string;
+  businessUnitId?: string;
+  costCenterId?: string;
+  profitCenterId?: string;
+  tripId?: string;
+  tripLegId?: string;
+  vehicleId?: string;
+  counterpartyType?: string;
+  counterpartyId?: string;
+}
+
+export interface CreateManualJournalFormData {
+  journalDate: string;
+  description: string;
+  sourceType?: JournalSourceType;
+  sourceId?: string;
+  idempotencyKey?: string;
+  companyId?: string;
+  lines: JournalLineInputFormData[];
+}
+
+export interface ReverseJournalFormData {
+  reason: string;
+  reversalDate?: string;
+  idempotencyKey?: string;
+}
+
+export interface JournalFilterParams {
+  startDate?: string;
+  endDate?: string;
+  status?: JournalStatus;
+  sourceType?: JournalSourceType;
+  accountId?: string;
+  businessUnitId?: string;
+  vehicleId?: string;
+  tripId?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: 'journalDate' | 'createdAt';
+  sortOrder?: 'ASC' | 'DESC';
+}
+
 
 

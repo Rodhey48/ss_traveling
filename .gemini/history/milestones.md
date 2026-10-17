@@ -2,6 +2,57 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-10-18: Stage 4 Completed — Accounting Core Engine & Jurnal Umum (BE + FE)
+- **Model & Database Migration Jurnal (`journal_entries`, `journal_lines`, `accounting_events`)**:
+  - Model `journal_entries` dengan penomoran unik `journal_no` (`JV/YYMM/XXXX`), tanggal jurnal, `source_type` (`MANUAL`, `SPJ`, `AR_INVOICE`, `AP_INVOICE`, `CASH_TRANSACTION`, `BANK_TRANSACTION`, `SETTLEMENT`, `PERIOD_CLOSING`, `DEPRECIATION`), relasi periode fiskal `period_id`, `status` (`POSTED`, `REVERSED`), total debit & kredit numeric(20,2), audit trail posting (`posted_by`, `posted_at`), dan self-referencing reversal `reversal_of_id`.
+  - Model `journal_lines` multi-dimensi per baris transaksi: `account_id`, debit, kredit, keterangan, dan dimensi analitik opsional (`business_unit_id`, `cost_center_id`, `profit_center_id`, `trip_id`, `trip_leg_id`, `vehicle_id`, `counterparty_type`, `counterparty_id`).
+  - Model `accounting_events` dengan constraint unik `idempotency_key` untuk proteksi mutlak anti-duplikasi posting.
+  - Migrasi `1781500000000-create-journals-and-accounting-events.ts` sukses dieksekusi di database PostgreSQL.
+- **Posting Satu Pintu Atomik (`AccountingPostingService`)**:
+  - Implementasi single entry point transaksi akuntansi dengan `DataSource.transaction()` atau penerimaan `EntityManager` eksternal dari modul operasional (SPJ/Kasir).
+  - Validasi ketat invariant akuntansi:
+    1. Validasi idempotensi (`idempotency_key`).
+    2. Validasi periode terbuka (`FiscalPeriodsService.findOpenPeriodForDate`), otomatis menolak posting ke periode berstatus `CLOSED`.
+    3. Validasi minimal 2 baris transaksi, nilai non-negatif, larangan debit dan kredit terisi sekaligus dalam 1 baris, dan larangan baris bernilai nol.
+    4. Validasi akun COA: wajib aktif (`isActive = true`) dan wajib berstatus detail (`isPostable = true`), menolak tegas posting ke akun induk/header.
+    5. Validasi keseimbangan ganda: Total Debit == Total Kredit via `MoneyHelper.isBalanced()`.
+    6. Penomoran dokumen concurrency-safe atomik via `DocumentSequenceService` dengan kode `JOURNAL_ENTRY` format `JV/YYMM/XXXX`.
+    7. Perekaman otomatis `accounting_events` untuk auditabilitas.
+    8. Dukungan kueri fleksibel: pencarian teks, rentang tanggal (default bulan berjalan), filter unit bisnis (`businessUnitId`), filter armada bus, filter SPJ, serta pengurutan dinamis (`journalDate` / `createdAt` ASC/DESC).
+- **Mekanisme Reversal Abadi & Proteksi Anti-Desinkronisasi (`JournalReversalService`)**:
+  - Prinsip akuntansi anti-edit/anti-hapus: Jurnal berstatus `POSTED` tidak dapat diedit atau dihapus secara langsung.
+  - Reversal otomatis: Memvalidasi jurnal asal, memastikan status `POSTED`, memastikan belum pernah di-reverse, memvalidasi periode terbuka pada tanggal reversal, menukar seluruh baris transaksi (Debit $\to$ Kredit, Kredit $\to$ Debit), menautkan `reversal_of_id`, menandai status jurnal asal menjadi `REVERSED`, menerbitkan jurnal pembalik baru, dan mencatat accounting event `REVERSED`.
+  - **Proteksi Jurnal Operasional**: Backend menolak tegas pembatalan manual langsung atas jurnal bersumber operasional (`SPJ`, `AR_INVOICE`, `AP_INVOICE`, `CASH`, `BANK`) jika tanpa flag operasional, mewajibkan koreksi diproses dari menu dokumen asalnya agar data lapangan tetap sinkron.
+- **REST API Controller Lengkap (`JournalsController`)**:
+  - `GET /api/v1/journals`: Kueri daftar jurnal dengan paginasi, limit selector, dan filter kaya (tanggal, status, sumber, akun, armada bus, unit bisnis, SPJ, live search, sort by date/createdAt).
+  - `GET /api/v1/journals/:id`: Detail komprehensif jurnal beserta seluruh baris dan relasi akun/dimensi.
+  - `POST /api/v1/journals/manual`: Pembuatan dan posting jurnal memorial seimbang.
+  - `POST /api/v1/journals/:id/reverse`: Aksi reversal jurnal terposting dengan alasan wajib.
+  - Terproteksi RBAC `@RequirePermissions('Journals:read')`, `'Journals:create'`, `'Journals:update'`.
+- **Frontend Interaktif & Lengkap (Halaman `/journals`)**:
+  - Halaman **Daftar Jurnal Umum (`/journals`)**:
+    - **Filter Default Bulan & Tahun Berjalan**: Otomatis menyaring transaksi tanggal 1 s.d. akhir bulan berjalan dengan badge indikator periode dan tombol aksi cepat `Reset (Bulan Ini)` serta `Semua Periode`.
+    - **Pemisahan Unit Bisnis Mandiri**: Kolom khusus **Unit Bisnis** di tabel utama (Badge ungu `AKAP`, badge biru `WISATA`, badge hijau `SHUTTLE`, dan netral `Kantor Pusat`), serta dropdown filter unit bisnis terdedikasi bagi PIC Keuangan AKAP dan PIC Keuangan Wisata.
+    - **Pengurutan Ganda Fleksibel**: Header tabel `Tanggal Jurnal` dan `Waktu Input` interaktif dapat diklik langsung untuk beralih ASC/DESC, serta pemilih urutan terkelompok di toolbar.
+    - **Pemilih Limit Halaman**: Pilihan 10, 15, 25, 50, dan 100 baris per halaman pada bar paginasi.
+    - **SOP & Panduan Edukasi**: Banner interaktif di atas tabel yang menjelaskan bahwa 95% jurnal dibuat otomatis oleh sistem dan dilarang menginput transaksi perjalanan bus secara manual.
+    - **Proteksi Tombol Reversal + Tooltip Pemandu**: Untuk jurnal operasional (`SPJ`, `AR_INVOICE`, dsb.), tombol reverse tetap terlihat namun berstatus *disabled* dengan tooltip instruksi menuju menu dokumen asal.
+  - Modal **Detail Jurnal (`JournalDetailModal`)**: Rincian baris jurnal debet-kredit, informasi akun COA, badge dimensi terikat (Unit Bisnis, armada bus, cost center, SPJ), banner status reversal, dan proteksi tombol reversal yang konsisten.
+  - Modal **Entri Jurnal Memorial (`CreateJournalModal`)**:
+    - Desain Spacious Card Layout yang lega (bukan tabel padat).
+    - 11 template transaksi operasional cepat dengan mekanisme auto-reset input.
+    - Dropdown COA terkelompok (Grouped Select) berdasarkan 6 kategori utama (Aset, Liabilitas, Ekuitas, Pendapatan, Beban, Non-Ops).
+    - Dropdown dimensi Unit Bisnis (`AKAP` / `WISATA` / `Kantor Pusat`) di tiap baris.
+    - Tombol cerdas **"Setimbang"** (Auto-balance) untuk menghitung selisih otomatis.
+    - Real-time Balance Checker Widget interaktif.
+    - Kotak peringatan anti-salah penggunaan di bagian atas form.
+  - Modal **Pembalik Jurnal (`ReverseJournalModal`)**: Dialog konfirmasi pembalikan jurnal dengan input alasan wajib dan tanggal reversal.
+  - Service client `journal.service.ts` terstandarisasi tanpa leading slash sesuai aturan CORS.
+- **Verifikasi Kualitas Penuh**:
+  - 91 unit tests backend (12 test suites) lulus 100%, termasuk pengujian penolakan reversal non-manual.
+  - 12 E2E tests (3 test suites) lulus 100% dengan mekanisme self-cleaning teardown di `afterAll`.
+  - Frontend TypeScript `yarn build` sukses 100% tanpa warning/error.
+
 ### 2026-10-17: Stage 3 Completed — Master Aturan Bisnis & Tarif Lapangan (BE + FE)
 - **Kalender Musim & Matriks Tarif Tiket Dinamis (`fare_seasons` & `fare_matrix`)**:
   - Model & tabel `fare_seasons` (Reguler, Tuslah Lebaran 1447H, Peak Season Liburan Sekolah) dan `fare_matrix` berversi multi-dimensi per rute, kelas kursi bus (`seat_classes`), dan tanggal perjalanan.

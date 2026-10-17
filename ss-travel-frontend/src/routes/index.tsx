@@ -14,6 +14,7 @@ import FaresPage from '@/pages/fares';
 import AgentsPage from '@/pages/agents';
 import CrewRatesPage from '@/pages/crew-rates';
 import PartnersPage from '@/pages/partners';
+import JournalsPage from '@/pages/journals';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import { ProtectedRoute } from './protected-route';
 import { GuestRoute } from './guest-route';
@@ -49,6 +50,7 @@ export default function AppRouter() {
         <Route path="agents" element={<AgentsPage />} />
         <Route path="crew-rates" element={<CrewRatesPage />} />
         <Route path="partners" element={<PartnersPage />} />
+        <Route path="journals" element={<JournalsPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="roles" element={<RolesPage />} />
         <Route path="menu-management" element={<MenusPage />} />

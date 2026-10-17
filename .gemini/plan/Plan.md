@@ -183,28 +183,30 @@ Setiap tahap dikerjakan secara paralel per fitur (*Vertical Slice*): **Database 
 
 ---
 
-### 📌 Tahap 4: Accounting Core Engine & Jurnal Umum (BE + FE)
-* [ ] **Backend Implementation (`ss-travel-backend`)**:
-  * [ ] **Models & Entities (`src/@models/`)**:
-    * [ ] `journal_entries`, `journal_lines`, `accounting_events`.
-  * [ ] **DTOs & Validations**:
-    * [ ] `CreateManualJournalDto`, `JournalLineInputDto`, `ReverseJournalDto`, `JournalFilterQueryDto`.
-  * [ ] **Services & Domain Logic**:
-    * [ ] `AccountingPostingService`: Posting satu pintu via `DataSource.transaction()`, row lock, validasi akun postable & aktif, validasi periode terbuka, validasi debet=kredit dengan `MoneyHelper.isBalanced()`, dan proteksi idempotency key.
-    * [ ] `JournalReversalService`: Pembuatan jurnal pembalik (*reversal*) otomatis tanpa edit/hapus jurnal lama.
-  * [ ] **Controllers & REST Endpoints**:
-    * [ ] `GET` `/api/v1/journals`, `GET` `/api/v1/journals/:id`
-    * [ ] `POST` `/api/v1/journals/manual` (pembuatan jurnal memorial berizin khusus)
-    * [ ] `POST` `/api/v1/journals/:id/reverse` (eksekusi reversal jurnal)
-  * [ ] **Automated Tests**:
-    * [ ] Unit test posting jurnal seimbang, penolakan jurnal tak seimbang, proteksi periode closed, dan reversal.
-* [ ] **Frontend Implementation (`ss-travel-frontend`)**:
-  * [ ] **API Service Clients (`src/services/`)**:
-    * [ ] `journal.service.ts`: Panggilan API `/api/v1/journals`.
-  * [ ] **Pages & Components (`src/pages/`)**:
-    * [ ] Halaman **Daftar Jurnal Umum (`/journals`)**: Tabel jurnal terposting, filter rentang tanggal, filter akun, filter dimensi (SPJ/Bus), dan modal detail rincian baris debet-kredit.
-    * [ ] Modal **Entri Jurnal Memorial (`/journals/create`)**: Form pembuatan jurnal multi-line dengan kalkulator live debet-kredit balance indicator.
-    * [ ] Aksi **Reversal Jurnal**: Tombol reversal dengan dialog konfirmasi alasan pembatalan.
+### 📌 Tahap 4: Accounting Core Engine & Jurnal Umum (BE + FE) (Completed)
+* [x] **Backend Implementation (`ss-travel-backend`)**:
+  * [x] **Models & Entities (`src/@models/`)**:
+    * [x] `journal_entries`, `journal_lines`, `accounting_events`.
+  * [x] **DTOs & Validations**:
+    * [x] `CreateManualJournalDto`, `JournalLineInputDto`, `ReverseJournalDto`, `JournalFilterQueryDto`.
+  * [x] **Services & Domain Logic**:
+    * [x] `AccountingPostingService`: Posting satu pintu via `DataSource.transaction()`, row lock, validasi akun postable & aktif, validasi periode terbuka, validasi debet=kredit dengan `MoneyHelper.isBalanced()`, dan proteksi idempotency key.
+    * [x] `JournalReversalService`: Pembuatan jurnal pembalik (*reversal*) otomatis tanpa edit/hapus jurnal lama.
+  * [x] **Controllers & REST Endpoints**:
+    * [x] `GET` `/api/v1/journals`, `GET` `/api/v1/journals/:id`
+    * [x] `POST` `/api/v1/journals/manual` (pembuatan jurnal memorial berizin khusus)
+    * [x] `POST` `/api/v1/journals/:id/reverse` (eksekusi reversal jurnal)
+  * [x] **Automated Tests**:
+    * [x] Unit test posting jurnal seimbang, penolakan jurnal tak seimbang, proteksi periode closed, dan reversal (90/90 tests passing).
+    * [x] E2E test lifecycle jurnal dan reversal (`test/journals.e2e-spec.ts`, 12/12 E2E tests passing).
+* [x] **Frontend Implementation (`ss-travel-frontend`)**:
+  * [x] **API Service Clients (`src/services/`)**:
+    * [x] `journal.service.ts`: Panggilan API `/api/v1/journals`.
+  * [x] **Pages & Components (`src/pages/`)**:
+    * [x] Halaman **Daftar Jurnal Umum (`/journals`)**: Tabel jurnal terposting, filter rentang tanggal, filter status, filter sumber transaksi, filter akun/dimensi, kartu statistik transaksi, dan paginasi.
+    * [x] Modal **Detail Jurnal (`JournalDetailModal`)**: Rincian baris jurnal debet-kredit, informasi akun COA, dimensi terikat (armada, cost center, SPJ), dan banner status reversal.
+    * [x] Modal **Entri Jurnal Memorial (`CreateJournalModal`)**: Form pembuatan jurnal multi-line dengan kalkulator live debet-kredit balance indicator.
+    * [x] Modal **Reversal Jurnal (`ReverseJournalModal`)**: Dialog konfirmasi alasan pembatalan dan penerbitan jurnal pembalik.
 
 ---
 

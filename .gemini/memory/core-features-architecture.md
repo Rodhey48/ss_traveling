@@ -228,6 +228,40 @@ Response error autentikasi menggunakan struktur terstandar:
 *   **Restoran Servis Makan AKAP**: Standar tarif kupon makan Rp 25.000/pax. Terpisah antara `INVOICED_MONTHLY_AP` (tagihan bulanan AP vendor tanpa melibatkan UJ kru) dan `PAID_BY_CREW_UJ` (tunai kru UJ).
 *   **Zonasi Fee Korlap**: Otomatisasi zonasi tarif fee Rp 10.000/pax berdasarkan arah leg: Leg Berangkat $\to$ Zona `WEST` (Jabodetabek) dan Leg Pulang $\to$ Zona `EAST` (Jateng & DIY).
 
+## 9. Accounting Core Engine & Jurnal Umum (Tahap 4 — Journals, Lines, Idempotency, Posting Atomik, & Reversal)
+
+### A. Model Jurnal & Accounting Events (`journal_entries`, `journal_lines`, `accounting_events`)
+*   **Journal Entries (`journal_entries`)**:
+    *   `journal_no`: Kode unik atomik format `JV/YYMM/XXXX` dihasilkan secara concurrency-safe via `DocumentSequenceService`.
+    *   `journal_date`: Tanggal transaksi akuntansi divalidasi ke kalender periode fiskal (`FiscalPeriodsService.findOpenPeriodForDate`).
+    *   `source_type`: Enum jenis transaksi (`MANUAL`, `SPJ`, `AR_INVOICE`, `AP_INVOICE`, `CASH_TRANSACTION`, `BANK_TRANSACTION`, `SETTLEMENT`, `PERIOD_CLOSING`, `DEPRECIATION`).
+    *   `status`: Enum status akuntansi (`POSTED`, `REVERSED`).
+    *   `reversal_of_id`: Foreign Key self-referencing menautkan jurnal pembalik dengan jurnal asalnya.
+    *   `total_debit` & `total_credit`: Nominal `numeric(20,2)` tersimpan seimbang secara abadi.
+*   **Journal Lines (`journal_lines`)**:
+    *   Rincian baris berurutan (`line_no`) yang memisahkan debit dan kredit per akun detail (`isPostable = true`).
+    *   Dimensi analitik terintegrasi: `business_unit_id`, `cost_center_id`, `profit_center_id`, `trip_id`, `trip_leg_id`, `vehicle_id`, `counterparty_type`, dan `counterparty_id`.
+*   **Accounting Events (`accounting_events`)**:
+    *   Kunci idempotensi (`idempotency_key`) unik untuk mencegah resiko *double posting* dari panggilan API atau re-trigger jaringan.
+
+### B. Single Entry Point Posting (`AccountingPostingService`)
+*   **Atomic Database Transaction**: Seluruh proses posting (pengecekan periode, validasi akun postable, generator nomor urut, pembuatan header/lines, dan event logging) dieksekusi dalam satu transaksi atomik `DataSource.transaction()` atau menerima `EntityManager` eksternal dari modul operasional.
+*   **Validasi Invariant Akuntansi**:
+    *   Wajib minimal 2 baris transaksi.
+    *   Nominal non-negatif dan dilarang terisi debit dan kredit sekaligus dalam 1 baris.
+    *   Akun COA wajib aktif dan berstatus detail/postable (menolak posting ke akun induk/header).
+    *   Keseimbangan debet = kredit dijamin 100% menggunakan `MoneyHelper.isBalanced()`.
+
+### C. Mekanisme Jurnal Pembalik Abadi (`JournalReversalService`)
+*   **Prinsip Audit Trail (Anti-Edit / Anti-Hapus)**: Jurnal yang sudah berstatus `POSTED` tidak dapat diedit atau dihapus.
+*   **Reversal Otomatis**: Memvalidasi jurnal asal, menukar seluruh posisi (Debit $\to$ Kredit dan Kredit $\to$ Debit), menautkan `reversal_of_id`, menandai status jurnal asal menjadi `REVERSED`, menerbitkan nomor jurnal pembalik baru, dan mencatat event `REVERSED`.
+
+### D. Frontend Antarmuka Jurnal (`/journals`)
+*   **Tabel Jurnal & Filter Multidimensi**: Tabel jurnal umum dengan filter rentang tanggal, status (`POSTED`/`REVERSED`), tipe sumber dokumen, dan pencarian instan.
+*   **Modal Entri Jurnal Memorial (`CreateJournalModal`)**: Form input baris transaksi dinamis dilengkapi dengan widget **Realtime Balance Checker** (Total Debit, Total Kredit, Selisih, dan Status Badge Siap Posting vs Belum Seimbang).
+*   **Modal Detail Jurnal (`JournalDetailModal`)**: Rincian baris debet-kredit, kode & nama akun, dimensi armada/cost center, serta banner riwayat reversal.
+*   **Modal Pembalikan Jurnal (`ReverseJournalModal`)**: Dialog konfirmasi alasan pembatalan dan tanggal jurnal pembalik.
+
 ---
 *Gunakan dokumen ini sebagai referensi saat melakukan pengembangan fitur baru atau debugging sistem otorisasi.*
 
