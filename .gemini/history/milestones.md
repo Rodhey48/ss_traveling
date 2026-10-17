@@ -2,6 +2,34 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-10-17: Stage 3 Completed — Master Aturan Bisnis & Tarif Lapangan (BE + FE)
+- **Kalender Musim & Matriks Tarif Tiket Dinamis (`fare_seasons` & `fare_matrix`)**:
+  - Model & tabel `fare_seasons` (Reguler, Tuslah Lebaran 1447H, Peak Season Liburan Sekolah) dan `fare_matrix` berversi multi-dimensi per rute, kelas kursi bus (`seat_classes`), dan tanggal perjalanan.
+  - Implementasi `FaresService.calculateFare`: Dynamic pricing calculation engine: `Harga Tiket = f(Rute, Musim/Tuslah, Kelas Kursi)` dengan fallback otomatis ke musim REGULER jika tidak ada tuslah khusus (Addendum v1.6 & v1.17).
+- **Mitra Agen Penjualan & Aturan Komisi (`agents` & `agent_commission_rules`)**:
+  - Model & tabel `agents` (Agen Fisik Loket vs Online OTA) dan `agent_commission_rules` berjenjang per kelas kursi (Flat Rp / tiket) maupun persentase (10% platform OTA).
+  - Smart Filter Arah Rute Leg (`findAgentsByRoute`): Mencegah kru bus salah memilih agen kota tujuan di leg keberangkatan saat deklarasi manifest (Addendum v1.7).
+  - Engine kalkulasi komisi otomatis: Menghitung hak potongan komisi agen dan net penerimaan disetor ke perusahaan.
+- **Standar Kompensasi & Tarif Kru (`crew_rate_rules`)**:
+  - Model & tabel `crew_rate_rules` untuk supir 1, supir 2, kondektur, dan pramugari bus.
+  - Dua basis skema: AKAP PP Trayek (`PER_TRIP` - Uang Makan + Premi Ritase + Bonus Full Seat 100%) vs Sewa Wisata (`PER_DAY` - Uang Makan Harian + Premi Harian dikali durasi hari sewa tanpa bonus full seat).
+  - Engine *Rate Snapshotting* SPJ: Menjamin hak kru di-snapshot saat SPJ terbit sehingga kebal terhadap fluktuasi master data tarif di kemudian hari (Addendum v1.8).
+- **Restoran Mitra & Fee Koordinator Lapangan (`restaurants` & `coordinator_fee_rules`)**:
+  - Model & tabel `restaurants` mitra servis makan AKAP (RM Taman Selera Subang, RM Raos Eco Gringsing, RM Kendil Mas Batang) dengan tarif kupon Rp 25.000/pax dan pemisahan mekanisme pembayaran (Invoice AP Bulanan vs Tunai Kasir/UJ Kru).
+  - Model & tabel `coordinator_fee_rules` membedakan Zone WEST (Jabodetabek) dan Zone EAST (Jateng & DIY) dengan fee standar Rp 10.000/pax (Addendum v1.9).
+- **Seeder & Database Migration**:
+  - Migrasi `1781400000000-create-pricing-and-rules.ts` mengeksekusi 8 enum & 7 tabel TypeORM.
+  - Seeder `1888888888892-SeedPricingAndMasterRules.ts` mengisi seluruh data real-world: 3 musim tarif, 48 matriks tarif rute Tangerang/Jakarta <-> Yogya untuk 4 kelas kursi, 4 agen terminal fisik + 2 OTA, aturan komisi flat & 10%, 8 master rate kru AKAP & Wisata, 3 RM mitra, dan aturan korlap 2 zona.
+- **Frontend Interaktif & Lengkap (4 Halaman Baru)**:
+  - Halaman **Matriks Tarif & Musim Tiket (`/fares`)**: Matriks harga tiket, kalender musim, dan widget **Kalkulator Dinamis Simulator**.
+  - Halaman **Mitra Agen & Aturan Komisi (`/agents`)**: Manajemen agen loket vs OTA, modal aturan komisi, serta **Validasi Smart Filter Arah Rute Leg & Kalkulator Komisi**.
+  - Halaman **Standar Kompensasi Kru (`/crew-rates`)**: Tabel tarif kompensasi kru dan widget **Simulasi Rate Snapshotting SPJ**.
+  - Halaman **Restoran Mitra & Korlap (`/partners`)**: Manajemen rumah makan servis makan, fee korlap zona Barat/Timur, serta widget **Simulasi Servis Makan & Fee Korlap**.
+  - 4 API service clients baru (`fare.service.ts`, `agent.service.ts`, `crew-rate.service.ts`, `partner.service.ts`).
+- **Verifikasi Kualitas Penuh**:
+  - 71 unit tests backend (10 test suites) lulus 100%.
+  - Frontend TypeScript `yarn build` sukses 100% tanpa warning/error.
+
 ### 2026-10-16: Stage 2 Completed — Master Keuangan, Hierarki COA (Kelompok 1-8), Kas/Bank & Periode Fiskal (BE + FE)
 - **Bagan Akun Akuntansi / COA (`accounts`)**:
   - Model & tabel `accounts` dengan hierarki parent-child, tipe (`ASSET`, `LIABILITY`, `EQUITY`, `REVENUE`, `EXPENSE`), saldo normal (`DEBIT`, `CREDIT`), dan indikator `is_postable`.

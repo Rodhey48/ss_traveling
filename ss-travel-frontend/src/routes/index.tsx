@@ -10,6 +10,10 @@ import OrganizationPage from '@/pages/organization';
 import AccountsPage from '@/pages/accounts';
 import CashBankPage from '@/pages/cash-bank';
 import FiscalPeriodsPage from '@/pages/fiscal-periods';
+import FaresPage from '@/pages/fares';
+import AgentsPage from '@/pages/agents';
+import CrewRatesPage from '@/pages/crew-rates';
+import PartnersPage from '@/pages/partners';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import { ProtectedRoute } from './protected-route';
 import { GuestRoute } from './guest-route';
@@ -41,6 +45,10 @@ export default function AppRouter() {
         <Route path="accounts" element={<AccountsPage />} />
         <Route path="cash-bank" element={<CashBankPage />} />
         <Route path="fiscal-periods" element={<FiscalPeriodsPage />} />
+        <Route path="fares" element={<FaresPage />} />
+        <Route path="agents" element={<AgentsPage />} />
+        <Route path="crew-rates" element={<CrewRatesPage />} />
+        <Route path="partners" element={<PartnersPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="roles" element={<RolesPage />} />
         <Route path="menu-management" element={<MenusPage />} />

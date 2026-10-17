@@ -155,32 +155,31 @@ Setiap tahap dikerjakan secara paralel per fitur (*Vertical Slice*): **Database 
 ---
 
 ### 📌 Tahap 3: Master Aturan Bisnis & Tarif Lapangan (BE + FE)
-* [ ] **Backend Implementation (`ss-travel-backend`)**:
-  * [ ] **Models & Entities (`src/@models/`)**:
-    * [ ] `fare_seasons`, `fare_matrix`: Kalender musim tarif & matriks tarif dinamis berversi.
-    * [ ] `agents`, `agent_commission_rules`: Master agen offline loket vs online OTA (RedBus, Traveloka), filter kota, dan aturan komisi berjenjang per kelas kursi.
-    * [ ] `crew_rate_rules`: Standar uang makan, premi ritase, dan bonus full seat kru (AKAP `PER_TRIP` vs Wisata `PER_DAY`).
-    * [ ] `restaurants`: Master rumah makan mitra servis makan AKAP.
-    * [ ] `coordinator_fee_rules`: Aturan fee koordinator wilayah Barat & Timur.
-  * [ ] **DTOs, Services, & Controllers**:
-    * [ ] `FareMatrixService`: Penentuan tarif tiket dinamis sesuai tanggal dan kelas kursi.
-    * [ ] `AgentsService`: Smart filter agen sesuai arah leg rute (Jakarta vs Yogya).
-    * [ ] `CrewRatesService`: Aturan rate snapshotting kompensasi kru.
-    * [ ] Controller untuk masing-masing master aturan dengan Swagger dan `@RequirePermissions`.
-  * [ ] **Seeder & Migration**:
-    * [ ] Migration tabel tarif, agen, komisi, kompensasi kru, dan restoran.
-    * [ ] Seeder: Matriks 10 Role Standar SS Traveling (Addendum v1.11) pada tabel `roles`.
-    * [ ] Seeder: Matriks tarif awal Jakarta-Yogya, komisi agen loket vs OTA, rate kompensasi kru, dan RM Taman Selera.
-  * [ ] **Automated Tests**:
-    * [ ] Unit test kalkulasi tarif musiman dan filter arah rute agen.
-* [ ] **Frontend Implementation (`ss-travel-frontend`)**:
-  * [ ] **API Service Clients (`src/services/`)**:
-    * [ ] `fare.service.ts`, `agent.service.ts`, `crew-rate.service.ts`, `restaurant.service.ts`.
-  * [ ] **Pages & Components (`src/pages/`)**:
-    * [ ] Halaman **Matriks Tarif & Musim Tiket (`/fares`)**: Pengaturan kalender musim (Reguler, Tuslah, Liburan) dan matriks harga tiket per kelas kursi.
-    * [ ] Halaman **Mitra Agen & Aturan Komisi (`/agents`)**: Pengelolaan agen loket fisik vs OTA, pengaturan komisi (flat per tiket vs persentase).
-    * [ ] Halaman **Standar Kompensasi Kru (`/crew-rates`)**: Tabel tarif uang makan & premi harian/ritase supir dan kondektur.
-    * [ ] Halaman **Restoran Mitra & Korlap (`/partners`)**: Manajemen rumah makan servis makan dan fee koordinator lapangan.
+* [x] **Backend Implementation (`ss-travel-backend`)**:
+  * [x] **Models & Entities (`src/@models/`)**:
+    * [x] `fare_seasons`, `fare_matrix`: Kalender musim tarif & matriks tarif dinamis berversi.
+    * [x] `agents`, `agent_commission_rules`: Master agen offline loket vs online OTA (RedBus, Traveloka), filter kota, dan aturan komisi berjenjang per kelas kursi.
+    * [x] `crew_rate_rules`: Standar uang makan, premi ritase, dan bonus full seat kru (AKAP `PER_TRIP` vs Wisata `PER_DAY`).
+    * [x] `restaurants`: Master rumah makan mitra servis makan AKAP.
+    * [x] `coordinator_fee_rules`: Aturan fee koordinator wilayah Barat & Timur.
+  * [x] **DTOs, Services, & Controllers**:
+    * [x] `FareMatrixService`: Penentuan tarif tiket dinamis sesuai tanggal dan kelas kursi.
+    * [x] `AgentsService`: Smart filter agen sesuai arah leg rute (Jakarta vs Yogya).
+    * [x] `CrewRatesService`: Aturan rate snapshotting kompensasi kru.
+    * [x] Controller untuk masing-masing master aturan dengan Swagger dan `@RequirePermissions`.
+  * [x] **Seeder & Migration**:
+    * [x] Migration tabel tarif, agen, komisi, kompensasi kru, dan restoran (`1781400000000-create-pricing-and-rules.ts`).
+    * [x] Seeder: Matriks tarif awal Jakarta-Yogya, komisi agen loket vs OTA, rate kompensasi kru, dan RM Taman Selera (`1888888888892-SeedPricingAndMasterRules.ts`).
+  * [x] **Automated Tests**:
+    * [x] Unit test kalkulasi tarif musiman, filter arah rute agen, komisi flat/persen, snapshot kompensasi kru, servis makan, dan fee korlap (71/71 tests passing).
+* [x] **Frontend Implementation (`ss-travel-frontend`)**:
+  * [x] **API Service Clients (`src/services/`)**:
+    * [x] `fare.service.ts`, `agent.service.ts`, `crew-rate.service.ts`, `partner.service.ts`.
+  * [x] **Pages & Components (`src/pages/`)**:
+    * [x] Halaman **Matriks Tarif & Musim Tiket (`/fares`)**: Pengaturan kalender musim (Reguler, Tuslah, Liburan) dan matriks harga tiket per kelas kursi dengan simulator kalkulasi dinamis.
+    * [x] Halaman **Mitra Agen & Aturan Komisi (`/agents`)**: Pengelolaan agen loket fisik vs OTA, pengaturan komisi (flat per tiket vs persentase), dan validasi smart filter rute SPJ.
+    * [x] Halaman **Standar Kompensasi Kru (`/crew-rates`)**: Tabel tarif uang makan & premi harian/ritase supir dan kondektur dengan engine snapshotting kompensasi SPJ.
+    * [x] Halaman **Restoran Mitra & Korlap (`/partners`)**: Manajemen rumah makan servis makan dan fee koordinator lapangan lengkap dengan kalkulator pengeluaran akuntansi.
 
 ---
 

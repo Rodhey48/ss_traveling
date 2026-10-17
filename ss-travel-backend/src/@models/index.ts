@@ -21,3 +21,11 @@ export * from './finance/bank-account.entity';
 export * from './finance/fiscal-year.entity';
 export * from './finance/fiscal-period.entity';
 export * from './finance/document-sequence.entity';
+export * from './master-rules/fare-season.entity';
+export * from './master-rules/fare-matrix.entity';
+export * from './master-rules/agent.entity';
+export * from './master-rules/agent-commission-rule.entity';
+export * from './master-rules/crew-rate-rule.entity';
+export * from './master-rules/restaurant.entity';
+export * from './master-rules/coordinator-fee-rule.entity';
+

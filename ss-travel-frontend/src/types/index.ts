@@ -471,4 +471,297 @@ export interface UpdatePeriodStatusFormData {
   reason?: string;
 }
 
+/**
+ * --- TAHAP 3: MASTER ATURAN BISNIS & TARIF LAPANGAN ---
+ */
+
+// 1. FARE SEASONS & MATRIX
+export interface FareSeason {
+  id: string;
+  companyId?: string;
+  code: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  description?: string;
+  isActive: boolean;
+  matrices?: FareMatrix[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FareSeasonFormData {
+  code: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  description?: string;
+  isActive?: boolean;
+}
+
+export interface FareMatrix {
+  id: string;
+  companyId?: string;
+  fareSeasonId: string;
+  fareSeason?: FareSeason;
+  origin: string;
+  destination: string;
+  seatClassId: string;
+  seatClass?: SeatClass;
+  amount: number;
+  effectiveFrom: string;
+  effectiveUntil?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FareMatrixFormData {
+  fareSeasonId: string;
+  origin: string;
+  destination: string;
+  seatClassId: string;
+  amount: number;
+  effectiveFrom?: string;
+  effectiveUntil?: string;
+  isActive?: boolean;
+}
+
+export interface FareCalculationQuery {
+  origin: string;
+  destination: string;
+  seatClassId: string;
+  travelDate?: string;
+}
+
+export interface CalculatedFareResult {
+  amount: number;
+  seasonName: string;
+  seasonCode: string;
+  isSeasonal: boolean;
+  origin: string;
+  destination: string;
+  travelDate: string;
+  seatClass: {
+    id: string;
+    code: string;
+    name: string;
+  };
+}
+
+// 2. AGENTS & COMMISSIONS
+export type AgentType = 'OFFLINE' | 'ONLINE_OTA';
+export type AgentSettlementType = 'CASH_TO_CREW' | 'CASH_TO_OFFICE' | 'BANK_TRANSFER';
+export type CommissionRuleType = 'FLAT_PER_TICKET' | 'PERCENTAGE';
+
+export interface Agent {
+  id: string;
+  companyId?: string;
+  code: string;
+  name: string;
+  agentType: AgentType;
+  city: string;
+  phone: string;
+  email?: string;
+  address?: string;
+  settlementType: AgentSettlementType;
+  contactPerson?: string;
+  isActive: boolean;
+  commissionRules?: AgentCommissionRule[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AgentFormData {
+  code: string;
+  name: string;
+  agentType: AgentType;
+  city: string;
+  phone: string;
+  email?: string;
+  address?: string;
+  settlementType: AgentSettlementType;
+  contactPerson?: string;
+  isActive?: boolean;
+}
+
+export interface AgentCommissionRule {
+  id: string;
+  companyId?: string;
+  agentId: string;
+  seatClassId?: string;
+  seatClass?: SeatClass;
+  ruleType: CommissionRuleType;
+  commissionValue: number;
+  effectiveFrom: string;
+  effectiveUntil?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AgentCommissionRuleFormData {
+  seatClassId?: string;
+  ruleType: CommissionRuleType;
+  commissionValue: number;
+  effectiveFrom?: string;
+  effectiveUntil?: string;
+  isActive?: boolean;
+}
+
+export interface CalculatedCommissionResult {
+  agentId: string;
+  agentName: string;
+  agentType: string;
+  seatClassId?: string;
+  seatClassName?: string;
+  ruleType: CommissionRuleType;
+  commissionRate: number;
+  ticketPrice: number;
+  calculatedCommission: number;
+  netPayoutToCompany: number;
+}
+
+// 3. CREW RATES & COMPENSATION
+export type CrewRole = 'DRIVER' | 'CO_DRIVER' | 'CONDUCTOR' | 'STEWARDESS';
+export type CrewServiceType = 'AKAP' | 'TOURISM';
+export type CrewRateType = 'PER_TRIP' | 'PER_DAY';
+
+export interface CrewRateRule {
+  id: string;
+  companyId?: string;
+  role: CrewRole;
+  serviceType: CrewServiceType;
+  origin: string;
+  destination: string;
+  rateType: CrewRateType;
+  mealAllowance: number;
+  tripIncentive: number;
+  fullSeatBonus: number;
+  effectiveFrom: string;
+  effectiveUntil?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CrewRateRuleFormData {
+  role: CrewRole;
+  serviceType: CrewServiceType;
+  origin: string;
+  destination: string;
+  rateType: CrewRateType;
+  mealAllowance: number;
+  tripIncentive: number;
+  fullSeatBonus?: number;
+  effectiveFrom?: string;
+  effectiveUntil?: string;
+  isActive?: boolean;
+}
+
+export interface CrewRateSnapshotQuery {
+  role: CrewRole;
+  serviceType: CrewServiceType;
+  origin?: string;
+  destination?: string;
+  travelDate?: string;
+  durationDays?: number;
+}
+
+export interface CrewRateSnapshotResult {
+  ruleId: string;
+  role: CrewRole;
+  serviceType: CrewServiceType;
+  rateType: CrewRateType;
+  durationDays: number;
+  dailyMealAllowance: number;
+  dailyTripIncentive: number;
+  mealAllowance: number;
+  tripIncentive: number;
+  fullSeatBonus: number;
+  totalStandardCompensation: number;
+  origin: string;
+  destination: string;
+  travelDate: string;
+}
+
+// 4. RESTAURANTS & COORDINATORS
+export type RestaurantSettlementType = 'PAID_BY_CREW_UJ' | 'INVOICED_MONTHLY_AP';
+export type CoordinatorZone = 'WEST' | 'EAST';
+
+export interface Restaurant {
+  id: string;
+  companyId?: string;
+  code: string;
+  name: string;
+  city: string;
+  address?: string;
+  phone?: string;
+  ratePerPax: number;
+  settlementType: RestaurantSettlementType;
+  contactPerson?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RestaurantFormData {
+  code: string;
+  name: string;
+  city: string;
+  address?: string;
+  phone?: string;
+  ratePerPax: number;
+  settlementType: RestaurantSettlementType;
+  contactPerson?: string;
+  isActive?: boolean;
+}
+
+export interface CalculatedMealResult {
+  restaurantId: string;
+  restaurantCode: string;
+  restaurantName: string;
+  city: string;
+  ratePerPax: number;
+  paxCount: number;
+  totalExpense: number;
+  settlementType: RestaurantSettlementType;
+  requiresInvoiceAP: boolean;
+  requiresCashFromCrewUJ: boolean;
+}
+
+export interface CoordinatorFeeRule {
+  id: string;
+  companyId?: string;
+  zone: CoordinatorZone;
+  coordinatorUserId?: string;
+  coordinatorUser?: User;
+  feePerPax: number;
+  effectiveFrom: string;
+  effectiveUntil?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CoordinatorFeeRuleFormData {
+  zone: CoordinatorZone;
+  coordinatorUserId?: string;
+  feePerPax: number;
+  effectiveFrom?: string;
+  effectiveUntil?: string;
+  isActive?: boolean;
+}
+
+export interface CalculatedCoordinatorFeeResult {
+  zone: CoordinatorZone;
+  legDirection: string;
+  feePerPax: number;
+  paxCount: number;
+  totalFee: number;
+  coordinatorUserId?: string;
+  coordinatorName?: string;
+}
+
+
 
