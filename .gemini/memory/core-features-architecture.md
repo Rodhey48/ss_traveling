@@ -205,6 +205,29 @@ Response error autentikasi menggunakan struktur terstandar:
 *   **Konsumsi Staf Garasi/Kantor**: Makan siang staf dan konsumsi piket di akun `57108 Beban Uang Makan & Konsumsi Staf Kantor/Garasi`.
 *   **Transport Dinas Kantor**: Uang saku/bensin dinas staf kantor ke Dishub/Samsat/Bank di akun `57109 Beban Perjalanan Dinas & Transport Staf Kantor`.
 
+## 8. Master Aturan Bisnis & Tarif Lapangan (Tahap 3 — Fares, Agents, Crew Rates, Partners)
+
+### A. Kalender Musim Tarif & Matriks Tiket Dinamis (`fare_seasons`, `fare_matrix`)
+*   **Dynamic Pricing Core Engine**: Formula harga tiket: `Harga = f(Rute, Musim/Tuslah, Kelas Kursi)`.
+*   **Fallback Graceful**: Prioritas pertama adalah musim musiman aktif pada tanggal perjalanan (misal: `LEBARAN_2026`). Jika tanggal berada di luar musim khusus atau rute belum dikonfigurasi di musim tersebut, sistem otomatis melakukan fallback ke tarif musim `REGULER`.
+*   **Price Snapshotting**: Saat transaksi manifest/tiket diterbitkan di SPJ, tarif disalin permanen ke transaksi agar catatan akuntansi masa lalu tidak berubah meskipun matriks master diupdate.
+
+### B. Mitra Agen & Smart Route Filter (`agents`, `agent_commission_rules`)
+*   **Smart Route Filtering (Anti-Human Error, Addendum v1.7)**: Mencegah kru salah memilih agen kota tujuan di leg keberangkatan:
+    *   Leg Berangkat (Jakarta/Tangerang $\to$ Yogya): Hanya agen domisili `JAKARTA`, `TANGERANG`, `ALL` (OTA).
+    *   Leg Pulang (Yogya $\to$ Jakarta/Tangerang): Hanya agen domisili `YOGYAKARTA`, `ALL` (OTA).
+*   **Kalkulasi Komisi Fleksibel**: Mendukung skema Flat per tiket (untuk agen fisik terminal: Sleeper 30k, Luxury 20k, Exec 20k, Std 15k) dan Persentase (10% untuk OTA seperti RedBus/Traveloka) serta perhitungan otomatis net setoran kas ke perusahaan.
+
+### C. Standar Kompensasi & Rate Snapshotting Kru (`crew_rate_rules`)
+*   **Dua Skema Operasional**:
+    *   `AKAP` (`PER_TRIP`): Uang Makan Standar + Premi Ritase PP + Bonus Full Seat (100% okupansi) per rit PP.
+    *   `TOURISM` (`PER_DAY`): Uang Makan Harian + Premi Harian dikalikan durasi hari sewa bus, tanpa bonus full seat.
+*   **Rate Snapshotting SPJ**: Hak uang makan dan premi disalin permanen saat SPJ diterbitkan, menjamin kepastian hak kru dan kebal terhadap revisi master tarif di masa depan.
+
+### D. Restoran Mitra & Koordinator Lapangan (`restaurants`, `coordinator_fee_rules`)
+*   **Restoran Servis Makan AKAP**: Standar tarif kupon makan Rp 25.000/pax. Terpisah antara `INVOICED_MONTHLY_AP` (tagihan bulanan AP vendor tanpa melibatkan UJ kru) dan `PAID_BY_CREW_UJ` (tunai kru UJ).
+*   **Zonasi Fee Korlap**: Otomatisasi zonasi tarif fee Rp 10.000/pax berdasarkan arah leg: Leg Berangkat $\to$ Zona `WEST` (Jabodetabek) dan Leg Pulang $\to$ Zona `EAST` (Jateng & DIY).
+
 ---
 *Gunakan dokumen ini sebagai referensi saat melakukan pengembangan fitur baru atau debugging sistem otorisasi.*
 
