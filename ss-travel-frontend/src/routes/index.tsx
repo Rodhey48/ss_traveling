@@ -15,6 +15,8 @@ import AgentsPage from '@/pages/agents';
 import CrewRatesPage from '@/pages/crew-rates';
 import PartnersPage from '@/pages/partners';
 import JournalsPage from '@/pages/journals';
+import SchedulesPage from '@/pages/schedules';
+import SpjsPage from '@/pages/spjs';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import { ProtectedRoute } from './protected-route';
 import { GuestRoute } from './guest-route';
@@ -51,6 +53,8 @@ export default function AppRouter() {
         <Route path="crew-rates" element={<CrewRatesPage />} />
         <Route path="partners" element={<PartnersPage />} />
         <Route path="journals" element={<JournalsPage />} />
+        <Route path="schedules" element={<SchedulesPage />} />
+        <Route path="spjs" element={<SpjsPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="roles" element={<RolesPage />} />
         <Route path="menu-management" element={<MenusPage />} />

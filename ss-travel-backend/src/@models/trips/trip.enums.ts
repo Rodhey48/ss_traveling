@@ -1,0 +1,58 @@
+export enum TripServiceType {
+  AKAP = 'AKAP',
+  WISATA = 'WISATA',
+  SHUTTLE = 'SHUTTLE',
+}
+
+export enum TripScheduleStatus {
+  DRAFT = 'DRAFT',
+  CONFIRMED = 'CONFIRMED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum SpjOperationalStatus {
+  DRAFT = 'DRAFT',
+  ISSUED = 'ISSUED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum SpjFinancialStatus {
+  PENDING_SETTLEMENT = 'PENDING_SETTLEMENT',
+  UNDER_REVIEW = 'UNDER_REVIEW',
+  DISCREPANCY = 'DISCREPANCY',
+  SETTLED = 'SETTLED',
+}
+
+export enum SpjLegDirection {
+  DEPARTURE = 'DEPARTURE',
+  RETURN = 'RETURN',
+  ONE_WAY = 'ONE_WAY',
+}
+
+export enum SpjLegStatus {
+  SCHEDULED = 'SCHEDULED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum CrewAssignmentRole {
+  DRIVER = 'DRIVER',
+  CO_DRIVER = 'CO_DRIVER',
+  CONDUCTOR = 'CONDUCTOR',
+  STEWARDESS = 'STEWARDESS',
+  MECHANIC = 'MECHANIC',
+  HELPER = 'HELPER',
+}
+
+export enum CrewAssignmentStatus {
+  ASSIGNED = 'ASSIGNED',
+  ACTIVE = 'ACTIVE',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+  REPLACED = 'REPLACED',
+}

@@ -874,5 +874,216 @@ export interface JournalFilterParams {
   sortOrder?: 'ASC' | 'DESC';
 }
 
+/**
+ * --- TAHAP 5: JADWAL BUS & SPJ (SURAT PERINTAH JALAN) ---
+ */
+export type TripServiceType = 'AKAP' | 'WISATA' | 'SHUTTLE';
+export type TripScheduleStatus = 'DRAFT' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+export type SpjOperationalStatus = 'DRAFT' | 'ISSUED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+export type SpjFinancialStatus = 'PENDING_SETTLEMENT' | 'UNDER_REVIEW' | 'DISCREPANCY' | 'SETTLED';
+export type SpjLegDirection = 'DEPARTURE' | 'RETURN' | 'ONE_WAY';
+export type SpjLegStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+export type CrewAssignmentRole = 'DRIVER' | 'CO_DRIVER' | 'CONDUCTOR' | 'STEWARDESS' | 'MECHANIC' | 'HELPER';
+export type CrewAssignmentStatus = 'ASSIGNED' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'REPLACED';
+
+export interface BufferWarning {
+  type: 'VEHICLE' | 'CREW';
+  targetId: string;
+  targetName: string;
+  message: string;
+  gapMinutes: number;
+}
+
+export interface ConflictCheckResult {
+  hasConflict: boolean;
+  conflictDetails: string[];
+  warnings: BufferWarning[];
+}
+
+export interface TripSchedule {
+  id: string;
+  companyId?: string;
+  scheduleNo: string;
+  serviceType: TripServiceType;
+  businessUnitId?: string;
+  businessUnit?: BusinessUnit;
+  vehicleId?: string;
+  vehicle?: Vehicle;
+  plannedDepartureAt: string;
+  plannedReturnAt: string;
+  origin: string;
+  destination: string;
+  customerId?: string;
+  customer?: Customer;
+  picName?: string;
+  picPhone?: string;
+  pickupNotes?: string;
+  totalPackagePrice: string | number;
+  plannedDriver1Id?: string;
+  plannedDriver1?: User;
+  plannedDriver2Id?: string;
+  plannedDriver2?: User;
+  plannedConductorId?: string;
+  plannedConductor?: User;
+  status: TripScheduleStatus;
+  spjId?: string;
+  spj?: Spj;
+  notes?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SpjLeg {
+  id: string;
+  spjId: string;
+  sequenceNo: number;
+  direction: SpjLegDirection;
+  origin: string;
+  destination: string;
+  departureAt?: string;
+  arrivalAt?: string;
+  status: SpjLegStatus;
+  passengerCount: number;
+  mealPaxCount: number;
+  mealDiscrepancyNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SpjCrewAssignment {
+  id: string;
+  spjId: string;
+  spjLegId?: string;
+  crewId: string;
+  crew?: User;
+  role: CrewAssignmentRole;
+  assignedFrom?: string;
+  assignedUntil?: string;
+  status: CrewAssignmentStatus;
+  replacementCrewId?: string;
+  replacementCrew?: User;
+  notes?: string;
+  mealAllowanceSnapshot: string | number;
+  incentiveSnapshot: string | number;
+  fullSeatBonusSnapshot: string | number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Spj {
+  id: string;
+  companyId?: string;
+  spjNo: string;
+  serviceType: TripServiceType;
+  tripScheduleId?: string;
+  tripSchedule?: TripSchedule;
+  parentSpjId?: string;
+  parentSpj?: Spj;
+  replacementSpjs?: Spj[];
+  vehicleId: string;
+  vehicle?: Vehicle;
+  businessUnitId?: string;
+  businessUnit?: BusinessUnit;
+  profitCenterId?: string;
+  profitCenter?: ProfitCenter;
+  operationalStatus: SpjOperationalStatus;
+  financialStatus: SpjFinancialStatus;
+  issuedAt?: string;
+  operationallyCompletedAt?: string;
+  closedAt?: string;
+  notes?: string;
+  legs?: SpjLeg[];
+  crewAssignments?: SpjCrewAssignment[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateTripScheduleFormData {
+  serviceType: TripServiceType;
+  vehicleId?: string;
+  plannedDepartureAt: string;
+  plannedReturnAt: string;
+  origin: string;
+  destination: string;
+  customerId?: string;
+  picName?: string;
+  picPhone?: string;
+  pickupNotes?: string;
+  totalPackagePrice?: number;
+  plannedDriver1Id?: string;
+  plannedDriver2Id?: string;
+  plannedConductorId?: string;
+  notes?: string;
+}
+
+export interface UpdateTripScheduleFormData extends Partial<CreateTripScheduleFormData> {
+  status?: TripScheduleStatus;
+}
+
+export interface ScheduleFilterParams {
+  serviceType?: TripServiceType;
+  status?: TripScheduleStatus;
+  vehicleId?: string;
+  driverId?: string;
+  startDate?: string;
+  endDate?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface CreateSpjFormData {
+  serviceType: TripServiceType;
+  vehicleId: string;
+  tripScheduleId?: string;
+  notes?: string;
+  legs?: {
+    sequenceNo: number;
+    direction: SpjLegDirection;
+    origin: string;
+    destination: string;
+    departureAt?: string;
+    arrivalAt?: string;
+    passengerCount?: number;
+  }[];
+  crewAssignments?: {
+    crewId: string;
+    role: CrewAssignmentRole;
+    spjLegId?: string;
+    notes?: string;
+  }[];
+}
+
+export interface ReplaceCrewFormData {
+  assignmentId: string;
+  replacementCrewId: string;
+  role?: CrewAssignmentRole;
+  reason: string;
+}
+
+export interface EmergencyReplaceBusFormData {
+  parentSpjId: string;
+  newVehicleId: string;
+  incidentLocation: string;
+  incidentNotes: string;
+  transferPassengerCount?: number;
+  continueWithExistingCrew?: boolean;
+}
+
+export interface SpjFilterParams {
+  serviceType?: TripServiceType;
+  operationalStatus?: SpjOperationalStatus;
+  financialStatus?: SpjFinancialStatus;
+  vehicleId?: string;
+  crewId?: string;
+  startDate?: string;
+  endDate?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
 
 

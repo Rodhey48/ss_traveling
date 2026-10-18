@@ -262,6 +262,32 @@ Response error autentikasi menggunakan struktur terstandar:
 *   **Modal Detail Jurnal (`JournalDetailModal`)**: Rincian baris debet-kredit, kode & nama akun, dimensi armada/cost center, serta banner riwayat reversal.
 *   **Modal Pembalikan Jurnal (`ReverseJournalModal`)**: Dialog konfirmasi alasan pembatalan dan tanggal jurnal pembalik.
 
+## 10. Perencanaan Jadwal Bus & Eksekusi SPJ (Tahap 5 — Schedules, SPJ, Legs, Crew Assignments, Conflict/Buffer Engine, Emergency Breakdown)
+
+### A. Perencanaan Jadwal Dinas Bus (`trip_schedules`) & Conflict Engine
+*   **Pemisahan Perencanaan vs Eksekusi (Addendum v1.16)**: Dokumen SPJ diterbitkan via aksi 1-klik dari dokumen jadwal dinas yang telah dikonfirmasi (`TripScheduleEntity`).
+*   **Overlap Conflict Check**: Formula overlap `(startA <= endB) AND (endA >= startB)` mendeteksi dan menolak jadwal bertabrakan pada rentang waktu yang sama baik untuk bus yang sama maupun kru yang sama.
+*   **Alert Buffer Waktu Istirahat (Minimal 3 Jam)**: Menghitung selisih waktu antara kepulangan jadwal sebelumnya dengan keberangkatan jadwal baru (< 180 menit) dan menampilkan peringatan transparan di form untuk mencegah kelelahan pengemudi.
+*   **Integrasi CRM Leads Wisata**: Otomatis memperbarui metrik frekuensi sewa (`totalTripsCount`) dan tanggal sewa terakhir (`lastTripDate`) pada master pelanggan saat jadwal sewa dikonfirmasi.
+
+### B. Surat Perintah Jalan (`spjs`) & Status Ganda Independen
+*   **Status Ganda Independen (Blueprint Bab 8.2 & Addendum v1.5)**:
+    *   `operational_status`: `DRAFT` ➔ `ISSUED` ➔ `IN_PROGRESS` ➔ `COMPLETED` (atau `CANCELLED`).
+    *   `financial_status`: `PENDING_SETTLEMENT` ➔ `UNDER_REVIEW` ➔ `SETTLED` (atau `DISCREPANCY`).
+    *   Bus yang telah kembali di garasi (`COMPLETED`) otomatis beralih ke `UNDER_REVIEW` untuk diperiksa kasirnya di Tahap 7, dan dilarang langsung dianggap lunas (`SETTLED`).
+*   **Validasi Penerbitan SPJ (`issue`)**: Wajib memiliki minimal 1 personel berstatus `DRIVER`.
+*   **Rate Snapshotting Hak Kru**: Hak kompensasi kru disalin permanen dari `crew_rate_rules` ke `spj_crew_assignments` saat penugasan, kebal terhadap perubahan master tarif di masa depan.
+*   **Revisi Kru Berjalan / Sakit di Jalan (`replaceCrew`, Skenario 1 Poin 7)**: Kru lama diubah statusnya menjadi `REPLACED` dengan alasan wajib, dan kru baru ditugaskan dengan snapshot tarif yang berlaku.
+*   **Emergency Breakdown Armada di Tol (`emergencyReplaceBus`, Skenario 3)**:
+    *   Menutup operasional bus yang mogok (`operational_status = COMPLETED` dengan catatan breakdown di lokasi X).
+    *   Menerbitkan SPJ Pengganti yang ditautkan ke `parent_spj_id`.
+    *   Memindahkan manifes 24 penumpang dan kru ke bus pengganti dengan jaminan omzet tiket tidak diakui ganda di akuntansi (*Anti-Double Revenue*).
+
+### C. Frontend Antarmuka Jadwal & SPJ (`/schedules` & `/spjs`)
+*   **Gantt Chart Kalender Timeline (`/schedules`)**: Visualisasi timeline per baris untuk 10 armada bus `SS-01` s.d. `SS-10`, balok warna status layanan (AKAP, Wisata, Shuttle), dan tombol cepat terbitkan SPJ.
+*   **Modal Form Booking Jadwal (`ScheduleModal`)**: Form lega dengan live conflict checker dan feedback peringatan buffer time 3 jam.
+*   **Monitoring Operasional SPJ (`/spjs`)**: Kartu metrik ringkasan, tabel pemantauan armada aktif di jalan, modal detail rute leg & kupon makan RM mitra (`SpjDetailModal`), modal pergantian kru (`ReplaceCrewModal`), dan modal penanganan breakdown di tol (`EmergencyReplaceBusModal`).
+
 ---
 *Gunakan dokumen ini sebagai referensi saat melakukan pengembangan fitur baru atau debugging sistem otorisasi.*
 

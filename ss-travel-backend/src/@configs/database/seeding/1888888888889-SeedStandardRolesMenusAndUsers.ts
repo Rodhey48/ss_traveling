@@ -267,7 +267,7 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
     const masterGroupId = uuidv4();
     await queryRunner.query(
       `INSERT INTO "menus" ("id", "name", "url", "icon", "sequence", "title", "isWeb", "is_active", "aclName", "moduleId", "createdAt", "updatedAt")
-       VALUES ($1, 'Master Data & CRM', NULL, 'Database', 2, true, true, true, 'MasterGroup', $2, NOW(), NOW())`,
+       VALUES ($1, 'Master Data Perusahaan', NULL, 'Database', 2, true, true, true, 'MasterGroup', $2, NOW(), NOW())`,
       [masterGroupId, fleetModId],
     );
 
@@ -301,7 +301,7 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
 
     // 5.2 Sub Menus
     const subMenus = [
-      // Master Data & CRM
+      // Master Data Perusahaan
       {
         id: uuidv4(),
         name: 'Armada Bus',
@@ -314,20 +314,10 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
       },
       {
         id: uuidv4(),
-        name: 'Pelanggan & CRM Leads',
-        url: '/customers',
-        icon: 'Users',
-        sequence: 2,
-        aclName: 'Customers',
-        parentId: masterGroupId,
-        moduleId: crmModId,
-      },
-      {
-        id: uuidv4(),
         name: 'Bagan Akun (COA)',
         url: '/accounts',
         icon: 'FolderTree',
-        sequence: 3,
+        sequence: 2,
         aclName: 'Accounts',
         parentId: masterGroupId,
         moduleId: accModId,
@@ -337,7 +327,7 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
         name: 'Kas & Rekening Bank',
         url: '/cash-bank',
         icon: 'Landmark',
-        sequence: 4,
+        sequence: 3,
         aclName: 'CashBank',
         parentId: masterGroupId,
         moduleId: finModId,
@@ -347,7 +337,7 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
         name: 'Tarif & Musim Tiket',
         url: '/fares',
         icon: 'Tags',
-        sequence: 5,
+        sequence: 4,
         aclName: 'Fares',
         parentId: masterGroupId,
         moduleId: opsModId,
@@ -357,7 +347,7 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
         name: 'Mitra Agen Penjualan',
         url: '/agents',
         icon: 'Store',
-        sequence: 6,
+        sequence: 5,
         aclName: 'Agents',
         parentId: masterGroupId,
         moduleId: opsModId,
@@ -367,7 +357,7 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
         name: 'Restoran Mitra & Korlap',
         url: '/partners',
         icon: 'UtensilsCrossed',
-        sequence: 7,
+        sequence: 6,
         aclName: 'Partners',
         parentId: masterGroupId,
         moduleId: opsModId,
@@ -377,7 +367,7 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
         name: 'Periode Fiskal',
         url: '/fiscal-periods',
         icon: 'CalendarRange',
-        sequence: 8,
+        sequence: 7,
         aclName: 'FiscalPeriods',
         parentId: masterGroupId,
         moduleId: accModId,
@@ -387,7 +377,7 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
         name: 'Pengaturan Organisasi',
         url: '/organization',
         icon: 'Building2',
-        sequence: 9,
+        sequence: 8,
         aclName: 'Organization',
         parentId: masterGroupId,
         moduleId: authModId,
@@ -396,10 +386,20 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
       // Jadwal & Operasional
       {
         id: uuidv4(),
+        name: 'Pelanggan & CRM Leads',
+        url: '/customers',
+        icon: 'Users',
+        sequence: 1,
+        aclName: 'Customers',
+        parentId: opsGroupId,
+        moduleId: crmModId,
+      },
+      {
+        id: uuidv4(),
         name: 'Jadwal & Plotting Bus',
         url: '/schedules',
         icon: 'CalendarDays',
-        sequence: 1,
+        sequence: 2,
         aclName: 'TripSchedules',
         parentId: opsGroupId,
         moduleId: opsModId,
@@ -409,7 +409,7 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
         name: 'Surat Perintah Jalan (SPJ)',
         url: '/spjs',
         icon: 'FileText',
-        sequence: 2,
+        sequence: 3,
         aclName: 'SPJ',
         parentId: opsGroupId,
         moduleId: opsModId,

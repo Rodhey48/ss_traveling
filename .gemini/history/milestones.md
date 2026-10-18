@@ -2,6 +2,42 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-10-18: Stage 5 Completed — Perencanaan Jadwal Bus & Eksekusi SPJ (BE + FE)
+- **Model Database & Migrasi PostgreSQL (`trip_schedules`, `spjs`, `spj_legs`, `spj_crew_assignments`)**:
+  - Model `trip_schedules` sebagai pintu masuk perencanaan jadwal dinas armada (`schedule_no` format `SCH/AKP/YYMM/XXXX`, `service_type`, `vehicle_id`, `planned_departure_at`, `planned_return_at`, `origin`, `destination`, relasi pelanggan CRM wisata `customer_id`, PIC, catatan jemput, `total_package_price`, supir 1, supir 2, kondektur, status `DRAFT`/`CONFIRMED`/`IN_PROGRESS`/`COMPLETED`/`CANCELLED`, dan relasi `spj_id`).
+  - Model `spjs` (Surat Perintah Jalan) dengan pemisahan status ganda independen (Blueprint Bab 8.2 & Addendum v1.5): `operational_status` (`DRAFT`, `ISSUED`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`) dan `financial_status` (`PENDING_SETTLEMENT`, `UNDER_REVIEW`, `DISCREPANCY`, `SETTLED`). Penomoran pintar unik `SPJ/AKP/YYMM/XXXX` atau `SPJ/WIS/YYMM/XXXX`, serta relasi darurat self-referencing `parent_spj_id` untuk penanganan breakdown di jalan (Skenario 3).
+  - Model `spj_legs` mendukung segmen perjalanan multi-leg (Leg 1 Berangkat & Leg 2 Pulang untuk AKAP, Leg 1 One-Way untuk wisata), waktu keberangkatan/kedatangan, manifes jumlah penumpang (`passenger_count`), kupon servis makan riil restoran mitra (`meal_pax_count`), dan catatan selisih kupon (`meal_discrepancy_notes`, Addendum v1.12).
+  - Model `spj_crew_assignments` dengan dukungan 2–4+ kru fleksibel, pergantian kru sakit mid-trip (`replacement_crew_id`), serta *Rate Snapshotting* otomatis hak kompensasi kru (`meal_allowance_snapshot`, `incentive_snapshot`, `full_seat_bonus_snapshot`, Addendum v1.8 & v1.10).
+  - Migrasi `1781600000000-create-trip-schedules-and-spjs.ts` dan seeder data riil `1888888888893-SeedSchedulesAndSpjs.ts` sukses dieksekusi di database PostgreSQL.
+- **Engine Validasi Anti-Bentrok Jadwal & Buffer Rest Time (`TripSchedulesService`)**:
+  - *Overlap Conflict Formula*: Mendeteksi dan menolak tegas jadwal bertabrakan pada rentang waktu `plannedDepartureAt` s.d. `plannedReturnAt` untuk armada bus yang sama maupun personel kru yang sama.
+  - *Buffer Rest Time Alert (Minimal 3 Jam)*: Menghitung selisih waktu antara kepulangan dinas sebelumnya dengan keberangkatan dinas baru (< 180 menit) dan menampilkan peringatan transparan agar kru tidak kelelahan.
+  - Integrasi CRM Prospek Sewa Wisata: Mengaitkan akun penyewa, memperbarui `totalTripsCount` dan `lastTripDate`, serta mencatat nilai kontrak sewa paket.
+- **State Machine Operasional & Modul SPJ Komprehensif (`SpjService`)**:
+  - *Aksi 1-Klik Terbitkan SPJ (`generateFromSchedule`)*: Mengubah jadwal dinas terkonfirmasi menjadi dokumen SPJ resmi, mengalokasikan armada dan kru, serta memperbarui status jadwal menjadi `IN_PROGRESS`.
+  - Validasi ketat penerbitan SPJ (`issue`): Menolak penerbitan jika tidak memiliki minimal 1 personel berstatus `DRIVER`.
+  - Transisi operasional: Keberangkatan bus (`start`) mengaktifkan leg 1 dan kru dinas; kepulangan bus (`complete`) menuntaskan seluruh leg aktif, mencatat `operationallyCompletedAt`, dan mengalihkan status finansial ke `UNDER_REVIEW` (siap direkonsiliasi kasir pool di Tahap 7).
+  - *Revisi Kru Mid-Trip (`replaceCrew`)*: Mendukung pergantian supir sakit di kota transit, mengunci status kru lama menjadi `REPLACED` dengan alasan wajib, dan menugaskan kru baru dengan snapshot tarif yang berlaku (Skenario 1 Poin 7).
+  - *Emergency Breakdown di Tol (`emergencyReplaceBus`)*: Realisasi Skenario 3 (insiden radiator bus SS-01 jebol di KM 214 Tol Cipali), menutup operasional bus mogok, menerbitkan SPJ pengganti bus SS-03 terhubung `parent_spj_id`, memindahkan manifes 24 penumpang tanpa duplikasi pendapatan tiket, dan melanjutkan penugasan kru estafet.
+- **REST API Endpoints Lengkap**:
+  - `GET/POST/PUT/DELETE` `/api/v1/trip-schedules`, `/api/v1/trip-schedules/calendar`, `/api/v1/trip-schedules/check-conflict`, `/api/v1/trip-schedules/:id/confirm`, `/api/v1/trip-schedules/:id/cancel`, `/api/v1/trip-schedules/:id/generate-spj`
+  - `GET/POST` `/api/v1/spjs`, `/api/v1/spjs/:id/issue`, `/api/v1/spjs/:id/start`, `/api/v1/spjs/:id/complete`, `/api/v1/spjs/:id/replace-crew`, `/api/v1/spjs/:id/emergency-replace-bus`, `/api/v1/spjs/legs/:legId`
+  - Terproteksi RBAC `@RequirePermissions('TripSchedules:...')` dan `@RequirePermissions('SPJ:...')`.
+- **Frontend Interaktif & Lengkap (2 Halaman Baru + 4 Komponen Modal)**:
+  - Halaman **Jadwal & Plotting Armada (`/schedules`)**:
+    - Tab **Kalender Timeline Armada (Gantt Chart)**: Visualisasi per baris untuk 10 armada bus `SS-01` s.d. `SS-10`, balok warna status dinas (AKAP ungu, Wisata kuning, Shuttle hijau), navigasi rentang tanggal, tooltip detail rute, supir, jam, dan tombol terbitkan SPJ.
+    - Tab **Daftar Jadwal (Tabel View)**: Filter layanan, filter status, live search, dan tombol-tombol aksi cepat.
+    - Modal **Booking Jadwal Baru (`ScheduleModal`)**: Layout lega, autocomplete CRM pelanggan wisata, selector armada & 3 kru, serta tombol live `[⚡ Cek Bentrok & Buffer Rest]` dengan kotak peringatan visual.
+  - Halaman **Operasional SPJ Dispatcher (`/spjs`)**:
+    - Kartu metrik ringkasan (Aktif di Rute, Siap Berangkat, Menunggu Kasir, Finansial Selesai).
+    - Tabel monitoring SPJ dengan badge status ganda independen dan indikator estafet bus pengganti.
+    - Modal **Detail SPJ (`SpjDetailModal`)**: Rincian legs, kupon makan RM mitra, kartu snapshot tarif hak kru (Makan, Premi, Bonus Full Seat), serta tombol kontrol operasional (`Jalan`, `Selesai`).
+    - Modal **Pergantian Kru Mid-Trip (`ReplaceCrewModal`)**: Form revisi supir sakit di jalan.
+    - Modal **Emergency Breakdown di Tol (`EmergencyReplaceBusModal`)**: Form Skenario 3 pemindahan 24 penumpang ke bus pengganti.
+- **Verifikasi Kualitas Penuh**:
+  - 108 unit tests backend (14 test suites) lulus 100%, termasuk pengujian overlap conflict, buffer time, issue driver validation, dan emergency replacement.
+  - Frontend TypeScript `yarn build` sukses 100% tanpa warning/error.
+
 ### 2026-10-18: Stage 4 Completed — Accounting Core Engine & Jurnal Umum (BE + FE)
 - **Model & Database Migration Jurnal (`journal_entries`, `journal_lines`, `accounting_events`)**:
   - Model `journal_entries` dengan penomoran unik `journal_no` (`JV/YYMM/XXXX`), tanggal jurnal, `source_type` (`MANUAL`, `SPJ`, `AR_INVOICE`, `AP_INVOICE`, `CASH_TRANSACTION`, `BANK_TRANSACTION`, `SETTLEMENT`, `PERIOD_CLOSING`, `DEPRECIATION`), relasi periode fiskal `period_id`, `status` (`POSTED`, `REVERSED`), total debit & kredit numeric(20,2), audit trail posting (`posted_by`, `posted_at`), dan self-referencing reversal `reversal_of_id`.

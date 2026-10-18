@@ -210,28 +210,31 @@ Setiap tahap dikerjakan secara paralel per fitur (*Vertical Slice*): **Database 
 
 ---
 
-### 📌 Tahap 5: Perencanaan Jadwal Bus & Eksekusi SPJ (BE + FE)
-* [ ] **Backend Implementation (`ss-travel-backend`)**:
-  * [ ] **Models & Entities (`src/@models/`)**:
-    * [ ] `trip_schedules`: Dokumen rencana jadwal dinas bus (`schedule_no`, `service_type`, `vehicle_id`, `planned_departure_at`, `planned_return_at`, `origin`, `destination`, `customer_id`, `pic_name`, `pic_phone`, `pickup_notes`, `planned_driver_1_id`, `planned_driver_2_id`, `planned_conductor_id`, `status`, `spj_id`).
-    * [ ] `spjs`: Dokumen Surat Perintah Jalan (`spj_no`, `service_type`, `parent_spj_id`, `operational_status`, `financial_status`).
-    * [ ] `spj_legs`, `spj_crew_assignments`.
-  * [ ] **Services & Domain Logic**:
-    * [ ] `TripSchedulesService`: Generator nomor jadwal, validasi anti-bentrok armada & kru (*Overlap Conflict*), peringatan buffer rest time (minimal 3 jam), auto-link customer/lead wisata, dan aksi 1-klik *Generate SPJ*.
-    * [ ] `SpjService`: State machine status operasional SPJ (`DRAFT` $\to$ `ISSUED` $\to$ `IN_PROGRESS` $\to$ `COMPLETED`), validasi kapasitas kursi, validasi minimal 1 Driver, snapshot rate hak kru, dan penautan darurat `parent_spj_id` (Skenario 3).
-  * [ ] **Controllers & REST Endpoints**:
-    * [ ] `GET/POST/PUT` `/api/v1/trip-schedules`, `/api/v1/trip-schedules/calendar`
-    * [ ] `POST` `/api/v1/trip-schedules/:id/confirm`, `/api/v1/trip-schedules/:id/generate-spj`
-    * [ ] `GET/POST` `/api/v1/spjs`, `/api/v1/spjs/:id/start`, `/api/v1/spjs/:id/complete`, `/api/v1/spjs/:id/replace-crew`
-  * [ ] **Automated Tests**:
-    * [ ] Unit test deteksi bentrok jadwal bus & kru, buffer time alert, dan transisi lifecycle SPJ.
-* [ ] **Frontend Implementation (`ss-travel-frontend`)**:
-  * [ ] **API Service Clients (`src/services/`)**:
-    * [ ] `trip-schedule.service.ts`, `spj.service.ts`.
-  * [ ] **Pages & Components (`src/pages/`)**:
-    * [ ] Halaman **Jadwal & Plotting Armada (`/schedules`)**: Visualisasi **Kalender Timeline Armada (Gantt Chart)** per bus `SS-01` s.d. `SS-10`, indikator warna status, peringatan jadwal bentrok / sisa istirahat mepet.
-    * [ ] Form **Booking Jadwal Wisata & AKAP Mingguan**: Input bus, kru, titik jemput/drop, dan pencarian instan nama/nomor WA penyewa (CRM auto-complete).
-    * [ ] Halaman **Operasional SPJ Dispatcher (`/spjs`)**: Monitoring bus aktif di jalan, tombol aksi 1-klik terbitkan SPJ dari jadwal, tombol keberangkatan (`IN_PROGRESS`), kepulangan (`COMPLETED`), dan pergantian kru darurat.
+### 📌 Tahap 5: Perencanaan Jadwal Bus & Eksekusi SPJ (BE + FE) (Completed)
+* [x] **Backend Implementation (`ss-travel-backend`)**:
+  * [x] **Models & Entities (`src/@models/`)**:
+    * [x] `trip_schedules`: Dokumen rencana jadwal dinas bus (`schedule_no`, `service_type`, `vehicle_id`, `planned_departure_at`, `planned_return_at`, `origin`, `destination`, `customer_id`, `pic_name`, `pic_phone`, `pickup_notes`, `planned_driver_1_id`, `planned_driver_2_id`, `planned_conductor_id`, `status`, `spj_id`).
+    * [x] `spjs`: Dokumen Surat Perintah Jalan (`spj_no`, `service_type`, `parent_spj_id`, `operational_status`, `financial_status`).
+    * [x] `spj_legs`, `spj_crew_assignments`.
+  * [x] **Services & Domain Logic**:
+    * [x] `TripSchedulesService`: Generator nomor jadwal, validasi anti-bentrok armada & kru (*Overlap Conflict*), peringatan buffer rest time (minimal 3 jam), auto-link customer/lead wisata, dan aksi 1-klik *Generate SPJ*.
+    * [x] `SpjService`: State machine status operasional SPJ (`DRAFT` $\to$ `ISSUED` $\to$ `IN_PROGRESS` $\to$ `COMPLETED`), validasi kapasitas kursi, validasi minimal 1 Driver, snapshot rate hak kru, dan penautan darurat `parent_spj_id` (Skenario 3).
+  * [x] **Controllers & REST Endpoints**:
+    * [x] `GET/POST/PUT/DELETE` `/api/v1/trip-schedules`, `/api/v1/trip-schedules/calendar`, `/api/v1/trip-schedules/check-conflict`
+    * [x] `POST` `/api/v1/trip-schedules/:id/confirm`, `/api/v1/trip-schedules/:id/cancel`, `/api/v1/trip-schedules/:id/generate-spj`
+    * [x] `GET/POST` `/api/v1/spjs`, `/api/v1/spjs/:id/issue`, `/api/v1/spjs/:id/start`, `/api/v1/spjs/:id/complete`, `/api/v1/spjs/:id/replace-crew`, `/api/v1/spjs/:id/emergency-replace-bus`, `/api/v1/spjs/legs/:legId`
+  * [x] **Seeder & Database Migration**:
+    * [x] Migration skema tabel jadwal dan SPJ (`1781600000000-create-trip-schedules-and-spjs.ts`).
+    * [x] Seeder data real-world: Jadwal AKAP SS-01, Jadwal Wisata SS-02, SPJ aktif SS-01 dan SPJ breakdown pengganti SS-03 (`1888888888893-SeedSchedulesAndSpjs.ts`).
+  * [x] **Automated Tests**:
+    * [x] Unit test deteksi bentrok jadwal bus & kru, buffer time alert, transisi lifecycle SPJ, revisi kru, dan emergency replacement (108/108 passing).
+* [x] **Frontend Implementation (`ss-travel-frontend`)**:
+  * [x] **API Service Clients (`src/services/`)**:
+    * [x] `trip-schedule.service.ts`, `spj.service.ts`.
+  * [x] **Pages & Components (`src/pages/`)**:
+    * [x] Halaman **Jadwal & Plotting Armada (`/schedules`)**: Visualisasi **Kalender Timeline Armada (Gantt Chart)** per bus `SS-01` s.d. `SS-10`, indikator warna status, peringatan jadwal bentrok / sisa istirahat mepet.
+    * [x] Form **Booking Jadwal Wisata & AKAP Mingguan (`ScheduleModal`)**: Input bus, kru, titik jemput/drop, live conflict/buffer checker, dan pencarian instan nama/nomor WA penyewa (CRM auto-complete).
+    * [x] Halaman **Operasional SPJ Dispatcher (`/spjs`)**: Monitoring bus aktif di jalan, kartu metrik ringkasan, tombol aksi 1-klik terbitkan SPJ dari jadwal, tombol keberangkatan (`IN_PROGRESS`), kepulangan (`COMPLETED`), modal pergantian kru darurat (`ReplaceCrewModal`), modal penanganan breakdown di tol (`EmergencyReplaceBusModal`), serta modal rincian leg & snapshot kompensasi (`SpjDetailModal`).
 
 ---
 
