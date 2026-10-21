@@ -6,12 +6,16 @@ import {
   IsUUID,
   IsDateString,
   IsNumber,
+  IsBoolean,
+  IsArray,
+  ValidateNested,
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import {
   TripServiceType,
   TripScheduleStatus,
+  CrewAssignmentRole,
 } from '../../@models/trips/trip.enums';
 
 export class CreateTripScheduleDto {
@@ -220,6 +224,35 @@ export class ConflictCheckDto {
   excludeScheduleId?: string;
 }
 
+export class CustomCrewRateDto {
+  @IsUUID()
+  @IsNotEmpty()
+  crewId!: string;
+
+  @IsEnum(CrewAssignmentRole)
+  @IsNotEmpty()
+  role!: CrewAssignmentRole;
+
+  @IsNumber()
+  @IsOptional()
+  @Type(() => Number)
+  mealAllowance?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Type(() => Number)
+  incentive?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Type(() => Number)
+  fullSeatBonus?: number;
+
+  @IsString()
+  @IsOptional()
+  payoutTiming?: string; // 'AT_SETTLEMENT' | 'EARLY_DISBURSEMENT'
+}
+
 export class GenerateSpjFromScheduleDto {
   @IsUUID()
   @IsOptional()
@@ -236,6 +269,16 @@ export class GenerateSpjFromScheduleDto {
   @IsUUID()
   @IsOptional()
   conductorId?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isRoundTrip?: boolean; // True: 2 Leg (PP), False: 1 Leg (One-way)
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => CustomCrewRateDto)
+  customCrewRates?: CustomCrewRateDto[];
 
   @IsString()
   @IsOptional()

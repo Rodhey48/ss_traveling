@@ -8,6 +8,15 @@ import type {
   Spj,
 } from '@/types';
 
+export interface CustomCrewRatePayload {
+  crewId: string;
+  role: 'DRIVER' | 'CO_DRIVER' | 'CONDUCTOR';
+  mealAllowance?: number;
+  incentive?: number;
+  fullSeatBonus?: number;
+  payoutTiming?: 'AT_SETTLEMENT' | 'EARLY_DISBURSEMENT';
+}
+
 export const TripScheduleService = {
   getSchedules: async (params?: ScheduleFilterParams): Promise<{ data: TripSchedule[]; total: number; page: number; limit: number }> => {
     const response = await api.get('api/v1/trip-schedules', { params });
@@ -69,6 +78,8 @@ export const TripScheduleService = {
       driver1Id?: string;
       driver2Id?: string;
       conductorId?: string;
+      isRoundTrip?: boolean;
+      customCrewRates?: CustomCrewRatePayload[];
       notes?: string;
     },
   ): Promise<Spj> => {

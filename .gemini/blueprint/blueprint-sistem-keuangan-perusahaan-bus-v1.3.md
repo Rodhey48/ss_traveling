@@ -2882,3 +2882,39 @@ Addendum ini membakukan tata kelola galeri foto armada bus berbasis relasi *One-
      - Rincian zona kelas kursi (*Multi-Class*) beserta fasilitas kabin yang bersumber dari master `seat_classes`.
      - Badge penanda *Website Catalog Ready*.
 
+---
+
+# Addendum v1.19 — Standardisasi Formula Kompensasi Kru Fleksibel: Satuan Hari/Leg (1 Hari = 1 Leg), Variabel Armada Bus, & Override Kesepakatan Dispatcher di SPJ
+Tanggal pembaruan: 21 Oktober 2026
+
+Addendum ini membakukan tata kelola penetapan hak kompensasi kru perjalanan (Uang Makan & Premi Ritase/Harian) untuk menjamin keadilan lapangan, fleksibilitas operasional pariwisata, dan integritas pencatatan keuangan:
+
+## 1. Prinsip Kesetaraan Satuan Dasar: 1 Hari Operasi = 1 Leg Rute
+- **Layanan AKAP Reguler (Trayek PP):**
+  - Perjalanan pulang-pergi (PP) Jakarta/Tangerang $\leftrightarrow$ Yogyakarta memakan waktu 2 hari dinas, dihitung setara dengan **2 Leg** (Leg 1 Keberangkatan & Leg 2 Kepulangan).
+  - Jika supir hanya menjalankan perjalanan satu arah (misal langsir/engkel/storing armada), dihitung setara dengan **1 Leg ($1 \text{ Hari}$)**.
+- **Layanan Pariwisata / Charter Wisata:**
+  - Dihitung murni berdasarkan **durasi hari kalender pemakaian bus** ($N \text{ Hari}$).
+- **Formula Kesetaraan Rekomendasi Sistem:**
+  $$\text{Rekomendasi Hak Kru} = \text{Durasi Satuan (Leg / Hari)} \times \text{Tarif Dasar Bus Tersebut}$$
+
+## 2. Variabel Armada Bus (Unit-Aware Base Rates)
+- Tanggung jawab dan kompleksitas pengemudi bus mewah (seperti armada `SS-01`, `SS-08`, `SS-09` berkabin Sleeper / Luxury Seat 2-1) berbeda secara signifikan dengan bus kelas standar.
+- Sistem menggunakan tarif dasar rekomendasi (*Base Rate*) yang dapat bervariasi sesuai kelas unit armada bus yang ditugaskan, dengan pembedaan peran antara:
+  1. **Pengemudi Utama & Cadangan (Driver 1 & Driver 2)**.
+  2. **Pembantu Pengemudi (Kondektur / Pramugari)**.
+
+## 3. Dinamika Pariwisata & Hak Override Penuh Dispatcher di SPJ (*In-SPJ Customizer*)
+- Realita penugasan wisata charter memiliki banyak variabel dinamis di lapangan: jarak tempuh (misal tur keliling Bali vs city tour lokal), pengalaman supir, tipe armada, harga sewa kontrak, hingga karakter tamu kementerian/korporat.
+- **Prinsip Solusi:** Sistem menghitungkan nilai rekomendasi dasar sebagai patokan awal, namun **Dispatcher diberikan hak penuh untuk menyesuaikan / mengubah (override) nominal Uang Makan dan Premi Kru secara langsung** pada modal **Review & Terbitkan SPJ**.
+- Nominal yang disepakati dan dikonfirmasi dispatcher langsung terkunci permanen (*snapshot*) ke dalam dokumen SPJ resmi, menjadi dasar sah bagi kasir pool tanpa sengketa tawar-menawar di kemudian hari.
+
+## 4. Opsi Waktu Pembayaran Premi Kru (Payment Timing)
+Sistem mendukung 2 opsi pencairan premi kru yang dicatat pada penugasan SPJ:
+1. **`AT_SETTLEMENT` (Bayar Nanti di Meja Kasir Pool — Standar):**
+   - Premi dibayarkan penuh oleh kasir pool saat armada bus tiba kembali dan SPJ berstatus `COMPLETED`.
+2. **`EARLY_DISBURSEMENT` (Bayar di Awal / Ditransfer Saat Berangkat):**
+   - Diperuntukkan bagi supir dinas wisata jarak jauh yang membutuhkan uang saku di awal keberangkatan.
+   - Dicairkan via kas pool atau transfer bank saat SPJ berstatus `ISSUED`/`IN_PROGRESS`, dan ditandai agar kasir pool tidak melakukan pembayaran dobel (*anti-double payout*) saat rekonsiliasi akhir.
+
+

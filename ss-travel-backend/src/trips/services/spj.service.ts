@@ -328,11 +328,27 @@ export class SpjService {
     // Buat Crew Assignments & Rate Snapshotting
     if (dto.crewAssignments && dto.crewAssignments.length > 0) {
       for (const crewDto of dto.crewAssignments) {
-        const rates = await this.getRateSnapshotForCrew(
-          crewDto.role,
-          dto.serviceType,
-          1,
-        );
+        let meal = crewDto.mealAllowanceSnapshot;
+        let inc = crewDto.incentiveSnapshot;
+        let bonus = crewDto.fullSeatBonusSnapshot;
+
+        if (meal === undefined || inc === undefined) {
+          const rates = await this.getRateSnapshotForCrew(
+            crewDto.role,
+            dto.serviceType,
+            1,
+          );
+          if (meal === undefined) meal = rates.mealAllowance;
+          if (inc === undefined) inc = rates.incentive;
+          if (bonus === undefined) bonus = rates.fullSeatBonus;
+        }
+
+        let assignmentNotes = crewDto.notes || '';
+        if (crewDto.payoutTiming) {
+          assignmentNotes = assignmentNotes
+            ? `${assignmentNotes} [Payout: ${crewDto.payoutTiming}]`
+            : `[Payout: ${crewDto.payoutTiming}]`;
+        }
 
         const assignment = this.crewRepo.create({
           spjId: savedSpj.id,
@@ -340,10 +356,10 @@ export class SpjService {
           role: crewDto.role,
           spjLegId: crewDto.spjLegId,
           status: CrewAssignmentStatus.ASSIGNED,
-          notes: crewDto.notes,
-          mealAllowanceSnapshot: String(rates.mealAllowance),
-          incentiveSnapshot: String(rates.incentive),
-          fullSeatBonusSnapshot: String(rates.fullSeatBonus),
+          notes: assignmentNotes || undefined,
+          mealAllowanceSnapshot: String(meal || 0),
+          incentiveSnapshot: String(inc || 0),
+          fullSeatBonusSnapshot: String(bonus || 0),
         });
         await this.crewRepo.save(assignment);
       }
@@ -353,7 +369,7 @@ export class SpjService {
   }
 
   /**
-   * Aksi 1-Klik: Terbitkan SPJ dari Jadwal yang Terkonfirmasi (Addendum v1.16)
+   * Aksi 1-Klik: Terbitkan SPJ dari Jadwal yang Terkonfirmasi (Addendum v1.16 & v1.19)
    */
   async generateFromSchedule(
     scheduleId: string,
@@ -393,15 +409,67 @@ export class SpjService {
       Math.ceil((retDate.getTime() - depDate.getTime()) / (1000 * 60 * 60 * 24)) + 1,
     );
 
-    // Kumpulkan Crew Assignments
-    const crewAssignments: { crewId: string; role: CrewAssignmentRole }[] = [];
-    if (driver1Id) crewAssignments.push({ crewId: driver1Id, role: CrewAssignmentRole.DRIVER });
-    if (driver2Id) crewAssignments.push({ crewId: driver2Id, role: CrewAssignmentRole.CO_DRIVER });
-    if (conductorId) crewAssignments.push({ crewId: conductorId, role: CrewAssignmentRole.CONDUCTOR });
+    // Legs: default 2 Leg (PP) untuk AKAP, atau sesuai pilihan isRoundTrip
+    const isRoundTrip =
+      dto?.isRoundTrip !== undefined
+        ? dto.isRoundTrip
+        : schedule.serviceType === TripServiceType.AKAP;
 
-    // Legs
+    // Multiplier hak kompensasi kru: AKAP (2 Leg PP atau 1 Leg), Wisata (Jumlah Hari)
+    const legOrDayMultiplier =
+      schedule.serviceType === TripServiceType.AKAP
+        ? (isRoundTrip ? 2 : 1)
+        : durationDays;
+
+    // Kumpulkan Crew Assignments beserta Snapshot Rate (Addendum v1.19)
+    const rawCrewList = [
+      { id: driver1Id, role: CrewAssignmentRole.DRIVER },
+      { id: driver2Id, role: CrewAssignmentRole.CO_DRIVER },
+      { id: conductorId, role: CrewAssignmentRole.CONDUCTOR },
+    ].filter((c) => !!c.id) as { id: string; role: CrewAssignmentRole }[];
+
+    const crewAssignments: {
+      crewId: string;
+      role: CrewAssignmentRole;
+      mealAllowanceSnapshot?: number;
+      incentiveSnapshot?: number;
+      fullSeatBonusSnapshot?: number;
+      payoutTiming?: string;
+    }[] = [];
+
+    for (const raw of rawCrewList) {
+      const custom = dto?.customCrewRates?.find((c) => c.crewId === raw.id || c.role === raw.role);
+      if (custom) {
+        crewAssignments.push({
+          crewId: raw.id,
+          role: raw.role,
+          mealAllowanceSnapshot: custom.mealAllowance,
+          incentiveSnapshot: custom.incentive,
+          fullSeatBonusSnapshot: custom.fullSeatBonus,
+          payoutTiming: custom.payoutTiming,
+        });
+      } else {
+        const baseRates = await this.getRateSnapshotForCrew(
+          raw.role,
+          schedule.serviceType,
+          1,
+        );
+        crewAssignments.push({
+          crewId: raw.id,
+          role: raw.role,
+          mealAllowanceSnapshot: baseRates.mealAllowance * legOrDayMultiplier,
+          incentiveSnapshot: baseRates.incentive * legOrDayMultiplier,
+          fullSeatBonusSnapshot:
+            schedule.serviceType === TripServiceType.AKAP && isRoundTrip
+              ? baseRates.fullSeatBonus * 2
+              : baseRates.fullSeatBonus,
+          payoutTiming: 'AT_SETTLEMENT',
+        });
+      }
+    }
+
     const legs: { sequenceNo: number; direction: SpjLegDirection; origin: string; destination: string; departureAt?: string; arrivalAt?: string }[] = [];
-    if (schedule.serviceType === TripServiceType.AKAP) {
+    if (isRoundTrip) {
       legs.push({
         sequenceNo: 1,
         direction: SpjLegDirection.DEPARTURE,

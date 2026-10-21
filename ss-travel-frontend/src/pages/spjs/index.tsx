@@ -41,6 +41,7 @@ import {
 import SpjDetailModal from './components/spj-detail-modal';
 import ReplaceCrewModal from './components/replace-crew-modal';
 import EmergencyReplaceBusModal from './components/emergency-replace-bus-modal';
+import ConfirmDialog from '@/components/shared/confirm-dialog';
 import { SpjService } from '@/services/spj.service';
 import type {
   Spj,
@@ -72,6 +73,22 @@ export default function SpjsPage() {
   const [replaceCrewModalOpen, setReplaceCrewModalOpen] = useState(false);
   const [emergencyModalOpen, setEmergencyModalOpen] = useState(false);
   const [selectedSpj, setSelectedSpj] = useState<Spj | null>(null);
+
+  // Custom Confirm Dialog State
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    variant: 'danger' | 'warning' | 'info' | 'primary';
+    confirmText?: string;
+    onConfirm: () => void | Promise<void>;
+  }>({
+    open: false,
+    title: '',
+    description: '',
+    variant: 'primary',
+    onConfirm: () => {},
+  });
 
   useEffect(() => {
     loadSpjs();
@@ -108,31 +125,44 @@ export default function SpjsPage() {
     loadSpjs();
   };
 
-  const handleStart = async (spj: Spj) => {
-    if (!confirm(`Berangkatkan armada bus '${spj.vehicle?.code}' di rute perjalanan?`)) return;
-    try {
-      await SpjService.startSpj(spj.id);
-      toast.success(`Armada '${spj.vehicle?.code}' resmi aktif di perjalanan.`);
-      loadSpjs();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Gagal memberangkatkan bus.');
-    }
+  const handleStart = (spj: Spj) => {
+    setConfirmDialog({
+      open: true,
+      title: 'Berangkatkan Armada Bus',
+      description: `Apakah Anda yakin ingin memberangkatkan armada bus '${spj.vehicle?.code}' (${spj.vehicle?.plateNumber})? Dokumen SPJ '${spj.spjNo}' akan aktif di rute perjalanan dan kru resmi bertugas.`,
+      variant: 'primary',
+      confirmText: 'Berangkatkan Bus',
+      onConfirm: async () => {
+        try {
+          await SpjService.startSpj(spj.id);
+          toast.success(`Armada '${spj.vehicle?.code}' resmi aktif di perjalanan.`);
+          setConfirmDialog((prev) => ({ ...prev, open: false }));
+          loadSpjs();
+        } catch (err: any) {
+          toast.error(err.response?.data?.message || 'Gagal memberangkatkan bus.');
+        }
+      },
+    });
   };
 
-  const handleComplete = async (spj: Spj) => {
-    if (
-      !confirm(
-        `Konfirmasi kedatangan armada '${spj.vehicle?.code}' di pool garasi? Status finansial akan beralih ke UNDER_REVIEW untuk rekonsiliasi kasir pool.`,
-      )
-    )
-      return;
-    try {
-      await SpjService.completeSpj(spj.id);
-      toast.success(`Operasional SPJ '${spj.spjNo}' tuntas.`);
-      loadSpjs();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Gagal menyelesaikan SPJ.');
-    }
+  const handleComplete = (spj: Spj) => {
+    setConfirmDialog({
+      open: true,
+      title: 'Konfirmasi Kepulangan di Pool Garasi',
+      description: `Konfirmasi kedatangan armada '${spj.vehicle?.code}' di pool garasi? Status operasional SPJ akan selesai (COMPLETED), dan status finansial otomatis beralih ke UNDER_REVIEW untuk rekonsiliasi kasir pool.`,
+      variant: 'info',
+      confirmText: 'Konfirmasi Tiba Pool',
+      onConfirm: async () => {
+        try {
+          await SpjService.completeSpj(spj.id);
+          toast.success(`Operasional SPJ '${spj.spjNo}' tuntas.`);
+          setConfirmDialog((prev) => ({ ...prev, open: false }));
+          loadSpjs();
+        } catch (err: any) {
+          toast.error(err.response?.data?.message || 'Gagal menyelesaikan SPJ.');
+        }
+      },
+    });
   };
 
   // Badge Status Operasional (Warna Lembut & Kontras Nyaman)
@@ -657,6 +687,17 @@ export default function SpjsPage() {
           loadSpjs();
           setDetailModalOpen(false);
         }}
+      />
+
+      {/* Reusable Confirm Dialog */}
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog((prev) => ({ ...prev, open }))}
+        title={confirmDialog.title}
+        description={confirmDialog.description}
+        variant={confirmDialog.variant}
+        confirmText={confirmDialog.confirmText}
+        onConfirm={confirmDialog.onConfirm}
       />
     </div>
   );

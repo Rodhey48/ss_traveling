@@ -2,6 +2,24 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-10-21: Stage 5 Enhancement — Visualisasi Segmen 2 Leg AKAP, Fleksibilitas Kompensasi Kru (Addendum v1.19), dan Review SPJ Modal
+- **Addendum v1.19 Diresmikan di Blueprint**:
+  - Membakukan prinsip kesetaraan satuan: Di AKAP $1 \text{ Hari} = 1 \text{ Leg}$ (rute PP = 2 Leg/2 Hari, rute engkel = 1 Leg/1 Hari). Di pariwisata dihitung berdasarkan durasi hari pemakaian kalender ($N \text{ Hari}$).
+  - Mengadopsi variabel tipe armada bus (*Unit-Aware Base Rates*): bus mewah (Sleeper/Luxury) memiliki base rate rekomendasi yang berbeda dengan kelas standar.
+  - Otorisasi penuh Dispatcher untuk meng-override (*In-SPJ Customizer*) nominal Uang Makan dan Premi Kru secara transparan di modal Review SPJ sesuai kesepakatan lapangan.
+  - Opsi waktu pembayaran premi kru: `AT_SETTLEMENT` (bayar di kasir pool saat kepulangan bus) vs `EARLY_DISBURSEMENT` (bayar di muka/transfer saat berangkat).
+- **Backend Tri-Module Alignment (`SpjService`, `trip-schedule.dto.ts`, `spj.dto.ts`)**:
+  - DTO `GenerateSpjFromScheduleDto` mendukung `isRoundTrip?: boolean` dan array `customCrewRates?: CustomCrewRateDto[]`.
+  - DTO `CreateSpjCrewAssignmentDto` mendukung snapshot custom `mealAllowanceSnapshot`, `incentiveSnapshot`, `fullSeatBonusSnapshot`, dan `payoutTiming`.
+  - Logika `SpjService.generateFromSchedule` otomatis menghitung multiplier Leg/Hari jika tidak di-override, atau menggunakan nilai kesepakatan dispatcher jika di-override.
+- **Frontend `ReviewPublishSpjModal.tsx` & UI Polish**:
+  - Visualisasi rute 2 Leg (Arah Berangkat DEPARTURE & Arah Pulang RETURN) vs 1 Leg (ONE-WAY).
+  - Tampilan dinamis personel kru yang ditugaskan di masing-masing leg beserta panduan SOP revisi supir di kota transit (Yogyakarta).
+  - Panel editor kompensasi kru interaktif: input nominal Uang Makan & Premi per supir/kondektur, toggle waktu pencairan (Kasir Pool vs Bayar Awal), tombol Reset Rekomendasi, dan kalkulator live total kompensasi.
+- **Verifikasi Kualitas Penuh**:
+  - Frontend TypeScript `yarn build` sukses 100% tanpa error.
+  - Backend `yarn build` dan 17 unit test di trips services lulus 100%.
+
 ### 2026-10-18: Stage 5 Completed — Perencanaan Jadwal Bus & Eksekusi SPJ (BE + FE)
 - **Model Database & Migrasi PostgreSQL (`trip_schedules`, `spjs`, `spj_legs`, `spj_crew_assignments`)**:
   - Model `trip_schedules` sebagai pintu masuk perencanaan jadwal dinas armada (`schedule_no` format `SCH/AKP/YYMM/XXXX`, `service_type`, `vehicle_id`, `planned_departure_at`, `planned_return_at`, `origin`, `destination`, relasi pelanggan CRM wisata `customer_id`, PIC, catatan jemput, `total_package_price`, supir 1, supir 2, kondektur, status `DRAFT`/`CONFIRMED`/`IN_PROGRESS`/`COMPLETED`/`CANCELLED`, dan relasi `spj_id`).
@@ -14,7 +32,7 @@
   - *Buffer Rest Time Alert (Minimal 3 Jam)*: Menghitung selisih waktu antara kepulangan dinas sebelumnya dengan keberangkatan dinas baru (< 180 menit) dan menampilkan peringatan transparan agar kru tidak kelelahan.
   - Integrasi CRM Prospek Sewa Wisata: Mengaitkan akun penyewa, memperbarui `totalTripsCount` dan `lastTripDate`, serta mencatat nilai kontrak sewa paket.
 - **State Machine Operasional & Modul SPJ Komprehensif (`SpjService`)**:
-  - *Aksi 1-Klik Terbitkan SPJ (`generateFromSchedule`)*: Mengubah jadwal dinas terkonfirmasi menjadi dokumen SPJ resmi, mengalokasikan armada dan kru, serta memperbarui status jadwal menjadi `IN_PROGRESS`.
+  - *Penerbitan SPJ Berbasis Review & Preview (`ReviewPublishSpjModal`)*: Alur penerbitan SPJ dari jadwal kini melalui tahap verifikasi dokumen lengkap di mana dispatcher dapat melihat pratinjau bentuk fisik SPJ resmi, menukar armada, menyesuaikan kru Driver 1/Driver 2/Kondektur di menit-menit akhir, dan menambahkan instruksi dinas khusus sebelum SPJ resmi berstatus ISSUED.
   - Validasi ketat penerbitan SPJ (`issue`): Menolak penerbitan jika tidak memiliki minimal 1 personel berstatus `DRIVER`.
   - Transisi operasional: Keberangkatan bus (`start`) mengaktifkan leg 1 dan kru dinas; kepulangan bus (`complete`) menuntaskan seluruh leg aktif, mencatat `operationallyCompletedAt`, dan mengalihkan status finansial ke `UNDER_REVIEW` (siap direkonsiliasi kasir pool di Tahap 7).
   - *Revisi Kru Mid-Trip (`replaceCrew`)*: Mendukung pergantian supir sakit di kota transit, mengunci status kru lama menjadi `REPLACED` dengan alasan wajib, dan menugaskan kru baru dengan snapshot tarif yang berlaku (Skenario 1 Poin 7).
@@ -23,17 +41,19 @@
   - `GET/POST/PUT/DELETE` `/api/v1/trip-schedules`, `/api/v1/trip-schedules/calendar`, `/api/v1/trip-schedules/check-conflict`, `/api/v1/trip-schedules/:id/confirm`, `/api/v1/trip-schedules/:id/cancel`, `/api/v1/trip-schedules/:id/generate-spj`
   - `GET/POST` `/api/v1/spjs`, `/api/v1/spjs/:id/issue`, `/api/v1/spjs/:id/start`, `/api/v1/spjs/:id/complete`, `/api/v1/spjs/:id/replace-crew`, `/api/v1/spjs/:id/emergency-replace-bus`, `/api/v1/spjs/legs/:legId`
   - Terproteksi RBAC `@RequirePermissions('TripSchedules:...')` dan `@RequirePermissions('SPJ:...')`.
-- **Frontend Interaktif & Lengkap (2 Halaman Baru + 4 Komponen Modal)**:
+- **Frontend Interaktif & Lengkap (2 Halaman Baru + 6 Komponen Modal)**:
   - Halaman **Jadwal & Plotting Armada (`/schedules`)**:
     - Tab **Kalender Timeline Armada (Gantt Chart)**: Visualisasi per baris untuk 10 armada bus `SS-01` s.d. `SS-10`, balok warna status dinas (AKAP ungu, Wisata kuning, Shuttle hijau), navigasi rentang tanggal, tooltip detail rute, supir, jam, dan tombol terbitkan SPJ.
-    - Tab **Daftar Jadwal (Tabel View)**: Filter layanan, filter status, live search, dan tombol-tombol aksi cepat.
+    - Tab **Daftar Jadwal (Tabel View)**: Filter layanan, filter status, filter rentang tanggal dengan preset cepat (Hari Ini, Bulan Ini, Reset), live search, dan tombol-tombol aksi cepat.
     - Modal **Booking Jadwal Baru (`ScheduleModal`)**: Layout lega, autocomplete CRM pelanggan wisata, selector armada & 3 kru, serta tombol live `[⚡ Cek Bentrok & Buffer Rest]` dengan kotak peringatan visual.
+    - Modal **Review & Terbitkan SPJ (`ReviewPublishSpjModal`)**: Tampilan pratinjau dokumen fisik SPJ resmi, nomor urut preview, editor armada & supir menit terakhir, catatan instruksi perjalanan, dan toast sukses ber-link langsung ke halaman SPJ.
   - Halaman **Operasional SPJ Dispatcher (`/spjs`)**:
     - Kartu metrik ringkasan (Aktif di Rute, Siap Berangkat, Menunggu Kasir, Finansial Selesai).
-    - Tabel monitoring SPJ dengan badge status ganda independen dan indikator estafet bus pengganti.
+    - Tabel monitoring SPJ dengan badge status ganda independen (Layanan, Operasional, dan Finansial PENDING SETTLEMENT / UNDER_REVIEW / SETTLED).
     - Modal **Detail SPJ (`SpjDetailModal`)**: Rincian legs, kupon makan RM mitra, kartu snapshot tarif hak kru (Makan, Premi, Bonus Full Seat), serta tombol kontrol operasional (`Jalan`, `Selesai`).
     - Modal **Pergantian Kru Mid-Trip (`ReplaceCrewModal`)**: Form revisi supir sakit di jalan.
     - Modal **Emergency Breakdown di Tol (`EmergencyReplaceBusModal`)**: Form Skenario 3 pemindahan 24 penumpang ke bus pengganti.
+  - Komponen **Dialog Konfirmasi Reusable (`ConfirmDialog`)**: Menggantikan seluruh `window.confirm` dan `window.prompt` bawaan browser dengan modal dialog UI bertema harmonis (danger, warning, info, prompt input alasan pembatalan).
 - **Verifikasi Kualitas Penuh**:
   - 108 unit tests backend (14 test suites) lulus 100%, termasuk pengujian overlap conflict, buffer time, issue driver validation, dan emergency replacement.
   - Frontend TypeScript `yarn build` sukses 100% tanpa warning/error.

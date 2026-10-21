@@ -40,6 +40,8 @@ import {
 } from 'lucide-react';
 import TimelineGantt, { type GanttViewMode } from './components/timeline-gantt';
 import ScheduleModal from './components/schedule-modal';
+import ReviewPublishSpjModal from './components/review-publish-spj-modal';
+import ConfirmDialog from '@/components/shared/confirm-dialog';
 import { TripScheduleService } from '@/services/trip-schedule.service';
 import { VehicleService } from '@/services/vehicle.service';
 import type {
@@ -80,6 +82,31 @@ export default function SchedulesPage() {
   // Modal State
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<TripSchedule | null>(null);
+
+  // Review & Publish SPJ Modal State
+  const [reviewSpjModalOpen, setReviewSpjModalOpen] = useState(false);
+  const [scheduleForSpj, setScheduleForSpj] = useState<TripSchedule | null>(null);
+
+  // Custom Confirm Dialog State
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    variant: 'danger' | 'warning' | 'info' | 'primary';
+    confirmText?: string;
+    promptInput?: {
+      label: string;
+      placeholder?: string;
+      required?: boolean;
+    };
+    onConfirm: (val?: string) => void | Promise<void>;
+  }>({
+    open: false,
+    title: '',
+    description: '',
+    variant: 'primary',
+    onConfirm: () => {},
+  });
 
   useEffect(() => {
     loadVehicles();
@@ -136,63 +163,85 @@ export default function SchedulesPage() {
     loadSchedules();
   };
 
-  const handleConfirmSchedule = async (id: string, no: string) => {
-    if (!confirm(`Konfirmasi jadwal '${no}'? Status akan berubah menjadi CONFIRMED dan armada/kru terkunci.`)) return;
-
-    try {
-      await TripScheduleService.confirmSchedule(id);
-      toast.success(`Jadwal '${no}' berhasil dikonfirmasi.`);
-      loadSchedules();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Gagal mengonfirmasi jadwal.');
-    }
+  const handleConfirmSchedule = (id: string, no: string) => {
+    setConfirmDialog({
+      open: true,
+      title: 'Konfirmasi & Kunci Jadwal Bus',
+      description: `Apakah Anda yakin ingin mengonfirmasi jadwal '${no}'? Status akan berubah menjadi CONFIRMED dan armada bus serta personel kru akan terkunci untuk penugasan ini.`,
+      variant: 'primary',
+      confirmText: 'Kunci Jadwal',
+      onConfirm: async () => {
+        try {
+          await TripScheduleService.confirmSchedule(id);
+          toast.success(`Jadwal '${no}' berhasil dikonfirmasi.`);
+          setConfirmDialog((prev) => ({ ...prev, open: false }));
+          loadSchedules();
+        } catch (err: any) {
+          toast.error(err.response?.data?.message || 'Gagal mengonfirmasi jadwal.');
+        }
+      },
+    });
   };
 
-  const handleCancelSchedule = async (id: string, no: string) => {
-    const reason = prompt(`Masukkan alasan pembatalan jadwal '${no}':`);
-    if (reason === null) return;
-
-    try {
-      await TripScheduleService.cancelSchedule(id, reason);
-      toast.success(`Jadwal '${no}' telah dibatalkan.`);
-      loadSchedules();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Gagal membatalkan jadwal.');
-    }
+  const handleCancelSchedule = (id: string, no: string) => {
+    setConfirmDialog({
+      open: true,
+      title: 'Batalkan Jadwal Dinas Bus',
+      description: `Masukkan alasan pembatalan dinas untuk jadwal '${no}'. Status jadwal akan diubah menjadi CANCELLED.`,
+      variant: 'warning',
+      confirmText: 'Batalkan Jadwal',
+      promptInput: {
+        label: 'Alasan Pembatalan Operasional',
+        placeholder: 'Contoh: Pemesan membatalkan sewa / bus mengalami kendala teknis',
+        required: true,
+      },
+      onConfirm: async (reason?: string) => {
+        try {
+          await TripScheduleService.cancelSchedule(id, reason);
+          toast.success(`Jadwal '${no}' telah dibatalkan.`);
+          setConfirmDialog((prev) => ({ ...prev, open: false }));
+          loadSchedules();
+        } catch (err: any) {
+          toast.error(err.response?.data?.message || 'Gagal membatalkan jadwal.');
+        }
+      },
+    });
   };
 
-  const handleGenerateSpj = async (schedule: TripSchedule) => {
-    if (!confirm(`Terbitkan Surat Perintah Jalan (SPJ) resmi untuk jadwal '${schedule.scheduleNo}'?`)) return;
-
-    try {
-      const spj = await TripScheduleService.generateSpj(schedule.id);
-      toast.success(`SPJ '${spj.spjNo}' berhasil diterbitkan! Armada siap diberangkatkan.`);
-      loadSchedules();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Gagal menerbitkan SPJ dari jadwal.');
-    }
+  // Membuka modal review dokumen SPJ sebelum penerbitan resmi
+  const handleGenerateSpj = (schedule: TripSchedule) => {
+    setScheduleForSpj(schedule);
+    setReviewSpjModalOpen(true);
   };
 
-  const handleDeleteSchedule = async (id: string, no: string) => {
-    if (!confirm(`Hapus draf jadwal '${no}'? Aksi ini permanen.`)) return;
-
-    try {
-      await TripScheduleService.deleteSchedule(id);
-      toast.success(`Jadwal '${no}' berhasil dihapus.`);
-      loadSchedules();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Gagal menghapus jadwal.');
-    }
+  const handleDeleteSchedule = (id: string, no: string) => {
+    setConfirmDialog({
+      open: true,
+      title: 'Hapus Draf Jadwal Dinas',
+      description: `Apakah Anda yakin ingin menghapus jadwal '${no}'? Jadwal berstatus DRAFT atau CANCELLED yang belum menerbitkan SPJ akan dihapus secara permanen.`,
+      variant: 'danger',
+      confirmText: 'Hapus Permanen',
+      onConfirm: async () => {
+        try {
+          await TripScheduleService.deleteSchedule(id);
+          toast.success(`Jadwal '${no}' berhasil dihapus.`);
+          setConfirmDialog((prev) => ({ ...prev, open: false }));
+          loadSchedules();
+        } catch (err: any) {
+          toast.error(err.response?.data?.message || 'Gagal menghapus jadwal.');
+        }
+      },
+    });
   };
 
   const getServiceBadge = (type: string) => {
     switch (type) {
       case 'AKAP':
-        return <Badge className="bg-indigo-50 text-indigo-800 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300">AKAP Reguler</Badge>;
+        return <Badge className="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-50 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800 font-semibold text-[10px]">AKAP Reguler</Badge>;
       case 'WISATA':
-        return <Badge className="bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300">Sewa Wisata</Badge>;
+        return <Badge className="bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-50 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800 font-semibold text-[10px]">Sewa Wisata</Badge>;
       default:
-        return <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300">Shuttle</Badge>;
+        return <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-50 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 font-semibold text-[10px]">Shuttle</Badge>;
     }
   };
 
@@ -526,10 +575,10 @@ export default function SchedulesPage() {
                             <Button
                               size="sm"
                               onClick={() => handleGenerateSpj(s)}
-                              className="h-8 text-xs bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
-                              title="Terbitkan SPJ Resmi"
+                              className="h-8 text-xs bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs font-semibold"
+                              title="Review & Terbitkan SPJ Resmi"
                             >
-                              <FileCheck className="w-3.5 h-3.5 mr-1" /> SPJ
+                              <FileCheck className="w-3.5 h-3.5 mr-1" /> Review SPJ
                             </Button>
                           )}
 
@@ -587,6 +636,28 @@ export default function SchedulesPage() {
         schedule={selectedSchedule}
         onSuccess={loadSchedules}
         onConfirmSchedule={handleConfirmSchedule}
+        onGenerateSpj={handleGenerateSpj}
+      />
+
+      {/* Modal Review & Terbitkan SPJ Resmi */}
+      <ReviewPublishSpjModal
+        open={reviewSpjModalOpen}
+        onOpenChange={setReviewSpjModalOpen}
+        schedule={scheduleForSpj}
+        vehicles={vehicles}
+        onSuccess={loadSchedules}
+      />
+
+      {/* Reusable Confirm Dialog */}
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog((prev) => ({ ...prev, open }))}
+        title={confirmDialog.title}
+        description={confirmDialog.description}
+        variant={confirmDialog.variant}
+        confirmText={confirmDialog.confirmText}
+        promptInput={confirmDialog.promptInput}
+        onConfirm={confirmDialog.onConfirm}
       />
     </div>
   );

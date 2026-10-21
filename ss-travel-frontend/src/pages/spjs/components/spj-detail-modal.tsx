@@ -29,6 +29,7 @@ import {
   Wrench,
   FileText,
 } from 'lucide-react';
+import ConfirmDialog from '@/components/shared/confirm-dialog';
 import { SpjService } from '@/services/spj.service';
 import type { Spj, SpjLeg } from '@/types';
 import { toast } from 'sonner';
@@ -59,53 +60,91 @@ export default function SpjDetailModal({
   const [mealNotes, setMealNotes] = useState<string>('');
   const [passengerCount, setPassengerCount] = useState<number>(0);
 
+  // Custom Confirm Dialog State
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    variant: 'danger' | 'warning' | 'info' | 'primary';
+    confirmText?: string;
+    onConfirm: () => void | Promise<void>;
+  }>({
+    open: false,
+    title: '',
+    description: '',
+    variant: 'primary',
+    onConfirm: () => {},
+  });
+
   if (!spj) return null;
 
-  const handleStart = async () => {
-    if (!confirm(`Berangkatkan armada bus '${spj.vehicle?.code}'? SPJ akan aktif di rute.`)) return;
-    setActionLoading(true);
-    try {
-      await SpjService.startSpj(spj.id);
-      toast.success(`Armada bus '${spj.vehicle?.code}' resmi diberangkatkan di rute!`);
-      onSuccess();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Gagal memberangkatkan bus.');
-    } finally {
-      setActionLoading(false);
-    }
+  const handleStart = () => {
+    setConfirmDialog({
+      open: true,
+      title: 'Berangkatkan Armada Bus',
+      description: `Apakah Anda yakin ingin memberangkatkan armada bus '${spj.vehicle?.code}'? SPJ '${spj.spjNo}' akan aktif di rute perjalanan.`,
+      variant: 'primary',
+      confirmText: 'Berangkatkan Bus',
+      onConfirm: async () => {
+        setActionLoading(true);
+        try {
+          await SpjService.startSpj(spj.id);
+          toast.success(`Armada bus '${spj.vehicle?.code}' resmi diberangkatkan di rute!`);
+          setConfirmDialog((prev) => ({ ...prev, open: false }));
+          onSuccess();
+        } catch (err: any) {
+          toast.error(err.response?.data?.message || 'Gagal memberangkatkan bus.');
+        } finally {
+          setActionLoading(false);
+        }
+      },
+    });
   };
 
-  const handleComplete = async () => {
-    if (
-      !confirm(
-        `Konfirmasi kepulangan armada bus '${spj.vehicle?.code}' di garasi? Status finansial akan beralih ke UNDER_REVIEW untuk rekonsiliasi kasir.`,
-      )
-    )
-      return;
-    setActionLoading(true);
-    try {
-      await SpjService.completeSpj(spj.id);
-      toast.success(`Operasional SPJ '${spj.spjNo}' tuntas. Siap untuk rekonsiliasi kasir pool!`);
-      onSuccess();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Gagal menyelesaikan operasional SPJ.');
-    } finally {
-      setActionLoading(false);
-    }
+  const handleComplete = () => {
+    setConfirmDialog({
+      open: true,
+      title: 'Konfirmasi Kedatangan di Garasi Pool',
+      description: `Konfirmasi kepulangan armada bus '${spj.vehicle?.code}' di garasi? Status operasional SPJ akan selesai (COMPLETED), dan status finansial otomatis beralih ke UNDER_REVIEW untuk rekonsiliasi kasir.`,
+      variant: 'info',
+      confirmText: 'Konfirmasi Tiba Pool',
+      onConfirm: async () => {
+        setActionLoading(true);
+        try {
+          await SpjService.completeSpj(spj.id);
+          toast.success(`Operasional SPJ '${spj.spjNo}' tuntas. Siap untuk rekonsiliasi kasir pool!`);
+          setConfirmDialog((prev) => ({ ...prev, open: false }));
+          onSuccess();
+        } catch (err: any) {
+          toast.error(err.response?.data?.message || 'Gagal menyelesaikan operasional SPJ.');
+        } finally {
+          setActionLoading(false);
+        }
+      },
+    });
   };
 
-  const handleIssue = async () => {
-    if (!confirm(`Terbitkan resmi dokumen SPJ '${spj.spjNo}'?`)) return;
-    setActionLoading(true);
-    try {
-      await SpjService.issueSpj(spj.id);
-      toast.success(`SPJ '${spj.spjNo}' resmi berstatus ISSUED.`);
-      onSuccess();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Gagal menerbitkan SPJ.');
-    } finally {
-      setActionLoading(false);
-    }
+  const handleIssue = () => {
+    setConfirmDialog({
+      open: true,
+      title: 'Terbitkan Dokumen SPJ Resmi',
+      description: `Terbitkan resmi dokumen SPJ '${spj.spjNo}'? Status dokumen akan beralih menjadi ISSUED dan armada siap jalan.`,
+      variant: 'primary',
+      confirmText: 'Terbitkan Resmi',
+      onConfirm: async () => {
+        setActionLoading(true);
+        try {
+          await SpjService.issueSpj(spj.id);
+          toast.success(`SPJ '${spj.spjNo}' resmi berstatus ISSUED.`);
+          setConfirmDialog((prev) => ({ ...prev, open: false }));
+          onSuccess();
+        } catch (err: any) {
+          toast.error(err.response?.data?.message || 'Gagal menerbitkan SPJ.');
+        } finally {
+          setActionLoading(false);
+        }
+      },
+    });
   };
 
   const handleStartEditLeg = (leg: SpjLeg) => {
@@ -222,168 +261,169 @@ export default function SpjDetailModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[880px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3">
-            <div className="flex items-center gap-2.5">
-              <span className="p-2 rounded-lg bg-primary/10 text-primary">
-                <FileText className="w-5 h-5" />
-              </span>
-              <div>
-                <DialogTitle className="text-xl font-bold">{spj.spjNo}</DialogTitle>
-                <DialogDescription className="text-xs">
-                  Surat Perintah Jalan Dinas Operasional PT SS Traveling Official
-                </DialogDescription>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-[880px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="p-2 rounded-lg bg-primary/10 text-primary">
+                  <FileText className="w-5 h-5" />
+                </span>
+                <div>
+                  <DialogTitle className="text-xl font-bold">{spj.spjNo}</DialogTitle>
+                  <DialogDescription className="text-xs">
+                    Surat Perintah Jalan Dinas Operasional PT SS Traveling Official
+                  </DialogDescription>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {getOperationalStatusBadge(spj.operationalStatus)}
+                {getFinancialStatusBadge(spj.financialStatus)}
               </div>
             </div>
+          </DialogHeader>
 
-            <div className="flex items-center gap-2">
-              {getOperationalStatusBadge(spj.operationalStatus)}
-              {getFinancialStatusBadge(spj.financialStatus)}
+          {/* Banner Emergency Breakdown (Skenario 3) jika ini SPJ Pengganti */}
+          {spj.parentSpj && (
+            <div className="p-3.5 rounded-xl border border-amber-200/70 bg-amber-50/40 dark:border-amber-900/40 dark:bg-amber-950/20 text-xs text-foreground flex items-start gap-2.5 shadow-2xs">
+              <Wrench className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-xs">Dokumen SPJ Pengganti Armada Breakdown (Skenario 3)</p>
+                <p className="text-muted-foreground mt-0.5 leading-relaxed">
+                  Perjalanan ini merupakan estafet darurat lanjutan dari SPJ Induk{' '}
+                  <strong className="text-foreground">{spj.parentSpj.spjNo}</strong> ({spj.parentSpj.vehicle?.code}). Omzet muatan tiket diakui terpusat tanpa duplikasi.
+                </p>
+              </div>
             </div>
-          </div>
-        </DialogHeader>
+          )}
 
-        {/* Banner Emergency Breakdown (Skenario 3) jika ini SPJ Pengganti */}
-        {spj.parentSpj && (
-          <div className="p-3.5 rounded-xl border border-amber-200/70 bg-amber-50/40 dark:border-amber-900/40 dark:bg-amber-950/20 text-xs text-foreground flex items-start gap-2.5 shadow-2xs">
-            <Wrench className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          {/* Informasi Ringkas Armada & Penugasan */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 rounded-xl border bg-muted/20 text-xs">
             <div>
-              <p className="font-bold text-xs">Dokumen SPJ Pengganti Armada Breakdown (Skenario 3)</p>
-              <p className="text-muted-foreground mt-0.5 leading-relaxed">
-                Perjalanan ini merupakan estafet darurat lanjutan dari SPJ Induk{' '}
-                <strong className="text-foreground">{spj.parentSpj.spjNo}</strong> ({spj.parentSpj.vehicle?.code}). Omzet muatan tiket diakui terpusat tanpa duplikasi.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Informasi Ringkas Armada & Penugasan */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 rounded-xl border bg-muted/20 text-xs">
-          <div>
-            <span className="text-muted-foreground block text-[11px]">Armada Bus:</span>
-            <span className="font-bold text-sm text-foreground">
-              {spj.vehicle?.code}
-            </span>
-            <span className="text-muted-foreground block">{spj.vehicle?.plateNumber}</span>
-          </div>
-
-          <div>
-            <span className="text-muted-foreground block text-[11px]">Layanan & Kapasitas:</span>
-            <div className="mt-1">
-              {getServiceBadge(spj.serviceType)}
-            </div>
-            <span className="text-muted-foreground block mt-0.5">{spj.vehicle?.capacity} Kursi</span>
-          </div>
-
-          <div>
-            <span className="text-muted-foreground block text-[11px]">Jadwal Terhubung:</span>
-            <span className="font-semibold text-foreground">
-              {spj.tripSchedule?.scheduleNo || '-'}
-            </span>
-            {spj.tripSchedule?.customer && (
-              <span className="text-muted-foreground block truncate">
-                {spj.tripSchedule.customer.institutionName || spj.tripSchedule.customer.picName}
+              <span className="text-muted-foreground block text-[11px]">Armada Bus:</span>
+              <span className="font-bold text-sm text-foreground">
+                {spj.vehicle?.code}
               </span>
-            )}
+              <span className="text-muted-foreground block">{spj.vehicle?.plateNumber}</span>
+            </div>
+
+            <div>
+              <span className="text-muted-foreground block text-[11px]">Layanan & Kapasitas:</span>
+              <div className="mt-1">
+                {getServiceBadge(spj.serviceType)}
+              </div>
+              <span className="text-muted-foreground block mt-0.5">{spj.vehicle?.capacity} Kursi</span>
+            </div>
+
+            <div>
+              <span className="text-muted-foreground block text-[11px]">Jadwal Terhubung:</span>
+              <span className="font-semibold text-foreground">
+                {spj.tripSchedule?.scheduleNo || '-'}
+              </span>
+              {spj.tripSchedule?.customer && (
+                <span className="text-muted-foreground block truncate">
+                  {spj.tripSchedule.customer.institutionName || spj.tripSchedule.customer.picName}
+                </span>
+              )}
+            </div>
+
+            <div>
+              <span className="text-muted-foreground block text-[11px]">Waktu Operasional:</span>
+              <span className="text-muted-foreground block">
+                Terbit: {spj.issuedAt ? new Date(spj.issuedAt).toLocaleDateString('id-ID') : '-'}
+              </span>
+              <span className="text-muted-foreground block">
+                Selesai: {spj.operationallyCompletedAt ? new Date(spj.operationallyCompletedAt).toLocaleDateString('id-ID') : '-'}
+              </span>
+            </div>
           </div>
 
-          <div>
-            <span className="text-muted-foreground block text-[11px]">Waktu Operasional:</span>
-            <span className="text-muted-foreground block">
-              Terbit: {spj.issuedAt ? new Date(spj.issuedAt).toLocaleDateString('id-ID') : '-'}
-            </span>
-            <span className="text-muted-foreground block">
-              Selesai: {spj.operationallyCompletedAt ? new Date(spj.operationallyCompletedAt).toLocaleDateString('id-ID') : '-'}
-            </span>
-          </div>
-        </div>
+          {/* Tabs: Legs Rute vs Penugasan Kru */}
+          <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as 'legs' | 'crew')} className="space-y-4">
+            <TabsList className="bg-muted p-1">
+              <TabsTrigger value="legs" className="flex items-center gap-2 text-xs font-semibold">
+                <MapPin className="w-4 h-4" /> Rute Perjalanan (Legs) ({spj.legs?.length || 0})
+              </TabsTrigger>
+              <TabsTrigger value="crew" className="flex items-center gap-2 text-xs font-semibold">
+                <Users className="w-4 h-4" /> Penugasan Kru & Hak ({spj.crewAssignments?.length || 0})
+              </TabsTrigger>
+            </TabsList>
 
-        {/* Tabs: Legs Rute vs Penugasan Kru */}
-        <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as 'legs' | 'crew')} className="space-y-4">
-          <TabsList className="bg-muted p-1">
-            <TabsTrigger value="legs" className="flex items-center gap-2 text-xs font-semibold">
-              <MapPin className="w-4 h-4" /> Rute Perjalanan (Legs) ({spj.legs?.length || 0})
-            </TabsTrigger>
-            <TabsTrigger value="crew" className="flex items-center gap-2 text-xs font-semibold">
-              <Users className="w-4 h-4" /> Penugasan Kru & Hak ({spj.crewAssignments?.length || 0})
-            </TabsTrigger>
-          </TabsList>
+            {/* Tab 1: Legs Rute Perjalanan */}
+            <TabsContent value="legs" className="space-y-3">
+              <div className="rounded-lg border overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/40 text-xs">
+                      <TableHead className="w-[80px]">Leg #</TableHead>
+                      <TableHead>Arah & Rute</TableHead>
+                      <TableHead>Waktu Dinas</TableHead>
+                      <TableHead>Manifes Kursi</TableHead>
+                      <TableHead>Kupon Restoran Mitra</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
 
-          {/* Tab 1: Legs Rute Perjalanan */}
-          <TabsContent value="legs" className="space-y-3">
-            <div className="rounded-lg border overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/40 text-xs">
-                    <TableHead className="w-[80px]">Leg #</TableHead>
-                    <TableHead>Arah & Rute</TableHead>
-                    <TableHead>Waktu Dinas</TableHead>
-                    <TableHead>Manifes Kursi</TableHead>
-                    <TableHead>Kupon Restoran Mitra</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
+                  <TableBody>
+                    {spj.legs?.map((leg) => {
+                      const isEditing = editingLegId === leg.id;
 
-                <TableBody>
-                  {spj.legs?.map((leg) => {
-                    const isEditing = editingLegId === leg.id;
+                      return (
+                        <TableRow key={leg.id} className="text-xs hover:bg-muted/30">
+                          <TableCell className="font-bold">
+                            <Badge variant="secondary" className="text-[10px]">
+                              Leg {leg.sequenceNo}
+                            </Badge>
+                          </TableCell>
 
-                    return (
-                      <TableRow key={leg.id} className="text-xs hover:bg-muted/30">
-                        <TableCell className="font-bold">
-                          <Badge variant="secondary" className="text-[10px]">
-                            Leg {leg.sequenceNo}
-                          </Badge>
-                        </TableCell>
+                          <TableCell>
+                            <div className="font-semibold text-foreground">{leg.origin.split('/')[0].trim()} ➔ {leg.destination}</div>
+                            <Badge variant="outline" className="text-[9px] mt-0.5 text-muted-foreground font-normal">
+                              {leg.direction}
+                            </Badge>
+                          </TableCell>
 
-                        <TableCell>
-                          <div className="font-semibold text-foreground">{leg.origin.split('/')[0].trim()} ➔ {leg.destination}</div>
-                          <Badge variant="outline" className="text-[9px] mt-0.5 text-muted-foreground font-normal">
-                            {leg.direction}
-                          </Badge>
-                        </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {leg.departureAt && (
+                              <div className="flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-muted-foreground" /> Berangkat:{' '}
+                                {new Date(leg.departureAt).toLocaleTimeString('id-ID', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </div>
+                            )}
+                            {leg.arrivalAt && (
+                              <div className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
+                                <Clock className="w-3 h-3" /> Tiba:{' '}
+                                {new Date(leg.arrivalAt).toLocaleTimeString('id-ID', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </div>
+                            )}
+                          </TableCell>
 
-                        <TableCell className="text-muted-foreground">
-                          {leg.departureAt && (
-                            <div className="flex items-center gap-1">
-                              <Clock className="w-3 h-3 text-muted-foreground" /> Berangkat:{' '}
-                              {new Date(leg.departureAt).toLocaleTimeString('id-ID', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </div>
-                          )}
-                          {leg.arrivalAt && (
-                            <div className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
-                              <Clock className="w-3 h-3" /> Tiba:{' '}
-                              {new Date(leg.arrivalAt).toLocaleTimeString('id-ID', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </div>
-                          )}
-                        </TableCell>
-
-                        <TableCell>
-                          {isEditing ? (
-                            <Input
-                              type="number"
-                              value={passengerCount}
-                              onChange={(e) => setPassengerCount(Number(e.target.value))}
-                              className="h-8 w-20 text-xs font-bold"
-                            />
-                          ) : (
-                            <span className="font-bold text-foreground">{leg.passengerCount} Pax</span>
-                          )}
-                        </TableCell>
-
-                        <TableCell>
-                          {isEditing ? (
-                            <div className="space-y-1">
+                          <TableCell>
+                            {isEditing ? (
                               <Input
+                                type="number"
+                                value={passengerCount}
+                                onChange={(e) => setPassengerCount(Number(e.target.value))}
+                                className="h-8 w-20 text-xs font-bold"
+                              />
+                            ) : (
+                              <span className="font-bold text-foreground">{leg.passengerCount} Pax</span>
+                            )}
+                          </TableCell>
+
+                          <TableCell>
+                            {isEditing ? (
+                              <div className="space-y-1">
+                                <Input
                                 type="number"
                                 value={mealPaxCount}
                                 onChange={(e) => setMealPaxCount(Number(e.target.value))}
@@ -596,5 +636,17 @@ export default function SpjDetailModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Reusable Confirm Dialog */}
+    <ConfirmDialog
+      open={confirmDialog.open}
+      onOpenChange={(open) => setConfirmDialog((prev) => ({ ...prev, open }))}
+      title={confirmDialog.title}
+      description={confirmDialog.description}
+      variant={confirmDialog.variant}
+      confirmText={confirmDialog.confirmText}
+      onConfirm={confirmDialog.onConfirm}
+    />
+  </>
   );
 }

@@ -42,6 +42,7 @@ interface ScheduleModalProps {
   schedule?: TripSchedule | null;
   onSuccess: () => void;
   onConfirmSchedule?: (id: string, no: string) => void;
+  onGenerateSpj?: (schedule: TripSchedule) => void;
 }
 
 export default function ScheduleModal({
@@ -49,6 +50,7 @@ export default function ScheduleModal({
   onOpenChange,
   schedule,
   onSuccess,
+  onGenerateSpj,
 }: ScheduleModalProps) {
   const [loading, setLoading] = useState(false);
   const [checkingConflict, setCheckingConflict] = useState(false);
@@ -1051,6 +1053,19 @@ export default function ScheduleModal({
                     className="text-blue-700 border-blue-200 hover:bg-blue-50 dark:text-blue-300 dark:border-blue-800 text-xs h-9 w-full sm:w-auto font-semibold"
                   >
                     <CheckCircle2 className="w-4 h-4 mr-1.5" /> Kunci Jadwal (Konfirmasi)
+                  </Button>
+                )}
+
+                {schedule && schedule.status === 'CONFIRMED' && !schedule.spjId && onGenerateSpj && (
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      onOpenChange(false);
+                      onGenerateSpj(schedule);
+                    }}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-9 w-full sm:w-auto font-semibold shadow-xs"
+                  >
+                    <CheckCircle2 className="w-4 h-4 mr-1.5" /> Review & Terbitkan SPJ
                   </Button>
                 )}
               </div>

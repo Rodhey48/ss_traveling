@@ -95,6 +95,25 @@ export class CreateSpjCrewAssignmentDto {
   @IsOptional()
   spjLegId?: string;
 
+  @IsNumber()
+  @IsOptional()
+  @Type(() => Number)
+  mealAllowanceSnapshot?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Type(() => Number)
+  incentiveSnapshot?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Type(() => Number)
+  fullSeatBonusSnapshot?: number;
+
+  @IsString()
+  @IsOptional()
+  payoutTiming?: string; // 'AT_SETTLEMENT' | 'EARLY_DISBURSEMENT'
+
   @IsString()
   @IsOptional()
   notes?: string;
