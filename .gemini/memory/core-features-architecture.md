@@ -288,6 +288,44 @@ Response error autentikasi menggunakan struktur terstandar:
 *   **Modal Form Booking Jadwal (`ScheduleModal`)**: Form lega dengan live conflict checker dan feedback peringatan buffer time 3 jam.
 *   **Monitoring Operasional SPJ (`/spjs`)**: Kartu metrik ringkasan, tabel pemantauan armada aktif di jalan, modal detail rute leg & kupon makan RM mitra (`SpjDetailModal`), modal pergantian kru (`ReplaceCrewModal`), dan modal penanganan breakdown di tol (`EmergencyReplaceBusModal`).
 
+## 11. Uang Jalan (UJ), Biaya Operasional SPJ & Deklarasi Kas Kru (Tahap 6 — Amplop UJ, Multi-Line Disbursements, Expenses Odometer/BBM, Anti-Netting Kas Kru, Dynamic Cargo Commission, & Early Payout)
+
+### A. Model Data Finansial SPJ (`spj_uj`, `spj_expenses`, `spj_revenue_declarations`, `crew_meal_payments`)
+*   **Amplop Uang Jalan (`spj_uj`, `spj_uj_disbursements`, `spj_uj_expenses`, `spj_uj_returns`, `spj_uj_additional_requests`)**:
+    *   `spj_uj`: Rekening penampung modal UJ per supir pemegang kas (`crew_id`), status (`DRAFT`, `DISBURSED`, `BALANCED`, `DISCREPANCY`), akumulasi saldo via `MoneyHelper` (`total_disbursed - total_spent - total_returned = balance`).
+    *   `spj_uj_disbursements`: Pencairan bertahap multi-line (`INITIAL` di pool garasi, `ADDITIONAL` via bank di jalan, `ROLLOVER_IN`), referensi BKK kas keluar, metode pembayaran (`CASH`, `BANK_TRANSFER`, `ROLLOVER`), dan akun sumber.
+    *   `spj_uj_expenses`: Relasi pemotongan otomatis saldo amplop UJ saat nota lapangan menggunakan sumber UJ.
+    *   `spj_uj_returns`: Pengembalian fisik sisa kas UJ di meja kasir pool kepulangan (BKM, status otomatis `BALANCED` saat saldo habis).
+    *   `spj_uj_additional_requests`: Form pengajuan tambahan dana UJ di jalan oleh kru dengan alur persetujuan dispatcher/kasir.
+    *   *Estafet UJ Rollover (Skenario 3)*: Mutasi sisa saldo UJ fisik dari bus mogok ke SPJ bus pengganti via `rollover_from_spj_id` & `rollover_to_spj_id`.
+*   **Beban Operasional Lapangan (`spj_expenses`)**:
+    *   Kategori beban riil: `FUEL` (BBM solar, liter, odometer KM, SPBU lokasi), `TOLL`, `PARKING`, `RETRIBUTION`, `RESTAURANT_MEAL_SERVICE`, `COORDINATOR_FEE`, `CREW_LODGING`, `EMERGENCY_REPAIR`, `TOWING`.
+    *   Sumber pendanaan: `UJ` (memotong saldo amplop), `OFFICE_CASH`, `OFFICE_BANK`, `CREW_POCKET` (talangan kru), `OFFICE_AP`.
+    *   Verifikasi akuntansi: Status `PENDING`, `APPROVED`, `REJECTED` dengan verifier audit.
+*   **Deklarasi Penerimaan Kas Kru & Anti-Netting (`spj_revenue_declarations`)**:
+    *   Penerapan tegas prinsip **Anti-Netting Kas Kru** (Addendum v1.9 & Skenario 1): Penerimaan kas tiket fisik loket pool (`TICKET_CASH`), titipan agen offline (`AGENT_DEPOSIT`), kargo motor (`CARGO_MOTORCYCLE`), kargo kardus (`CARGO_BOX`), dan sewa wisata (`CHARTER_CASH`) wajib disetor bruto penuh tanpa pemotongan pribadi oleh kru di jalan.
+    *   *Dynamic Crew Cargo Commission*: Perhitungan otomatis hak komisi kru kargo (preset 15%, 20%, 25% atau custom) yang langsung mendaftarkan hak rupiah kru ke tabel kompensasi kru kategori `CARGO_COMMISSION`.
+*   **Kompensasi Kru & Early Payout (`crew_meal_payments`)**:
+    *   Rincian hak kru: `MEAL_ALLOWANCE`, `TRIP_INCENTIVE`, `FULL_SEAT_BONUS`, `CARGO_COMMISSION`.
+    *   Jadwal pencairan: `AT_SETTLEMENT` (di kasir pool saat kepulangan) vs `EARLY_DISBURSEMENT` (pencairan di muka / transfer bank uang dapur keluarga saat wisata, Skenario 2).
+
+### B. Domain Services & Solusi Cascade
+*   `SpjUjService`: Mengelola pencairan, pengembalian sisa UJ, approval tambahan UJ, dan rollover UJ.
+*   `SpjExpensesService`: Validasi nota fisik & odometer solar, pemotongan saldo UJ, dan verifikasi kasir.
+*   `SpjRevenueService`: Pencatatan kas bruto tiket/kargo dan perhitungan komisi dinamis kru 20%.
+*   `CrewMealPaymentsService`: Snapshotting kompensasi kru dari penugasan dan transfer early payout mid-trip.
+*   *TypeORM Safe Update Pattern*: Seluruh pembaruan saldo amplop menggunakan `ujRepo.update(uj.id, ...)` atomik dan relasi `@OneToMany` bebas dari `cascade: true` untuk mengeliminasi resiko nullification foreign key `spj_uj_id`.
+
+### C. Frontend Antarmuka Keuangan SPJ (`SpjFinanceModal`)
+*   Modal terpadu dengan 4 sub-tab:
+    1. *Uang Jalan (UJ)*: 4 kartu metrik saldo amplop, tabel multi-line disbursement, riwayat return fisik, dialog pencairan kasir, dan tombol rollover estafet breakdown.
+    2. *Biaya Operasional SPJ*: Rincian nota BBM solar (liter + odometer KM + SPBU), tol, parkir, servis makan, serta tombol verifikasi kasir.
+    3. *Deklarasi Penerimaan Kas Kru*: Form tiket langsung & kargo dengan live slider persentase komisi kru (15%, 20%, 25%) dan kalkulator instan net setoran ke kantor.
+    4. *Hak Kompensasi Kru*: Daftar hak kompensasi per supir/kondektur, tombol sinkronisasi penugasan, dan modal transfer nafkah keluarga kru di jalan (*Early Payout*).
+*   *Live Thousand Separator*: Seluruh input nilai rupiah otomatis menerapkan format pemisah ribuan titik saat diketik (`formatNumberWithDots`), dengan pembersihan otomatis sebelum dikirim ke server (`cleanDots`).
+*   Akses cepat tombol `[💰 Keuangan & UJ]` pada tabel utama `/spjs` dan footer modal detail SPJ.
+
 ---
 *Gunakan dokumen ini sebagai referensi saat melakukan pengembangan fitur baru atau debugging sistem otorisasi.*
+
 

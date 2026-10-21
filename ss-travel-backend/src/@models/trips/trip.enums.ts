@@ -56,3 +56,89 @@ export enum CrewAssignmentStatus {
   CANCELLED = 'CANCELLED',
   REPLACED = 'REPLACED',
 }
+
+export enum SpjExpenseType {
+  FUEL = 'FUEL',
+  TOLL = 'TOLL',
+  PARKING = 'PARKING',
+  RETRIBUTION = 'RETRIBUTION',
+  RESTAURANT_MEAL_SERVICE = 'RESTAURANT_MEAL_SERVICE',
+  COORDINATOR_FEE = 'COORDINATOR_FEE',
+  CREW_LODGING = 'CREW_LODGING',
+  PARKING_TOURISM = 'PARKING_TOURISM',
+  EMERGENCY_REPAIR = 'EMERGENCY_REPAIR',
+  TOWING = 'TOWING',
+  OTHER = 'OTHER',
+}
+
+export enum SpjExpensePaymentSource {
+  UJ = 'UJ',
+  OFFICE_AP = 'OFFICE_AP',
+  OFFICE_CASH = 'OFFICE_CASH',
+  OFFICE_BANK = 'OFFICE_BANK',
+  CREW_POCKET = 'CREW_POCKET',
+}
+
+export enum SpjExpenseStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+}
+
+export enum SpjUjStatus {
+  DRAFT = 'DRAFT',
+  DISBURSED = 'DISBURSED',
+  BALANCED = 'BALANCED',
+  DISCREPANCY = 'DISCREPANCY',
+}
+
+export enum SpjDisbursementType {
+  INITIAL = 'INITIAL',
+  ADDITIONAL = 'ADDITIONAL',
+  ROLLOVER_IN = 'ROLLOVER_IN',
+}
+
+export enum SpjPaymentMethod {
+  CASH = 'CASH',
+  BANK_TRANSFER = 'BANK_TRANSFER',
+  ROLLOVER = 'ROLLOVER',
+}
+
+export enum SpjAdditionalRequestStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+}
+
+export enum SpjRevenueDeclarationType {
+  TICKET_CASH = 'TICKET_CASH',
+  AGENT_DEPOSIT = 'AGENT_DEPOSIT',
+  CARGO_MOTORCYCLE = 'CARGO_MOTORCYCLE',
+  CARGO_BOX = 'CARGO_BOX',
+  CHARTER_CASH = 'CHARTER_CASH',
+}
+
+export enum SpjRevenueDeclarationStatus {
+  DECLARED = 'DECLARED',
+  VERIFIED = 'VERIFIED',
+  DISCREPANCY = 'DISCREPANCY',
+}
+
+export enum CrewMealPaymentCategory {
+  MEAL_ALLOWANCE = 'MEAL_ALLOWANCE',
+  TRIP_INCENTIVE = 'TRIP_INCENTIVE',
+  FULL_SEAT_BONUS = 'FULL_SEAT_BONUS',
+  CARGO_COMMISSION = 'CARGO_COMMISSION',
+}
+
+export enum CrewMealPaymentStatus {
+  PENDING = 'PENDING',
+  PAID = 'PAID',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum CrewPayoutTiming {
+  AT_SETTLEMENT = 'AT_SETTLEMENT',
+  EARLY_DISBURSEMENT = 'EARLY_DISBURSEMENT',
+}
+

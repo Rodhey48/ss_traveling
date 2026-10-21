@@ -35,5 +35,13 @@ export * from './trips/trip-schedule.entity';
 export * from './trips/spj.entity';
 export * from './trips/spj-leg.entity';
 export * from './trips/spj-crew-assignment.entity';
+export * from './trips/spj-expense.entity';
+export * from './trips/spj-uj.entity';
+export * from './trips/spj-uj-disbursement.entity';
+export * from './trips/spj-uj-expense.entity';
+export * from './trips/spj-uj-return.entity';
+export * from './trips/spj-uj-additional-request.entity';
+export * from './trips/spj-revenue-declaration.entity';
+export * from './trips/crew-meal-payment.entity';
 
 

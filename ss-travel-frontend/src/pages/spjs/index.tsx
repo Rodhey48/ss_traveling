@@ -37,8 +37,10 @@ import {
   Info,
   Calendar,
   RotateCcw,
+  Wallet,
 } from 'lucide-react';
 import SpjDetailModal from './components/spj-detail-modal';
+import SpjFinanceModal from './components/spj-finance-modal';
 import ReplaceCrewModal from './components/replace-crew-modal';
 import EmergencyReplaceBusModal from './components/emergency-replace-bus-modal';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
@@ -70,6 +72,7 @@ export default function SpjsPage() {
 
   // Modals state
   const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [financeModalOpen, setFinanceModalOpen] = useState(false);
   const [replaceCrewModalOpen, setReplaceCrewModalOpen] = useState(false);
   const [emergencyModalOpen, setEmergencyModalOpen] = useState(false);
   const [selectedSpj, setSelectedSpj] = useState<Spj | null>(null);
@@ -600,6 +603,19 @@ export default function SpjsPage() {
                           <Eye className="w-3.5 h-3.5 mr-1" /> Rincian
                         </Button>
 
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedSpj(s);
+                            setFinanceModalOpen(true);
+                          }}
+                          className="h-8 text-xs font-semibold bg-emerald-50/70 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 border-emerald-300 dark:border-emerald-800 shadow-2xs"
+                          title="Kelola Keuangan SPJ (Uang Jalan, Biaya BBM/Tol, Kas Kru)"
+                        >
+                          <Wallet className="w-3.5 h-3.5 mr-1 text-emerald-600 dark:text-emerald-400" /> Keuangan & UJ
+                        </Button>
+
                         {s.operationalStatus === 'ISSUED' && isUpdate && (
                           <Button
                             size="sm"
@@ -662,6 +678,22 @@ export default function SpjsPage() {
         }}
         onOpenEmergencyReplace={() => {
           setEmergencyModalOpen(true);
+        }}
+        onOpenFinance={() => {
+          setFinanceModalOpen(true);
+        }}
+      />
+
+      {/* Modal Keuangan SPJ (Tahap 6: UJ, Biaya BBM/Tol, Kas Kru) */}
+      <SpjFinanceModal
+        open={financeModalOpen}
+        onOpenChange={setFinanceModalOpen}
+        spj={selectedSpj}
+        onSuccess={() => {
+          loadSpjs();
+          if (selectedSpj) {
+            SpjService.getSpj(selectedSpj.id).then(setSelectedSpj);
+          }
         }}
       />
 

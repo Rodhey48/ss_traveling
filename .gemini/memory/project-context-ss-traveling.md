@@ -26,20 +26,20 @@ Membangun sistem ERP komprehensif untuk SS Traveling Official (layanan Bus AKAP 
     2. Skenario 2: Sewa Wisata / Charter Multi-Day & B2B Partner Cashback.
     3. Skenario 3: Anomali AKAP Breakdown, Penggantian Armada (`parent_spj_id`) & Estafet UJ.
     4. Skenario 4: Rekonsiliasi Kasir Bermasalah, Musyawarah Kru & Resolusi Selisih Kas.
-- **Fase 3: Core Implementation**: [READY TO START]
+- **Fase 3: Core Implementation**: [IN PROGRESS]
   - **Master Plan Terkunci**: Roadmap 10 tahap terdokumentasi lengkap di `.gemini/plan/Plan.md`.
-  - **Konfigurasi BE & FE Siap**: `decimal.js`, `MoneyHelper` (100% test passed), `timestamptz`, dan standardisasi API prefix `/api/v1` telah aktif dan diverifikasi.
-  - **Fokus Tahap 1**: Master Organisasi, Dimensi, & Armada Bus (`companies`, `business_units`, `cost_centers`, `profit_centers`, `vehicles`, `vehicle_seat_classes`, dan seeder 10 bus existing).
+  - **Progres Selesai**: Tahap 0 s.d. Tahap 6 telah tuntas 100% (RBAC, Master Organisasi & 10 Bus, COA Kelompok 1-8, Matriks Tarif & Kompensasi Kru, Accounting Posting & Reversal Engine, Penjadwalan & SPJ Lifecycle, Uang Jalan Multi-Line, Biaya BBM Odometer, Deklarasi Kas Anti-Netting).
+  - **Fokus Berikutnya (Tahap 7)**: Meja Kasir Pool, Settlement Kas Kru, & Resolusi Selisih Kasir (Skenario 1 & Skenario 4).
 
 ## Rencana Eksekusi Bertahap (Fase 3)
 Lihat rincian lengkap 10 tahap eksekusi di `.gemini/plan/Plan.md`:
-* Tahap 1: Master Organisasi, Dimensi, & Armada Bus (Entities & Seeder 10 Bus)
-* Tahap 2: Master Keuangan, Hierarki COA (Kelompok 1-8), & Kas/Bank (Entities & Seeder)
-* Tahap 3: Master Aturan Bisnis & Tarif Lapangan (Fare Matrix, Komisi, Rate Kru, Restoran)
-* Tahap 4: Accounting Core Engine (Jurnal, Lines, Posting Service Atomik, Idempotency)
-* Tahap 5: SPJ Life Cycle & Multi-Leg State Machine (Status Ganda & Penomoran Dokumen)
-* Tahap 6: Uang Jalan (UJ), Biaya SPJ, & Deklarasi Penerimaan (Multi-Line UJ & Anti-Netting)
-* Tahap 7: Kasir Pool, Settlement Kas Kru, & Resolusi Selisih (Skenario 1 & Skenario 4)
+* Tahap 1: Master Organisasi, Dimensi, & Armada Bus (Entities & Seeder 10 Bus) [COMPLETED]
+* Tahap 2: Master Keuangan, Hierarki COA (Kelompok 1-8), & Kas/Bank (Entities & Seeder) [COMPLETED]
+* Tahap 3: Master Aturan Bisnis & Tarif Lapangan (Fare Matrix, Komisi, Rate Kru, Restoran) [COMPLETED]
+* Tahap 4: Accounting Core Engine (Jurnal, Lines, Posting Service Atomik, Idempotency) [COMPLETED]
+* Tahap 5: SPJ Life Cycle & Multi-Leg State Machine (Status Ganda & Penomoran Dokumen) [COMPLETED]
+* Tahap 6: Uang Jalan (UJ), Biaya SPJ, & Deklarasi Penerimaan (Multi-Line UJ & Anti-Netting) [COMPLETED]
+* Tahap 7: Kasir Pool, Settlement Kas Kru, & Resolusi Selisih (Skenario 1 & Skenario 4) [NEXT]
 * Tahap 8: Modul AR & AP (Tagihan Servis Makan Mitra, Kontrak Charter Wisata, Komisi Agen)
 * Tahap 9: Laporan Finansial, Trip Profitability (Margin), & Tutup Buku Bulanan
 * Tahap 10: Integrasi Frontend UI & E2E Verification

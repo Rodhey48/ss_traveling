@@ -238,28 +238,34 @@ Setiap tahap dikerjakan secara paralel per fitur (*Vertical Slice*): **Database 
 
 ---
 
-### 📌 Tahap 6: Uang Jalan (UJ), Biaya SPJ, & Deklarasi Penerimaan (BE + FE)
-* [ ] **Backend Implementation (`ss-travel-backend`)**:
-  * [ ] **Models & Entities (`src/@models/`)**:
-    * [ ] `spj_expenses` (BBM solar + liter + odometer, tol, parkir, retribusi).
-    * [ ] `spj_uj`, `spj_uj_disbursements` (multi-line), `spj_uj_expenses`, `spj_uj_returns`, `spj_uj_additional_requests`.
-    * [ ] `spj_revenue_declarations` (tiket tunai, kargo motor, kargo kardus dengan komisi dinamis kru 20%).
-    * [ ] `crew_meal_payments` (hak makan, premi, bonus full seat, komisi kargo).
-  * [ ] **Services & Domain Logic**:
-    * [ ] `SpjUjService`: Multi-line disbursement, pencatatan otomatis debit UJ `13101`, dan estafet UJ (*UJ Rollover*) saat breakdown (Skenario 3).
-    * [ ] `SpjExpensesService`: Validasi nota fisik & odometer.
-    * [ ] `SpjRevenueService`: Penegakan prinsip Anti-Netting kas bruto.
-  * [ ] **Controllers & Endpoints**:
-    * [ ] Endpoint pencairan UJ, pengajuan tambahan UJ, input biaya SPJ, dan deklarasi penerimaan tiket/kargo.
-  * [ ] **Automated Tests**:
-    * [ ] Unit test multi-line disbursement, UJ rollover, dan komisi dinamis kargo.
-* [ ] **Frontend Implementation (`ss-travel-frontend`)**:
-  * [ ] **API Service Clients (`src/services/`)**:
-    * [ ] `spj-finance.service.ts`: Panggilan API UJ, expenses, dan revenue declarations.
-  * [ ] **Pages & Components (`src/pages/`)**:
-    * [ ] Tab **Uang Jalan & Pengeluaran SPJ (`/spjs/:id/finance`)**: Form pencairan UJ bertahap (kasir/bank), rincian nota BBM (liter + foto odometer), tol, dan fasilitas perjalanan.
-    * [ ] Form **Deklarasi Penerimaan Kas Kru**: Form input tiket langsung naik pool dan resi kargo (pilihan kargo motor vs kardus + slider/preset persentase komisi kru 20%).
-    * [ ] Modal **Pencairan Nafkah Premi di Jalan (*Early Payout*)**: Form transfer uang keluarga kru di tengah tour wisata (Skenario 2).
+### 📌 Tahap 6: Uang Jalan (UJ), Biaya SPJ, & Deklarasi Penerimaan (BE + FE) (Completed)
+* [x] **Backend Implementation (`ss-travel-backend`)**:
+  * [x] **Models & Entities (`src/@models/`)**:
+    * [x] `spj_expenses` (BBM solar + liter + odometer, tol, parkir, retribusi).
+    * [x] `spj_uj`, `spj_uj_disbursements` (multi-line), `spj_uj_expenses`, `spj_uj_returns`, `spj_uj_additional_requests`.
+    * [x] `spj_revenue_declarations` (tiket tunai, kargo motor, kargo kardus dengan komisi dinamis kru 20%).
+    * [x] `crew_meal_payments` (hak makan, premi, bonus full seat, komisi kargo).
+  * [x] **Services & Domain Logic**:
+    * [x] `SpjUjService`: Multi-line disbursement, pencatatan otomatis debit UJ `13101`, dan estafet UJ (*UJ Rollover*) saat breakdown (Skenario 3).
+    * [x] `SpjExpensesService`: Validasi nota fisik & odometer.
+    * [x] `SpjRevenueService`: Penegakan prinsip Anti-Netting kas bruto.
+    * [x] `CrewMealPaymentsService`: Snapshotting kompensasi kru, sync penugasan, dan early payout mid-trip (Skenario 2).
+  * [x] **Controllers & Endpoints**:
+    * [x] `SpjFinanceController`: Endpoint pencairan UJ, pengajuan tambahan UJ, input biaya SPJ, deklarasi penerimaan tiket/kargo, dan early payout.
+  * [x] **Database Migration & Seeder**:
+    * [x] Migrasi `1781700000000-create-spj-uj-expenses-and-revenue.ts` dan seeder riil Skenario 1 & 2 `1888888888894-SeedSpjFinanceData.ts`.
+  * [x] **Automated Tests**:
+    * [x] Unit test multi-line disbursement, UJ rollover, fuel expense odometer validation, komisi dinamis kargo 20%, dan early transfer (121/121 passing).
+* [x] **Frontend Implementation (`ss-travel-frontend`)**:
+  * [x] **API Service Clients (`src/services/`)**:
+    * [x] `spj-finance.service.ts`: Panggilan API UJ, expenses, revenue declarations, dan crew meal payments tanpa leading slash.
+  * [x] **Pages & Components (`src/pages/`)**:
+    * [x] Modal **Keuangan & UJ SPJ (`SpjFinanceModal`)**:
+      * [x] Tab 1: **Uang Jalan (UJ)**: 4 kartu metrik saldo amplop UJ (Total Dicairkan, Terpakai di Jalan, Dikembalikan Kasir, Sisa Saldo UJ), riwayat pencairan multi-line, riwayat pengembalian fisik, form pengajuan tambahan UJ, dan estafet rollover UJ saat breakdown di tol (Skenario 3).
+      * [x] Tab 2: **Biaya Operasional SPJ**: Rincian nota BBM solar (liter + odometer KM + SPBU), tol, parkir, retribusi, servis makan, serta verifikasi kasir.
+      * [x] Tab 3: **Deklarasi Penerimaan Kas Kru (Anti-Netting)**: Input tiket tunai langsung naik pool dan resi kargo (pilihan kargo motor vs kardus + slider/preset persentase komisi kru 20%).
+      * [x] Tab 4: **Hak Kompensasi Kru & Early Payout**: Daftar hak uang makan, premi ritase, bonus full seat, komisi kargo, serta tombol pencairan nafkah premi di jalan via transfer bank (Skenario 2).
+    * [x] Integrasi tombol aksi cepat `[💰 Keuangan & UJ]` pada setiap baris tabel dokumen SPJ (`/spjs`) dan modal detail SPJ.
 
 ---
 

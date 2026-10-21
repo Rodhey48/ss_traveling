@@ -14,6 +14,10 @@ import { VehicleEntity } from '../fleet/vehicle.entity';
 import { TripScheduleEntity } from './trip-schedule.entity';
 import { SpjLegEntity } from './spj-leg.entity';
 import { SpjCrewAssignmentEntity } from './spj-crew-assignment.entity';
+import { SpjExpenseEntity } from './spj-expense.entity';
+import { SpjUjEntity } from './spj-uj.entity';
+import { SpjRevenueDeclarationEntity } from './spj-revenue-declaration.entity';
+import { CrewMealPaymentEntity } from './crew-meal-payment.entity';
 import {
   TripServiceType,
   SpjOperationalStatus,
@@ -132,4 +136,16 @@ export class SpjEntity extends BaseEntity {
     cascade: true,
   })
   crewAssignments?: SpjCrewAssignmentEntity[];
+
+  @OneToMany(() => SpjUjEntity, (uj) => uj.spj)
+  ujs?: SpjUjEntity[];
+
+  @OneToMany(() => SpjExpenseEntity, (expense) => expense.spj)
+  expenses?: SpjExpenseEntity[];
+
+  @OneToMany(() => SpjRevenueDeclarationEntity, (rev) => rev.spj)
+  revenueDeclarations?: SpjRevenueDeclarationEntity[];
+
+  @OneToMany(() => CrewMealPaymentEntity, (pay) => pay.spj)
+  crewMealPayments?: CrewMealPaymentEntity[];
 }

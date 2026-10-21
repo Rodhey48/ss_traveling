@@ -28,6 +28,7 @@ import {
   AlertTriangle,
   Wrench,
   FileText,
+  Wallet,
 } from 'lucide-react';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import { SpjService } from '@/services/spj.service';
@@ -41,6 +42,7 @@ interface SpjDetailModalProps {
   onSuccess: () => void;
   onOpenReplaceCrew: () => void;
   onOpenEmergencyReplace: () => void;
+  onOpenFinance?: () => void;
 }
 
 export default function SpjDetailModal({
@@ -50,6 +52,7 @@ export default function SpjDetailModal({
   onSuccess,
   onOpenReplaceCrew,
   onOpenEmergencyReplace,
+  onOpenFinance,
 }: SpjDetailModalProps) {
   const [activeTab, setActiveTab] = useState<'legs' | 'crew'>('legs');
   const [actionLoading, setActionLoading] = useState(false);
@@ -596,6 +599,21 @@ export default function SpjDetailModal({
           </div>
 
           <div className="flex items-center justify-end gap-2">
+            {onOpenFinance && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  onOpenChange(false);
+                  onOpenFinance();
+                }}
+                className="text-xs h-9 font-semibold bg-emerald-50/70 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 border-emerald-300 dark:border-emerald-800"
+              >
+                <Wallet className="w-3.5 h-3.5 mr-1.5 text-emerald-600" /> Keuangan & UJ
+              </Button>
+            )}
+
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="text-xs h-9">
               Tutup
             </Button>

@@ -2,6 +2,40 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-10-21: Stage 6 Completed — Uang Jalan (UJ), Biaya Operasional SPJ (BBM/Tol), & Deklarasi Penerimaan Kas Kru (Anti-Netting)
+- **Model Database & Migrasi PostgreSQL (`spj_expenses`, `spj_uj`, `spj_uj_disbursements`, `spj_uj_expenses`, `spj_uj_returns`, `spj_uj_additional_requests`, `spj_revenue_declarations`, `crew_meal_payments`)**:
+  - `spj_expenses`: Pencatatan beban riil perjalanan armada (`expense_type`: `FUEL`, `TOLL`, `PARKING`, `RETRIBUTION`, `RESTAURANT_MEAL_SERVICE`, `COORDINATOR_FEE`, `CREW_LODGING`, `EMERGENCY_REPAIR`, `TOWING`, dll.), metadata solar BBM (volume liter, odometer KM, SPBU lokasi), nomor struk nota, status verifikasi akuntansi (`PENDING`, `APPROVED`, `REJECTED`), dan sumber pendanaan (`UJ`, `OFFICE_CASH`, `OFFICE_BANK`, `CREW_POCKET`, `OFFICE_AP`).
+  - `spj_uj`: Rekening amplop pertanggungjawaban UJ per SPJ (`crew_id` pemegang UJ, `status`: `DRAFT`, `DISBURSED`, `BALANCED`, `DISCREPANCY`), akumulasi live (`total_disbursed`, `total_spent`, `total_returned`, `balance`), serta relasi estafet darurat `rollover_from_spj_id` & `rollover_to_spj_id` (Skenario 3).
+  - `spj_uj_disbursements`: Pencairan UJ bertahap multi-line (`INITIAL` di pool garasi, `ADDITIONAL` via bank di jalan, `ROLLOVER_IN`), referensi BKK kas keluar, metode pembayaran (`CASH`, `BANK_TRANSFER`, `ROLLOVER`), dan akun sumber.
+  - `spj_uj_expenses`: Relasi m:n pemotongan saldo amplop UJ otomatis saat nota lapangan diinput dengan sumber dana UJ.
+  - `spj_uj_returns`: Pencatatan fisik pengembalian sisa saldo UJ kru di meja kasir pool saat kepulangan bus (referensi BKM kas masuk, status otomatis `BALANCED` saat saldo habis).
+  - `spj_uj_additional_requests`: Form pengajuan tambahan UJ oleh kru di tengah rute dinas dengan persetujuan kasir/dispatcher (`PENDING` ➔ `APPROVED` / `REJECTED`).
+  - `spj_revenue_declarations`: Penerapan tegas prinsip **Anti-Netting Kas Kru** (Addendum v1.9 & Skenario 1) untuk tiket tunai langsung naik pool (`TICKET_CASH`), titipan setoran agen terminal (`AGENT_DEPOSIT`), kargo motor (`CARGO_MOTORCYCLE`), kargo paket/kardus (`CARGO_BOX`), dan pelunasan sewa wisata di lapangan (`CHARTER_CASH`).
+  - *Dynamic Crew Cargo Commission*: Perhitungan otomatis hak komisi kru kargo (preset 15%, 20%, 25% atau custom) yang otomatis mendaftarkan hak rupiah kru ke tabel `crew_meal_payments` kategori `CARGO_COMMISSION`.
+  - `crew_meal_payments`: Manajemen hak kompensasi kru per SPJ (uang makan `MEAL_ALLOWANCE`, premi ritase `TRIP_INCENTIVE`, bonus full-seat `FULL_SEAT_BONUS`, komisi kargo `CARGO_COMMISSION`), status pembayaran (`PENDING`, `PAID`, `CANCELLED`), serta dukungan **Early Payout Mid-Trip** via transfer bank (Skenario 2).
+  - Migrasi `1781700000000-create-spj-uj-expenses-and-revenue.ts` dan seeder data riil `1888888888894-SeedSpjFinanceData.ts` sukses dieksekusi 100% pada PostgreSQL.
+- **Service Layer & Domain Accounting Logic (`ss-travel-backend`)**:
+  - `SpjUjService`: Logika pencairan multi-line, auto-update saldo amplop via `MoneyHelper`, penanganan return fisik, approval tambahan UJ, dan eksekusi estafet **UJ Rollover** saat armada breakdown di tol (Skenario 3).
+  - `SpjExpensesService`: Validasi nota fisik & odometer, auto-deduct saldo amplop UJ jika `paymentSource === 'UJ'`, verifikasi kasir, dan pengembalian saldo UJ jika pengeluaran dibatalkan.
+  - `SpjRevenueService`: Penegakan prinsip Anti-Netting (kas bruto disetor utuh), perhitungan dinamis komisi kargo kru 20%, dan pendaftaran otomatis kompensasi kru.
+  - `CrewMealPaymentsService`: Sinkronisasi otomatis uang makan & premi dari snapshot penugasan kru (`syncFromCrewAssignments`), serta eksekusi transfer uang dapur di tengah perjalanan wisata (`disburseEarlyPayment`, Skenario 2).
+- **REST API Endpoints & RBAC Security**:
+  - UJ: `GET /api/v1/spjs/:id/uj`, `POST /api/v1/spjs/:id/uj/disburse`, `POST /api/v1/spjs/:id/uj/return`, `POST /api/v1/spjs/:id/uj/additional-request`, `PUT /api/v1/spjs/uj/additional-requests/:requestId/process`, `POST /api/v1/spjs/:id/uj/rollover`.
+  - Expenses: `GET /api/v1/spjs/:id/expenses`, `POST /api/v1/spjs/:id/expenses`, `PUT /api/v1/spjs/expenses/:expenseId/verify`, `DELETE /api/v1/spjs/expenses/:expenseId`.
+  - Revenues: `GET /api/v1/spjs/:id/revenues`, `POST /api/v1/spjs/:id/revenues`, `PUT /api/v1/spjs/revenues/:revenueId/verify`, `DELETE /api/v1/spjs/revenues/:revenueId`.
+  - Crew Payments: `GET /api/v1/spjs/:id/crew-payments`, `POST /api/v1/spjs/:id/crew-payments`, `POST /api/v1/spjs/:id/crew-payments/sync`, `POST /api/v1/spjs/crew-payments/:paymentId/early-disburse`.
+- **Frontend `SpjFinanceModal.tsx` & Service Client (`ss-travel-frontend`)**:
+  - Service `SpjFinanceService` dengan pemanggilan Axios terstandarisasi tanpa leading slash (`api.get('api/v1/spjs/...')`).
+  - Modal komprehensif `SpjFinanceModal` dengan 4 sub-tab:
+    1. *Uang Jalan (UJ)*: 4 kartu metrik saldo amplop, tabel multi-line disbursement, riwayat return fisik, dialog pencairan kasir, dan tombol rollover estafet breakdown.
+    2. *Biaya Operasional SPJ*: Rincian nota BBM solar (liter + odometer + SPBU), tol, parkir, servis makan, serta tombol verifikasi kasir.
+    3. *Deklarasi Penerimaan Kas Kru*: Form tiket langsung & kargo dengan live slider persentase komisi kru (15%, 20%, 25%) dan kalkulator instan net setoran ke kantor.
+    4. *Hak Kompensasi Kru*: Daftar hak kompensasi per supir/kondektur, tombol sinkronisasi penugasan, dan modal transfer nafkah keluarga kru di jalan (*Early Payout*).
+  - Tombol aksi cepat `[💰 Keuangan & UJ]` pada setiap baris tabel dokumen SPJ dan footer detail SPJ.
+- **Verifikasi Kualitas Penuh**:
+  - 18 unit test suites backend (121 tests total) lulus 100%.
+  - Frontend TypeScript `yarn build` sukses 100% bebas error.
+
 ### 2026-10-21: Stage 5 Enhancement — Visualisasi Segmen 2 Leg AKAP, Fleksibilitas Kompensasi Kru (Addendum v1.19), dan Review SPJ Modal
 - **Addendum v1.19 Diresmikan di Blueprint**:
   - Membakukan prinsip kesetaraan satuan: Di AKAP $1 \text{ Hari} = 1 \text{ Leg}$ (rute PP = 2 Leg/2 Hari, rute engkel = 1 Leg/1 Hari). Di pariwisata dihitung berdasarkan durasi hari pemakaian kalender ($N \text{ Hari}$).

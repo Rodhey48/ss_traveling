@@ -1085,5 +1085,297 @@ export interface SpjFilterParams {
   limit?: number;
 }
 
+// -------------------------------------------------------------
+// STAGE 6: ENUMS & TIPE FINANSIAL SPJ
+// -------------------------------------------------------------
+
+export type SpjExpenseType =
+  | 'FUEL'
+  | 'TOLL'
+  | 'PARKING'
+  | 'RETRIBUTION'
+  | 'RESTAURANT_MEAL_SERVICE'
+  | 'COORDINATOR_FEE'
+  | 'CREW_LODGING'
+  | 'PARKING_TOURISM'
+  | 'EMERGENCY_REPAIR'
+  | 'TOWING'
+  | 'OTHER';
+
+export type SpjExpensePaymentSource =
+  | 'UJ'
+  | 'OFFICE_AP'
+  | 'OFFICE_CASH'
+  | 'OFFICE_BANK'
+  | 'CREW_POCKET';
+
+export type SpjExpenseStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export type SpjUjStatus = 'DRAFT' | 'DISBURSED' | 'BALANCED' | 'DISCREPANCY';
+
+export type SpjDisbursementType = 'INITIAL' | 'ADDITIONAL' | 'ROLLOVER_IN';
+
+export type SpjPaymentMethod = 'CASH' | 'BANK_TRANSFER' | 'ROLLOVER';
+
+export type SpjAdditionalRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export type SpjRevenueDeclarationType =
+  | 'TICKET_CASH'
+  | 'AGENT_DEPOSIT'
+  | 'CARGO_MOTORCYCLE'
+  | 'CARGO_BOX'
+  | 'CHARTER_CASH';
+
+export type SpjRevenueDeclarationStatus = 'DECLARED' | 'VERIFIED' | 'DISCREPANCY';
+
+export type CrewMealPaymentCategory =
+  | 'MEAL_ALLOWANCE'
+  | 'TRIP_INCENTIVE'
+  | 'FULL_SEAT_BONUS'
+  | 'CARGO_COMMISSION';
+
+export type CrewMealPaymentStatus = 'PENDING' | 'PAID' | 'CANCELLED';
+
+export type CrewPayoutTiming = 'AT_SETTLEMENT' | 'EARLY_DISBURSEMENT';
+
+export interface SpjExpense {
+  id: string;
+  spjId: string;
+  spjLegId?: string;
+  spjLeg?: SpjLeg;
+  vehicleId: string;
+  vehicle?: Vehicle;
+  expenseType: SpjExpenseType;
+  amount: string;
+  expenseDate: string;
+  paymentSource: SpjExpensePaymentSource;
+  fuelLiters?: string;
+  odometerKm?: number;
+  fuelStation?: string;
+  receiptNumber?: string;
+  receiptUrl?: string;
+  notes?: string;
+  status: SpjExpenseStatus;
+  verifiedBy?: string;
+  verifier?: User;
+  verifiedAt?: string;
+  createdAt: string;
+}
+
+export interface SpjUjDisbursement {
+  id: string;
+  spjUjId: string;
+  crewAssignmentId?: string;
+  crewAssignment?: SpjCrewAssignment;
+  disbursementType: SpjDisbursementType;
+  amount: string;
+  disbursedAt: string;
+  paymentMethod: SpjPaymentMethod;
+  cashAccountId?: string;
+  cashAccount?: CashAccount;
+  bankAccountId?: string;
+  bankAccount?: BankAccount;
+  disbursedBy?: string;
+  disburser?: User;
+  receiptRef?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface SpjUjExpense {
+  id: string;
+  spjUjId: string;
+  expenseId: string;
+  expense?: SpjExpense;
+  amount: string;
+  receiptRef?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface SpjUjReturn {
+  id: string;
+  spjUjId: string;
+  crewAssignmentId?: string;
+  crewAssignment?: SpjCrewAssignment;
+  amount: string;
+  returnedAt: string;
+  paymentMethod: SpjPaymentMethod;
+  cashAccountId?: string;
+  cashAccount?: CashAccount;
+  bankAccountId?: string;
+  bankAccount?: BankAccount;
+  receivedBy?: string;
+  receiver?: User;
+  receiptRef?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface SpjUjAdditionalRequest {
+  id: string;
+  spjId: string;
+  spjUjId: string;
+  crewAssignmentId?: string;
+  requestedBy: string;
+  requester?: User;
+  amount: string;
+  reason: string;
+  status: SpjAdditionalRequestStatus;
+  processedBy?: string;
+  processor?: User;
+  processedAt?: string;
+  rejectionReason?: string;
+  createdAt: string;
+}
+
+export interface SpjUj {
+  id: string;
+  companyId?: string;
+  spjId: string;
+  crewId: string;
+  crew?: User;
+  status: SpjUjStatus;
+  totalDisbursed: string;
+  totalSpent: string;
+  totalReturned: string;
+  balance: string;
+  rolloverFromSpjId?: string;
+  rolloverFromSpj?: Spj;
+  rolloverToSpjId?: string;
+  rolloverToSpj?: Spj;
+  notes?: string;
+  disbursements?: SpjUjDisbursement[];
+  expenses?: SpjUjExpense[];
+  returns?: SpjUjReturn[];
+  additionalRequests?: SpjUjAdditionalRequest[];
+  createdAt: string;
+}
+
+export interface SpjRevenueDeclaration {
+  id: string;
+  spjId: string;
+  spjLegId?: string;
+  spjLeg?: SpjLeg;
+  declarationType: SpjRevenueDeclarationType;
+  amount: string;
+  declaredBy: string;
+  declarer?: User;
+  declaredAt: string;
+  sourceReference?: string;
+  crewCommissionPercentage?: string;
+  crewCommissionAmount?: string;
+  cargoSenderName?: string;
+  cargoSenderPhone?: string;
+  cargoReceiverName?: string;
+  cargoReceiverPhone?: string;
+  cargoItemDescription?: string;
+  status: SpjRevenueDeclarationStatus;
+  verifiedBy?: string;
+  verifier?: User;
+  verifiedAt?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface CrewMealPayment {
+  id: string;
+  spjId: string;
+  crewAssignmentId?: string;
+  crewAssignment?: SpjCrewAssignment;
+  crewId: string;
+  crew?: User;
+  paymentCategory: CrewMealPaymentCategory;
+  amount: string;
+  payoutTiming: CrewPayoutTiming;
+  status: CrewMealPaymentStatus;
+  paidAt?: string;
+  paymentMethod?: SpjPaymentMethod;
+  cashAccountId?: string;
+  cashAccount?: CashAccount;
+  bankAccountId?: string;
+  bankAccount?: BankAccount;
+  paidBy?: string;
+  payer?: User;
+  receiptRef?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface CreateSpjUjDisbursementFormData {
+  crewAssignmentId?: string;
+  disbursementType?: SpjDisbursementType;
+  amount: string;
+  paymentMethod: SpjPaymentMethod;
+  cashAccountId?: string;
+  bankAccountId?: string;
+  receiptRef?: string;
+  notes?: string;
+}
+
+export interface CreateSpjUjReturnFormData {
+  crewAssignmentId?: string;
+  amount: string;
+  paymentMethod: SpjPaymentMethod;
+  cashAccountId?: string;
+  bankAccountId?: string;
+  receiptRef?: string;
+  notes?: string;
+}
+
+export interface CreateSpjUjAdditionalRequestFormData {
+  crewAssignmentId?: string;
+  amount: string;
+  reason: string;
+}
+
+export interface ProcessAdditionalRequestFormData {
+  status: 'APPROVED' | 'REJECTED';
+  rejectionReason?: string;
+}
+
+export interface UjRolloverFormData {
+  targetSpjId: string;
+  amount: string;
+  notes?: string;
+}
+
+export interface CreateSpjExpenseFormData {
+  spjLegId?: string;
+  vehicleId?: string;
+  expenseType: SpjExpenseType;
+  amount: string;
+  expenseDate?: string;
+  paymentSource?: SpjExpensePaymentSource;
+  fuelLiters?: string;
+  odometerKm?: number;
+  fuelStation?: string;
+  receiptNumber?: string;
+  receiptUrl?: string;
+  notes?: string;
+}
+
+export interface CreateSpjRevenueDeclarationFormData {
+  spjLegId?: string;
+  declarationType: SpjRevenueDeclarationType;
+  amount: string;
+  sourceReference?: string;
+  crewCommissionPercentage?: string;
+  cargoSenderName?: string;
+  cargoSenderPhone?: string;
+  cargoReceiverName?: string;
+  cargoReceiverPhone?: string;
+  cargoItemDescription?: string;
+  notes?: string;
+}
+
+export interface DisburseEarlyMealPaymentFormData {
+  paymentMethod: SpjPaymentMethod;
+  bankAccountId?: string;
+  cashAccountId?: string;
+  receiptRef?: string;
+  notes?: string;
+}
+
 
 
