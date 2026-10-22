@@ -18,6 +18,9 @@ import { SpjExpenseEntity } from './spj-expense.entity';
 import { SpjUjEntity } from './spj-uj.entity';
 import { SpjRevenueDeclarationEntity } from './spj-revenue-declaration.entity';
 import { CrewMealPaymentEntity } from './crew-meal-payment.entity';
+import { CrewCashSettlementEntity } from '../cashier/crew-cash-settlement.entity';
+import { CrewCashRemittanceEntity } from '../cashier/crew-cash-remittance.entity';
+import { CrewCashDiscrepancyEntity } from '../cashier/crew-cash-discrepancy.entity';
 import {
   TripServiceType,
   SpjOperationalStatus,
@@ -148,4 +151,13 @@ export class SpjEntity extends BaseEntity {
 
   @OneToMany(() => CrewMealPaymentEntity, (pay) => pay.spj)
   crewMealPayments?: CrewMealPaymentEntity[];
+
+  @OneToMany(() => CrewCashSettlementEntity, (s) => s.spj)
+  settlements?: CrewCashSettlementEntity[];
+
+  @OneToMany(() => CrewCashRemittanceEntity, (r) => r.spj)
+  remittances?: CrewCashRemittanceEntity[];
+
+  @OneToMany(() => CrewCashDiscrepancyEntity, (d) => d.spj)
+  discrepancies?: CrewCashDiscrepancyEntity[];
 }

@@ -28,8 +28,8 @@ Membangun sistem ERP komprehensif untuk SS Traveling Official (layanan Bus AKAP 
     4. Skenario 4: Rekonsiliasi Kasir Bermasalah, Musyawarah Kru & Resolusi Selisih Kas.
 - **Fase 3: Core Implementation**: [IN PROGRESS]
   - **Master Plan Terkunci**: Roadmap 10 tahap terdokumentasi lengkap di `.gemini/plan/Plan.md`.
-  - **Progres Selesai**: Tahap 0 s.d. Tahap 6 telah tuntas 100% (RBAC, Master Organisasi & 10 Bus, COA Kelompok 1-8, Matriks Tarif & Kompensasi Kru, Accounting Posting & Reversal Engine, Penjadwalan & SPJ Lifecycle, Uang Jalan Multi-Line, Biaya BBM Odometer, Deklarasi Kas Anti-Netting).
-  - **Fokus Berikutnya (Tahap 7)**: Meja Kasir Pool, Settlement Kas Kru, & Resolusi Selisih Kasir (Skenario 1 & Skenario 4).
+  - **Progres Selesai**: Tahap 0 s.d. Tahap 8 telah tuntas 100% (RBAC, Master Organisasi & 10 Bus, COA Kelompok 1-8, Matriks Tarif & Kompensasi Kru, Accounting Posting & Reversal Engine, Penjadwalan & SPJ Lifecycle, Uang Jalan Multi-Line, Biaya BBM Odometer, Deklarasi Kas Anti-Netting, Meja Kasir Pool & Resolusi Selisih, Modul AR & AP).
+  - **Fokus Berikutnya (Tahap 9)**: Laporan Finansial (GL, Neraca Saldo, Laba Rugi, Neraca), Trip Profitability (Margin Kontribusi Per Bus vs Per Kelompok Perjalanan), & Tutup Buku Bulanan Unblocked via Akun 11999.
 
 ## Rencana Eksekusi Bertahap (Fase 3)
 Lihat rincian lengkap 10 tahap eksekusi di `.gemini/plan/Plan.md`:
@@ -39,7 +39,7 @@ Lihat rincian lengkap 10 tahap eksekusi di `.gemini/plan/Plan.md`:
 * Tahap 4: Accounting Core Engine (Jurnal, Lines, Posting Service Atomik, Idempotency) [COMPLETED]
 * Tahap 5: SPJ Life Cycle & Multi-Leg State Machine (Status Ganda & Penomoran Dokumen) [COMPLETED]
 * Tahap 6: Uang Jalan (UJ), Biaya SPJ, & Deklarasi Penerimaan (Multi-Line UJ & Anti-Netting) [COMPLETED]
-* Tahap 7: Kasir Pool, Settlement Kas Kru, & Resolusi Selisih (Skenario 1 & Skenario 4) [NEXT]
-* Tahap 8: Modul AR & AP (Tagihan Servis Makan Mitra, Kontrak Charter Wisata, Komisi Agen)
-* Tahap 9: Laporan Finansial, Trip Profitability (Margin), & Tutup Buku Bulanan
+* Tahap 7: Kasir Pool, Settlement Kas Kru, & Resolusi Selisih (Skenario 1 & Skenario 4) [COMPLETED]
+* Tahap 8: Modul AR & AP (Tagihan Servis Makan Mitra, Kontrak Charter Wisata, Komisi Agen) [COMPLETED]
+* Tahap 9: Laporan Finansial, Trip Profitability (Margin), & Tutup Buku Bulanan [NEXT]
 * Tahap 10: Integrasi Frontend UI & E2E Verification

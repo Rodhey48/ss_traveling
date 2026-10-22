@@ -269,46 +269,58 @@ Setiap tahap dikerjakan secara paralel per fitur (*Vertical Slice*): **Database 
 
 ---
 
-### 📌 Tahap 7: Meja Kasir Pool, Settlement Kas Kru, & Resolusi Selisih (BE + FE)
-* [ ] **Backend Implementation (`ss-travel-backend`)**:
-  * [ ] **Models & Entities (`src/@models/`)**:
-    * [ ] `crew_cash_settlements`, `crew_cash_remittances`, `crew_cash_remittance_allocations`, `crew_cash_discrepancies`.
-  * [ ] **Services & Domain Logic**:
-    * [ ] `CashierSettlementService`: Gerbang validasi UJ=BALANCED & Revenue=MATCHED/DISCREPANCY_RECORDED, alur musyawarah kru (Lapis 1) vs pencatatan sistemik (Lapis 2), otorisasi FM dispensasi `58101` vs klaim kru `12901`, penampung neraca `11999` (tutup buku unblocked), dan pengiriman instruksi posting jurnal rekonsiliasi SPJ ke `AccountingPostingService` (menutup saldo UJ `13101` menjadi Rp 0).
-  * [ ] **Controllers & Endpoints**:
-    * [ ] Endpoint meja kasir pool, verifikasi settlement, dan resolusi keputusan selisih Finance Manager.
-  * [ ] **Automated Tests**:
-    * [ ] Unit test simulasi Skenario 1 (normal imbang Rp 16.68jt) dan Skenario 4 (selisih nota hilang & dispensasi FM Rp 11.86jt).
-* [ ] **Frontend Implementation (`ss-travel-frontend`)**:
-  * [ ] **API Service Clients (`src/services/`)**:
-    * [ ] `cashier.service.ts`: Panggilan API meja kasir pool & resolusi selisih.
-  * [ ] **Pages & Components (`src/pages/`)**:
-    * [ ] Halaman **Meja Kasir Pool (`/cashier`)**: Antarmuka kasir pool saat bus tiba di garasi.
-    * [ ] Widget **Dua Kantong Kas Kru (Anti-Netting)**:
-      * Kantong 1: Pertanggungjawaban UJ (Plafon vs Nota vs Sisa Fisik Dikembalikan $\to$ Status UJ).
-      * Kantong 2: Setoran Bruto Penerimaan Tiket & Kargo (Target Manifes vs Uang Fisik Diserahkan $\to$ Status Setoran).
-    * [ ] Cetak **Bukti Kas Masuk (BKM) & Bukti Kas Keluar (BKK)** fisik kasir.
-    * [ ] Modal **Resolusi Selisih Kasir & Investigasi**: Layar otorisasi khusus Finance Manager untuk memeriksa data GPS dan memilih putusan (Dispensasi Perusahaan vs Klaim Gaji Kru).
+### 📌 Tahap 7: Meja Kasir Pool, Settlement Kas Kru, & Resolusi Selisih (BE + FE) (Completed)
+* [x] **Backend Implementation (`ss-travel-backend`)**:
+  * [x] **Models & Entities (`src/@models/`)**:
+    * [x] `crew_cash_settlements`, `crew_cash_remittances`, `crew_cash_remittance_allocations`, `crew_cash_discrepancies`.
+  * [x] **Services & Domain Logic**:
+    * [x] `CashierSettlementService`: Gerbang validasi UJ=BALANCED & Revenue=MATCHED/DISCREPANCY_RECORDED, alur musyawarah kru (Lapis 1) vs pencatatan sistemik (Lapis 2), otorisasi FM dispensasi `58101` vs klaim kru `12901`, penampung neraca `11999` (tutup buku unblocked), dan pengiriman instruksi posting jurnal rekonsiliasi SPJ ke `AccountingPostingService` (menutup saldo UJ `13101` menjadi Rp 0).
+    * [x] `CashierDiscrepancyService`: Investigasi selisih kasir, pencatatan kronologi telematika GPS, otorisasi putusan FM (`COMPANY_WAIVER`, `CHARGE_TO_CREW`, `ALLOCATION_CORRECTION`), dan posting jurnal penyesuaian selisih otomatis.
+  * [x] **Controllers & Endpoints**:
+    * [x] Endpoint meja kasir pool: `GET /api/v1/cashier/pending-spjs`, `GET /api/v1/cashier/settlements`, `GET /api/v1/cashier/spjs/:spjId/summary`, `POST /api/v1/cashier/settlements`, `POST /api/v1/cashier/settlements/:id/unblock-period-closing`.
+    * [x] Endpoint resolusi selisih: `GET /api/v1/cashier/discrepancies`, `GET /api/v1/cashier/discrepancies/:id`, `POST /api/v1/cashier/discrepancies`, `PUT /api/v1/cashier/discrepancies/:id/resolve`.
+  * [x] **Database Migration & Seeder**:
+    * [x] Migrasi `1781800000000-create-crew-cash-settlements-and-discrepancies.ts`.
+    * [x] Seeder data riil Skenario 1 (AKAP normal seimbang) & Skenario 4 (nota BBM darurat Palimanan hilang Rp 300rb dalam investigasi FM) `1888888888895-SeedCashierSettlementData.ts`.
+  * [x] **Automated Tests**:
+    * [x] Unit test simulasi Skenario 1 (normal imbang BKM & BKK Rp 1.7jt), Skenario 4 (selisih nota hilang Rp 300rb & dispensasi FM akun 58101), klaim kru akun 12901, serta unblock tutup buku via akun 11999 (129/129 passing 100%).
+* [x] **Frontend Implementation (`ss-travel-frontend`)**:
+  * [x] **API Service Clients (`src/services/`)**:
+    * [x] `cashier.service.ts`: Panggilan API meja kasir pool & resolusi selisih tanpa leading slash.
+  * [x] **Pages & Components (`src/pages/`)**:
+    * [x] Halaman **Meja Kasir Pool (`/cashier`)**: Antarmuka kasir pool saat bus tiba di garasi dengan 4 kartu metrik dan 3 Tab (SPJ Siap Rekonsiliasi, Riwayat Dokumen Settlement, dan Pusat Investigasi Selisih FM Hub).
+    * [x] Modal **Rekonsiliasi Kasir Pool (`CashierSettlementModal`)**:
+      * [x] Visualisasi **Dua Kantong Kas Kru (Anti-Netting)**:
+        * Kantong 1: Pertanggungjawaban UJ (Plafon vs Nota vs Sisa Fisik Dikembalikan $\to$ Status UJ `BALANCED` vs `DISCREPANCY`).
+        * Kantong 2: Setoran Bruto Penerimaan Tiket & Kargo (Target Manifes vs Uang Fisik Diserahkan $\to$ Status Setoran `MATCHED` vs `DISCREPANCY_RECORDED`).
+      * [x] Mode **Musyawarah Kru di Meja Kasir (Lapis 1)**: Kalkulator patungan/talangan tunai kru di tempat untuk menggenapkan kekurangan kembalian kecil.
+      * [x] Posisi fisik laci kasir pool (BKM masuk vs BKK hak kru dibayar di tempat vs net fisik kasir).
+    * [x] Cetak **Bukti Kas Masuk (BKM) & Bukti Kas Keluar (BKK)** fisik kasir (`CashReceiptVoucherModal`): Format resmi voucher tanda terima PT SS Traveling Indonesia siap print.
+    * [x] Modal **Resolusi Selisih Kasir & Investigasi (`DiscrepancyResolutionModal`)**: Layar otorisasi khusus Finance Manager untuk memeriksa kronologi telematika GPS dan memilih putusan (Dispensasi Perusahaan `58101` vs Klaim Gaji Kru `12901`).
+    * [x] Modal **Pencatatan Selisih Sistemik Kasir (`CreateDiscrepancyModal`)**: Layar Lapis 2 Kasir untuk meneruskan perselisihan kas ke meja Finance Manager.
 
 ---
 
-### 📌 Tahap 8: Modul Piutang (AR) & Utang (AP) (BE + FE)
-* [ ] **Backend Implementation (`ss-travel-backend`)**:
-  * [ ] **Models & Entities (`src/@models/`)**:
-    * [ ] `ar_invoices`, `ar_invoice_lines`, `ar_receipts`, `ar_allocations`.
-    * [ ] `ap_invoices`, `ap_invoice_lines`, `ap_payments`, `ap_allocations`.
-  * [ ] **Services & Controllers**:
-    * [ ] `ApService`: Tagihan berkala servis makan restoran mitra (tarik SPJ belum ditagih, validasi kupon riil vs manifes `meal_pax_count`, anti-double bill, bebas beban kas kru), tagihan vendor bengkel/derek bus rusak (Skenario 3), dan pembayaran komisi agen.
-    * [ ] `ArService`: Siklus DP sewa wisata 30% (`24101`), pelunasan invoice 70%, AR OTA RedBus/Traveloka, dan pengakuan pendapatan sewa 100% saat SPJ completed.
-  * [ ] **Automated Tests**:
-    * [ ] Unit test siklus AR wisata (Skenario 2) dan tagihan servis makan AP berkala (Skenario 1).
-* [ ] **Frontend Implementation (`ss-travel-frontend`)**:
-  * [ ] **API Service Clients (`src/services/`)**:
-    * [ ] `ar.service.ts`, `ap.service.ts`.
-  * [ ] **Pages & Components (`src/pages/`)**:
-    * [ ] Halaman **Tagihan Vendor / AP Invoices (`/ap-invoices`)**: Daftar tagihan rekanan, form tagihan baru dengan fitur khusus modal **`[+ Tarik SPJ Belum Ditagih]`** untuk restoran mitra, input kupon riil, serta peringatan otomatis jika melebihi manifes.
-    * [ ] Halaman **Piutang Usaha / AR Invoices (`/ar-invoices`)**: Penerbitan invoice kontrak sewa wisata, invoice pelunasan, dan pencatatan penerimaan mutasi bank (alokasi pelunasan invoice).
-    * [ ] Dialog **Pembayaran Komisi Agen & Cashback Wisata B2B**: Eksekusi transfer bank atas hak agen dan mitra sewa bus.
+### 📌 Tahap 8: Modul Piutang (AR) & Utang (AP) (BE + FE) (Completed)
+* [x] **Backend Implementation (`ss-travel-backend`)**:
+  * [x] **Models & Entities (`src/@models/`)**:
+    * [x] `ar_invoices`, `ar_invoice_lines`, `ar_receipts`, `ar_allocations`.
+    * [x] `ap_invoices`, `ap_invoice_lines`, `ap_payments`, `ap_allocations`.
+  * [x] **Services & Controllers**:
+    * [x] `ApService`: Tagihan berkala servis makan restoran mitra (tarik SPJ belum ditagih, validasi kupon riil vs manifes `meal_pax_count`, anti-double bill, bebas beban kas kru), tagihan vendor bengkel/derek bus rusak (Skenario 3), dan pembayaran komisi agen.
+    * [x] `ArService`: Siklus DP sewa wisata 30% (`24101`), pelunasan invoice 70%, AR OTA RedBus/Traveloka, dan pengakuan pendapatan sewa 100% saat SPJ completed.
+  * [x] **Database Migration & Seeder**:
+    * [x] Migrasi tabel AR/AP `1781900000000-create-ar-and-ap-invoices.ts`.
+    * [x] Seeder data riil Skenario 1 (Tagihan RM Taman Selera Rp 1.050.000), Skenario 2 (DP 30% Rp 5.250.000 & Pelunasan AR 70% Rp 12.250.000), dan Skenario 3 (Tagihan Bengkel Cirebon Diesel Motor Rp 2.500.000) `1888888888896-SeedArAndApData.ts`.
+  * [x] **Automated Tests**:
+    * [x] Unit test siklus AR wisata (Skenario 2) dan tagihan servis makan AP berkala (Skenario 1) (136/136 tests passing 100%).
+* [x] **Frontend Implementation (`ss-travel-frontend`)**:
+  * [x] **API Service Clients (`src/services/`)**:
+    * [x] `ar.service.ts`, `ap.service.ts`.
+  * [x] **Pages & Components (`src/pages/`)**:
+    * [x] Halaman **Tagihan Vendor / AP Invoices (`/ap-invoices`)**: 4 kartu metrik, filter status/tipe vendor/pencarian, daftar tagihan dan riwayat pembayaran, modal **`[+ Tagihan Servis Makan Restoran]`** dengan dialog **`[+ Tarik SPJ Belum Ditagih]`** anti-double billing, kupon riil vs manifes warning, modal **`[+ Tagihan Vendor Bengkel]`**, modal **`[Bayar Faktur AP]`** kas/bank, dan modal detail tagihan AP.
+    * [x] Halaman **Piutang Usaha / AR Invoices (`/ar-invoices`)**: 4 kartu metrik piutang & DP, modal **`[+ Terima DP Sewa Wisata (30%)]`** (Skenario 2 akun `24101`), modal **`[+ Invoice Pelunasan Wisata (70%)]`** (Skenario 2 akun `12101`), modal **`[Pelunasan Piutang]`** bank/kas, dan modal detail invoice AR.
+    * [x] Pendaftaran rute `/ap-invoices` dan `/ar-invoices` di `AppRouter`.
 
 ---
 

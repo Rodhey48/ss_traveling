@@ -48,6 +48,10 @@ export class DocumentSequenceService {
         return `${prefix}/${String(1).padStart(padding, '0')}`;
       }
 
+      if (prefix && sequence.prefix !== prefix) {
+        sequence.prefix = prefix;
+      }
+
       sequence.lastNumber += 1;
       await manager.save(sequence);
 

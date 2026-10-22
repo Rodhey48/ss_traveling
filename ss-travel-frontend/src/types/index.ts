@@ -1377,5 +1377,567 @@ export interface DisburseEarlyMealPaymentFormData {
   notes?: string;
 }
 
+/**
+ * --- TAHAP 7: MEJA KASIR POOL & SETTLEMENT KAS KRU (ANTI-NETTING) ---
+ */
+export type CrewCashSettlementStatus = 'DRAFT' | 'SUBMITTED' | 'VERIFIED' | 'REJECTED';
+export type SettlementUjStatus = 'PENDING' | 'BALANCED' | 'DISCREPANCY';
+export type SettlementRevenueStatus = 'PENDING' | 'MATCHED' | 'DISCREPANCY_RECORDED';
+export type RemittancePaymentMethod = 'CASH' | 'BANK_TRANSFER';
+export type RemittanceStatus = 'PENDING' | 'VERIFIED' | 'REJECTED';
+export type DiscrepancySourceType =
+  | 'UJ_EXPENSE_UNVERIFIED'
+  | 'REVENUE_SHORTAGE'
+  | 'REVENUE_OVERAGE'
+  | 'OTHER';
+export type DiscrepancyResolutionStatus =
+  | 'PENDING_INVESTIGATION'
+  | 'RESOLVED'
+  | 'REJECTED';
+export type DiscrepancyResolutionDecision =
+  | 'COMPANY_WAIVER'
+  | 'CHARGE_TO_CREW'
+  | 'ALLOCATION_CORRECTION';
 
+export interface CrewCashRemittanceAllocation {
+  id: string;
+  remittanceId: string;
+  revenueDeclarationId: string;
+  allocatedAmount: number;
+  notes?: string;
+  revenueDeclaration?: SpjRevenueDeclaration;
+}
+
+export interface CrewCashRemittance {
+  id: string;
+  companyId?: string;
+  remittanceNo: string;
+  settlementId?: string;
+  spjId: string;
+  depositorCrewId: string;
+  depositorCrew?: User;
+  amount: number;
+  cashAccountId?: string;
+  cashAccount?: CashAccount;
+  receivedByCashierId?: string;
+  receivedByCashier?: User;
+  remittedAt: string;
+  paymentMethod: RemittancePaymentMethod;
+  status: RemittanceStatus;
+  bkmNo?: string;
+  notes?: string;
+  allocations?: CrewCashRemittanceAllocation[];
+  createdAt: string;
+}
+
+export interface CrewCashDiscrepancy {
+  id: string;
+  companyId?: string;
+  discrepancyNo: string;
+  settlementId?: string;
+  spjId: string;
+  spj?: Spj;
+  sourceType: DiscrepancySourceType;
+  expectedAmount: number;
+  actualAmount: number;
+  differenceAmount: number;
+  reportedById: string;
+  reportedBy?: User;
+  responsibleCrewId?: string;
+  responsibleCrew?: User;
+  reason: string;
+  investigationNotes?: string;
+  resolutionStatus: DiscrepancyResolutionStatus;
+  resolutionDecision?: DiscrepancyResolutionDecision;
+  resolutionAccountId?: string;
+  resolutionAccount?: Account;
+  resolvedById?: string;
+  resolvedBy?: User;
+  resolvedAt?: string;
+  journalEntryId?: string;
+  createdAt: string;
+}
+
+export interface CrewCashSettlement {
+  id: string;
+  companyId?: string;
+  settlementNo: string;
+  spjId: string;
+  spj?: Spj;
+  status: CrewCashSettlementStatus;
+  ujStatus: SettlementUjStatus;
+  revenueStatus: SettlementRevenueStatus;
+  cashierId?: string;
+  cashier?: User;
+  submittedAt?: string;
+  reviewedById?: string;
+  reviewedBy?: User;
+  reviewedAt?: string;
+  notes?: string;
+  totalUjDisbursed: number;
+  totalUjSpent: number;
+  totalUjReturned: number;
+  ujBalance: number;
+  totalRevenueExpected: number;
+  totalRevenueRemitted: number;
+  revenueBalance: number;
+  totalCashReceived: number;
+  totalCashPaid: number;
+  bkmNo?: string;
+  bkkNo?: string;
+  journalEntryId?: string;
+  remittances?: CrewCashRemittance[];
+  discrepancies?: CrewCashDiscrepancy[];
+  createdAt: string;
+}
+
+export interface SettlementSummary {
+  spj: Spj;
+  existingSettlement: CrewCashSettlement | null;
+  kantong1Uj: {
+    totalDisbursed: number;
+    totalSpent: number;
+    totalReturned: number;
+    balance: number;
+    status: SettlementUjStatus;
+    breakdownExpenses: Array<{
+      type: string;
+      amount: number;
+      fuelLiters?: number;
+      odometerKm?: number;
+      notes?: string;
+    }>;
+  };
+  kantong2Revenue: {
+    totalExpected: number;
+    totalRemitted: number;
+    balance: number;
+    status: SettlementRevenueStatus;
+    breakdownDeclarations: Array<{
+      id: string;
+      type: string;
+      amount: number;
+      sourceReference?: string;
+      crewCommissionAmount?: number;
+      allocatedAmount: number;
+      status: string;
+    }>;
+    remittances: CrewCashRemittance[];
+  };
+  cashDesk: {
+    totalCashReceived: number;
+    totalCrewCompensationPayable: number;
+    netCashPosition: number;
+    pendingMealPayments: CrewMealPayment[];
+  };
+  discrepancies: CrewCashDiscrepancy[];
+}
+
+export interface RemittanceAllocationItemFormData {
+  revenueDeclarationId: string;
+  allocatedAmount: number;
+  notes?: string;
+}
+
+export interface CreateRemittanceFormData {
+  spjId: string;
+  depositorCrewId: string;
+  amount: number;
+  cashAccountId?: string;
+  paymentMethod?: RemittancePaymentMethod;
+  notes?: string;
+  allocations?: RemittanceAllocationItemFormData[];
+}
+
+export interface CreateSettlementFormData {
+  spjId: string;
+  cashAccountId: string;
+  notes?: string;
+  cashPaidToCrew?: boolean;
+  remittances?: CreateRemittanceFormData[];
+}
+
+export interface CreateDiscrepancyFormData {
+  spjId: string;
+  settlementId?: string;
+  sourceType: DiscrepancySourceType;
+  expectedAmount: number;
+  actualAmount: number;
+  differenceAmount?: number;
+  responsibleCrewId?: string;
+  reason: string;
+  investigationNotes?: string;
+}
+
+export interface ResolveDiscrepancyFormData {
+  decision: DiscrepancyResolutionDecision;
+  resolutionAccountId?: string;
+  resolutionNotes: string;
+}
+
+export interface CashierFilterParams {
+  status?: CrewCashSettlementStatus;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface DiscrepancyFilterParams {
+  resolutionStatus?: DiscrepancyResolutionStatus;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+/**
+ * ==========================================
+ * --- AP (ACCOUNTS PAYABLE) TYPES ---
+ * ==========================================
+ */
+export type ApVendorType = 'RESTAURANT' | 'WORKSHOP' | 'AGENT' | 'OTHER';
+export type ApInvoiceStatus = 'DRAFT' | 'APPROVED' | 'PARTIALLY_PAID' | 'PAID' | 'CANCELLED';
+export type ApPaymentStatus = 'CONFIRMED' | 'CANCELLED';
+export type FinancePaymentMethod = 'BANK_TRANSFER' | 'CASH';
+
+export interface ApInvoiceLine {
+  id: string;
+  invoiceId: string;
+  lineNo: number;
+  description: string;
+  accountId: string;
+  account?: Account;
+  qty: number;
+  unitPrice: number;
+  amount: number;
+  tripId?: string;
+  trip?: Spj;
+  tripLegId?: string;
+  vehicleId?: string;
+  vehicle?: Vehicle;
+  manifestPaxCount?: number;
+  couponCount?: number;
+  discrepancyNotes?: string;
+}
+
+export interface ApAllocation {
+  id: string;
+  paymentId: string;
+  payment?: ApPayment;
+  invoiceId: string;
+  invoice?: ApInvoice;
+  amount: number;
+}
+
+export interface ApInvoice {
+  id: string;
+  companyId?: string;
+  billNo: string;
+  vendorInvoiceNo?: string;
+  vendorType: ApVendorType;
+  vendorId?: string;
+  vendorName: string;
+  invoiceDate: string;
+  dueDate: string;
+  status: ApInvoiceStatus;
+  currency: string;
+  subtotal: number;
+  taxAmount: number;
+  totalAmount: number;
+  paidAmount: number;
+  sourceType: string;
+  sourceId?: string;
+  apAccountId: string;
+  apAccount?: Account;
+  notes?: string;
+  journalEntryId?: string;
+  journalEntry?: JournalEntry;
+  lines?: ApInvoiceLine[];
+  allocations?: ApAllocation[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ApPayment {
+  id: string;
+  companyId?: string;
+  paymentNo: string;
+  vendorType: ApVendorType;
+  vendorId?: string;
+  vendorName: string;
+  paymentDate: string;
+  paymentMethod: FinancePaymentMethod;
+  bankAccountId?: string;
+  bankAccount?: BankAccount;
+  cashAccountId?: string;
+  cashAccount?: CashAccount;
+  amount: number;
+  status: ApPaymentStatus;
+  reference?: string;
+  notes?: string;
+  journalEntryId?: string;
+  allocations?: ApAllocation[];
+  createdAt: string;
+}
+
+export interface UnbilledSpjItem {
+  tripId: string;
+  tripLegId?: string;
+  spjNo: string;
+  departureDate: string;
+  vehiclePlate: string;
+  vehicleCode: string;
+  driverName: string;
+  manifestPaxCount: number;
+  suggestedCouponCount: number;
+  discrepancyNotes?: string;
+  ratePerPax: number;
+  suggestedSubtotal: number;
+}
+
+export interface RestaurantBillSpjItemFormData {
+  tripId: string;
+  tripLegId?: string;
+  couponCount: number;
+  discrepancyNotes?: string;
+}
+
+export interface CreateRestaurantBillFormData {
+  restaurantId: string;
+  vendorInvoiceNo: string;
+  invoiceDate: string;
+  dueDate: string;
+  notes?: string;
+  spjItems: RestaurantBillSpjItemFormData[];
+}
+
+export interface CreateApInvoiceLineFormData {
+  description: string;
+  accountId: string;
+  qty: number;
+  unitPrice: number;
+  tripId?: string;
+  vehicleId?: string;
+  costCenterId?: string;
+  businessUnitId?: string;
+}
+
+export interface CreateApInvoiceFormData {
+  vendorType: ApVendorType;
+  vendorId?: string;
+  vendorName: string;
+  vendorInvoiceNo?: string;
+  invoiceDate: string;
+  dueDate: string;
+  apAccountId: string;
+  sourceType?: string;
+  notes?: string;
+  lines: CreateApInvoiceLineFormData[];
+}
+
+export interface CreateApPaymentFormData {
+  vendorType: ApVendorType;
+  vendorId?: string;
+  vendorName: string;
+  paymentDate: string;
+  paymentMethod: FinancePaymentMethod;
+  bankAccountId?: string;
+  cashAccountId?: string;
+  amount: number;
+  reference?: string;
+  notes?: string;
+  allocations: Array<{ invoiceId: string; amount: number }>;
+}
+
+export interface ApInvoiceFilterParams {
+  vendorType?: ApVendorType;
+  status?: ApInvoiceStatus;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface ApPaymentFilterParams {
+  vendorType?: ApVendorType;
+  paymentMethod?: FinancePaymentMethod;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}
+
+/**
+ * ==========================================
+ * --- AR (ACCOUNTS RECEIVABLE) TYPES ---
+ * ==========================================
+ */
+export type ArInvoiceStatus = 'DRAFT' | 'APPROVED' | 'PARTIALLY_PAID' | 'PAID' | 'CANCELLED';
+export type ArReceiptStatus = 'CONFIRMED' | 'CANCELLED';
+
+export interface ArInvoiceLine {
+  id: string;
+  invoiceId: string;
+  lineNo: number;
+  description: string;
+  accountId: string;
+  account?: Account;
+  qty: number;
+  unitPrice: number;
+  amount: number;
+  tripId?: string;
+  vehicleId?: string;
+}
+
+export interface ArAllocation {
+  id: string;
+  receiptId: string;
+  receipt?: ArReceipt;
+  invoiceId: string;
+  invoice?: ArInvoice;
+  amount: number;
+}
+
+export interface ArInvoice {
+  id: string;
+  companyId?: string;
+  invoiceNo: string;
+  customerId?: string;
+  customer?: Customer;
+  customerName: string;
+  invoiceDate: string;
+  dueDate: string;
+  status: ArInvoiceStatus;
+  currency: string;
+  subtotal: number;
+  taxAmount: number;
+  totalAmount: number;
+  paidAmount: number;
+  sourceType: string;
+  sourceId?: string;
+  tripId?: string;
+  trip?: Spj;
+  arAccountId: string;
+  arAccount?: Account;
+  isDownPayment: boolean;
+  notes?: string;
+  journalEntryId?: string;
+  journalEntry?: JournalEntry;
+  lines?: ArInvoiceLine[];
+  allocations?: ArAllocation[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ArReceipt {
+  id: string;
+  companyId?: string;
+  receiptNo: string;
+  customerId?: string;
+  customer?: Customer;
+  customerName: string;
+  receiptDate: string;
+  paymentMethod: FinancePaymentMethod;
+  bankAccountId?: string;
+  bankAccount?: BankAccount;
+  cashAccountId?: string;
+  cashAccount?: CashAccount;
+  amount: number;
+  status: ArReceiptStatus;
+  reference?: string;
+  isDownPayment: boolean;
+  downPaymentTripId?: string;
+  downPaymentTrip?: Spj;
+  notes?: string;
+  journalEntryId?: string;
+  allocations?: ArAllocation[];
+  createdAt: string;
+}
+
+export interface CharterContractStatus {
+  downPaymentReceived: number;
+  totalInvoiced: number;
+  totalPaid: number;
+  remainingBalance: number;
+  isFullyPaid: boolean;
+}
+
+export interface CreateDownPaymentFormData {
+  customerId?: string;
+  customerName: string;
+  receiptDate: string;
+  paymentMethod: FinancePaymentMethod;
+  bankAccountId?: string;
+  cashAccountId?: string;
+  amount: number;
+  downPaymentTripId?: string;
+  reference?: string;
+  notes?: string;
+}
+
+export interface CreateCharterPelunasanFormData {
+  tripId: string;
+  customerId?: string;
+  customerName: string;
+  invoiceDate: string;
+  dueDate: string;
+  remainingAmount: number;
+  notes?: string;
+}
+
+export interface CreateArInvoiceLineFormData {
+  description: string;
+  accountId: string;
+  qty: number;
+  unitPrice: number;
+  tripId?: string;
+  vehicleId?: string;
+}
+
+export interface CreateArInvoiceFormData {
+  customerId?: string;
+  customerName: string;
+  invoiceDate: string;
+  dueDate: string;
+  arAccountId?: string;
+  tripId?: string;
+  isDownPayment?: boolean;
+  notes?: string;
+  lines: CreateArInvoiceLineFormData[];
+}
+
+export interface CreateArReceiptFormData {
+  customerId?: string;
+  customerName: string;
+  receiptDate: string;
+  paymentMethod: FinancePaymentMethod;
+  bankAccountId?: string;
+  cashAccountId?: string;
+  amount: number;
+  reference?: string;
+  notes?: string;
+  allocations?: Array<{ invoiceId: string; amount: number }>;
+}
+
+export interface ArInvoiceFilterParams {
+  customerId?: string;
+  status?: ArInvoiceStatus;
+  isDownPayment?: boolean;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface ArReceiptFilterParams {
+  customerId?: string;
+  isDownPayment?: boolean;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}
 

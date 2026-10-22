@@ -11,6 +11,7 @@ import { CustomersModule } from './customers/customers.module';
 import { FinanceModule } from './finance/finance.module';
 import { MasterRulesModule } from './master-rules/master-rules.module';
 import { TripsModule } from './trips/trips.module';
+import { CashierModule } from './cashier/cashier.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import * as Models from './@models';
@@ -46,6 +47,7 @@ import * as Models from './@models';
     FinanceModule,
     MasterRulesModule,
     TripsModule,
+    CashierModule,
   ],
   controllers: [AppController],
   providers: [AppService],

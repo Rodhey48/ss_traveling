@@ -2,6 +2,75 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-10-22: Stage 8 Completed — Modul Utang Usaha (AP) & Piutang Usaha (AR) (BE + FE)
+- **Model Database & Migrasi PostgreSQL (`ap_invoices`, `ap_invoice_lines`, `ap_payments`, `ap_allocations`, `ar_invoices`, `ar_invoice_lines`, `ar_receipts`, `ar_allocations`)**:
+  - `ap_invoices` & `ap_invoice_lines`: Header dan rincian faktur tagihan rekanan vendor (`bill_no`, `vendor_invoice_no`, `vendor_type`: `RESTAURANT`, `WORKSHOP`, `AGENT`, `OTHER`, `ap_account_id`: `21101` RM, `21102` Bengkel, `22101` Agen). Lines mencakup akun beban debit (`51102`, `55101`, `54101`), kupon riil, manifes pax SPJ, catatan selisih, dan dimensi armada/SPJ.
+  - `ap_payments` & `ap_allocations`: Pencatatan bukti bayar utang vendor via Bank BCA (`11104`) atau Kas Pool (`11101`) dengan alokasi otomatis ke faktur dan pembaruan status faktur (`PAID` / `PARTIALLY_PAID`).
+  - `ar_invoices` & `ar_invoice_lines`: Header dan rincian invoice piutang usaha (`invoice_no`, `customer_id`, `trip_id`, `ar_account_id`: `12101`, status `DRAFT`, `APPROVED`, `PARTIALLY_PAID`, `PAID`, `CANCELLED`).
+  - `ar_receipts` & `ar_allocations`: Pencatatan penerimaan pembayaran piutang dan penerimaan DP Sewa Wisata 30% (`is_down_payment = true`, liabilitas akun `24101`).
+  - Migrasi `1781900000000-create-ar-and-ap-invoices.ts` dan seeder data riil Skenario 1 (Tagihan RM Taman Selera Rp 1.050.000), Skenario 2 (DP 30% Rp 5.250.000 & Invoice Pelunasan 70% Rp 12.250.000), serta Skenario 3 (Tagihan Bengkel Cirebon Diesel Motor Rp 2.500.000) `1888888888896-SeedArAndApData.ts`.
+- **Service Layer & Accounting Engine (`ss-travel-backend`)**:
+  - `ApService`:
+    - `findUnbilledSpjsForRestaurant`: Tarik daftar SPJ AKAP yang belum pernah ditagihkan oleh restoran mitra dengan validasi ketat Anti-Double Billing.
+    - `createRestaurantBill`: Penerbitan tagihan servis makan berkala (Skenario 1) dengan audit jumlah kupon riil vs manifes fisik dan warning over-capacity.
+    - `approveApInvoice`: Posting jurnal utang atomik satu pintu via `AccountingPostingService` (Debit Beban `51102` / `55101` / `54101`, Kredit Utang `21101` / `21102` / `22101`).
+    - `createPayment`: Pelunasan tagihan AP via transfer bank atau kas pool dengan posting jurnal otomatis.
+  - `ArService`:
+    - `createDownPaymentReceipt`: Penerimaan DP sewa wisata 30% (Skenario 2) dengan posting jurnal Debit Bank BCA `11104` dan Kredit `24101 Pendapatan Diterima di Muka (DP Sewa Wisata)`.
+    - `createCharterPelunasanInvoice`: Penerbitan faktur pelunasan 70% kontrak sewa wisata terkait SPJ dan Customer ke akun `12101`.
+    - `createReceipt`: Pencatatan pelunasan piutang dengan alokasi invoice dan posting jurnal Debit Bank `11104`, Kredit Piutang `12101`.
+- **REST Endpoints & Controllers**:
+  - AP Endpoints: `GET /api/v1/ap/unbilled-spjs/:restaurantId`, `POST /api/v1/ap/restaurant-bill`, `POST /api/v1/ap/invoices`, `GET /api/v1/ap/invoices`, `GET /api/v1/ap/invoices/:id`, `PUT /api/v1/ap/invoices/:id/approve`, `PUT /api/v1/ap/invoices/:id/cancel`, `POST /api/v1/ap/payments`, `GET /api/v1/ap/payments`.
+  - AR Endpoints: `POST /api/v1/ar/down-payment`, `POST /api/v1/ar/charter-pelunasan`, `POST /api/v1/ar/invoices`, `GET /api/v1/ar/invoices`, `GET /api/v1/ar/invoices/:id`, `PUT /api/v1/ar/invoices/:id/approve`, `POST /api/v1/ar/receipts`, `GET /api/v1/ar/receipts`, `GET /api/v1/ar/charter-status/:tripId`.
+- **Frontend Halaman & Modal Terpadu (`ss-travel-frontend`)**:
+  - Services `ApService` (`src/services/ap.service.ts`) dan `ArService` (`src/services/ar.service.ts`) terstandarisasi tanpa leading slash.
+  - Halaman **Tagihan Vendor / AP Invoices (`/ap-invoices`)**: 4 kartu metrik live, tab daftar tagihan vs riwayat pembayaran, modal **`[+ Tagihan Servis Makan Restoran]`** dengan dialog **`[+ Tarik SPJ Belum Ditagih]`**, modal **`[+ Tagihan Vendor Bengkel]`**, modal **`[Bayar Faktur AP]`**, dan modal detail faktur AP dengan preview jurnal terposting.
+  - Halaman **Piutang Usaha / AR Invoices (`/ar-invoices`)**: 4 kartu metrik piutang & DP, modal **`[+ Terima DP Sewa Wisata (30%)]`** (Skenario 2), modal **`[+ Invoice Pelunasan Wisata (70%)]`**, modal **`[Pelunasan Piutang]`**, dan modal detail invoice AR.
+  - Pendaftaran rute baru `/ap-invoices` dan `/ar-invoices` di `AppRouter`.
+- **Verifikasi Kualitas Penuh**:
+  - 22 unit test suites backend (136 tests total) lulus 100%.
+  - Frontend TypeScript `yarn build` sukses 100% bebas error.
+
+### 2026-10-21: Stage 7 Completed — Meja Kasir Pool, Settlement Kas Kru, & Resolusi Selisih Kasir (Anti-Netting)
+- **Model Database & Migrasi PostgreSQL (`crew_cash_settlements`, `crew_cash_remittances`, `crew_cash_remittance_allocations`, `crew_cash_discrepancies`)**:
+  - `crew_cash_settlements`: Header dokumen rekonsiliasi kas meja kasir pool per SPJ (`settlement_no`, `status`: `DRAFT`, `SUBMITTED`, `VERIFIED`, `REJECTED`), status independen Dua Kantong Kas Kru (`uj_status`: `PENDING`, `BALANCED`, `DISCREPANCY`; `revenue_status`: `PENDING`, `MATCHED`, `DISCREPANCY_RECORDED`), pelacakan kas fisik kasir (`total_cash_received`, `total_cash_paid`), nomor voucher resmi kasir (`bkm_no`, `bkk_no`), dan foreign key ke jurnal rekonsiliasi yang terbentuk (`journal_entry_id`).
+  - `crew_cash_remittances`: Pencatatan setoran uang fisik aktual bruto penerimaan dari kru bus ke laci kasir pool (`remittance_no`, `depositor_crew_id`, `amount`, `cash_account_id`, `payment_method`: `CASH`, `BANK_TRANSFER`, `status`: `VERIFIED`).
+  - `crew_cash_remittance_allocations`: Tabel relasi pelunasan setoran kas aktual ke masing-masing deklarasi tiket fisik dan kargo paket bagasi bus.
+  - `crew_cash_discrepancies`: Register temuan selisih kas kasir (Lapis 2 Jalur Sistemik) (`discrepancy_no`, `source_type`: `UJ_EXPENSE_UNVERIFIED`, `REVENUE_SHORTAGE`, `REVENUE_OVERAGE`, `OTHER`), nominal selisih `difference_amount`, alasan kru, kronologi telematika GPS, status resolusi (`PENDING_INVESTIGATION`, `RESOLVED`, `REJECTED`), keputusan Finance Manager (`COMPANY_WAIVER`, `CHARGE_TO_CREW`, `ALLOCATION_CORRECTION`), dan akun buku besar tujuan (`resolution_account_id`: `58101` atau `12901`).
+  - Migrasi `1781800000000-create-crew-cash-settlements-and-discrepancies.ts` dan seeder data riil Skenario 1 (AKAP normal seimbang) & Skenario 4 (nota BBM darurat Palimanan hilang Rp 300rb dalam investigasi FM) `1888888888895-SeedCashierSettlementData.ts` sukses dieksekusi 100% pada PostgreSQL.
+- **Service Layer & Domain Accounting Engine (`ss-travel-backend`)**:
+  - `CashierSettlementService`:
+    - Perhitungan real-time Dua Kantong Kas Kru (Anti-Netting) dari mutasi database live.
+    - Gerbang validasi kelayakan settlement: hanya dapat berstatus `VERIFIED` bila `uj_status === 'BALANCED'` dan `revenue_status === 'MATCHED' | 'DISCREPANCY_RECORDED'`.
+    - Otomatisasi penerbitan nomor Bukti Kas Masuk (BKM) dan Bukti Kas Keluar (BKK) kru via `DocumentSequenceService`.
+    - Posting Jurnal Rekonsiliasi SPJ atomik via `AccountingPostingService`: menutup saldo UJ `13101` ke Rp 0, mendebit `11101` Kas Pool untuk kas fisik bersih, mendebit beban-beban operasional sah, dan mengkredit pendapatan.
+    - Kemerdekaan Tutup Buku Bulanan (*Period Closing Unblocked*): Pengalihan selisih kas yang masih dalam investigasi ke akun penampung `11999 Selisih Kas Operasional Sementara` sehingga penutupan buku bulanan tidak terblokir.
+  - `CashierDiscrepancyService`:
+    - Pencatatan temuan selisih transparan (Lapis 2 Jalur Sistemik) dengan pengubahan status SPJ ke `DISCREPANCY`.
+    - Otorisasi Putusan Finance Manager:
+      - Opsi A (`COMPANY_WAIVER`): Membebankan selisih ke perusahaan (akun `58101 Beban Selisih Kasir Pool`), mengubah status UJ ke `BALANCED`, dan memposting jurnal rekonsiliasi SPJ seimbang (Skenario 4 Kasus 2).
+      - Opsi B (`CHARGE_TO_CREW`): Mengakui piutang klaim kru (akun `12901 Piutang Klaim Selisih Kas Kru`), mengubah status UJ ke `BALANCED`, dan memposting jurnal rekonsiliasi SPJ seimbang.
+- **REST API Endpoints & RBAC Security**:
+  - Cashier Desk: `GET /api/v1/cashier/pending-spjs`, `GET /api/v1/cashier/settlements`, `GET /api/v1/cashier/spjs/:spjId/summary`, `POST /api/v1/cashier/settlements`, `POST /api/v1/cashier/settlements/:id/unblock-period-closing`.
+  - Discrepancy Hub: `GET /api/v1/cashier/discrepancies`, `GET /api/v1/cashier/discrepancies/:id`, `POST /api/v1/cashier/discrepancies`, `PUT /api/v1/cashier/discrepancies/:id/resolve`.
+- **Frontend Halaman Meja Kasir Pool (`/cashier`) & Modal Terpadu (`ss-travel-frontend`)**:
+  - Service `CashierService` (`src/services/cashier.service.ts`) terstandarisasi tanpa leading slash.
+  - Halaman **Meja Kasir Pool (`src/pages/cashier/index.tsx`)**: 4 kartu metrik live (SPJ Siap Settle, Menunggu Investigasi FM, Settlement Tuntas, Kas Fisik Masuk Hari Ini) dan 3 Tab navigasi (SPJ Siap Rekonsiliasi, Riwayat Dokumen Settlement, dan Pusat Investigasi Selisih FM Hub).
+  - Modal **Rekonsiliasi Kasir Pool (`CashierSettlementModal.tsx`)**:
+    - Kartu visual Kantong 1 Uang Jalan (Plafon vs Nota vs Sisa Fisik Kembali) dengan indikator saldo & badge status.
+    - Kartu visual Kantong 2 Setoran Kas Kru dengan kalkulator bantuan Musyawarah Kru di Meja Kasir (Lapis 1).
+    - Ringkasan fisik laci kasir pool (BKM masuk, BKK keluar pembayaran tunai hak kru, net kas pool).
+  - Modal **Otorisasi Putusan Manajer Keuangan (`DiscrepancyResolutionModal.tsx`)**:
+    - Layar khusus Finance Manager untuk menelaah temuan kasir, alasan kru, dan bukti telematika GPS.
+    - Pilihan putusan radio interaktif (Dispensasi Perusahaan `58101` vs Klaim Piutang Kru `12901`) dan eksekusi posting jurnal SPJ seimbang.
+  - Modal **Voucher Resmi Kasir BKM & BKK (`CashReceiptVoucherModal.tsx`)**:
+    - Tampilan tanda terima resmi PT SS Traveling Indonesia siap cetak fisik printer (`window.print()`).
+  - Modal **Pencatatan Selisih Sistemik Kasir (`CreateDiscrepancyModal.tsx`)**.
+  - Pendaftaran rute baru `/cashier` di `AppRouter`.
+- **Verifikasi Kualitas Penuh**:
+  - 20 unit test suites backend (129 tests total) lulus 100%.
+  - Frontend TypeScript `yarn build` sukses 100% bebas error.
+
 ### 2026-10-21: Stage 6 Completed — Uang Jalan (UJ), Biaya Operasional SPJ (BBM/Tol), & Deklarasi Penerimaan Kas Kru (Anti-Netting)
 - **Model Database & Migrasi PostgreSQL (`spj_expenses`, `spj_uj`, `spj_uj_disbursements`, `spj_uj_expenses`, `spj_uj_returns`, `spj_uj_additional_requests`, `spj_revenue_declarations`, `crew_meal_payments`)**:
   - `spj_expenses`: Pencatatan beban riil perjalanan armada (`expense_type`: `FUEL`, `TOLL`, `PARKING`, `RETRIBUTION`, `RESTAURANT_MEAL_SERVICE`, `COORDINATOR_FEE`, `CREW_LODGING`, `EMERGENCY_REPAIR`, `TOWING`, dll.), metadata solar BBM (volume liter, odometer KM, SPBU lokasi), nomor struk nota, status verifikasi akuntansi (`PENDING`, `APPROVED`, `REJECTED`), dan sumber pendanaan (`UJ`, `OFFICE_CASH`, `OFFICE_BANK`, `CREW_POCKET`, `OFFICE_AP`).

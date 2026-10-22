@@ -1,0 +1,52 @@
+export enum ApVendorType {
+  RESTAURANT = 'RESTAURANT',
+  WORKSHOP = 'WORKSHOP',
+  AGENT = 'AGENT',
+  OTHER = 'OTHER',
+}
+
+export enum ApInvoiceStatus {
+  DRAFT = 'DRAFT',
+  APPROVED = 'APPROVED',
+  PARTIALLY_PAID = 'PARTIALLY_PAID',
+  PAID = 'PAID',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum ApPaymentStatus {
+  CONFIRMED = 'CONFIRMED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum ArInvoiceStatus {
+  DRAFT = 'DRAFT',
+  APPROVED = 'APPROVED',
+  PARTIALLY_PAID = 'PARTIALLY_PAID',
+  PAID = 'PAID',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum ArReceiptStatus {
+  CONFIRMED = 'CONFIRMED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum FinancePaymentMethod {
+  BANK_TRANSFER = 'BANK_TRANSFER',
+  CASH = 'CASH',
+}
+
+export enum ApSourceType {
+  RESTAURANT_PERIODIC = 'RESTAURANT_PERIODIC',
+  WORKSHOP_REPAIR = 'WORKSHOP_REPAIR',
+  AGENT_COMMISSION = 'AGENT_COMMISSION',
+  MANUAL = 'MANUAL',
+  OTHER = 'OTHER',
+}
+
+export enum ArSourceType {
+  CHARTER_CONTRACT = 'CHARTER_CONTRACT',
+  OTA_SETTLEMENT = 'OTA_SETTLEMENT',
+  MANUAL = 'MANUAL',
+  OTHER = 'OTHER',
+}

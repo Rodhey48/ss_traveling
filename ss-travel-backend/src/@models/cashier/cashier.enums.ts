@@ -1,0 +1,48 @@
+export enum CrewCashSettlementStatus {
+  DRAFT = 'DRAFT',
+  SUBMITTED = 'SUBMITTED',
+  VERIFIED = 'VERIFIED',
+  REJECTED = 'REJECTED',
+}
+
+export enum SettlementUjStatus {
+  PENDING = 'PENDING',
+  BALANCED = 'BALANCED',
+  DISCREPANCY = 'DISCREPANCY',
+}
+
+export enum SettlementRevenueStatus {
+  PENDING = 'PENDING',
+  MATCHED = 'MATCHED',
+  DISCREPANCY_RECORDED = 'DISCREPANCY_RECORDED',
+}
+
+export enum RemittancePaymentMethod {
+  CASH = 'CASH',
+  BANK_TRANSFER = 'BANK_TRANSFER',
+}
+
+export enum RemittanceStatus {
+  PENDING = 'PENDING',
+  VERIFIED = 'VERIFIED',
+  REJECTED = 'REJECTED',
+}
+
+export enum DiscrepancySourceType {
+  UJ_EXPENSE_UNVERIFIED = 'UJ_EXPENSE_UNVERIFIED',
+  REVENUE_SHORTAGE = 'REVENUE_SHORTAGE',
+  REVENUE_OVERAGE = 'REVENUE_OVERAGE',
+  OTHER = 'OTHER',
+}
+
+export enum DiscrepancyResolutionStatus {
+  PENDING_INVESTIGATION = 'PENDING_INVESTIGATION',
+  RESOLVED = 'RESOLVED',
+  REJECTED = 'REJECTED',
+}
+
+export enum DiscrepancyResolutionDecision {
+  COMPANY_WAIVER = 'COMPANY_WAIVER',
+  CHARGE_TO_CREW = 'CHARGE_TO_CREW',
+  ALLOCATION_CORRECTION = 'ALLOCATION_CORRECTION',
+}

@@ -325,6 +325,102 @@ Response error autentikasi menggunakan struktur terstandar:
 *   *Live Thousand Separator*: Seluruh input nilai rupiah otomatis menerapkan format pemisah ribuan titik saat diketik (`formatNumberWithDots`), dengan pembersihan otomatis sebelum dikirim ke server (`cleanDots`).
 *   Akses cepat tombol `[💰 Keuangan & UJ]` pada tabel utama `/spjs` dan footer modal detail SPJ.
 
+## 12. Meja Kasir Pool, Settlement Kas Kru & Resolusi Selisih Kasir (Tahap 7 — Dua Kantong Kas Kru, Anti-Netting, BKM/BKK, Musyawarah Lapis 1 vs Sistemik Lapis 2, Dispensasi FM Akun 58101, Klaim Kru Akun 12901, & Unblock Tutup Buku Akun 11999)
+
+### A. Model Data Rekonsiliasi Kasir (`crew_cash_settlements`, `crew_cash_remittances`, `crew_cash_remittance_allocations`, `crew_cash_discrepancies`)
+*   **Header Dokumen Settlement (`crew_cash_settlements`)**:
+    *   `settlement_no`: Nomor unik `SETTLE/YYMM/XXXX`.
+    *   Status independen Dua Kantong Kas Kru: `uj_status` (`PENDING`, `BALANCED`, `DISCREPANCY`) dan `revenue_status` (`PENDING`, `MATCHED`, `DISCREPANCY_RECORDED`).
+    *   Akumulasi finansial live: `total_uj_disbursed`, `total_uj_spent`, `total_uj_returned`, `uj_balance` vs `total_revenue_expected`, `total_revenue_remitted`, `revenue_balance`.
+    *   Laci fisik kasir pool: `total_cash_received` (sisa UJ + setoran kru) vs `total_cash_paid` (pembayaran tunai hak kru di pool via BKK).
+    *   Voucher kasir: `bkm_no` (`BKM/YYMM/XXXX`), `bkk_no` (`BKK/YYMM/XXXX`), dan relasi foreign key ke jurnal rekonsiliasi yang terbentuk (`journal_entry_id`).
+*   **Setoran Kas Aktual Kru (`crew_cash_remittances` & `crew_cash_remittance_allocations`)**:
+    *   Pencatatan setoran uang fisik aktual bruto tiket & kargo dari supir/kondektur ke kasir pool.
+    *   Alokasi fleksibel m:n dari 1 setoran ke beberapa deklarasi tiket/kargo resi.
+*   **Temuan Selisih Kas Sistemik (`crew_cash_discrepancies`)**:
+    *   Register temuan investigasi kasir (Lapis 2): Kategori `source_type` (`UJ_EXPENSE_UNVERIFIED`, `REVENUE_SHORTAGE`, `REVENUE_OVERAGE`, `OTHER`), nominal selisih `difference_amount`, alasan kru, dan catatan telematika GPS.
+    *   Keputusan resmi Finance Manager: `COMPANY_WAIVER` (dialihkan ke `58101 Beban Selisih Kasir Pool`), `CHARGE_TO_CREW` (dialihkan ke `12901 Piutang Klaim Selisih Kas Kru`), atau `ALLOCATION_CORRECTION`.
+
+### B. Domain Services & Alur Akuntansi Meja Kasir
+*   `CashierSettlementService`:
+    *   *Kalkulator Dua Kantong Kas Kru*: Menghitung live Kantong 1 UJ (Plafon vs Nota vs Sisa Fisik Kembali) dan Kantong 2 Setoran (Target Manifes vs Uang Fisik Diserahkan).
+    *   *Gerbang Verifikasi*: Settlement hanya berstatus `VERIFIED` bila `uj_status === 'BALANCED'` dan `revenue_status === 'MATCHED' | 'DISCREPANCY_RECORDED'`.
+    *   *Posting Jurnal Rekonsiliasi Atomik*: Otomatis menerbitkan jurnal rekonsiliasi SPJ seimbang (menutup saldo UJ `13101` ke Rp 0, mendebit `11101` Kas Pool untuk kas fisik bersih, mendebit beban-beban operasional perjalanan sah, dan mengkredit pendapatan tiket `41101` & kargo `43101`).
+    *   *Kemerdekaan Tutup Buku Bulanan (Period Closing Unblocked)*: Pengalihan selisih kas yang masih dalam investigasi ke akun neraca penampung sementara `11999 Selisih Kas Operasional Sementara`, menjamin tutup buku bulanan tidak terblokir oleh perselisihan kas di jalan.
+*   `CashierDiscrepancyService`:
+    *   Mencatat temuan selisih kas kasir secara transparan dan mengalihkan status SPJ ke `DISCREPANCY`.
+    *   Mengeksekusi otorisasi putusan Finance Manager:
+        *   Dispensasi Perusahaan (`COMPANY_WAIVER`): Membebankan selisih ke perusahaan (akun `58101`), menyeimbangkan UJ ke `BALANCED`, dan memposting jurnal rekonsiliasi SPJ lengkap.
+        *   Klaim Piutang Kru (`CHARGE_TO_CREW`): Mengakui piutang klaim kru (akun `12901`), menyeimbangkan UJ ke `BALANCED`, dan memposting jurnal rekonsiliasi SPJ lengkap.
+
+### C. Frontend Antarmuka Meja Kasir Pool (`/cashier`)
+*   **Halaman Utama Meja Kasir Pool (`/cashier`)**:
+    *   4 kartu metrik live: SPJ Siap Settle, Menunggu Investigasi FM, Total Settlement Tuntas, dan Kas Fisik Diterima Hari Ini (BKM).
+    *   3 Tab navigasi: SPJ Siap Rekonsiliasi, Riwayat Dokumen Settlement, dan Pusat Investigasi Selisih (Finance Manager Hub).
+*   **Modal Rekonsiliasi Kasir Pool (`CashierSettlementModal`)**:
+    *   Visualisasi Dua Kantong Kas Kru (Anti-Netting) dengan kartu perbandingan, badge warna-warni, dan peringatan selisih nota.
+    *   Mode **Musyawarah Kru di Meja Kasir (Lapis 1)**: Kalkulator patungan/talangan tunai kru di meja kasir untuk menggenapkan kekurangan kembalian kecil di tempat.
+    *   Form input uang fisik setoran baru kru dengan alokasi otomatis ke tiket/kargo.
+    *   Ringkasan laci kasir: BKM kas masuk, BKK kas bayar hak kru di tempat, dan net kas pool.
+*   **Modal Otorisasi Putusan Manajer Keuangan (`DiscrepancyResolutionModal`)**:
+    *   Layar khusus Finance Manager untuk memeriksa kronologi kasir, alasan kru, dan telematika GPS.
+    *   Pilihan radio putusan (Dispensasi Perusahaan `58101` vs Klaim Piutang Kru `12901`) dan tombol eksekusi posting jurnal SPJ seimbang.
+*   **Modal Voucher Resmi Cetak BKM / BKK (`CashReceiptVoucherModal`)**:
+    *   Format cetak resmi voucher tanda terima kas PT SS Traveling Indonesia lengkap dengan tanda tangan kru penyetor dan kasir pool penerima (`window.print()`).
+
+## 13. Modul Utang Usaha (AP) & Piutang Usaha (AR) (Tahap 8 — Servis Makan RM, Bengkel Rekanan, DP Wisata, & Pelunasan Piutang)
+
+### A. Model Entitas Database (`ap_invoices`, `ap_invoice_lines`, `ap_payments`, `ap_allocations`, `ar_invoices`, `ar_invoice_lines`, `ar_receipts`, `ar_allocations`)
+*   **Tagihan Rekanan Vendor (`ap_invoices`, `ap_invoice_lines`)**:
+    *   `bill_no`: Nomor tagihan format `BILL/YYMM/XXXX` dihasilkan via sequence generator.
+    *   `vendor_invoice_no`: Nomor faktur/nota fisik vendor rekanan (misal `INV-RMTS-2026/10/012` atau `NOTA-CDM-8821`).
+    *   `vendor_type`: `RESTAURANT`, `WORKSHOP`, `AGENT`, `OTHER`.
+    *   `ap_account_id`: Akun utang usaha (`21101` Utang RM, `21102` Utang Bengkel, `22101` Utang Agen).
+    *   `lines`: Rincian biaya per baris terikat akun beban (`51102` Servis Makan, `55101` Bengkel/Derek Tol, `54101` Komisi Agen) dengan dimensi SPJ (`trip_id`), bus (`vehicle_id`), kupon makan riil, manifes penumpang, dan catatan selisih.
+*   **Pembayaran Tagihan AP (`ap_payments`, `ap_allocations`)**:
+    *   Pencatatan realisasi bayar utang via Bank BCA (`11104`) atau Kas Pool (`11101`) dengan alokasi ke satu atau beberapa faktur, serta pembaruan otomatis saldo terbayar dan status faktur (`PAID` / `PARTIALLY_PAID`).
+*   **Invoice Piutang Pelanggan (`ar_invoices`, `ar_invoice_lines`)**:
+    *   `invoice_no`: Format nomor unik `INV/WIS/YYMM/XXXX` atau `INV/YYMM/XXXX`.
+    *   Tautan pelanggan `customer_id` dan kontrak sewa bus wisata `trip_id` (Skenario 2).
+    *   `ar_account_id`: Akun piutang usaha `12101 Piutang Sewa Charter Bus Wisata`.
+*   **Penerimaan Kas/Bank & DP Wisata (`ar_receipts`, `ar_allocations`)**:
+    *   Pencatatan penerimaan mutasi bank/kas dengan alokasi pelunasan invoice piutang.
+    *   Dukungan khusus **Uang Muka (DP) 30% Sewa Wisata** (`is_down_payment = true`): Membukukan penerimaan kas/bank di debit dan mengkredit liabilitas `24101 Pendapatan Diterima di Muka (DP Sewa Wisata)`.
+
+### B. Aturan Bisnis & Posting Jurnal Satu Pintu
+*   **Tagihan Servis Makan RM Mitra (Skenario 1)**:
+    *   Fitur `findUnbilledSpjsForRestaurant`: Menarik seluruh SPJ AKAP yang belum pernah ditagihkan oleh restoran mitra tersebut.
+    *   Proteksi ketat **Anti-Double Billing**: SPJ yang sudah tercantum di baris tagihan aktif milik restoran tersebut otomatis ditolak oleh sistem.
+    *   Audit Kupon Riil vs Manifes: Validasi jumlah kupon makan riil yang ditukarkan penumpang, dengan peringatan (*over-capacity warning*) jika kupon melebihi manifes fisik bus.
+    *   Persetujuan Tagihan AP: Posting jurnal utang otomatis:
+        *   **Debit**: `51102 Beban Service Makan Penumpang Restoran Mitra` (per baris SPJ & bus).
+        *   **Kredit**: `21101 Utang Vendor Restoran Mitra` (total tagihan).
+*   **Tagihan Vendor Bengkel & Derek Tol Bus Rusak (Skenario 3)**:
+    *   Pencatatan tagihan bengkel rekanan (misal Cirebon Diesel Motor) atas perbaikan radiator bus `SS-01` di Tol Cipali KM 214.
+    *   **Debit**: `55101 Beban Perawatan, Perbaikan, & Derek Armada` (dimensi bus rusak `SS-01`).
+    *   **Kredit**: `21102 Utang Vendor Suku Cadang & Bengkel Rekanan`.
+*   **Siklus Kontrak Sewa Wisata (Skenario 2)**:
+    *   1. *Penerimaan DP 30%* (Rp 5.250.000): Debit Bank BCA `11104`, Kredit `24101 Pendapatan Diterima di Muka`.
+    *   2. *Penerbitan Invoice Pelunasan 70%* (Rp 12.250.000): Menerbitkan invoice `INV/WIS` ke akun `12101 Piutang Sewa Charter Bus Wisata`.
+    *   3. *Penerimaan Pelunasan 70%*: Debit Bank BCA `11104`, Kredit `12101 Piutang Sewa Charter Bus Wisata` (menutup invoice piutang).
+    *   4. *Pengakuan Pendapatan Accrual 100%*: Saat SPJ Wisata tuntas (`COMPLETED`) dan diselesaikan di meja kasir: Debit `24101` (Rp 5.25jt), Debit Kas/Piutang (Rp 12.25jt), Kredit `42101 Pendapatan Sewa Bus Pariwisata` (Rp 17.5jt).
+
+### C. Frontend Antarmuka AP & AR (`/ap-invoices` & `/ar-invoices`)
+*   **Halaman Tagihan Vendor / AP Invoices (`/ap-invoices`)**:
+    *   4 kartu metrik: Total Tagihan Belum Dibayar, Utang Servis Makan RM (21101), Utang Bengkel & Suku Cadang (21102), Total Terbayar Bulan Ini.
+    *   Tab Daftar Tagihan AP vs Tab Riwayat Pembayaran.
+    *   Modal **`[+ Tagihan Servis Makan Restoran]`** dengan dialog cerdas **`[+ Tarik SPJ Belum Ditagih]`**, kupon riil, badge warning > manifes, dan subtotal otomatis.
+    *   Modal **`[+ Tagihan Vendor Bengkel]`** untuk perbaikan bus mogok & sparepart.
+    *   Modal **`[Bayar Faktur AP]`** via Transfer Bank / Kas Pool dengan alokasi otomatis.
+    *   Modal **Detail Faktur AP** dengan rincian baris, jurnal terposting, dan riwayat pembayaran.
+*   **Halaman Piutang Usaha / AR Invoices (`/ar-invoices`)**:
+    *   4 kartu metrik: Total Piutang Belum Tertagih, Titipan DP Sewa Wisata (24101), Piutang Tertagih Bulan Ini, Total Faktur Terbit.
+    *   Tab Daftar Faktur Piutang AR vs Tab Riwayat Penerimaan / DP.
+    *   Modal **`[+ Terima DP Sewa Wisata (30%)]`** (Skenario 2).
+    *   Modal **`[+ Invoice Pelunasan Wisata (70%)]`** (Skenario 2).
+    *   Modal **`[Pelunasan Piutang]`** bank/kas dengan alokasi invoice.
+    *   Modal **Detail Invoice AR** dengan rincian baris dan status pelunasan.
+
 ---
 *Gunakan dokumen ini sebagai referensi saat melakukan pengembangan fitur baru atau debugging sistem otorisasi.*
 

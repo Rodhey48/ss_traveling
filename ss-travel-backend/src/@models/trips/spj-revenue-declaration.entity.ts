@@ -3,12 +3,14 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { BaseEntity } from '../base.entity';
 import { CompanyEntity } from '../organization/company.entity';
 import { SpjEntity } from './spj.entity';
 import { SpjLegEntity } from './spj-leg.entity';
 import { UsersEntity } from '../user/user.entity';
+import { CrewCashRemittanceAllocationEntity } from '../cashier/crew-cash-remittance-allocation.entity';
 import {
   SpjRevenueDeclarationType,
   SpjRevenueDeclarationStatus,
@@ -163,4 +165,10 @@ export class SpjRevenueDeclarationEntity extends BaseEntity {
 
   @Column({ type: 'text', nullable: true })
   notes?: string;
+
+  @OneToMany(
+    () => CrewCashRemittanceAllocationEntity,
+    (alloc) => alloc.revenueDeclaration,
+  )
+  allocations?: CrewCashRemittanceAllocationEntity[];
 }
