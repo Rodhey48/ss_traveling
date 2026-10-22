@@ -410,16 +410,22 @@ Response error autentikasi menggunakan struktur terstandar:
     *   4 kartu metrik: Total Tagihan Belum Dibayar, Utang Servis Makan RM (21101), Utang Bengkel & Suku Cadang (21102), Total Terbayar Bulan Ini.
     *   Tab Daftar Tagihan AP vs Tab Riwayat Pembayaran.
     *   Modal **`[+ Tagihan Servis Makan Restoran]`** dengan dialog cerdas **`[+ Tarik SPJ Belum Ditagih]`**, kupon riil, badge warning > manifes, dan subtotal otomatis.
-    *   Modal **`[+ Tagihan Vendor Bengkel]`** untuk perbaikan bus mogok & sparepart.
-    *   Modal **`[Bayar Faktur AP]`** via Transfer Bank / Kas Pool dengan alokasi otomatis.
+    *   Modal **`[+ Tagihan Vendor & Beban Operasional]`** dengan **1-Click Template Presets** (Gaji Staf/Mekanik, Listrik/WiFi, Bengkel & Sparepart, Pajak STNK/KIR, Asuransi Jasa Raharja, Perlengkapan Pool, Komisi Agen, dan Tagihan Kustom).
+    *   Modal **`[Bayar Faktur AP]`** via Transfer Bank / Kas Pool dengan alokasi otomatis, pemisah ribuan titik (`.`), dan tombol pintas *"Bayar Lunas"*.
     *   Modal **Detail Faktur AP** dengan rincian baris, jurnal terposting, dan riwayat pembayaran.
 *   **Halaman Piutang Usaha / AR Invoices (`/ar-invoices`)**:
     *   4 kartu metrik: Total Piutang Belum Tertagih, Titipan DP Sewa Wisata (24101), Piutang Tertagih Bulan Ini, Total Faktur Terbit.
     *   Tab Daftar Faktur Piutang AR vs Tab Riwayat Penerimaan / DP.
-    *   Modal **`[+ Terima DP Sewa Wisata (30%)]`** (Skenario 2).
-    *   Modal **`[+ Invoice Pelunasan Wisata (70%)]`** (Skenario 2).
-    *   Modal **`[Pelunasan Piutang]`** bank/kas dengan alokasi invoice.
+    *   Modal **`[+ Terima DP Sewa Wisata (30%)]`** (Skenario 2 akun `24101`).
+    *   Modal **`[+ Invoice Pelunasan Wisata (70%)]`** (Skenario 2 akun `12101`).
+    *   Modal **`[+ Invoice Piutang Umum (AR)]`** dengan template rekomendasi (Sewa Wisata Non-SPJ, Piutang Tiket Agen, Piutang Kargo, Sewa Kios & Iklan Bodi).
+    *   Modal **`[Pelunasan Piutang]`** bank/kas dengan alokasi invoice, format angka ribuan, dan shortcut *"Bayar Lunas"*.
     *   Modal **Detail Invoice AR** dengan rincian baris dan status pelunasan.
+*   **Standar Ergonomi UI/UX Modal & Pemilihan Akun COA**:
+    *   *Pelebaran Modal Transaksi*: Form faktur AP & AR diperlebar ke `max-w-5xl` (`1024px+`) dengan padding lega (`p-6 sm:p-7`), dan modal pembayaran/penerimaan diperlebar ke `max-w-2xl` (`672px`).
+    *   *Pemisahan Kategori COA Terstruktur (`<optgroup>`)*: Dropdown akun COA dikelompokkan berdasarkan fungsi akuntansi PO bus (Beban Operasional `51`, Tol `52`, Kru `53`, Keagenan `54`, Bengkel `55`, Kantor `57`, Utang Vendor `211`, Utang Gaji `212`, Piutang `121`, Pendapatan `41/42/43/81`) lengkap dengan badge penanda rekomendasi template.
+    *   *Kartu Berjenjang (Two-Tier Card)*: Baris rincian dipisahkan menjadi baris atas (deskripsi & armada) dan baris bawah (akun COA, Qty, Harga Satuan, tombol hapus, subtotal) sehingga tidak ada teks yang terpotong.
+    *   *Format Mata Uang Dinamis*: Input nominal menggunakan `toLocaleString('id-ID')` dengan `inputMode="numeric"`.
 
 ---
 *Gunakan dokumen ini sebagai referensi saat melakukan pengembangan fitur baru atau debugging sistem otorisasi.*

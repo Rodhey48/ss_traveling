@@ -22,11 +22,15 @@
 - **REST Endpoints & Controllers**:
   - AP Endpoints: `GET /api/v1/ap/unbilled-spjs/:restaurantId`, `POST /api/v1/ap/restaurant-bill`, `POST /api/v1/ap/invoices`, `GET /api/v1/ap/invoices`, `GET /api/v1/ap/invoices/:id`, `PUT /api/v1/ap/invoices/:id/approve`, `PUT /api/v1/ap/invoices/:id/cancel`, `POST /api/v1/ap/payments`, `GET /api/v1/ap/payments`.
   - AR Endpoints: `POST /api/v1/ar/down-payment`, `POST /api/v1/ar/charter-pelunasan`, `POST /api/v1/ar/invoices`, `GET /api/v1/ar/invoices`, `GET /api/v1/ar/invoices/:id`, `PUT /api/v1/ar/invoices/:id/approve`, `POST /api/v1/ar/receipts`, `GET /api/v1/ar/receipts`, `GET /api/v1/ar/charter-status/:tripId`.
-- **Frontend Halaman & Modal Terpadu (`ss-travel-frontend`)**:
+- **Frontend Halaman, Modal Terpadu & Penyempurnaan UI/UX (`ss-travel-frontend`)**:
   - Services `ApService` (`src/services/ap.service.ts`) dan `ArService` (`src/services/ar.service.ts`) terstandarisasi tanpa leading slash.
-  - Halaman **Tagihan Vendor / AP Invoices (`/ap-invoices`)**: 4 kartu metrik live, tab daftar tagihan vs riwayat pembayaran, modal **`[+ Tagihan Servis Makan Restoran]`** dengan dialog **`[+ Tarik SPJ Belum Ditagih]`**, modal **`[+ Tagihan Vendor Bengkel]`**, modal **`[Bayar Faktur AP]`**, dan modal detail faktur AP dengan preview jurnal terposting.
-  - Halaman **Piutang Usaha / AR Invoices (`/ar-invoices`)**: 4 kartu metrik piutang & DP, modal **`[+ Terima DP Sewa Wisata (30%)]`** (Skenario 2), modal **`[+ Invoice Pelunasan Wisata (70%)]`**, modal **`[Pelunasan Piutang]`**, dan modal detail invoice AR.
-  - Pendaftaran rute baru `/ap-invoices` dan `/ar-invoices` di `AppRouter`.
+  - Halaman **Tagihan Vendor / AP Invoices (`/ap-invoices`)**: 4 kartu metrik live, tab daftar tagihan vs riwayat pembayaran, modal **`[+ Tagihan Servis Makan Restoran]`** dengan dialog **`[+ Tarik SPJ Belum Ditagih]`**, modal **`[+ Tagihan Vendor Bengkel / Umum]`**, modal **`[Bayar Faktur AP]`**, dan modal detail faktur AP dengan preview jurnal terposting.
+  - Halaman **Piutang Usaha / AR Invoices (`/ar-invoices`)**: 4 kartu metrik piutang & DP, modal **`[+ Terima DP Sewa Wisata (30%)]`** (Skenario 2), modal **`[+ Invoice Pelunasan Wisata (70%)]`**, modal **`[+ Invoice Piutang Umum (AR)]`**, modal **`[Pelunasan Piutang]`**, dan modal detail invoice AR.
+  - **Penyempurnaan Ergonomi & Tata Letak Modal (UI/UX Overhaul)**:
+    - *Pelebaran Modal Transaksi*: Seluruh modal diperlebar secara proporsional (`max-w-5xl` / `1024px+` untuk faktur tagihan AP, AR umum, dan tagihan berkala RM; `max-w-2xl` / `672px` untuk DP 30%, Pelunasan 70%, Bukti Bayar AP, dan Bukti Terima AR).
+    - *Pengelompokan Akun COA Terstruktur (`<optgroup>`)*: Mengatasi kebingungan user dalam memilih akun buku besar dengan menyusun dropdown COA ke dalam kategori fungsional resmi akuntansi bus (51 Beban Langsung Armada, 52 Beban Tol & Parkir, 53 Beban Kru, 54 Beban Keagenan, 55 Beban Perawatan Bengkel & Sparepart, 57 Beban Umum & Pool, 211 Utang Usaha Vendor, 212 Utang Gaji & Akrual, 121 Piutang Usaha, 41 Pendapatan AKAP, 42 Pendapatan Wisata) lengkap dengan badge rekomendasi template otomatis (`★ Rekomendasi Template`).
+    - *Layout Kartu Berjenjang (Two-Tier Line Items)*: Menghilangkan kesan sempit dan penumpukan input pada rincian baris biaya dengan memisahkan baris atas (Deskripsi barang/jasa & pilihan armada bus) dan baris bawah (Pilihan Akun COA Debit/Kredit, Qty, Harga Satuan format titik, tombol hapus, dan subtotal dinamis).
+    - *Pemisah Ribuan & Shortcut Pelunasan*: Format mata uang otomatis titik (`.`) saat pengetikan nominal dan tombol pintas *"Bayar Lunas"* untuk kalkulasi seketika.
 - **Verifikasi Kualitas Penuh**:
   - 22 unit test suites backend (136 tests total) lulus 100%.
   - Frontend TypeScript `yarn build` sukses 100% bebas error.
