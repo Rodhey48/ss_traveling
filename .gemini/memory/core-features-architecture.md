@@ -425,9 +425,77 @@ Response error autentikasi menggunakan struktur terstandar:
     *   *Pelebaran Modal Transaksi*: Form faktur AP & AR diperlebar ke `max-w-5xl` (`1024px+`) dengan padding lega (`p-6 sm:p-7`), dan modal pembayaran/penerimaan diperlebar ke `max-w-2xl` (`672px`).
     *   *Pemisahan Kategori COA Terstruktur (`<optgroup>`)*: Dropdown akun COA dikelompokkan berdasarkan fungsi akuntansi PO bus (Beban Operasional `51`, Tol `52`, Kru `53`, Keagenan `54`, Bengkel `55`, Kantor `57`, Utang Vendor `211`, Utang Gaji `212`, Piutang `121`, Pendapatan `41/42/43/81`) lengkap dengan badge penanda rekomendasi template.
     *   *Kartu Berjenjang (Two-Tier Card)*: Baris rincian dipisahkan menjadi baris atas (deskripsi & armada) dan baris bawah (akun COA, Qty, Harga Satuan, tombol hapus, subtotal) sehingga tidak ada teks yang terpotong.
-    *   *Format Mata Uang Dinamis*: Input nominal menggunakan `toLocaleString('id-ID')` dengan `inputMode="numeric"`.
+    *   **Format Mata Uang Dinamis**: Input nominal menggunakan `toLocaleString('id-ID')` dengan `inputMode="numeric"`.
 
----
-*Gunakan dokumen ini sebagai referensi saat melakukan pengembangan fitur baru atau debugging sistem otorisasi.*
+    ---
+
+    ## 12. Modul Kas Kecil Pool (Petty Cash Garasi)
+
+    ### A. Model Data & Skema Akuntansi
+    *   **Model `cash_transactions` (`CashTransactionEntity`)**:
+        *   `transaction_no`: Format atomik `BKK-KAS/YYMM/XXXX` (Bukti Kas Keluar) dan `BKM-KAS/YYMM/XXXX` (Bukti Kas Masuk).
+        *   `type`: `DISBURSEMENT` (Pengeluaran taktis garasi) vs `REPLENISHMENT` (Pengisian kembali kas kecil).
+        *   `status`: `DRAFT` $\to$ `SUBMITTED` $\to$ `VERIFIED` (Posting GL) / `REJECTED`.
+        *   Preset Akun Beban Terstandarisasi SOP Bus:
+            *   `52104`: Beban Snack Onboard, Amenity, & Fasilitas Kabin Bus.
+            *   `53105`: Beban Uang Makan Standby Driver (Non-SPJ Garasi).
+            *   `53106`: Beban Insentif Langsir Armada Kosongan (Non-SPJ Karoseri/KIR).
+            *   `57102`: Beban Sabun Cuci Bus, Semir Ban, & ATK Pool.
+            *   `57107`: Beban Lembur Mekanik & Teknisi Bengkel Malam Hari.
+            *   `57108`: Beban Konsumsi Kopi & Air Galon Staf Piket Garasi.
+            *   `57109`: Beban Transport Dinas & Bensin Staf Kantor.
+            *   `55102`: Beban Sparepart Eceran Darurat Garasi.
+    *   **Aturan Posting Jurnal Atomik (`PettyCashService`)**:
+        *   *Pengeluaran (BKK)*: Debit Akun Beban Terkait, Kredit `11103 Kas Kecil (Petty Cash Garasi)`.
+        *   *Pengisian Kembali (BKM)*: Debit `11103 Kas Kecil (Petty Cash Garasi)`, Kredit `11104 Bank BCA Operasional` atau `11101 Kas Induk Pool`.
+
+    ---
+
+    ## 13. Dashboard Utama Live & Role-Based Financial Isolation
+
+    ### A. Evaluasi Hak Akses & Proteksi Data Sensitif (RBAC Security)
+    *   **Zero Leakage Policy**: Informasi likuiditas saldo rekening kas fisik garasi, rekening bank korporat, piutang sewa terbuka (AR), utang vendor jatuh tempo (AP), dan selisih kasir akun `11999` **hanya dikirimkan** jika pengguna memiliki role keuangan/eksekutif (`SUPER_ADMIN`, `DIRECTOR`, `FINANCE_MANAGER`, `ACCOUNTANT`, `FINANCE_AR_AP`).
+    *   **Perlakuan untuk Non-Keuangan (Supir, Kondektur, Pramugari, Dispatcher Ops)**:
+        *   Payload data finansial (`cashAndBank` dan `financeAlerts`) bernilai `null` dari backend.
+        *   Frontend secara dinamis menyembunyikan seluruh kartu saldo dan seksi perbankan, menggantikannya dengan:
+            *   **Kesiapan Armada Bus Garasi Pool:** Unit aktif di rute vs unit standby garasi.
+            *   **Status Pengemudi (Driver):** Supir berdinas jalan vs supir standby pool.
+            *   **Pelayanan Kabin (Kru):** Kondektur & pramugari aktif melayani penumpang.
+            *   **Pedoman Keselamatan & SOP Resmi:** Batas waktu menyetir 4 jam (tukar supir Rest Area KM 228), penyerahan setoran bruto 100% Anti-Netting ke kasir pool, dan struk dispenser BBM solar.
+
+    ### B. Pintasan Operasional Cepat Dinamis (Dynamic Quick Actions)
+    *   Tombol pintasan cepat (*Quick Actions*) disaring secara dinamis menggunakan daftar menu yang dimiliki pengguna (`hasMenuAccess`):
+        *   Kru hanya melihat pintasan dokumen dinas yang menjadi haknya (seperti **SPJ Lapangan**).
+        *   Dispatcher melihat **Plotting Bus & Jadwal**, **SPJ Lapangan**, dan **Armada Bus**.
+        *   Kasir Pool melihat **Meja Kasir Pool** dan **Kas Kecil Pool (BKK)**.
+        *   Direksi & Keuangan melihat seluruh pintasan operasional dan finansial.
+
+    ---
+
+    ## 14. Format Cetak Dokumen Operasional Fisik (Print Slips)
+
+    ### A. Surat Perintah Jalan (SPJ) Resmi Pengemudi (`SpjPrintModal.tsx`)
+    *   Diterbitkan oleh Dispatcher sebelum bus keluar gerbang garasi.
+    *   Format cetak printer A4/Letter standar industri bus:
+        *   Kop surat resmi PT SS Travelink Official Indonesia, kontak, dan website.
+        *   Nomor SPJ, tanggal dinas, nomor lambung armada, pelat nomor, kapasitas kursi kabin bus.
+        *   Susunan 3 kru penugasan (Driver 1, Driver 2, Kondektur/Pramugari).
+        *   Rincian leg perjalanan (Leg 1 Berangkat & Leg 2 Pulang) dan jatah kupon makan di RM Taman Selera Subang (Tol Cipali KM 102).
+        *   Instruksi keselamatan berkendara dan kewajiban settlement kasir maksimal 2 jam setelah bus tiba di pool.
+        *   4 Kolom tanda tangan resmi: Dispatcher/Pengawas, Kasir Pool (Pencairan UJ), Pengemudi 1, Pengemudi 2.
+
+    ### B. Faktur Invoice Piutang Usaha & Kwitansi DP Wisata (`ArInvoicePrintModal.tsx`)
+    *   Diterbitkan untuk penagihan kontrak sewa bus pariwisata ke panitia penyewa / instansi.
+    *   Format cetak dokumen resmi:
+        *   Kop surat resmi PT SS Traveling.
+        *   Identitas instansi penyewa, PIC, alamat, nomor telepon, dan referensi SPJ terkait.
+        *   Tabel rincian paket sewa bus, kuantitas, harga satuan, dan pembebasan PPN 0%.
+        *   Ringkasan nilai kontrak, nominal DP 30% yang telah disetor, dan sisa tagihan pelunasan 70%.
+        *   Petunjuk transfer rekening Bank Central Asia (BCA) No. Rek `8830-1928-31` a/n PT SS Travelink Official.
+        *   Kolom tanda tangan persetujuan penyewa dan Bagian Keuangan (AR Finance).
+
+    ---
+    *Gunakan dokumen ini sebagai referensi saat melakukan pengembangan fitur baru atau debugging sistem otorisasi.*
+
 
 
