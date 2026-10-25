@@ -8,6 +8,8 @@ import { Repository } from 'typeorm';
 import { CashAccountEntity } from '../../@models/finance/cash-account.entity';
 import { BankAccountEntity } from '../../@models/finance/bank-account.entity';
 import { AccountEntity } from '../../@models/finance/account.entity';
+import { JournalLineEntity } from '../../@models/finance/journal-line.entity';
+import { JournalStatus } from '../../@models/finance/journal-entry.entity';
 import {
   CreateCashAccountDto,
   UpdateCashAccountDto,
@@ -36,7 +38,26 @@ export class CashBankService {
     private readonly bankRepo: Repository<BankAccountEntity>,
     @InjectRepository(AccountEntity)
     private readonly accountRepo: Repository<AccountEntity>,
+    @InjectRepository(JournalLineEntity)
+    private readonly lineRepo: Repository<JournalLineEntity>,
   ) {}
+
+  /**
+   * Helper ORM untuk menghitung saldo buku besar (GL) real-time dari jurnal POSTED
+   */
+  private async calculateAccountBalance(accountId?: string): Promise<string> {
+    if (!accountId) return '0.00';
+
+    const raw = await this.lineRepo
+      .createQueryBuilder('line')
+      .innerJoin('line.journalEntry', 'j')
+      .where('line.accountId = :accountId', { accountId })
+      .andWhere('j.status = :status', { status: JournalStatus.POSTED })
+      .select('COALESCE(SUM(CAST(line.debit AS numeric)) - SUM(CAST(line.credit AS numeric)), 0)', 'balance')
+      .getRawOne();
+
+    return Number(raw?.balance || 0).toFixed(2);
+  }
 
   // ==========================================
   // Cash Accounts
@@ -65,7 +86,7 @@ export class CashBankService {
     return await this.cashRepo.save(cashAccount);
   }
 
-  async findAllCashAccounts(filter: CashAccountQueryFilterDto): Promise<CashAccountEntity[]> {
+  async findAllCashAccounts(filter: CashAccountQueryFilterDto = {}): Promise<CashAccountEntity[]> {
     const qb = this.cashRepo
       .createQueryBuilder('cash')
       .leftJoinAndSelect('cash.account', 'account')
@@ -92,7 +113,13 @@ export class CashBankService {
       );
     }
 
-    return await qb.getMany();
+    const accounts = await qb.getMany();
+
+    for (const c of accounts) {
+      (c as any).currentBalance = await this.calculateAccountBalance(c.accountId);
+    }
+
+    return accounts;
   }
 
   async findOneCashAccount(id: string): Promise<CashAccountEntity> {
@@ -105,6 +132,7 @@ export class CashBankService {
       throw new NotFoundException(`Rekening kas dengan ID '${id}' tidak ditemukan.`);
     }
 
+    (cash as any).currentBalance = await this.calculateAccountBalance(cash.accountId);
     return cash;
   }
 
@@ -175,7 +203,7 @@ export class CashBankService {
     return await this.bankRepo.save(bankAccount);
   }
 
-  async findAllBankAccounts(filter: BankAccountQueryFilterDto): Promise<BankAccountEntity[]> {
+  async findAllBankAccounts(filter: BankAccountQueryFilterDto = {}): Promise<BankAccountEntity[]> {
     const qb = this.bankRepo
       .createQueryBuilder('bank')
       .leftJoinAndSelect('bank.account', 'account')
@@ -200,7 +228,13 @@ export class CashBankService {
       );
     }
 
-    return await qb.getMany();
+    const accounts = await qb.getMany();
+
+    for (const b of accounts) {
+      (b as any).currentBalance = await this.calculateAccountBalance(b.accountId);
+    }
+
+    return accounts;
   }
 
   async findOneBankAccount(id: string): Promise<BankAccountEntity> {
@@ -213,6 +247,7 @@ export class CashBankService {
       throw new NotFoundException(`Rekening bank dengan ID '${id}' tidak ditemukan.`);
     }
 
+    (bank as any).currentBalance = await this.calculateAccountBalance(bank.accountId);
     return bank;
   }
 
@@ -253,6 +288,109 @@ export class CashBankService {
     return {
       success: true,
       message: `Rekening bank '${bank.code} - ${bank.bankName} (${bank.accountNumberMasked})' berhasil dinonaktifkan.`,
+    };
+  }
+
+  // ==========================================
+  // Digital Statement (Rekening Koran) — Pure ORM
+  // ==========================================
+
+  async getBankStatement(id: string, startDate?: string, endDate?: string) {
+    const bank = await this.findOneBankAccount(id);
+    return await this.generateStatement(bank.accountId, bank, 'BANK', startDate, endDate);
+  }
+
+  async getCashStatement(id: string, startDate?: string, endDate?: string) {
+    const cash = await this.findOneCashAccount(id);
+    return await this.generateStatement(cash.accountId, cash, 'CASH', startDate, endDate);
+  }
+
+  private async generateStatement(
+    accountId: string,
+    accountEntity: any,
+    type: 'BANK' | 'CASH',
+    startDate?: string,
+    endDate?: string,
+  ) {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const lastDay = new Date(y, now.getMonth() + 1, 0).getDate();
+
+    const start = startDate || `${y}-${m}-01`;
+    const end = endDate || `${y}-${m}-${String(lastDay).padStart(2, '0')}`;
+
+    if (!accountId) {
+      return {
+        account: accountEntity,
+        type,
+        startDate: start,
+        endDate: end,
+        openingBalance: '0.00',
+        totalDebit: '0.00',
+        totalCredit: '0.00',
+        endingBalance: '0.00',
+        lines: [],
+      };
+    }
+
+    // 1. Saldo Awal (sebelum startDate) menggunakan ORM QueryBuilder
+    const openRaw = await this.lineRepo
+      .createQueryBuilder('line')
+      .innerJoin('line.journalEntry', 'j')
+      .where('line.accountId = :accountId', { accountId })
+      .andWhere('j.status = :status', { status: JournalStatus.POSTED })
+      .andWhere('j.journalDate < :start', { start })
+      .select('COALESCE(SUM(CAST(line.debit AS numeric)) - SUM(CAST(line.credit AS numeric)), 0)', 'balance')
+      .getRawOne();
+
+    const openingBalNum = Number(openRaw?.balance || 0);
+
+    // 2. Baris Mutasi menggunakan ORM QueryBuilder & Entity Relations
+    const lineEntities = await this.lineRepo
+      .createQueryBuilder('line')
+      .innerJoinAndSelect('line.journalEntry', 'j')
+      .where('line.accountId = :accountId', { accountId })
+      .andWhere('j.status = :status', { status: JournalStatus.POSTED })
+      .andWhere('j.journalDate >= :start AND j.journalDate <= :end', { start, end })
+      .orderBy('j.journalDate', 'ASC')
+      .addOrderBy('j.createdAt', 'ASC')
+      .addOrderBy('line.id', 'ASC')
+      .getMany();
+
+    let running = openingBalNum;
+    let totD = 0;
+    let totC = 0;
+    const lines = [];
+
+    for (const item of lineEntities) {
+      const d = Number(item.debit);
+      const c = Number(item.credit);
+      totD += d;
+      totC += c;
+      running = running + d - c;
+      lines.push({
+        id: item.id,
+        date: item.journalEntry?.journalDate || '',
+        journalNo: item.journalEntry?.journalNo || '',
+        sourceType: item.journalEntry?.sourceType || '',
+        description: item.description || item.journalEntry?.description || '',
+        debit: d.toFixed(2),
+        credit: c.toFixed(2),
+        runningBalance: running.toFixed(2),
+      });
+    }
+
+    return {
+      account: accountEntity,
+      type,
+      startDate: start,
+      endDate: end,
+      openingBalance: openingBalNum.toFixed(2),
+      totalDebit: totD.toFixed(2),
+      totalCredit: totC.toFixed(2),
+      endingBalance: running.toFixed(2),
+      lines,
     };
   }
 }

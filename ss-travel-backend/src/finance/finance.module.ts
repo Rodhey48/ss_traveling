@@ -4,6 +4,7 @@ import {
   AccountEntity,
   CashAccountEntity,
   BankAccountEntity,
+  FundTransferEntity,
   FiscalYearEntity,
   FiscalPeriodEntity,
   PeriodCloseCheckEntity,
@@ -29,6 +30,7 @@ import {
 } from '../@models';
 import { AccountsService } from './services/accounts.service';
 import { CashBankService } from './services/cash-bank.service';
+import { FundTransfersService } from './services/fund-transfers.service';
 import { FiscalPeriodsService } from './services/fiscal-periods.service';
 import { DocumentSequenceService } from './services/document-sequence.service';
 import { AccountingPostingService } from './services/accounting-posting.service';
@@ -42,6 +44,7 @@ import { PettyCashService } from './services/petty-cash.service';
 import { AccountsController } from './controllers/accounts.controller';
 import { CashAccountsController } from './controllers/cash-accounts.controller';
 import { BankAccountsController } from './controllers/bank-accounts.controller';
+import { FundTransfersController } from './controllers/fund-transfers.controller';
 import { FiscalPeriodsController } from './controllers/fiscal-periods.controller';
 import { DocumentSequenceController } from './controllers/document-sequence.controller';
 import { JournalsController } from './controllers/journals.controller';
@@ -59,6 +62,7 @@ import { JWTService } from '../@services/jwt/jwt.service';
       AccountEntity,
       CashAccountEntity,
       BankAccountEntity,
+      FundTransferEntity,
       FiscalYearEntity,
       FiscalPeriodEntity,
       PeriodCloseCheckEntity,
@@ -87,6 +91,7 @@ import { JWTService } from '../@services/jwt/jwt.service';
     AccountsController,
     CashAccountsController,
     BankAccountsController,
+    FundTransfersController,
     FiscalPeriodsController,
     DocumentSequenceController,
     JournalsController,
@@ -100,6 +105,7 @@ import { JWTService } from '../@services/jwt/jwt.service';
   providers: [
     AccountsService,
     CashBankService,
+    FundTransfersService,
     FiscalPeriodsService,
     DocumentSequenceService,
     AccountingPostingService,
@@ -115,6 +121,7 @@ import { JWTService } from '../@services/jwt/jwt.service';
   exports: [
     AccountsService,
     CashBankService,
+    FundTransfersService,
     FiscalPeriodsService,
     DocumentSequenceService,
     AccountingPostingService,

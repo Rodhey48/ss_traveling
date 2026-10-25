@@ -495,6 +495,30 @@ Response error autentikasi menggunakan struktur terstandar:
         *   Kolom tanda tangan persetujuan penyewa dan Bagian Keuangan (AR Finance).
 
     ---
+
+    ## 15. Modul Treasury, Pemindahan Dana & Rekening Koran Digital (`/treasury`)
+
+    ### A. Pemisahan Master Data vs Operasional Likuiditas
+    *   **Master Data (`/cash-bank`)**: CRUD data master rekening kas dan bank, kode COA, custodian, dan cost center.
+    *   **Operasional Likuiditas (`/treasury`)**: Terdaftar di bawah menu *Meja Kasir Pool* khusus operasional harian:
+        *   **Rekening Induk (Pusat Penerimaan Inflow)**: BCA Induk (`11111`) dan Mandiri Induk (`11112`).
+        *   **Rekening Operasional (Pengeluaran Outflow)**: BCA Ops AKAP (`11121`), BCA Ops Wisata (`11122`), Mandiri Ops AKAP (`11123`), Mandiri Ops Wisata (`11124`).
+        *   **Kas Fisik Pool**: Kas Pool Ciputat, Cabang Yogya, Kas Kecil Garasi.
+
+    ### B. Rekening Koran Digital (*Digital Bank Statement*)
+    *   **Perhitungan Saldo GL Real-Time**: Dibangun menggunakan TypeORM QueryBuilder (`JournalLineEntity`) murni tanpa raw SQL.
+    *   **Fitur Analisis**: Preset rentang tanggal instan, live search, filter multi-kategori transaksi (SPJ, Transfer, AR, AP, Kas Pool, Memorial), filter arah aliran dana (Inflow/Outflow), pengurutan kronologis fleksibel, dan cetak slip statement A4.
+
+    ### C. Pemindahan Dana (*Fund Transfers*) & Persetujuan Atasan (*Maker-Checker*)
+    *   **Entitas `fund_transfers`**: Nomor dokumen atomik `TRF/YYMM/XXXX`, rekening sumber (Kredit), rekening tujuan (Debit), nominal, keperluan, dan referensi bukti transfer.
+    *   **Siklus Status**: `PENDING_APPROVAL` $\to$ `APPROVED` (atau `REJECTED`).
+    *   **Posting Otomatis GL**: Saat disetujui, `AccountingPostingService` otomatis mendebit rekening penerima dan mengkredit rekening pengirim.
+    *   **Otorisasi Murni Custom Permission Menu (`actions?.approve`)**: Pendaftaran `availableActions: '["approve"]'` pada menu `/treasury` dan `actions: '{"approve": true}'` pada `role-menus` untuk `SUPER_ADMIN`, `DIRECTOR`, dan `FINANCE_MANAGER`, dapat diatur dinamis via `/roles`.
+    *   **UI Komponen**:
+        *   `TransferDetailModal.tsx`: Visualisasi alur transfer, detail dokumen, audit trail Maker & Checker, dan tombol cetak slip fisik transfer (`window.print()`).
+        *   `ConfirmDialog`: Menghilangkan alert bawaan browser (`window.confirm`) dengan modal konfirmasi bertema primary untuk approval dan danger dengan prompt input alasan untuk penolakan.
+
+    ---
     *Gunakan dokumen ini sebagai referensi saat melakukan pengembangan fitur baru atau debugging sistem otorisasi.*
 
 

@@ -2,6 +2,60 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-10-25: Modul Treasury, Persetujuan Pemindahan Dana & Rekening Koran Digital Completed
+- **Pemisahan Tegas Master Data vs Operasional Likuiditas**:
+  - Halaman **`/cash-bank`**: Dipertahankan murni sebagai **Master Data Kas & Rekening Bank** (CRUD data rekening kas fisik, rekening bank, pemetaan akun COA, cost center, dan masking nomor rekening).
+  - Halaman Baru **`/treasury`**: Terdaftar di bawah induk menu **Meja Kasir Pool** (`sequence: 3`) khusus operasional likuiditas kas & bank:
+    * **Desain Visual Bersih & Netral (Clean & Subtle Aesthetics)**:
+      - 4 Kartu Ringkasan Likuiditas KPI di bagian atas dengan kotak ikon netral lembut (`bg-muted text-muted-foreground`), angka tebal mono yang elegan, dan subteks informatif.
+      - Seluruh ikon menggunakan wadah abu-abu netral (`bg-muted`), menghilangkan warna background kontras tinggi.
+      - Seluruh badge menggunakan varian bersih `variant="outline"` dengan teks netral `text-muted-foreground`, serasi dan sejuk di mata pada tema terang maupun gelap.
+    * **Tab 1: Rekening Koran Digital (*Bank Statement*)**:
+      - Kartu visual rekening induk (penerimaan), operasional (pengeluaran), dan kas pool dengan saldo real-time GL.
+      - **Preset Rentang Tanggal Cepat**: Tombol pintas 1-klik (*Bulan Ini*, *Bulan Lalu*, *30 Hari Terakhir*, *Tahun Berjalan*) serta pemilih tanggal kustom.
+      - **Pencarian Cepat (*Live Search*)**: Menyaring instan berdasarkan nomor jurnal (`JV/...`), tanggal, dan uraian transaksi.
+      - **Filter Tipe Dokumen & Arah Aliran**: Filter multi-kategori (*Semua Dokumen*, *SPJ Kru*, *Mutasi Transfer*, *Piutang AR*, *Utang AP*, *Kas Pool BKK*, *Jurnal Memorial*) serta pemilah arah dana (*Semua*, *Hanya Masuk/Debit*, *Hanya Keluar/Kredit*).
+      - **Urutan Kronologis Fleksibel (*Sorting*)**: Beralih urutan tanggal dengan tombol sort atau klik header tabel (*Terlama &rarr; Terbaru / Kronologis* vs *Terbaru &rarr; Terlama*).
+      - **Paginasi Lengkap**: Pengatur limit baris (10, 25, 50, 100 baris/halaman), navigasi nomor halaman, tombol Sebelumnya/Berikutnya, serta cetak dokumen A4 resmi.
+    * **Tab 2: Riwayat Pemindahan Dana**:
+      - Tabel mutasi dana dengan tombol **`[Detail]` (ikon mata `Eye`)** pada setiap baris untuk membuka modal dokumen transfer lengkap.
+      - Modal permohonan transfer (`CreateTransferModal`) dengan template cerdas (Dropping Induk &rarr; Ops, Ops &rarr; Ops, Setor Kas Pool, Tarik Tunai Bank).
+    * **Tab 3: Meja Persetujuan (Approval Desk)**:
+      - Kartu antrean review pengajuan transfer berstatus `PENDING_APPROVAL` dengan tombol **`[Detail]`** untuk audit rincian sebelum tindakan.
+      - **Otorisasi Murni Berbasis Custom Permission Menu (`actions?.approve`)**:
+        * Menambahkan migrasi database `1782700000000-add-treasury-custom-actions.ts` yang mendaftarkan `availableActions: '["approve"]'` pada menu `/treasury` (`menus`) dan memberikan izin `actions: '{"approve": true}'` pada `role-menus` untuk `SUPER_ADMIN`, `DIRECTOR`, dan `FINANCE_MANAGER`.
+        * Menghapus seluruh hardcode pengecekan nama role (`SUPER_ADMIN`, `DIRECTOR`, `FINANCE_MANAGER`) di frontend `TreasuryPage`. Logika otorisasi kini 100% didelegasikan ke `actions?.approve` dari hook `usePermission()`.
+        * Memberikan fleksibilitas penuh bagi administrator untuk mengaktifkan atau mencabut hak approval per role secara dinamis melalui antarmuka Manajemen Role (`/roles`).
+      - **Dialog Konfirmasi UI Modern (*Zero Native Browser Alert*)**:
+        * Menghilangkan seluruh `window.confirm()` bawaan browser.
+        * Aksi **`[✓ Setujui & Posting]`**: Membuka `ConfirmDialog` bertema primary dengan rincian nomor transfer, nominal rupiah, dan edukasi posting otomatis ke GL.
+        * Aksi **`[✕ Tolak]`**: Membuka `ConfirmDialog` bertema danger lengkap dengan input form alasan penolakan wajib (*prompt input*).
+        * Konsisten digunakan baik pada kartu antrean Tab 3 maupun di dalam modal `TransferDetailModal`.
+    * **Modal Detail Dokumen Pemindahan Dana (`TransferDetailModal.tsx`)**:
+      - Pratinjau dokumen transfer resmi (`TRF/YYMM/XXXX`) dengan alur visual rekening pengirim (kredit) dan penerima (debit).
+      - Rincian nominal, tujuan dropping, bukti M-Banking/referensi, audit trail pemohon (*Maker*), tanggal pengajuan, serta informasi jurnal GL terposting (*Checker*).
+      - Tombol **`[Cetak Bukti Transfer]`** siap print fisik (`window.print()`), serta tombol approval langsung di dalam modal.
+- **Refaktor Query ke Pure TypeORM QueryBuilder (`CashBankService`)**:
+  - Menghapus seluruh query SQL mentah (*raw queries*) dan menggantikannya dengan repositori resmi TypeORM `JournalLineEntity` (`lineRepo.createQueryBuilder('line')`).
+  - Menangani pemetaan otomatis kolom `"createdAt"` dan relasi `line.journalEntry` secara aman dan portabel tanpa potensi error *column does not exist*.
+  - Helper `calculateAccountBalance` menghitung saldo berjalan akun GL dari seluruh jurnal berstatus `POSTED` secara atomik.
+- **Struktur Rekening Bank Korporat Terpisah (2 Induk + 4 Operasional) (`ss-travel-backend`)**:
+  - Migrasi `1782500000000-create-fund-transfers.ts` menambahkan 6 akun COA baru:
+    * `11111` — Bank BCA Induk (Pusat Penerimaan) $\to$ `BANK-BCA-MAIN`
+    * `11112` — Bank Mandiri Induk (Pusat Penerimaan) $\to$ `BANK-MANDIRI-MAIN`
+    * `11121` — Bank BCA Operasional AKAP $\to$ `BANK-BCA-OPS-AKAP`
+    * `11122` — Bank BCA Operasional Wisata $\to$ `BANK-BCA-OPS-WIS`
+    * `11123` — Bank Mandiri Operasional AKAP $\to$ `BANK-MANDIRI-OPS-AKAP`
+    * `11124` — Bank Mandiri Operasional Wisata $\to$ `BANK-MANDIRI-OPS-WIS`
+- **Sistem Pemindahan Dana (*Fund Transfers*) & Persetujuan Atasan (*Maker-Checker*)**:
+  - Entitas `FundTransferEntity` (`fund_transfers`) mencatat permohonan dropping dana berdokumen resmi `TRF/YYMM/XXXX`.
+  - Siklus status: `PENDING_APPROVAL` $\to$ `APPROVED` (atau `REJECTED`).
+  - Posting Jurnal Otomatis via `AccountingPostingService` saat disetujui Manajer Keuangan / Direktur (Debit Rekening Penerima, Kredit Rekening Pengirim).
+  - Controller `FundTransfersController` (`/api/v1/fund-transfers`) dengan otorisasi RBAC `CashBank:create` dan `CashBank:approve`.
+- **Verifikasi Kualitas**:
+  - Seluruh 27 test suites backend (160 unit tests) lulus 100%.
+  - Build Backend NestJS dan Frontend Vite TypeScript lulus 100% bebas error.
+
 ### 2026-10-25: Dashboard Live & Cetak Dokumen Operasional SPJ / AR Completed (Refinement)
 - **Backend Dashboard Module & REST API (`ss-travel-backend`)**:
   - `DashboardService`: Agregasi multi-tabel real-time untuk status armada (aktif di rute, standby garasi, bengkel), operasional SPJ (di jalan, menunggu meja kasir, selesai bulan ini), likuiditas kas fisik garasi + bank operasional (GL saldo berjalan akun `11101`, `11102`, `11103`, `11104`), alert piutang terbuka (AR), alert utang jatuh tempo (AP), kasus selisih kasir akun `11999` dalam investigasi FM, bon kas kecil status `SUBMITTED`, dan daftar perjalanan SPJ terbaru.

@@ -5,6 +5,9 @@ import type {
   CashAccountFormData,
   BankAccount,
   BankAccountFormData,
+  StatementReport,
+  FundTransfer,
+  CreateFundTransferFormData,
 } from '@/types';
 
 export const CashBankService = {
@@ -100,6 +103,76 @@ export const CashBankService = {
   removeBankAccount: async (id: string): Promise<BaseResponse<void>> => {
     const response = await api.delete<BaseResponse<void>>(
       `api/v1/bank-accounts/${id}`,
+    );
+    return response.data;
+  },
+
+  // Statements (Rekening Koran Digital)
+  getBankStatement: async (
+    id: string,
+    params?: { startDate?: string; endDate?: string },
+  ): Promise<BaseResponse<StatementReport>> => {
+    const response = await api.get<BaseResponse<StatementReport>>(
+      `api/v1/bank-accounts/${id}/statement`,
+      { params },
+    );
+    return response.data;
+  },
+
+  getCashStatement: async (
+    id: string,
+    params?: { startDate?: string; endDate?: string },
+  ): Promise<BaseResponse<StatementReport>> => {
+    const response = await api.get<BaseResponse<StatementReport>>(
+      `api/v1/cash-accounts/${id}/statement`,
+      { params },
+    );
+    return response.data;
+  },
+
+  // Fund Transfers (Mutasi Kas/Bank & Approval)
+  findAllFundTransfers: async (params?: {
+    status?: string;
+    search?: string;
+  }): Promise<BaseResponse<FundTransfer[]>> => {
+    const response = await api.get<BaseResponse<FundTransfer[]>>(
+      'api/v1/fund-transfers',
+      { params },
+    );
+    return response.data;
+  },
+
+  findOneFundTransfer: async (id: string): Promise<BaseResponse<FundTransfer>> => {
+    const response = await api.get<BaseResponse<FundTransfer>>(
+      `api/v1/fund-transfers/${id}`,
+    );
+    return response.data;
+  },
+
+  createFundTransfer: async (
+    data: CreateFundTransferFormData,
+  ): Promise<BaseResponse<FundTransfer>> => {
+    const response = await api.post<BaseResponse<FundTransfer>>(
+      'api/v1/fund-transfers',
+      data,
+    );
+    return response.data;
+  },
+
+  approveFundTransfer: async (id: string): Promise<BaseResponse<FundTransfer>> => {
+    const response = await api.put<BaseResponse<FundTransfer>>(
+      `api/v1/fund-transfers/${id}/approve`,
+    );
+    return response.data;
+  },
+
+  rejectFundTransfer: async (
+    id: string,
+    data: { rejectionReason: string },
+  ): Promise<BaseResponse<FundTransfer>> => {
+    const response = await api.put<BaseResponse<FundTransfer>>(
+      `api/v1/fund-transfers/${id}/reject`,
+      data,
     );
     return response.data;
   },

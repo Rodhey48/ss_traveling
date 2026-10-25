@@ -18,6 +18,7 @@ export * from './customer/customer.entity';
 export * from './finance/account.entity';
 export * from './finance/cash-account.entity';
 export * from './finance/bank-account.entity';
+export * from './finance/fund-transfer.entity';
 export * from './finance/fiscal-year.entity';
 export * from './finance/fiscal-period.entity';
 export * from './finance/period-close-check.entity';

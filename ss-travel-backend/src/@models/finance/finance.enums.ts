@@ -75,3 +75,19 @@ export enum PettyCashCategory {
   OTHER = 'OTHER', // Beban Lain-Lain
 }
 
+export enum FundTransferStatus {
+  PENDING_APPROVAL = 'PENDING_APPROVAL',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum FundTransferType {
+  MAIN_TO_OPS = 'MAIN_TO_OPS',       // Dropping dana dari Induk ke Operasional
+  OPS_TO_OPS = 'OPS_TO_OPS',         // Pemindahan antar rekening Operasional
+  POOL_TO_MAIN = 'POOL_TO_MAIN',     // Setoran dari Kas Pool ke Rekening Induk
+  OPS_TO_POOL = 'OPS_TO_POOL',       // Tarik tunai dari Bank Operasional ke Kas Pool
+  MAIN_TO_POOL = 'MAIN_TO_POOL',     // Tarik tunai dari Bank Induk ke Kas Pool
+  OTHER = 'OTHER',
+}
+

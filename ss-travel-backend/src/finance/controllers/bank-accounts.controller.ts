@@ -53,6 +53,22 @@ export class BankAccountsController {
     };
   }
 
+  @Get(':id/statement')
+  @RequirePermissions('CashBank:read')
+  @ApiOperation({ summary: 'Rekening koran digital rekening bank' })
+  async getStatement(
+    @Param('id') id: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ): Promise<ResponseInterface> {
+    const data = await this.cashBankService.getBankStatement(id, startDate, endDate);
+    return {
+      status: true,
+      message: 'Berhasil memuat rekening koran bank',
+      data,
+    };
+  }
+
   @Post()
   @RequirePermissions('CashBank:create')
   @ApiOperation({ summary: 'Tambah rekening bank baru' })

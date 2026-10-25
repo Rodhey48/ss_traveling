@@ -298,6 +298,12 @@ Setiap tahap dikerjakan secara paralel per fitur (*Vertical Slice*): **Database 
     * [x] Cetak **Bukti Kas Masuk (BKM) & Bukti Kas Keluar (BKK)** fisik kasir (`CashReceiptVoucherModal`): Format resmi voucher tanda terima PT SS Traveling Indonesia siap print.
     * [x] Modal **Resolusi Selisih Kasir & Investigasi (`DiscrepancyResolutionModal`)**: Layar otorisasi khusus Finance Manager untuk memeriksa kronologi telematika GPS dan memilih putusan (Dispensasi Perusahaan `58101` vs Klaim Gaji Kru `12901`).
     * [x] Modal **Pencatatan Selisih Sistemik Kasir (`CreateDiscrepancyModal`)**: Layar Lapis 2 Kasir untuk meneruskan perselisihan kas ke meja Finance Manager.
+    * [x] **Sub-Modul Treasury & Rekening Koran Digital (`/treasury`)**:
+      * [x] Terdaftar di sidebar bawah "Meja Kasir Pool" khusus operasional likuiditas.
+      * [x] 6 Rekening Bank Terpisah (2 Induk Inflow BCA/Mandiri + 4 Operasional Outflow AKAP/Wisata).
+      * [x] Rekening Koran Digital (*Bank Statement*) berbasis pure TypeORM QueryBuilder (`JournalLineEntity`).
+      * [x] Pemindahan Dana (*Fund Transfers*) & Persetujuan Atasan (*Maker-Checker*).
+      * [x] Halaman Master Data terpisah tetap berada di `/cash-bank`.
 
 ---
 
@@ -397,6 +403,36 @@ Setiap tahap dikerjakan secara paralel per fitur (*Vertical Slice*): **Database 
     * [x] Modal cetak faktur invoice / kwitansi resmi PT SS Traveling untuk penagihan ke pelanggan sewa bus.
     * [x] Kop surat resmi, data instansi penyewa & PIC, rincian biaya sewa, sisa pelunasan, instruksi transfer Bank BCA, dan kolom tanda tangan kasir AR & penyewa.
     * [x] Terintegrasi tombol **`[Cetak Faktur (Invoice)]`** di `ArInvoiceDetailModal.tsx`.
+
+---
+
+### 📌 Modul Treasury, Persetujuan Pemindahan Dana & Rekening Koran Digital (BE + FE) (Completed)
+* [x] **Backend Implementation (`ss-travel-backend`)**:
+  * [x] **Master Rekening Bank Korporat Terpisah**:
+    * [x] 2 Rekening Induk: BCA Induk `11111` & Mandiri Induk `11112` (Pusat Penerimaan/Inflow).
+    * [x] 4 Rekening Operasional: BCA Ops AKAP `11121`, BCA Ops Wisata `11122`, Mandiri Ops AKAP `11123`, Mandiri Ops Wisata `11124`.
+    * [x] Migrasi TypeORM `1782500000000-create-fund-transfers.ts`.
+  * [x] **Entitas & Workflow Pemindahan Dana (Maker-Checker)**:
+    * [x] `FundTransferEntity` (`fund_transfers`): Dokumen pemindahan dana `TRF/YYMM/XXXX`, sumber & tujuan rekening kas/bank, nominal, keperluan, referensi bukti transfer, dan status (`PENDING_APPROVAL`, `APPROVED`, `REJECTED`).
+    * [x] `FundTransfersService`: Pengajuan mutasi dana, penomoran urut atomik, dan persetujuan dengan posting jurnal otomatis ke Buku Besar GL (Debit Rekening Penerima, Kredit Rekening Pengirim).
+    * [x] `FundTransfersController`: Endpoint `/api/v1/fund-transfers` terproteksi izin `CashBank:create` dan `CashBank:approve`.
+  * [x] **Custom Permission Menu Database (`1782700000000-add-treasury-custom-actions.ts`)**:
+    * [x] Pendaftaran `availableActions: '["approve"]'` pada menu `/treasury` di tabel `menus`.
+    * [x] Pendaftaran izin `actions: '{"approve": true}'` pada `role-menus` untuk `SUPER_ADMIN`, `DIRECTOR`, dan `FINANCE_MANAGER`.
+  * [x] **Refaktor Pure TypeORM QueryBuilder (`CashBankService`)**:
+    * [x] Mengganti seluruh raw SQL di `calculateAccountBalance` dan `generateStatement` dengan `JournalLineEntity.createQueryBuilder` untuk integritas pemetaan kolom timestamptz.
+  * [x] **Automated Tests**:
+    * [x] Seluruh 27 unit test suites (160 tests passing 100%).
+* [x] **Frontend Implementation (`ss-travel-frontend`)**:
+  * [x] **Halaman Operasional Mutasi Kas & Bank (`/treasury`)**:
+    * [x] 4 Kartu KPI Likuiditas Berdesain Bersih & Netral (*Clean & Subtle Aesthetics*, wadah ikon abu-abu `bg-muted` dan badge `variant="outline"`).
+    * [x] **Tab 1: Rekening Koran Digital (*Bank Statement*)**: Saldo real-time GL, preset tanggal cepat (Bulan Ini, Bulan Lalu, 30 Hari Terakhir, YTD), live search instan, filter multi-kategori (SPJ, Transfer, AR, AP, Kas Pool, Memorial), pengurutan ASC/DESC, paginasi (10/25/50/100 baris), dan cetak slip statement A4.
+    * [x] **Tab 2: Riwayat Pemindahan Dana**: Tabel mutasi transfer antar-rekening dan tombol **`[Detail]`** di setiap baris.
+    * [x] **Tab 3: Meja Persetujuan (*Approval Desk*)**: Antrean pengajuan transfer menunggu persetujuan atasan dengan tombol **`[Detail]`**, **`[✓ Setujui & Posting]`**, dan **`[✕ Tolak]`**.
+    * [x] **Otorisasi Approval Murni Berbasis Permission (`actions?.approve`)**: Pengecekan dinamis via hook `usePermission()` tanpa hardcoded peran kerja.
+    * [x] **Modal Detail Pemindahan Dana (`TransferDetailModal.tsx`)**: Visual alur pengirim/penerima, nominal, audit trail pemohon/penyetuju, referensi transfer, tombol approval langsung, dan cetak slip bukti transfer fisik (`window.print()`).
+    * [x] **Dialog Konfirmasi UI Modern (`ConfirmDialog`)**: Menghilangkan seluruh `window.confirm` bawaan browser untuk persetujuan (primary) dan penolakan ber-prompt input alasan (danger).
+    * [x] Kompilasi frontend Vite TypeScript 100% bebas error.
 
 ---
 

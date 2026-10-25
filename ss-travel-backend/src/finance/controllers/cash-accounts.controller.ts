@@ -53,6 +53,22 @@ export class CashAccountsController {
     };
   }
 
+  @Get(':id/statement')
+  @RequirePermissions('CashBank:read')
+  @ApiOperation({ summary: 'Buku kas harian digital rekening kas' })
+  async getStatement(
+    @Param('id') id: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ): Promise<ResponseInterface> {
+    const data = await this.cashBankService.getCashStatement(id, startDate, endDate);
+    return {
+      status: true,
+      message: 'Berhasil memuat buku kas harian',
+      data,
+    };
+  }
+
   @Post()
   @RequirePermissions('CashBank:create')
   @ApiOperation({ summary: 'Tambah rekening kas operasional baru' })

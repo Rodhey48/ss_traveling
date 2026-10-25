@@ -19,6 +19,7 @@ import SchedulesPage from '@/pages/schedules';
 import SpjsPage from '@/pages/spjs';
 import CashierPage from '@/pages/cashier';
 import PettyCashPage from '@/pages/petty-cash';
+import TreasuryPage from '@/pages/treasury';
 import ApInvoicesPage from '@/pages/ap-invoices';
 import ArInvoicesPage from '@/pages/ar-invoices';
 import TripProfitabilityPage from '@/pages/reports/trip-profitability';
@@ -64,6 +65,7 @@ export default function AppRouter() {
         <Route path="spjs" element={<SpjsPage />} />
         <Route path="cashier" element={<CashierPage />} />
         <Route path="petty-cash" element={<PettyCashPage />} />
+        <Route path="treasury" element={<TreasuryPage />} />
         <Route path="ap-invoices" element={<ApInvoicesPage />} />
         <Route path="ar-invoices" element={<ArInvoicesPage />} />
         <Route path="reports/trip-profitability" element={<TripProfitabilityPage />} />

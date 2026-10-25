@@ -384,6 +384,7 @@ export interface CashAccount {
   costCenter?: CostCenter;
   description?: string;
   isActive: boolean;
+  currentBalance?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -411,6 +412,7 @@ export interface BankAccount {
   currency: string;
   description?: string;
   isActive: boolean;
+  currentBalance?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -2394,6 +2396,81 @@ export interface DashboardSummary {
     operationalStatus: string;
     financialStatus: string;
   }>;
+}
+
+/**
+ * --- TREASURY & FUND TRANSFER TYPES ---
+ */
+export type FundTransferStatus = 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+
+export type FundTransferType =
+  | 'MAIN_TO_OPS'
+  | 'OPS_TO_OPS'
+  | 'POOL_TO_MAIN'
+  | 'OPS_TO_POOL'
+  | 'MAIN_TO_POOL'
+  | 'OTHER';
+
+export interface FundTransfer {
+  id: string;
+  transferNo: string;
+  companyId: string;
+  transferType: FundTransferType;
+  sourceBankAccountId?: string;
+  sourceBankAccount?: BankAccount;
+  sourceCashAccountId?: string;
+  sourceCashAccount?: CashAccount;
+  targetBankAccountId?: string;
+  targetBankAccount?: BankAccount;
+  targetCashAccountId?: string;
+  targetCashAccount?: CashAccount;
+  amount: string;
+  purpose: string;
+  referenceDoc?: string;
+  status: FundTransferStatus;
+  requestedById: string;
+  requestedBy?: User;
+  approvedById?: string;
+  approvedBy?: User;
+  approvedAt?: string;
+  rejectionReason?: string;
+  journalEntryId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateFundTransferFormData {
+  transferType: FundTransferType;
+  sourceBankAccountId?: string;
+  sourceCashAccountId?: string;
+  targetBankAccountId?: string;
+  targetCashAccountId?: string;
+  amount: string;
+  purpose: string;
+  referenceDoc?: string;
+}
+
+export interface StatementLine {
+  id: string;
+  date: string;
+  journalNo: string;
+  sourceType: string;
+  description: string;
+  debit: string;
+  credit: string;
+  runningBalance: string;
+}
+
+export interface StatementReport {
+  account: BankAccount | CashAccount;
+  type: 'BANK' | 'CASH';
+  startDate: string;
+  endDate: string;
+  openingBalance: string;
+  totalDebit: string;
+  totalCredit: string;
+  endingBalance: string;
+  lines: StatementLine[];
 }
 
 
