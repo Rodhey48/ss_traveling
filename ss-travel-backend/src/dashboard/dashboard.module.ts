@@ -10,6 +10,7 @@ import {
   CrewCashDiscrepancyEntity,
   CashTransactionEntity,
 } from '../@models';
+import { JWTService } from '../@services/jwt/jwt.service';
 import { DashboardService } from './dashboard.service';
 import { DashboardController } from './dashboard.controller';
 
@@ -27,7 +28,7 @@ import { DashboardController } from './dashboard.controller';
     ]),
   ],
   controllers: [DashboardController],
-  providers: [DashboardService],
+  providers: [DashboardService, JWTService],
   exports: [DashboardService],
 })
 export class DashboardModule {}
