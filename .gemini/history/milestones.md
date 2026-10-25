@@ -2,6 +2,36 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-10-25: Dashboard Live & Cetak Dokumen Operasional SPJ / AR Completed (Refinement)
+- **Backend Dashboard Module & REST API (`ss-travel-backend`)**:
+  - `DashboardService`: Agregasi multi-tabel real-time untuk status armada (aktif di rute, standby garasi, bengkel), operasional SPJ (di jalan, menunggu meja kasir, selesai bulan ini), likuiditas kas fisik garasi + bank operasional (GL saldo berjalan akun `11101`, `11102`, `11103`, `11104`), alert piutang terbuka (AR), alert utang jatuh tempo (AP), kasus selisih kasir akun `11999` dalam investigasi FM, bon kas kecil status `SUBMITTED`, dan daftar perjalanan SPJ terbaru.
+  - `DashboardController`: Endpoint `GET /api/v1/dashboard/summary` dengan proteksi otorisasi JWT & RBAC.
+  - Unit test `dashboard.service.spec.ts` (2 tests) lulus 100%, total **27 test suites backend (159 unit tests) lulus 100%**.
+- **Frontend Dashboard Utama Live (`ss-travel-frontend/src/pages/dashboard/index.tsx`)**:
+  - Menggantikan kartu placeholder statis dengan tampilan kendali operasional & finansial real-time berbasis Glassmorphism.
+  - 4 Kartu Metrik Utama KPI (Armada Bus di Rute vs Garasi, SPJ Aktif di Jalan vs Kasir, Total Kas & Bank GL, Piutang Terbuka AR).
+  - Pintas Operasional Cepat (Booking Jadwal Bus, Monitoring SPJ Lapangan, Meja Kasir Pool, Kas Kecil BKK, Profitabilitas Trip).
+  - Kolom Posisi Kas Operasional & Rekening Bank dengan saldo dinamis Rupiah.
+  - Kolom Alert Keuangan & Pengendalian Internal (Jatuh tempo AP, piutang AR, selisih kasir akun 11999 Skenario 4, bon kas kecil BKK).
+  - Tabel Monitoring Perjalanan SPJ Terbaru dengan link cepat navigasi.
+- **Cetak Dokumen Fisik Surat Perintah Jalan (SPJ) Resmi Supir (`SpjPrintModal.tsx`)**:
+  - Modal cetak dokumen fisik A4 standar industri transportasi bus PT SS Traveling Official (`window.print()`).
+  - Kop surat resmi, tipe layanan (AKAP/Wisata), nomor lambung bus, pelat nomor, kapasitas kursi.
+  - Susunan kru dinas (Pengemudi Utama / Driver 1, Pengemudi Pengganti / Driver 2, Kondektur/Pramugari).
+  - Segmen rute leg, jam keberangkatan, manifes kursi, dan rumah makan servis makan rekanan (RM Taman Selera).
+  - Tata tertib operasional dan kepatuhan keuangan (SOP Anti-Netting dan rekonsiliasi kasir maksimal 2 jam).
+  - 4 Kolom paraf resmi: Dispatcher/Pengawas, Kasir Pool, Pengemudi 1, Pengemudi 2.
+- **Cetak Faktur Tagihan AR & Kwitansi DP Sewa Wisata (`ArInvoicePrintModal.tsx`)**:
+  - Modal cetak faktur invoice / kwitansi resmi PT SS Traveling untuk penagihan ke pelanggan sewa bus.
+  - Kop surat resmi, nomor faktur, data instansi penyewa & PIC, referensi SPJ, tanggal faktur, dan tanggal jatuh tempo.
+  - Tabel rincian paket sewa armada, subtotal, PPN, nilai faktur, pembayaran DP yang telah diterima, dan sisa tagihan pelunasan.
+  - Petunjuk rekening pembayaran transfer Bank BCA Operasional No. Rek `8830-1928-31` a/n PT SS Traveling Official.
+  - Kolom tanda tangan resmi Kasir Piutang Usaha (AR) dan Penyewa.
+- **Verifikasi Kualitas Penuh**:
+  - 27 unit test suites backend (159 unit tests) lulus 100%.
+  - Backend NestJS `yarn build` sukses 100% bebas error.
+  - Frontend Vite `yarn build` sukses 100% bebas error.
+
 ### 2026-10-25: Modul Kas Kecil Pool (Petty Cash) Completed (BE + FE)
 - **Model Database & Migrasi PostgreSQL (`cash_transactions`)**:
   - Model `cash_transactions` untuk pencatatan transaksi kas kecil non-SPJ garasi pool (`transaction_no` format `BKK-KAS/YYMM/XXXX` & `BKM-KAS/YYMM/XXXX`, `cash_account_id` relasi ke `cash_accounts`, `type`: `DISBURSEMENT` / `REPLENISHMENT`, `amount`, `recipient`, `expense_account_id`, `source_bank_account_id`, `source_cash_account_id`, `vehicle_id`, `cost_center_id`, `category`, `description`, `receipt_no`, `status`: `DRAFT`, `SUBMITTED`, `VERIFIED`, `REJECTED`, `journal_entry_id`, `created_by_id`, `verified_by_id`, `verified_at`).

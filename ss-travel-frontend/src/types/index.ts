@@ -2339,4 +2339,53 @@ export interface PettyCashFilterParams {
   search?: string;
 }
 
+/**
+ * --- DASHBOARD TYPES ---
+ */
+export interface DashboardSummary {
+  fleet: {
+    total: number;
+    activeOnRoute: number;
+    standbyPool: number;
+    inMaintenance: number;
+  };
+  trips: {
+    inProgress: number;
+    pendingCashierSettlement: number;
+    completedThisMonth: number;
+    totalTripsThisMonth: number;
+  };
+  cashAndBank: {
+    totalLiquidity: string;
+    accounts: Array<{
+      id: string;
+      code: string;
+      name: string;
+      balance: string;
+      type: 'CASH' | 'BANK';
+    }>;
+  };
+  financeAlerts: {
+    openArInvoicesAmount: string;
+    openArCount: number;
+    openApInvoicesAmount: string;
+    openApCount: number;
+    unresolvedDiscrepancyAmount: string;
+    pendingDiscrepancyCount: number;
+    pendingPettyCashCount: number;
+  };
+  recentSpjs: Array<{
+    id: string;
+    spjNo: string;
+    serviceType: string;
+    vehicleCode: string;
+    vehiclePlate: string;
+    driverName: string;
+    route: string;
+    departureDate: string;
+    operationalStatus: string;
+    financialStatus: string;
+  }>;
+}
+
 

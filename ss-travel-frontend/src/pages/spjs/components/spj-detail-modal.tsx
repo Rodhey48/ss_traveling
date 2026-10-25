@@ -29,8 +29,10 @@ import {
   Wrench,
   FileText,
   Wallet,
+  Printer,
 } from 'lucide-react';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
+import SpjPrintModal from './spj-print-modal';
 import { SpjService } from '@/services/spj.service';
 import type { Spj, SpjLeg } from '@/types';
 import { toast } from 'sonner';
@@ -56,6 +58,7 @@ export default function SpjDetailModal({
 }: SpjDetailModalProps) {
   const [activeTab, setActiveTab] = useState<'legs' | 'crew'>('legs');
   const [actionLoading, setActionLoading] = useState(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   // Edit Leg state
   const [editingLegId, setEditingLegId] = useState<string | null>(null);
@@ -614,6 +617,16 @@ export default function SpjDetailModal({
               </Button>
             )}
 
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setIsPrintModalOpen(true)}
+              className="text-xs h-9 font-semibold text-indigo-700 bg-indigo-50/60 border-indigo-200 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800"
+            >
+              <Printer className="w-3.5 h-3.5 mr-1.5 text-indigo-600" /> Cetak SPJ Fisik
+            </Button>
+
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="text-xs h-9">
               Tutup
             </Button>
@@ -664,6 +677,13 @@ export default function SpjDetailModal({
       variant={confirmDialog.variant}
       confirmText={confirmDialog.confirmText}
       onConfirm={confirmDialog.onConfirm}
+    />
+
+    {/* Physical Document Print Modal */}
+    <SpjPrintModal
+      open={isPrintModalOpen}
+      onOpenChange={setIsPrintModalOpen}
+      spj={spj}
     />
   </>
   );

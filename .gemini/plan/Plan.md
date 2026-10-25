@@ -373,6 +373,33 @@ Setiap tahap dikerjakan secara paralel per fitur (*Vertical Slice*): **Database 
 
 ---
 
+### 📌 Penyempurnaan Dashboard Live & Cetak Dokumen Operasional (BE + FE) (Completed)
+* [x] **Backend Implementation (`ss-travel-backend`)**:
+  * [x] `DashboardModule`, `DashboardService`, `DashboardController`:
+    * [x] Agregasi real-time status armada bus (aktif di rute, standby garasi, bengkel).
+    * [x] Monitoring perjalanan SPJ (di jalan, menunggu meja kasir, selesai bulan ini).
+    * [x] Saldo likuiditas buku besar GL akun kas fisik garasi (11101, 11102, 11103) dan rekening bank operasional (11104).
+    * [x] Alert finansial: piutang terbuka (AR), tagihan vendor jatuh tempo (AP), selisih kasir akun 11999 (Skenario 4), dan bon kas kecil garasi (BKK submitted).
+    * [x] Daftar perjalanan SPJ terbaru dengan relasi armada, pengemudi, rute, dan status ganda.
+    * [x] Endpoint `GET /api/v1/dashboard/summary` terproteksi JWT & RBAC.
+  * [x] **Automated Tests**:
+    * [x] Unit test `dashboard.service.spec.ts` (159/159 tests total passing 100%).
+* [x] **Frontend Implementation (`ss-travel-frontend`)**:
+  * [x] `DashboardService` (`src/services/dashboard.service.ts`).
+  * [x] Halaman **Dashboard Utama Live (`/dashboard`)**:
+    * [x] Menggantikan data mock/placeholder statis dengan tampilan kendali operasional & finansial real-time.
+    * [x] 4 Kartu KPI Utama, Pintas Operasional Cepat, Posisi Saldo Kas & Bank, Alert Keuangan & Pengendalian Internal, serta Tabel Monitoring SPJ Terbaru.
+  * [x] **Cetak Fisik Surat Perintah Jalan Resmi (`SpjPrintModal.tsx`)**:
+    * [x] Modal cetak format fisik A4 standar operasional bus PT SS Traveling Official (`window.print()`).
+    * [x] Kop surat resmi, tipe layanan, nomor lambung, nopol, kapasitas, susunan 3 kru dinas, rute leg, servis makan RM mitra, SOP keselamatan, dan 4 kolom tanda tangan resmi.
+    * [x] Terintegrasi tombol **`[Cetak SPJ Fisik]`** di `SpjDetailModal.tsx`.
+  * [x] **Cetak Faktur Tagihan AR & Kwitansi DP Wisata (`ArInvoicePrintModal.tsx`)**:
+    * [x] Modal cetak faktur invoice / kwitansi resmi PT SS Traveling untuk penagihan ke pelanggan sewa bus.
+    * [x] Kop surat resmi, data instansi penyewa & PIC, rincian biaya sewa, sisa pelunasan, instruksi transfer Bank BCA, dan kolom tanda tangan kasir AR & penyewa.
+    * [x] Terintegrasi tombol **`[Cetak Faktur (Invoice)]`** di `ArInvoiceDetailModal.tsx`.
+
+---
+
 ### 📌 Tahap 10: E2E Simulation Testing & System Polish (Final Verification)
 * [ ] **Simulasi End-to-End Penuh di Browser**:
   * [ ] **Simulasi Skenario 1**: Penerbitan Jadwal & SPJ AKAP PP Bus SS-01 $\to$ Pencairan UJ Rp 3.5jt $\to$ Penjualan Tiket Bruto & Kargo Motor Komisi 20% $\to$ Rekonsiliasi Kasir Pool (Kantong UJ Balanced Rp 0 + Kantong Setoran Matched) $\to$ Posting Jurnal SPJ Rp 16.68jt $\to$ Penagihan AP Servis Makan RM Taman Selera Subang $\to$ Cek Laporan Margin Trip (+Rp 6.57jt).
