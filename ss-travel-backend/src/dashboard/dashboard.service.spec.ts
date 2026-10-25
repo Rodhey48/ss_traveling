@@ -29,7 +29,16 @@ describe('DashboardService', () => {
     };
 
     spjRepo = {
-      find: jest.fn().mockResolvedValue([]),
+      find: jest.fn().mockResolvedValue([
+        {
+          id: 'spj-1',
+          vehicleId: 'veh-1',
+          crewAssignments: [
+            { crewId: 'driver-1', role: 'DRIVER', crew: { name: 'Pak Budi' } },
+            { crewId: 'cond-1', role: 'CONDUCTOR', crew: { name: 'Mas Anto' } },
+          ],
+        },
+      ]),
       count: jest.fn().mockResolvedValue(2),
       createQueryBuilder: jest.fn().mockReturnValue({
         where: jest.fn().mockReturnThis(),
@@ -77,7 +86,7 @@ describe('DashboardService', () => {
     };
 
     dataSource = {
-      query: jest.fn().mockResolvedValue([{ balance: '5000000.00' }]),
+      query: jest.fn().mockResolvedValue([{ count: '6', balance: '5000000.00' }]),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -102,13 +111,25 @@ describe('DashboardService', () => {
     expect(service).toBeDefined();
   });
 
-  it('should aggregate live fleet, trips, liquidity, and finance alert metrics', async () => {
-    const summary = await service.getSummary();
+  it('should include financial data when user has DIRECTOR / FINANCE role', async () => {
+    const summary = await service.getSummary({ role: ['FINANCE_MANAGER'] });
     expect(summary).toBeDefined();
+    expect(summary.canViewFinance).toBe(true);
     expect(summary.fleet.total).toBe(10);
-    expect(summary.financeAlerts.openArCount).toBe(3);
-    expect(summary.financeAlerts.openApCount).toBe(2);
-    expect(summary.financeAlerts.pendingDiscrepancyCount).toBe(1);
-    expect(summary.cashAndBank.accounts.length).toBe(2);
+    expect(summary.crew.activeDrivers).toBe(1);
+    expect(summary.cashAndBank).not.toBeNull();
+    expect(summary.financeAlerts).not.toBeNull();
+    expect(summary.financeAlerts?.openArCount).toBe(3);
+  });
+
+  it('should OMIT sensitive financial data when user is CREW_DRIVER / non-finance', async () => {
+    const summary = await service.getSummary({ role: ['CREW_DRIVER'] });
+    expect(summary).toBeDefined();
+    expect(summary.canViewFinance).toBe(false);
+    expect(summary.fleet.total).toBe(10);
+    expect(summary.crew.activeDrivers).toBe(1);
+    // Sensitive financial data MUST be null for security!
+    expect(summary.cashAndBank).toBeNull();
+    expect(summary.financeAlerts).toBeNull();
   });
 });

@@ -2343,11 +2343,19 @@ export interface PettyCashFilterParams {
  * --- DASHBOARD TYPES ---
  */
 export interface DashboardSummary {
+  canViewFinance: boolean;
   fleet: {
     total: number;
     activeOnRoute: number;
     standbyPool: number;
     inMaintenance: number;
+  };
+  crew: {
+    totalDrivers: number;
+    activeDrivers: number;
+    standbyDrivers: number;
+    totalConductors: number;
+    activeConductors: number;
   };
   trips: {
     inProgress: number;
@@ -2364,7 +2372,7 @@ export interface DashboardSummary {
       balance: string;
       type: 'CASH' | 'BANK';
     }>;
-  };
+  } | null;
   financeAlerts: {
     openArInvoicesAmount: string;
     openArCount: number;
@@ -2373,7 +2381,7 @@ export interface DashboardSummary {
     unresolvedDiscrepancyAmount: string;
     pendingDiscrepancyCount: number;
     pendingPettyCashCount: number;
-  };
+  } | null;
   recentSpjs: Array<{
     id: string;
     spjNo: string;

@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Req, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../@guards/roles/roles.guard';
@@ -13,9 +13,12 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get('summary')
-  @ApiOperation({ summary: 'Ringkasan KPI armada, perjalanan SPJ, likuiditas kas/bank, dan alert keuangan' })
-  async getSummary(): Promise<ResponseInterface> {
-    const data = await this.dashboardService.getSummary();
+  @ApiOperation({
+    summary:
+      'Ringkasan KPI armada, penugasan kru operasional, likuiditas kas/bank (hanya role finansial/direksi), dan alert',
+  })
+  async getSummary(@Req() req: any): Promise<ResponseInterface> {
+    const data = await this.dashboardService.getSummary(req.user);
     return {
       status: true,
       message: 'Berhasil memuat ringkasan dashboard operasional & finansial',
