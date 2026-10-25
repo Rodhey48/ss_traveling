@@ -1941,3 +1941,402 @@ export interface ArReceiptFilterParams {
   limit?: number;
 }
 
+// ==========================================
+// TAHAP 9: LAPORAN FINANSIAL & PROFITABILITAS
+// ==========================================
+
+export type TripProfitabilityViewMode = 'BY_BUS' | 'BY_JOURNEY_GROUP';
+
+export interface GeneralLedgerFilterParams {
+  accountId?: string;
+  accountCode?: string;
+  startDate?: string;
+  endDate?: string;
+  periodId?: string;
+  businessUnitId?: string;
+  costCenterId?: string;
+}
+
+export interface LedgerLineReport {
+  lineId: string;
+  journalId: string;
+  journalNo: string;
+  journalDate: string;
+  sourceType: string;
+  description: string;
+  debit: string;
+  credit: string;
+  runningBalance: string;
+  tripId?: string;
+  vehicleId?: string;
+}
+
+export interface AccountLedgerReport {
+  accountId: string;
+  accountCode: string;
+  accountName: string;
+  accountType: AccountType;
+  normalBalance: NormalBalance;
+  openingBalance: string;
+  totalDebit: string;
+  totalCredit: string;
+  endingBalance: string;
+  lines: LedgerLineReport[];
+}
+
+export interface GeneralLedgerResponse {
+  periodInfo?: {
+    startDate: string;
+    endDate: string;
+    periodName?: string;
+  };
+  accounts: AccountLedgerReport[];
+  grandTotalDebit: string;
+  grandTotalCredit: string;
+}
+
+export interface TrialBalanceItem {
+  accountId: string;
+  accountCode: string;
+  accountName: string;
+  accountType: AccountType;
+  normalBalance: NormalBalance;
+  openingDebit: string;
+  openingCredit: string;
+  periodDebit: string;
+  periodCredit: string;
+  endingDebit: string;
+  endingCredit: string;
+}
+
+export interface TrialBalanceResponse {
+  periodInfo: {
+    startDate: string;
+    endDate: string;
+    periodName?: string;
+  };
+  items: TrialBalanceItem[];
+  totals: {
+    openingDebit: string;
+    openingCredit: string;
+    periodDebit: string;
+    periodCredit: string;
+    endingDebit: string;
+    endingCredit: string;
+    isBalanced: boolean;
+  };
+}
+
+export interface PnLGroupItem {
+  accountCode: string;
+  accountName: string;
+  amount: string;
+}
+
+export interface PnLGroup {
+  groupCode: string;
+  groupName: string;
+  subtotal: string;
+  accounts: PnLGroupItem[];
+}
+
+export interface IncomeStatementResponse {
+  periodInfo: {
+    startDate: string;
+    endDate: string;
+    periodName?: string;
+  };
+  revenues: {
+    groups: PnLGroup[];
+    totalRevenue: string;
+  };
+  expenses: {
+    directFleetCosts: PnLGroup[];
+    crewCosts: PnLGroup[];
+    agentPartnerCosts: PnLGroup[];
+    maintenanceCosts: PnLGroup[];
+    generalPoolCosts: PnLGroup[];
+    otherCosts: PnLGroup[];
+    totalExpense: string;
+  };
+  grossProfit: string;
+  operatingProfit: string;
+  netIncome: string;
+}
+
+export interface BalanceSheetItem {
+  accountCode: string;
+  accountName: string;
+  amount: string;
+}
+
+export interface BalanceSheetCategory {
+  categoryCode: string;
+  categoryName: string;
+  subtotal: string;
+  items: BalanceSheetItem[];
+}
+
+export interface BalanceSheetResponse {
+  asOfDate: string;
+  periodName?: string;
+  assets: {
+    categories: BalanceSheetCategory[];
+    totalAssets: string;
+  };
+  liabilities: {
+    categories: BalanceSheetCategory[];
+    totalLiabilities: string;
+  };
+  equity: {
+    categories: BalanceSheetCategory[];
+    currentPeriodNetIncome: string;
+    totalEquity: string;
+  };
+  isBalanced: boolean;
+}
+
+export interface TripProfitabilityFilterParams {
+  startDate?: string;
+  endDate?: string;
+  serviceType?: TripServiceType;
+  vehicleId?: string;
+  viewMode?: TripProfitabilityViewMode;
+  search?: string;
+}
+
+export interface TripProfitabilityItem {
+  id: string;
+  journeyGroupId?: string;
+  spjNo: string;
+  parentSpjNo?: string;
+  hasReplacement: boolean;
+  serviceType: string;
+  departureDate: string;
+  origin: string;
+  destination: string;
+  vehicleCode: string;
+  vehiclePlate: string;
+  driverName?: string;
+  paxCount: number;
+  ticketRevenue: string;
+  cargoRevenue: string;
+  charterRevenue: string;
+  grossRevenue: string;
+  fuelCost: string;
+  tollAndParkingCost: string;
+  mealCouponCost: string;
+  crewCost: string;
+  agentAndPartnerCost: string;
+  incidentalRepairCost: string;
+  totalDirectCost: string;
+  contributionMargin: string;
+  contributionMarginRatio: number;
+  status: string;
+}
+
+export interface TripProfitabilitySummary {
+  totalTrips: number;
+  totalRevenue: string;
+  totalDirectCost: string;
+  totalContributionMargin: string;
+  averageMarginRatio: number;
+}
+
+export interface TripProfitabilityResponse {
+  summary: TripProfitabilitySummary;
+  viewMode: TripProfitabilityViewMode;
+  items: TripProfitabilityItem[];
+}
+
+export interface TripProfitabilityDetailResponse {
+  info: TripProfitabilityItem;
+  relatedSpjs?: Array<{
+    id: string;
+    spjNo: string;
+    vehicleCode: string;
+    role: 'PARENT' | 'REPLACEMENT';
+  }>;
+  revenueDetails: Array<{
+    source: string;
+    description: string;
+    amount: string;
+  }>;
+  costDetails: Array<{
+    category: string;
+    accountCode: string;
+    accountName: string;
+    description: string;
+    amount: string;
+  }>;
+  journalEntries: Array<{
+    journalId: string;
+    journalNo: string;
+    journalDate: string;
+    sourceType: string;
+    description: string;
+    totalDebit: string;
+    totalCredit: string;
+  }>;
+}
+
+// ==========================================
+// TAHAP 9: TUTUP BUKU BULANAN (PERIOD CLOSING)
+// ==========================================
+
+export type PeriodCheckStatus = 'PASSED' | 'WARNING' | 'BLOCKED';
+
+export interface PeriodCloseCheckItemResult {
+  checkCode: string;
+  checkName: string;
+  status: PeriodCheckStatus;
+  description: string;
+  details?: Record<string, any>;
+}
+
+export interface PeriodClosingChecklistResponse {
+  period: {
+    id: string;
+    periodNo: number;
+    name: string;
+    startDate: string;
+    endDate: string;
+    status: FiscalPeriodStatus;
+    closedAt?: string;
+    closedByName?: string;
+    closeReason?: string;
+  };
+  canClose: boolean;
+  blockerReasons: string[];
+  warningReasons: string[];
+  checks: PeriodCloseCheckItemResult[];
+  lastCheckedAt?: string;
+}
+
+export interface ClosePeriodFormData {
+  notes?: string;
+}
+
+export interface ReopenPeriodFormData {
+  reason: string;
+}
+
+export interface PeriodClosingFilterParams {
+  year?: number;
+  status?: FiscalPeriodStatus;
+}
+
+/**
+ * --- MODUL KAS KECIL POOL (PETTY CASH) ---
+ */
+export type CashTransactionType = 'DISBURSEMENT' | 'REPLENISHMENT';
+export type CashTransactionStatus = 'DRAFT' | 'SUBMITTED' | 'VERIFIED' | 'REJECTED';
+export type PettyCashCategory =
+  | 'FACILITY_SNACK'
+  | 'STANDBY_CREW'
+  | 'DEADHEAD_INSENTIF'
+  | 'POOL_SUPPLIES'
+  | 'OVERTIME_MEKANIK'
+  | 'OFFICE_CONSUMPTION'
+  | 'OFFICE_TRAVEL'
+  | 'WORKSHOP_EMERGENCY'
+  | 'OTHER';
+
+export interface CashTransaction {
+  id: string;
+  transactionNo: string;
+  cashAccountId: string;
+  cashAccount?: CashAccount;
+  type: CashTransactionType;
+  transactionDate: string;
+  amount: string;
+  recipient: string;
+  expenseAccountId?: string;
+  expenseAccount?: Account;
+  sourceBankAccountId?: string;
+  sourceBankAccount?: BankAccount;
+  sourceCashAccountId?: string;
+  sourceCashAccount?: CashAccount;
+  vehicleId?: string;
+  vehicle?: Vehicle;
+  costCenterId?: string;
+  costCenter?: CostCenter;
+  category: PettyCashCategory;
+  description: string;
+  receiptNo?: string;
+  receiptImageUrl?: string;
+  status: CashTransactionStatus;
+  journalEntryId?: string;
+  journalEntry?: JournalEntry;
+  createdById?: string;
+  createdByUser?: User;
+  verifiedById?: string;
+  verifiedByUser?: User;
+  verifiedAt?: string;
+  rejectionReason?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PettyCashSummary {
+  cashAccount: {
+    id: string;
+    code: string;
+    name: string;
+    glAccountCode?: string;
+    glAccountName?: string;
+  };
+  currentBalance: string;
+  thisMonthExpenses: string;
+  pendingVerificationCount: number;
+  todayTransactionsCount: number;
+}
+
+export interface CreatePettyCashDisbursementFormData {
+  cashAccountId: string;
+  transactionDate: string;
+  amount: string;
+  recipient: string;
+  expenseAccountId: string;
+  category: PettyCashCategory;
+  vehicleId?: string;
+  costCenterId?: string;
+  description: string;
+  receiptNo?: string;
+  receiptImageUrl?: string;
+  autoVerify?: boolean;
+}
+
+export interface CreatePettyCashReplenishmentFormData {
+  cashAccountId: string;
+  transactionDate: string;
+  amount: string;
+  sourceType: 'BANK' | 'CASH';
+  sourceBankAccountId?: string;
+  sourceCashAccountId?: string;
+  recipient?: string;
+  description: string;
+  receiptNo?: string;
+}
+
+export interface VerifyPettyCashFormData {
+  notes?: string;
+}
+
+export interface RejectPettyCashFormData {
+  reason: string;
+}
+
+export interface PettyCashFilterParams {
+  startDate?: string;
+  endDate?: string;
+  type?: CashTransactionType;
+  status?: CashTransactionStatus;
+  cashAccountId?: string;
+  category?: PettyCashCategory;
+  vehicleId?: string;
+  search?: string;
+}
+
+

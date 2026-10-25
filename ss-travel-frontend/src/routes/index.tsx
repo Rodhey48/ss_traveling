@@ -18,8 +18,12 @@ import JournalsPage from '@/pages/journals';
 import SchedulesPage from '@/pages/schedules';
 import SpjsPage from '@/pages/spjs';
 import CashierPage from '@/pages/cashier';
+import PettyCashPage from '@/pages/petty-cash';
 import ApInvoicesPage from '@/pages/ap-invoices';
 import ArInvoicesPage from '@/pages/ar-invoices';
+import TripProfitabilityPage from '@/pages/reports/trip-profitability';
+import GeneralLedgerPage from '@/pages/reports/general-ledger';
+import PeriodClosingPage from '@/pages/period-closing';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import { ProtectedRoute } from './protected-route';
 import { GuestRoute } from './guest-route';
@@ -59,8 +63,12 @@ export default function AppRouter() {
         <Route path="schedules" element={<SchedulesPage />} />
         <Route path="spjs" element={<SpjsPage />} />
         <Route path="cashier" element={<CashierPage />} />
+        <Route path="petty-cash" element={<PettyCashPage />} />
         <Route path="ap-invoices" element={<ApInvoicesPage />} />
         <Route path="ar-invoices" element={<ArInvoicesPage />} />
+        <Route path="reports/trip-profitability" element={<TripProfitabilityPage />} />
+        <Route path="reports/general-ledger" element={<GeneralLedgerPage />} />
+        <Route path="period-closing" element={<PeriodClosingPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="roles" element={<RolesPage />} />
         <Route path="menu-management" element={<MenusPage />} />

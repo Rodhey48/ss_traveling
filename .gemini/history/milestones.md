@@ -2,6 +2,79 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-10-25: Modul Kas Kecil Pool (Petty Cash) Completed (BE + FE)
+- **Model Database & Migrasi PostgreSQL (`cash_transactions`)**:
+  - Model `cash_transactions` untuk pencatatan transaksi kas kecil non-SPJ garasi pool (`transaction_no` format `BKK-KAS/YYMM/XXXX` & `BKM-KAS/YYMM/XXXX`, `cash_account_id` relasi ke `cash_accounts`, `type`: `DISBURSEMENT` / `REPLENISHMENT`, `amount`, `recipient`, `expense_account_id`, `source_bank_account_id`, `source_cash_account_id`, `vehicle_id`, `cost_center_id`, `category`, `description`, `receipt_no`, `status`: `DRAFT`, `SUBMITTED`, `VERIFIED`, `REJECTED`, `journal_entry_id`, `created_by_id`, `verified_by_id`, `verified_at`).
+  - Enums: `CashTransactionType`, `CashTransactionStatus`, `PettyCashCategory` (`FACILITY_SNACK`, `STANDBY_CREW`, `DEADHEAD_INSENTIF`, `POOL_SUPPLIES`, `OVERTIME_MEKANIK`, `OFFICE_CONSUMPTION`, `OFFICE_TRAVEL`, `WORKSHOP_EMERGENCY`, `OTHER`).
+  - Migrasi `1782300000000-create-cash-transactions.ts` sukses dieksekusi 100% pada database PostgreSQL lengkap dengan seeder data riil kas kecil garasi (Replenishment Rp 10jt, snack kabin bus SS-01 Rp 350rb, uang makan standby driver Rp 150rb, insentif langsir SS-03 Rp 200rb, sabun cuci bus Rp 120rb, kopi lembur Rp 180rb).
+- **Service Layer & Accounting Core Integration (`ss-travel-backend`)**:
+  - `PettyCashService`:
+    - `getSummary`: Menghitung saldo berjalan kas kecil dari buku besar GL atau mutasi bersih transaksi, total pengeluaran bulan ini, antrean nota menunggu verifikasi akuntan (`SUBMITTED`), dan transaksi hari ini.
+    - `getTransactions`: Kueri daftar mutasi kas kecil dengan filter tanggal, rekening kas, kategori beban, status verifikasi, dan pencarian teks.
+    - `createDisbursement`: Menerbitkan Bukti Kas Keluar (BKK) dengan penomoran concurrency-safe `BKK-KAS/YYMM/XXXX` via `DocumentSequenceService`, validasi akun postable, dan opsi langsung posting GL jika `autoVerify`.
+    - `createReplenishment`: Pencairan dana pengisian kembali kas kecil (BKM) dari rekening Bank BCA Operasional (`11104`) atau Kas Induk Pool (`11101`) dengan posting jurnal otomatis Debit `11103 Kas Kecil Pool`, Kredit `11104 Bank BCA` / `11101 Kas Induk`.
+    - `verifyTransaction`: Otorisasi verifikasi nota oleh Akuntan dan posting jurnal otomatis Debit Akun Beban (52104 / 53105 / 53106 / 57102 / 57107 / 57108), Kredit `11103 Kas Kecil Pool` via `AccountingPostingService`.
+    - `rejectTransaction`: Penolakan nota pengeluaran kas kecil dengan alasan wajib.
+    - `deleteTransaction`: Pembatalan transaksi jika belum berstatus `VERIFIED`.
+  - `PettyCashController`: Endpoint REST API `/api/v1/petty-cash` lengkap dengan dokumentasi Swagger dan proteksi izin `@RequirePermissions('PettyCash:...')`.
+  - Unit test `petty-cash.service.spec.ts` (8 tests) lulus 100%, total 26 test suites backend (157 unit tests) lulus 100%.
+- **Frontend Halaman & Modal Terpadu (`ss-travel-frontend`)**:
+  - API Client Service: `PettyCashService` (`src/services/petty-cash.service.ts`) terstandarisasi tanpa leading slash.
+  - Halaman **Kas Kecil Pool (`/petty-cash`)**: 4 kartu metrik live (Sisa Saldo Kas Kecil, Pengeluaran Bulan Ini, Menunggu Verifikasi Akuntan, Aktivitas Hari Ini), toolbar filter kaya, dan tabel riwayat mutasi kas kecil.
+  - Modal **Input Pengeluaran Kas Kecil BKK (`CreatePettyCashModal.tsx`)**: 8 tombol preset cepat SOP akuntansi bus (Standby Driver 53105, Langsir Armada 53106, Snack Onboard 52104, Cuci Bus & ATK 57102, Lembur Mekanik 57107, Kopi Piket 57108, Transport Dinas 57109, Sparepart Darurat 55102), selector armada bus, format rupiah titik, dan checkbox langsung posting GL.
+  - Modal **Pengisian Kembali Kas Kecil BKM (`ReplenishPettyCashModal.tsx`)**: Form transfer bank atau kas pool induk ke kas kecil garasi.
+  - Modal **Detail & Cetak Slip Voucher Resmi Kasir BKK/BKM (`PettyCashDetailModal.tsx`)**: Preview jurnal GL terposting, tanda tangan otorisasi (Penerima, Kasir Pool, Akuntan), tombol verifikasi & tolak bon, serta cetak voucher siap print fisik.
+  - Rute `/petty-cash` didaftarkan di `AppRouter`.
+- **Verifikasi Kualitas Penuh**:
+  - 26 unit test suites backend (157 tests) lulus 100%.
+  - Backend NestJS `yarn build` sukses 100% bebas error.
+  - Frontend Vite `yarn build` sukses 100% bebas error.
+
+### 2026-10-25: Stage 9 Completed & Stabilized — Laporan Finansial, Trip Profitability (Margin), & Tutup Buku Bulanan (BE + FE)
+- **Hotfix & Stabilisasi Relasi / Skema TypeORM**:
+  - Memperbaiki pemanggilan relasi kru di `TripProfitabilityService` dan `PeriodClosingService` dari `crewAssignments.user` ke `crewAssignments.crew`.
+  - Menyelaraskan filter tanggal jadwal perjalanan ke `schedule.plannedDepartureAt`.
+  - Menjalankan migrasi `1782100000000-add-is-active-to-period-close-checks.ts` dan `1782200000000-fix-period-close-checks-timestamps.ts` untuk memastikan kolom `is_active`, `"createdAt"`, dan `"updatedAt"` tersedia sesuai kontrak TypeORM `BaseEntity`.
+  - Seluruh fungsionalitas laporan profitabilitas trip, buku besar/neraca, dan checklist tutup buku 6-poin teruji berjalan normal tanpa error di Backend & Frontend.
+- **Model Database & Migrasi PostgreSQL (`period_close_checks`, `fiscal_periods.checklist_snapshot`)**:
+  - `period_close_checks`: Entitas audit checklist penutupan buku bulanan per periode (`period_id`, `check_code`, `check_name`, `status`: `PASSED`, `WARNING`, `BLOCKED`, `details`: JSONB, `checked_at`, `checked_by`).
+  - Kolom `checklist_snapshot` (JSONB) pada tabel `fiscal_periods` untuk menyimpan arsip permanen hasil audit 6-point checklist saat penutupan buku dieksekusi.
+  - Migrasi `1782000000000-create-period-closing-and-reports.ts` sukses dieksekusi 100% pada database PostgreSQL.
+- **Service Layer & Domain Accounting Engine (`ss-travel-backend`)**:
+  - `FinancialReportsService`:
+    - `getGeneralLedger`: Menghasilkan Buku Besar (GL) per akun dan rentang tanggal dengan saldo awal sebelum periode, mutasi debit/kredit baris-demi-baris dengan referensi dokumen sumber, dan running balance dinamis berdasarkan saldo normal (`DEBIT` vs `CREDIT`).
+    - `getTrialBalance`: Menghasilkan Neraca Saldo lengkap (Saldo Awal Debit/Kredit, Mutasi Periode Debit/Kredit, dan Saldo Akhir Debit/Kredit) dengan validasi matematis keseimbangan total (`isBalanced`).
+    - `getIncomeStatement`: Laporan Laba Rugi Komprehensif (Pendapatan Operasional kelompok 4 & 81, Beban Langsung Armada & Fasilitas 51 & 52, Beban Kru 53, Beban Agen/Korlap 54, Beban Bengkel 55, Beban Pool & Lainnya 56-59, Gross Profit, Operating Profit, dan Net Income).
+    - `getBalanceSheet`: Neraca Keuangan posisi per tanggal (Aset kelompok 1, Liabilitas kelompok 2, Ekuitas kelompok 3, dan Laba/Rugi Bersih Berjalan, dengan validasi seimbang Aset = Liabilitas + Ekuitas).
+  - `TripProfitabilityService`:
+    - Laporan Margin Kontribusi Perjalanan Bus dengan 2 sudut pandang sesuai Blueprint Bab 16 & Skenario 3:
+      - *Tampilan Per Bus (`BY_BUS`)*: Mengisolasi kinerja armada individual fisik (misal: defisit bus rusak SS-01 yang menanggung derek & bengkel darurat Rp 1.5jt vs margin bus pengganti SS-03 penerus rute).
+      - *Tampilan Per Kelompok Perjalanan (`BY_JOURNEY_GROUP`)*: Konsolidasi 1 unit ekonomi perjalanan utuh yang menyatukan SPJ Induk (SS-01) dan SPJ Pengganti (SS-03), menggabungkan omzet tiket + kargo (Rp 6.35jt), biaya solar, tol, makan kru, serta perbaikan darurat untuk menyajikan margin kontribusi rute Tangerang-Yogya yang sebenarnya tanpa distorsi (+Rp 2.25jt s.d. +Rp 2.715jt / ~42.75%).
+    - `getTripProfitabilityDetail`: Audit trail lengkap per perjalanan mencakup rincian akun pendapatan, breakdown pos beban langsung, daftar armada terkait, dan seluruh entri jurnal terposting.
+  - `PeriodClosingService`:
+    - Checklist Otomatis 6-Poin:
+      1. `JOURNAL_BALANCE`: Memverifikasi seluruh jurnal berstatus `POSTED` seimbang dan tidak ada jurnal `DRAFT` tertinggal (`PASSED` / `BLOCKED`).
+      2. `CASHIER_SPJ_STATUS`: Mendeteksi dokumen SPJ yang belum tuntas di meja kasir pool sebagai exception peringatan sesuai Blueprint Bab 5 (`WARNING`, BUKAN pemblokir tutup buku).
+      3. `UNRESOLVED_DISCREPANCY_11999`: Memverifikasi saldo akun penampung `11999` dan kasus investigasi terbuka FM sesuai Skenario 4 (`WARNING`, Kemerdekaan Tutup Buku Unblocked).
+      4. `CASH_BANK_RECON`: Merekonsiliasi posisi saldo kas fisik pool (11101, 11102, 11103) dan bank operasional (11104).
+      5. `OPEN_AR_AP`: Menyajikan ringkasan saldo terbuka faktur piutang (AR) dan tagihan vendor (AP).
+      6. `TRIAL_BALANCE_EQUAL`: Memvalidasi neraca saldo akhir seimbang (`PASSED` / `BLOCKED`).
+    - `closePeriod`: Mengunci periode fiskal menjadi `CLOSED`, mencatat `closedBy`, `closedAt`, alasan, dan snapshot audit checklist ke database.
+    - `reopenPeriod`: Otorisasi pembukaan kembali periode tertutup untuk Finance Manager dengan kewajiban input alasan audit tertulis.
+- **REST Endpoints & Controllers**:
+  - `GET /api/v1/reports/general-ledger`, `GET /api/v1/reports/trial-balance`, `GET /api/v1/reports/income-statement`, `GET /api/v1/reports/balance-sheet`.
+  - `GET /api/v1/reports/trip-profitability`, `GET /api/v1/reports/trip-profitability/:id`.
+  - `GET /api/v1/period-closing/periods`, `GET /api/v1/period-closing/:periodId/checklist`, `POST /api/v1/period-closing/:periodId/run-checklist`, `POST /api/v1/period-closing/:periodId/close`, `POST /api/v1/period-closing/:periodId/reopen`.
+- **Frontend Halaman & Modal Terpadu (`ss-travel-frontend`)**:
+  - API Client Services: `ReportService` (`src/services/report.service.ts`) dan `PeriodClosingService` (`src/services/period-closing.service.ts`).
+  - Halaman **Laporan Profitabilitas Trip (`/reports/trip-profitability`)**: 4 kartu metrik live (Omzet, Beban Langsung, Margin Bersih, % Margin), toolbar filter rute & layanan, toggle sudut pandang *Per Kelompok Perjalanan* vs *Per Bus Fisik*, tabel breakdown performa SPJ, dan modal **Audit Detail Margin Trip (`TripProfitabilityDetailModal.tsx`)**.
+  - Halaman **Buku Besar & Neraca Saldo (`/reports/general-ledger`)**: 4 Tab navigasi terpadu (Buku Besar Akun COA dengan running balance, Neraca Saldo Saldo Awal/Mutasi/Saldo Akhir, Laporan Laba Rugi Komprehensif berjenjang, dan Neraca Keuangan Aktiva vs Pasiva).
+  - Halaman **Tutup Buku Bulanan (`/period-closing`)**: Selector periode fiskal, banner status periode, kartu kesiapan penutupan (Ready to Close vs Blocked), banner edukasi kepatuhan SOP akuntansi bus PT SS Traveling Official, grid 6-point checklist interaktif, modal konfirmasi **Kunci & Tutup Buku (`ClosePeriodModal.tsx`)**, dan modal otorisasi **Buka Kembali Periode (`ReopenPeriodModal.tsx`)**.
+- **Verifikasi Kualitas Penuh**:
+  - 25 unit test suites backend (149 tests total) lulus 100%.
+  - Backend NestJS `yarn build` sukses 100% bebas error.
+  - Frontend Vite `yarn build` sukses 100% bebas error.
+
 ### 2026-10-22: Stage 8 Completed — Modul Utang Usaha (AP) & Piutang Usaha (AR) (BE + FE)
 - **Model Database & Migrasi PostgreSQL (`ap_invoices`, `ap_invoice_lines`, `ap_payments`, `ap_allocations`, `ar_invoices`, `ar_invoice_lines`, `ar_receipts`, `ar_allocations`)**:
   - `ap_invoices` & `ap_invoice_lines`: Header dan rincian faktur tagihan rekanan vendor (`bill_no`, `vendor_invoice_no`, `vendor_type`: `RESTAURANT`, `WORKSHOP`, `AGENT`, `OTHER`, `ap_account_id`: `21101` RM, `21102` Bengkel, `22101` Agen). Lines mencakup akun beban debit (`51102`, `55101`, `54101`), kupon riil, manifes pax SPJ, catatan selisih, dan dimensi armada/SPJ.

@@ -6,6 +6,7 @@ import {
   BankAccountEntity,
   FiscalYearEntity,
   FiscalPeriodEntity,
+  PeriodCloseCheckEntity,
   DocumentSequenceEntity,
   JournalEntryEntity,
   JournalLineEntity,
@@ -22,6 +23,9 @@ import {
   CustomerEntity,
   SpjEntity,
   SpjLegEntity,
+  VehicleEntity,
+  CrewCashDiscrepancyEntity,
+  CashTransactionEntity,
 } from '../@models';
 import { AccountsService } from './services/accounts.service';
 import { CashBankService } from './services/cash-bank.service';
@@ -31,6 +35,10 @@ import { AccountingPostingService } from './services/accounting-posting.service'
 import { JournalReversalService } from './services/journal-reversal.service';
 import { ApService } from './services/ap.service';
 import { ArService } from './services/ar.service';
+import { FinancialReportsService } from './services/financial-reports.service';
+import { TripProfitabilityService } from './services/trip-profitability.service';
+import { PeriodClosingService } from './services/period-closing.service';
+import { PettyCashService } from './services/petty-cash.service';
 import { AccountsController } from './controllers/accounts.controller';
 import { CashAccountsController } from './controllers/cash-accounts.controller';
 import { BankAccountsController } from './controllers/bank-accounts.controller';
@@ -39,6 +47,10 @@ import { DocumentSequenceController } from './controllers/document-sequence.cont
 import { JournalsController } from './controllers/journals.controller';
 import { ApController } from './controllers/ap.controller';
 import { ArController } from './controllers/ar.controller';
+import { FinancialReportsController } from './controllers/financial-reports.controller';
+import { TripProfitabilityController } from './controllers/trip-profitability.controller';
+import { PeriodClosingController } from './controllers/period-closing.controller';
+import { PettyCashController } from './controllers/petty-cash.controller';
 import { JWTService } from '../@services/jwt/jwt.service';
 
 @Module({
@@ -49,6 +61,7 @@ import { JWTService } from '../@services/jwt/jwt.service';
       BankAccountEntity,
       FiscalYearEntity,
       FiscalPeriodEntity,
+      PeriodCloseCheckEntity,
       DocumentSequenceEntity,
       JournalEntryEntity,
       JournalLineEntity,
@@ -65,6 +78,9 @@ import { JWTService } from '../@services/jwt/jwt.service';
       CustomerEntity,
       SpjEntity,
       SpjLegEntity,
+      VehicleEntity,
+      CrewCashDiscrepancyEntity,
+      CashTransactionEntity,
     ]),
   ],
   controllers: [
@@ -76,6 +92,10 @@ import { JWTService } from '../@services/jwt/jwt.service';
     JournalsController,
     ApController,
     ArController,
+    FinancialReportsController,
+    TripProfitabilityController,
+    PeriodClosingController,
+    PettyCashController,
   ],
   providers: [
     AccountsService,
@@ -86,6 +106,10 @@ import { JWTService } from '../@services/jwt/jwt.service';
     JournalReversalService,
     ApService,
     ArService,
+    FinancialReportsService,
+    TripProfitabilityService,
+    PeriodClosingService,
+    PettyCashService,
     JWTService,
   ],
   exports: [
@@ -97,6 +121,10 @@ import { JWTService } from '../@services/jwt/jwt.service';
     JournalReversalService,
     ApService,
     ArService,
+    FinancialReportsService,
+    TripProfitabilityService,
+    PeriodClosingService,
+    PettyCashService,
   ],
 })
 export class FinanceModule {}

@@ -59,4 +59,7 @@ export class FiscalPeriodEntity extends BaseEntity {
 
   @Column({ type: 'text', name: 'close_reason', nullable: true })
   closeReason?: string;
+
+  @Column({ type: 'jsonb', name: 'checklist_snapshot', nullable: true })
+  checklistSnapshot?: Record<string, any>;
 }

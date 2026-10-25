@@ -20,6 +20,7 @@ export * from './finance/cash-account.entity';
 export * from './finance/bank-account.entity';
 export * from './finance/fiscal-year.entity';
 export * from './finance/fiscal-period.entity';
+export * from './finance/period-close-check.entity';
 export * from './finance/document-sequence.entity';
 export * from './finance/journal-entry.entity';
 export * from './finance/journal-line.entity';
@@ -58,5 +59,6 @@ export * from './cashier/crew-cash-settlement.entity';
 export * from './cashier/crew-cash-remittance.entity';
 export * from './cashier/crew-cash-remittance-allocation.entity';
 export * from './cashier/crew-cash-discrepancy.entity';
+export * from './finance/cash-transaction.entity';
 
 
