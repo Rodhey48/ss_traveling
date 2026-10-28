@@ -45,64 +45,61 @@ export default function Sidebar({ className }: SidebarProps) {
   return (
     <nav
       className={cn(
-        `hidden h-screen flex-none border-r border-slate-200/90 dark:border-border/60 bg-slate-100/90 dark:bg-card/95 text-foreground shadow-xs md:flex md:flex-col justify-between select-none`,
+        `hidden md:block bg-white/80 dark:bg-zinc-900/90 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] text-slate-600 dark:text-slate-300 text-sm rounded-[2rem] border border-slate-200/80 dark:border-zinc-800 backdrop-blur-xl transition-all duration-300 flex-shrink-0 my-3 ml-4 h-[calc(100vh-105px)] overflow-hidden select-none`,
         status && 'duration-500',
-        !isMinimized ? 'w-80' : 'w-20',
+        !isMinimized ? 'w-[280px]' : 'w-[75px]',
         className
       )}
     >
-      {/* Sidebar Brand Header */}
-      <div
-        className={cn(
-          'flex h-16 items-center border-b border-slate-200/80 dark:border-border/60 px-3 bg-slate-100/50 dark:bg-card/40',
-          isMinimized ? 'flex-col justify-center gap-1.5' : 'justify-between'
-        )}
-      >
-        {!isMinimized && (
-          <div className="flex items-center gap-2 font-black tracking-widest text-[#1cb85a] truncate text-base pl-1">
-            <span>{import.meta.env.VITE_APP_NAME || 'SS TRAVEL ERP'}</span>
-          </div>
-        )}
-        <button
-          type="button"
-          onClick={handleToggle}
-          title={isMinimized ? 'Perluas Sidebar' : 'Kecilkan Sidebar'}
-          className={cn(
-            'size-7 cursor-pointer rounded-full border border-slate-200 dark:border-border/80 bg-white dark:bg-card text-foreground transition-all hover:bg-slate-200/60 dark:hover:bg-accent flex items-center justify-center shrink-0 shadow-xs'
-          )}
-        >
-          <ChevronLeft
-            className={cn(
-              'size-4 transition-transform duration-200',
-              isMinimized && 'rotate-180'
+      <div className="flex h-full flex-col min-h-0">
+        {/* Header non-scroll */}
+        <div className="shrink-0 p-4 border-b border-slate-200/60 dark:border-zinc-800 bg-transparent">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleToggle}
+              title={isMinimized ? 'Perluas Sidebar' : 'Kecilkan Sidebar'}
+              className="h-10 w-10 shrink-0 rounded-2xl bg-slate-500/5 dark:bg-white/10 hover:bg-slate-500/10 dark:hover:bg-white/20 text-slate-700 dark:text-slate-200 transition-all flex items-center justify-center border border-slate-200/50 dark:border-zinc-700 shadow-2xs"
+            >
+              <ChevronLeft
+                className={cn(
+                  'size-4.5 transition-transform duration-200',
+                  isMinimized && 'rotate-180'
+                )}
+              />
+            </button>
+            {!isMinimized && (
+              <div className="text-base font-extrabold text-slate-800 dark:text-slate-100 flex-1 truncate tracking-tight">
+                Menu Utama
+              </div>
             )}
-          />
-        </button>
-      </div>
-
-      {/* Nav Items Scroll Area */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar py-3 px-2">
-        <DashboardNav items={navItems} />
-      </div>
-
-      {/* Sidebar Footer Status */}
-      <div className="border-t border-slate-200/80 dark:border-border/60 bg-slate-200/40 dark:bg-muted/10 p-3">
-        {!isMinimized ? (
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-              <span className="font-semibold text-foreground">SS Travelink</span>
-              <span className="font-mono text-[9px] bg-white dark:bg-secondary text-foreground px-1.5 py-0.5 rounded border border-slate-200/80 dark:border-border/60">v1.3</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-              <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Sistem Terhubung Realtime</span>
-            </div>
           </div>
-        ) : (
-          <div className="flex justify-center" title="Sistem Aktif & Terhubung">
-            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-          </div>
-        )}
+        </div>
+
+        {/* Nav Items Scroll Area */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar px-3 py-3">
+          <DashboardNav items={navItems} />
+        </div>
+
+        {/* Sidebar Footer Status */}
+        <div className="p-3 border-t border-slate-200/60 dark:border-zinc-800 bg-slate-500/5 dark:bg-white/5 rounded-b-[2rem]">
+          {!isMinimized ? (
+            <div className="flex flex-col gap-1 px-1">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">SS Travelink</span>
+                <span className="font-mono text-[9px] bg-slate-500/10 dark:bg-white/10 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded-full border border-slate-200/40 dark:border-zinc-700">v1.3</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Sistem Terhubung Realtime</span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex justify-center" title="Sistem Aktif & Terhubung">
+              <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+            </div>
+          )}
+        </div>
       </div>
     </nav>
   );

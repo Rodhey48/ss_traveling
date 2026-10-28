@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Bell, CheckCheck, Clock, FileText, AlertTriangle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -77,21 +76,20 @@ export default function NotificationNav() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="icon"
-          className="relative size-9 rounded-lg border-slate-200/90 dark:border-border/80 bg-white dark:bg-card text-foreground hover:bg-slate-200/60 dark:hover:bg-accent transition-all cursor-pointer shadow-xs"
+        <button
+          type="button"
+          className="h-10 w-10 shrink-0 rounded-2xl bg-slate-500/5 dark:bg-white/5 hover:bg-slate-500/10 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-all flex items-center justify-center border border-slate-200/40 dark:border-white/5 shadow-2xs relative cursor-pointer"
           title="Notifikasi Operasional"
         >
-          <Bell className="size-4.5 text-foreground" />
+          <Bell className="size-4.5" />
           {unreadCount > 0 && (
             <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-black text-white shadow-xs animate-pulse">
               {unreadCount}
             </span>
           )}
-        </Button>
+        </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 sm:w-96 p-2 shadow-xl border-border">
+      <DropdownMenuContent align="end" className="w-80 sm:w-96 p-2 shadow-xl border-border rounded-2xl">
         <DropdownMenuLabel className="flex items-center justify-between px-2 py-1.5">
           <div className="flex items-center gap-2">
             <span className="font-bold text-sm text-foreground">Notifikasi Operasional</span>
@@ -118,7 +116,7 @@ export default function NotificationNav() {
             <DropdownMenuItem
               key={item.id}
               onClick={() => item.link && navigate(item.link)}
-              className="flex items-start gap-3 p-2.5 rounded-lg cursor-pointer transition-colors focus:bg-accent hover:bg-accent/60"
+              className="flex items-start gap-3 p-2.5 rounded-xl cursor-pointer transition-colors focus:bg-accent hover:bg-accent/60"
             >
               <div className="p-2 rounded-lg bg-secondary/80 border border-border/50 shrink-0 mt-0.5">
                 {getIcon(item.type)}

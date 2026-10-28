@@ -39,15 +39,15 @@ export default function MobileSidebar({
 
   return (
     <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-      <SheetContent side="left" className="bg-slate-100/95 dark:bg-card border-r border-slate-200/90 dark:border-border/60 text-foreground px-0! w-80 max-w-[85vw]">
+      <SheetContent side="left" className="bg-white/80 dark:bg-zinc-950/80 border-r border-slate-200/60 dark:border-white/10 backdrop-blur-xl text-foreground px-0! w-80 max-w-[85vw]">
         <div className="flex h-full flex-col py-4">
           <div className="px-5 py-2">
             <Link
               to="/"
               onClick={() => setSidebarOpen(false)}
-              className="text-lg font-bold tracking-widest text-[#1cb85a]"
+              className="text-lg font-black tracking-widest bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-400 bg-clip-text text-transparent"
             >
-              SS TRAVEL ERP
+              SS TRAVELING ERP
             </Link>
           </div>
           <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar px-3 py-2">

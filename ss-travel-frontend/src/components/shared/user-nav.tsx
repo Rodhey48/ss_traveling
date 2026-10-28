@@ -1,5 +1,4 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,30 +22,30 @@ export default function UserNav() {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="relative flex items-center gap-2.5 h-9 px-2.5 rounded-xl hover:bg-slate-200/60 dark:hover:bg-accent border border-slate-200/90 dark:border-border/80 bg-white dark:bg-card shadow-xs cursor-pointer select-none"
+          <button
+            type="button"
+            className="h-10 rounded-2xl bg-slate-500/5 dark:bg-white/5 hover:bg-slate-500/10 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-all flex items-center gap-2.5 px-3 border border-slate-200/40 dark:border-white/5 shadow-2xs cursor-pointer select-none"
           >
-            <Avatar className="size-7 border border-slate-200/80 dark:border-border/60">
+            <Avatar className="size-7.5 border border-slate-200/60 dark:border-white/10 shadow-2xs">
               <AvatarImage
                 src={user?.avatar}
                 alt={user?.name || ''}
               />
-              <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
+              <AvatarFallback className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-extrabold text-xs">
                 {user?.name?.charAt(0).toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
             <div className="hidden lg:flex flex-col text-left mr-0.5">
-              <span className="text-xs font-bold leading-tight text-foreground truncate max-w-30">
+              <span className="text-xs font-extrabold leading-tight text-slate-800 dark:text-slate-100 truncate max-w-30">
                 {user?.name || 'User'}
               </span>
-              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-tight">
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-tight">
                 {roleName}
               </span>
             </div>
-          </Button>
+          </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-60 p-2 shadow-xl border-border" align="end" forceMount>
+        <DropdownMenuContent className="w-60 p-2 shadow-xl border-border rounded-2xl" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1 p-1">
               <p className="text-sm font-bold leading-none text-foreground">{user?.name || 'User'}</p>
@@ -61,20 +60,20 @@ export default function UserNav() {
           <DropdownMenuSeparator className="my-1.5" />
           <DropdownMenuGroup>
             <DropdownMenuItem 
-              className="flex items-center gap-2 cursor-pointer focus:bg-primary/5 focus:text-primary rounded-lg py-2"
+              className="flex items-center gap-2 cursor-pointer focus:bg-primary/5 focus:text-primary rounded-xl py-2"
               onClick={() => setIsProfileOpen(true)}
             >
               Profile & Security
               <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
             </DropdownMenuItem>
-            <DropdownMenuItem className="flex items-center gap-2 cursor-pointer rounded-lg py-2">
+            <DropdownMenuItem className="flex items-center gap-2 cursor-pointer rounded-xl py-2">
               Settings
               <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator className="my-1.5" />
           <DropdownMenuItem 
-            className="flex items-center gap-2 cursor-pointer text-destructive focus:bg-destructive/5 focus:text-destructive rounded-lg py-2"
+            className="flex items-center gap-2 cursor-pointer text-destructive focus:bg-destructive/5 focus:text-destructive rounded-xl py-2"
             onClick={logout}
           >
             Log out
