@@ -1,7 +1,7 @@
 import { getIcon } from '@/components/ui/icons';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/hooks/use-sidebar';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 
@@ -20,18 +20,49 @@ export default function DashboardNav({
   const location = useLocation();
   const [expandedItems, setExpanded] = useState<Record<string, boolean>>({});
 
+  // Auto-expand the parent that contains the active route
+  useEffect(() => {
+    if (!items?.length) return;
+
+    const findActiveParent = (navItems: any[]): string | null => {
+      for (const item of navItems) {
+        if (item.items && item.items.length > 0) {
+          const hasActive = item.items.some(
+            (c: any) =>
+              c.href === location.pathname ||
+              (c.items && c.items.some((sub: any) => sub.href === location.pathname))
+          );
+          if (hasActive) return item.title;
+        }
+      }
+      return null;
+    };
+
+    const activeTitle = findActiveParent(items);
+    if (activeTitle) {
+      setExpanded((prev) => {
+        if (prev[activeTitle]) return prev;
+        return { [activeTitle]: true };
+      });
+    }
+  }, [location.pathname, items]);
+
   const toggleExpand = (title: string) => {
-    setExpanded((prev) => ({
-      ...prev,
-      [title]: !prev[title]
-    }));
+    setExpanded((prev) => {
+      const isCurrentlyOpen = !!prev[title];
+      if (isCurrentlyOpen) {
+        return { ...prev, [title]: false };
+      }
+      // Accordion mode: keep only the clicked section open
+      return { [title]: true };
+    });
   };
 
   if (!items?.length) {
     return null;
   }
 
-  const renderNavItem = (item: any, index: number) => {
+  const renderNavItem = (item: any, index: number, isChild = false) => {
     const Icon = getIcon(item.icon || 'arrowRight');
     const hasChildren = item.items && item.items.length > 0;
     const isExpanded = expandedItems[item.title];
@@ -39,29 +70,39 @@ export default function DashboardNav({
     const isGroup = !!item.isParentGroup;
 
     return (
-      <div key={index} className="w-full">
+      <div key={index} className="w-full min-w-0">
         {hasChildren ? (
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             <button
+              type="button"
               onClick={() => toggleExpand(item.title)}
+              title={item.title}
               className={cn(
-                'group flex w-full items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-all',
-                isExpanded ? 'bg-accent/50 text-accent-foreground' : 'transparent',
+                'group flex w-full items-center rounded-lg px-2.5 py-2 text-sm font-medium hover:bg-accent/70 hover:text-accent-foreground transition-all duration-200 select-none min-w-0',
+                isExpanded ? 'bg-accent/60 text-accent-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground',
                 isMinimized && !isMobileNav ? 'justify-center' : 'justify-between'
               )}
             >
-              <div className="flex items-center gap-2 overflow-hidden">
-                <Icon className={cn('size-5 shrink-0', isActive ? 'text-primary' : 'text-muted-foreground')} />
-                {(!isMinimized || isMobileNav) && <span className="truncate">{item.title}</span>}
+              <div className="flex items-center gap-2.5 min-w-0 overflow-hidden">
+                <Icon className={cn('size-4.5 shrink-0 transition-colors', isExpanded ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground')} />
+                {(!isMinimized || isMobileNav) && (
+                  <span className="truncate text-[13.5px] font-medium tracking-tight">{item.title}</span>
+                )}
               </div>
               {(!isMinimized || isMobileNav) && (
-                isExpanded ? <ChevronDown className="size-4 opacity-50" /> : <ChevronRight className="h-4 w-4 opacity-50" />
+                <div className="shrink-0 pl-1 text-muted-foreground/60 group-hover:text-muted-foreground">
+                  {isExpanded ? (
+                    <ChevronDown className="size-4 transition-transform duration-200" />
+                  ) : (
+                    <ChevronRight className="size-4 transition-transform duration-200" />
+                  )}
+                </div>
               )}
             </button>
             {isExpanded && (!isMinimized || isMobileNav) && (
-              <div className="ml-4 mt-1 space-y-1 border-l border-border pl-2">
+              <div className="ml-3 mt-1 space-y-0.5 border-l-2 border-border/70 pl-2.5 min-w-0">
                 {item.items.map((child: any, idx: number) =>
-                  renderNavItem(child, idx)
+                  renderNavItem(child, idx, true)
                 )}
               </div>
             )}
@@ -69,23 +110,38 @@ export default function DashboardNav({
         ) : (
           <Link
             to={isGroup ? '#' : (item.href || '#')}
+            title={item.title}
             onClick={(e) => {
               if (isGroup) {
                 e.preventDefault();
-                // If it's a group but has no children, maybe do nothing or show toast
                 return;
               }
               if (setOpen) setOpen(false);
             }}
             className={cn(
-              'group flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-all',
-              isActive ? 'bg-primary/10 text-primary font-bold' : 'transparent',
-              isMinimized && !isMobileNav ? 'justify-center' : 'justify-start gap-2',
+              'group flex items-center rounded-md transition-all duration-150 min-w-0 w-full select-none',
+              isChild
+                ? 'px-2.5 py-1.5 text-[13px] font-medium'
+                : 'px-2.5 py-2 text-sm font-medium rounded-lg',
+              isActive
+                ? 'bg-primary/10 text-primary font-bold shadow-xs'
+                : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+              isMinimized && !isMobileNav ? 'justify-center' : 'justify-start gap-2.5',
               item.disabled && 'cursor-not-allowed opacity-80'
             )}
           >
-            <Icon className={cn('size-5 shrink-0', isActive ? 'text-primary' : 'text-muted-foreground')} />
-            {(!isMinimized || isMobileNav) && <span className="truncate">{item.title}</span>}
+            <Icon
+              className={cn(
+                isChild ? 'size-4' : 'size-4.5',
+                'shrink-0 transition-colors',
+                isActive ? 'text-primary' : 'text-muted-foreground/70 group-hover:text-foreground'
+              )}
+            />
+            {(!isMinimized || isMobileNav) && (
+              <span className={cn('truncate leading-normal', isChild ? 'text-[13px]' : 'text-[13.5px]')}>
+                {item.title}
+              </span>
+            )}
           </Link>
         )}
       </div>
@@ -93,7 +149,7 @@ export default function DashboardNav({
   };
 
   return (
-    <nav className="grid items-start gap-1">
+    <nav className="grid items-start gap-1 min-w-0">
       {items.map((item, index) => renderNavItem(item, index))}
     </nav>
   );

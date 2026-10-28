@@ -1,22 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Lock,
-  Unlock,
-  CheckCircle2,
-  AlertTriangle,
-  XCircle,
-  RefreshCw,
-  Layers,
-  FileCheck2,
-  DollarSign,
-  Receipt,
-  Scale,
-  Info,
-} from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -24,11 +8,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { toast } from 'sonner';
 import { PeriodClosingService } from '@/services/period-closing.service';
+import type { PeriodCheckStatus } from '@/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  DollarSign,
+  FileCheck2,
+  Info,
+  Layers,
+  Lock,
+  Receipt,
+  RefreshCw,
+  Scale,
+  Unlock,
+  XCircle,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { ClosePeriodModal } from './ClosePeriodModal';
 import { ReopenPeriodModal } from './ReopenPeriodModal';
-import type { PeriodCheckStatus } from '@/types';
 
 export default function PeriodClosingPage() {
   const queryClient = useQueryClient();
@@ -171,9 +171,8 @@ export default function PeriodClosingPage() {
             className="h-9 text-xs gap-1.5"
           >
             <RefreshCw
-              className={`h-3.5 w-3.5 ${
-                runChecklistMutation.isPending || isChecklistLoading ? 'animate-spin' : ''
-              }`}
+              className={`h-3.5 w-3.5 ${runChecklistMutation.isPending || isChecklistLoading ? 'animate-spin' : ''
+                }`}
             />
             Audit Ulang
           </Button>
@@ -242,17 +241,15 @@ export default function PeriodClosingPage() {
       ) : checklist ? (
         <div className="space-y-4">
           <div
-            className={`p-4 rounded-xl border flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${
-              checklist.canClose
-                ? 'bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-300 text-emerald-950'
-                : 'bg-gradient-to-r from-rose-50 to-red-50 border-rose-300 text-rose-950'
-            }`}
+            className={`p-4 rounded-xl border flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${checklist.canClose
+                ? 'bg-linear-to-r from-emerald-50 to-teal-50 border-emerald-300 text-emerald-950'
+                : 'bg-linear-to-r from-rose-50 to-red-50 border-rose-300 text-rose-950'
+              }`}
           >
             <div className="flex items-start gap-3">
               <div
-                className={`p-2 rounded-lg mt-0.5 ${
-                  checklist.canClose ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'
-                }`}
+                className={`p-2 rounded-lg mt-0.5 ${checklist.canClose ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'
+                  }`}
               >
                 {checklist.canClose ? <CheckCircle2 className="h-6 w-6" /> : <XCircle className="h-6 w-6" />}
               </div>
@@ -349,7 +346,7 @@ export default function PeriodClosingPage() {
                   {item.checkCode === 'CASHIER_SPJ_STATUS' && item.details?.openSpjCount > 0 && (
                     <div className="bg-gray-50 p-2 rounded border border-gray-200 text-[11px] text-gray-700 flex justify-between">
                       <span>SPJ Belum Tuntas:</span>
-                      <strong className="text-amber-800">{item.details.openSpjCount} Dokumen</strong>
+                      <strong className="text-amber-800">{item.details?.openSpjCount} Dokumen</strong>
                     </div>
                   )}
 

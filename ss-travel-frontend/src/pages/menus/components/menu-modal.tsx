@@ -249,7 +249,7 @@ export default function MenuModal({
                             <button
                               type="button"
                               onClick={() => {
-                                const newTags = [...field.value];
+                                const newTags = [...(field.value || [])];
                                 newTags.splice(index, 1);
                                 field.onChange(newTags);
                               }}

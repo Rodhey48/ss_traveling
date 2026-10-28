@@ -1,11 +1,11 @@
-import { useEffect } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -16,8 +16,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -27,7 +25,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { MenuService } from '@/services/menu.service';
-import type { Role, RoleFormData, BackendMenu } from '@/types';
+import type { BackendMenu, Role, RoleFormData } from '@/types';
+import { useEffect } from 'react';
+import { useFieldArray, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
 interface RoleModalProps {
@@ -82,7 +82,7 @@ export default function RoleModal({
               if (node.children) flatten(node.children, level + 1);
             });
           };
-          
+
           flatten(response.data);
           replace(flatPermissions);
         }
@@ -117,13 +117,13 @@ export default function RoleModal({
       if (value === true) updated.isRead = true; // Auto read if action checked
     } else {
       // Handle CRUD
-      updated[field] = value;
+      (updated as any)[field] = value;
 
       // Smart logic: If Create/Update/Delete is checked, Read MUST be checked
       if ((field === 'isCreate' || field === 'isUpdate' || field === 'isDelete') && value === true) {
         updated.isRead = true;
       }
-      
+
       // If Read is unchecked, everything else MUST be unchecked
       if (field === 'isRead' && value === false) {
         updated.isCreate = false;
@@ -143,7 +143,7 @@ export default function RoleModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-200 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{role ? 'Edit Role' : 'Add New Role'}</DialogTitle>
         </DialogHeader>
@@ -190,18 +190,18 @@ export default function RoleModal({
                 <Table>
                   <TableHeader className="bg-muted/50">
                     <TableRow>
-                      <TableHead className="w-[250px]">Menu Hierarchy</TableHead>
-                      <TableHead className="text-center w-[80px]">Read</TableHead>
-                      <TableHead className="text-center w-[80px]">Create</TableHead>
-                      <TableHead className="text-center w-[80px]">Update</TableHead>
-                      <TableHead className="text-center w-[80px]">Delete</TableHead>
+                      <TableHead className="w-62.5">Menu Hierarchy</TableHead>
+                      <TableHead className="text-center w-20">Read</TableHead>
+                      <TableHead className="text-center w-20">Create</TableHead>
+                      <TableHead className="text-center w-20">Update</TableHead>
+                      <TableHead className="text-center w-20">Delete</TableHead>
                       <TableHead className="">Custom Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {fields.map((field, index) => (
                       <TableRow key={field.id} className="hover:bg-accent/30">
-                        <TableCell 
+                        <TableCell
                           className="font-medium text-xs"
                           style={{ paddingLeft: `${(field as any).level * 24 + 16}px` }}
                         >
@@ -231,12 +231,12 @@ export default function RoleModal({
                             onCheckedChange={(v) => handleCheckboxChange(index, 'isDelete', v as boolean)}
                           />
                         </TableCell>
-                        <TableCell className="min-w-[200px]">
-                          <div className="max-h-[100px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-muted-foreground/20">
+                        <TableCell className="min-w-50">
+                          <div className="max-h-25 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-muted-foreground/20">
                             <div className="flex flex-wrap gap-1.5">
                               {(field as any).availableActions?.map((action: string) => (
-                                <div 
-                                  key={action} 
+                                <div
+                                  key={action}
                                   className="flex items-center space-x-1 bg-muted/50 border border-border/50 px-2 py-0.5 rounded transition-colors hover:bg-muted"
                                 >
                                   <span className="text-[9px] font-bold uppercase tracking-tight text-muted-foreground leading-none">
