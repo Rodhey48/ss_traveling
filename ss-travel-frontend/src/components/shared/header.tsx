@@ -30,10 +30,10 @@ export default function Header() {
           </Button>
         </div>
 
-        <Link to="/" className="flex items-center gap-3 w-auto md:w-[260px] shrink-0">
+        <Link to="/" className="flex items-center gap-3 w-auto md:w-65 shrink-0">
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <span className="font-extrabold tracking-tight bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-400 bg-clip-text text-transparent drop-shadow-sm text-2xl leading-none">
+              <span className="font-extrabold tracking-tight bg-linear-to-r from-emerald-600 via-emerald-500 to-teal-400 bg-clip-text text-transparent drop-shadow-sm text-2xl leading-none">
                 {import.meta.env.VITE_APP_NAME || 'SS Traveling'}
               </span>
               <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 tracking-wide uppercase select-none leading-none">

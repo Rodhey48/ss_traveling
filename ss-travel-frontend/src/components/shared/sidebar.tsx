@@ -45,9 +45,9 @@ export default function Sidebar({ className }: SidebarProps) {
   return (
     <nav
       className={cn(
-        `hidden md:block bg-white/80 dark:bg-zinc-900/90 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] text-slate-600 dark:text-slate-300 text-sm rounded-[2rem] border border-slate-200/80 dark:border-zinc-800 backdrop-blur-xl transition-all duration-300 flex-shrink-0 my-3 ml-4 h-[calc(100vh-105px)] overflow-hidden select-none`,
+        `hidden md:block bg-white/80 dark:bg-zinc-900/90 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] text-slate-600 dark:text-slate-300 text-sm rounded-4xl border border-slate-200/80 dark:border-zinc-800 backdrop-blur-xl transition-all duration-300 shrink-0 my-3 ml-4 h-[calc(100vh-105px)] overflow-hidden select-none`,
         status && 'duration-500',
-        !isMinimized ? 'w-[280px]' : 'w-[75px]',
+        !isMinimized ? 'w-70' : 'w-18.75',
         className
       )}
     >
@@ -82,7 +82,7 @@ export default function Sidebar({ className }: SidebarProps) {
         </div>
 
         {/* Sidebar Footer Status */}
-        <div className="p-3 border-t border-slate-200/60 dark:border-zinc-800 bg-slate-500/5 dark:bg-white/5 rounded-b-[2rem]">
+        <div className="p-3 border-t border-slate-200/60 dark:border-zinc-800 bg-slate-500/5 dark:bg-white/5 rounded-b-4xl">
           {!isMinimized ? (
             <div className="flex flex-col gap-1 px-1">
               <div className="flex items-center justify-between text-[11px]">
