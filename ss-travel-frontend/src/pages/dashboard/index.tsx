@@ -160,7 +160,7 @@ export default function DashboardPage() {
   const canViewFinance = summary?.canViewFinance ?? false;
 
   return (
-    <div className="space-y-6 p-1">
+    <div className="space-y-6 p-6">
       {/* Top Banner & Header */}
       <div className="relative overflow-hidden rounded-2xl bg-linear-to-r from-slate-950 via-[#0c1829] to-[#042e1f] p-6 text-white shadow-2xl border border-emerald-500/20">
         {/* Decorative background glow & orbs */}

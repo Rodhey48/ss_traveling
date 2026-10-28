@@ -3,10 +3,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useSidebar } from '@/hooks/use-sidebar';
 import { cn } from '@/lib/utils';
 import type { BackendMenu, NavItem } from '@/types';
-import {
-  Bell,
-  ChevronLeft
-} from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 type SidebarProps = {
@@ -48,62 +45,64 @@ export default function Sidebar({ className }: SidebarProps) {
   return (
     <nav
       className={cn(
-        `hidden h-screen flex-none bg-secondary px-2.5 md:block`,
+        `hidden h-screen flex-none border-r border-slate-200/90 dark:border-border/60 bg-slate-100/90 dark:bg-card/95 text-foreground shadow-xs md:flex md:flex-col justify-between select-none`,
         status && 'duration-500',
         !isMinimized ? 'w-80' : 'w-20',
         className
       )}
     >
+      {/* Sidebar Brand Header */}
       <div
         className={cn(
-          'flex items-center px-1 py-2 md:px-2',
-          isMinimized ? 'flex-col justify-center gap-2' : 'justify-between'
+          'flex h-16 items-center border-b border-slate-200/80 dark:border-border/60 px-3 bg-slate-100/50 dark:bg-card/40',
+          isMinimized ? 'flex-col justify-center gap-1.5' : 'justify-between'
         )}
       >
         {!isMinimized && (
-          <div className="flex h-16 items-center text-lg font-bold tracking-widest text-[#1cb85a] truncate">
-            {import.meta.env.VITE_APP_NAME || 'SS TRAVEL ERP'}
+          <div className="flex items-center gap-2 font-black tracking-widest text-[#1cb85a] truncate text-base pl-1">
+            <span>{import.meta.env.VITE_APP_NAME || 'SS TRAVEL ERP'}</span>
           </div>
         )}
-        <ChevronLeft
-          className={cn(
-            'size-7.5 cursor-pointer rounded-full border bg-background text-foreground transition-all hover:bg-accent shrink-0 shadow-xs',
-            isMinimized && 'rotate-180'
-          )}
+        <button
+          type="button"
           onClick={handleToggle}
-        />
+          title={isMinimized ? 'Perluas Sidebar' : 'Kecilkan Sidebar'}
+          className={cn(
+            'size-7 cursor-pointer rounded-full border border-slate-200 dark:border-border/80 bg-white dark:bg-card text-foreground transition-all hover:bg-slate-200/60 dark:hover:bg-accent flex items-center justify-center shrink-0 shadow-xs'
+          )}
+        >
+          <ChevronLeft
+            className={cn(
+              'size-4 transition-transform duration-200',
+              isMinimized && 'rotate-180'
+            )}
+          />
+        </button>
       </div>
 
-      <div className="flex h-[calc(100vh-80px)] flex-col justify-between">
-        <div className="py-2 overflow-y-auto overflow-x-hidden custom-scrollbar pr-1">
-          <div className="px-1">
-            <DashboardNav items={navItems} />
-          </div>
-        </div>
+      {/* Nav Items Scroll Area */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar py-3 px-2">
+        <DashboardNav items={navItems} />
+      </div>
 
-        <div className="relative p-2 border-t border-border/50">
-          <button
-            className={cn(
-              "flex w-full items-center rounded-xl bg-background/50 backdrop-blur-sm p-2 hover:bg-accent transition-all duration-300 shadow-sm border border-border/40 group",
-              isMinimized ? "justify-center" : "justify-between"
-            )}
-          >
-            <div className="flex items-center gap-2.5">
-              <div className="relative">
-                <div className="p-1.5 rounded-lg bg-primary/5 text-primary group-hover:bg-primary/10 transition-colors">
-                  <Bell className="size-4.5" />
-                </div>
-                <span className="absolute -top-0.5 -right-0.5 size-2 bg-red-500 border-2 border-background rounded-full" />
-              </div>
-              {!isMinimized && (
-                <div className="flex flex-col text-left">
-                  <span className="text-xs font-bold text-foreground">Notifikasi</span>
-                  <span className="text-[10px] text-muted-foreground">3 pesan baru</span>
-                </div>
-              )}
+      {/* Sidebar Footer Status */}
+      <div className="border-t border-slate-200/80 dark:border-border/60 bg-slate-200/40 dark:bg-muted/10 p-3">
+        {!isMinimized ? (
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+              <span className="font-semibold text-foreground">SS Travelink</span>
+              <span className="font-mono text-[9px] bg-white dark:bg-secondary text-foreground px-1.5 py-0.5 rounded border border-slate-200/80 dark:border-border/60">v1.3</span>
             </div>
-          </button>
-        </div>
+            <div className="flex items-center gap-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+              <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Sistem Terhubung Realtime</span>
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-center" title="Sistem Aktif & Terhubung">
+            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+          </div>
+        )}
       </div>
     </nav>
   );

@@ -106,7 +106,7 @@ export default function GeneralLedgerPage() {
   const bsResponse = bsData?.data;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="space-y-6 p-6">
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">

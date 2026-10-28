@@ -39,7 +39,7 @@ export default function MobileSidebar({
 
   return (
     <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-      <SheetContent side="left" className="bg-background px-0! w-80 max-w-[85vw]">
+      <SheetContent side="left" className="bg-slate-100/95 dark:bg-card border-r border-slate-200/90 dark:border-border/60 text-foreground px-0! w-80 max-w-[85vw]">
         <div className="flex h-full flex-col py-4">
           <div className="px-5 py-2">
             <Link

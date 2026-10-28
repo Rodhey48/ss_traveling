@@ -202,7 +202,7 @@ export default function AgentsPage() {
   const activeCount = agents.filter((a) => a.isActive).length;
 
   return (
-    <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
+    <div className="space-y-6 p-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <Heading
           title="Mitra Agen & Aturan Komisi"

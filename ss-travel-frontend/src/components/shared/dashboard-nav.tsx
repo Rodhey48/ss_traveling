@@ -78,19 +78,26 @@ export default function DashboardNav({
               onClick={() => toggleExpand(item.title)}
               title={item.title}
               className={cn(
-                'group flex w-full items-center rounded-lg px-2.5 py-2 text-sm font-medium hover:bg-accent/70 hover:text-accent-foreground transition-all duration-200 select-none min-w-0',
-                isExpanded ? 'bg-accent/60 text-accent-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground',
+                'group flex w-full items-center rounded-lg px-2.5 py-2 text-sm font-medium transition-all duration-200 select-none min-w-0',
+                isExpanded
+                  ? 'bg-white/90 dark:bg-accent/60 text-foreground font-semibold shadow-xs border border-slate-200/80 dark:border-border/40'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100',
                 isMinimized && !isMobileNav ? 'justify-center' : 'justify-between'
               )}
             >
               <div className="flex items-center gap-2.5 min-w-0 overflow-hidden">
-                <Icon className={cn('size-4.5 shrink-0 transition-colors', isExpanded ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground')} />
+                <Icon
+                  className={cn(
+                    'size-4.5 shrink-0 transition-colors',
+                    isExpanded ? 'text-primary' : 'text-slate-500 dark:text-slate-400 group-hover:text-foreground'
+                  )}
+                />
                 {(!isMinimized || isMobileNav) && (
                   <span className="truncate text-[13.5px] font-medium tracking-tight">{item.title}</span>
                 )}
               </div>
               {(!isMinimized || isMobileNav) && (
-                <div className="shrink-0 pl-1 text-muted-foreground/60 group-hover:text-muted-foreground">
+                <div className="shrink-0 pl-1 text-slate-400 dark:text-slate-400 group-hover:text-foreground">
                   {isExpanded ? (
                     <ChevronDown className="size-4 transition-transform duration-200" />
                   ) : (
@@ -100,7 +107,7 @@ export default function DashboardNav({
               )}
             </button>
             {isExpanded && (!isMinimized || isMobileNav) && (
-              <div className="ml-3 mt-1 space-y-0.5 border-l-2 border-border/70 pl-2.5 min-w-0">
+              <div className="ml-3 mt-1 space-y-0.5 border-l-2 border-slate-300/80 dark:border-border/60 pl-2.5 min-w-0">
                 {item.items.map((child: any, idx: number) =>
                   renderNavItem(child, idx, true)
                 )}
@@ -124,8 +131,8 @@ export default function DashboardNav({
                 ? 'px-2.5 py-1.5 text-[13px] font-medium'
                 : 'px-2.5 py-2 text-sm font-medium rounded-lg',
               isActive
-                ? 'bg-primary/10 text-primary font-bold shadow-xs'
-                : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+                ? 'bg-white dark:bg-primary/20 text-emerald-600 dark:text-emerald-400 font-bold shadow-xs border border-slate-200/90 dark:border-primary/30'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-white/80 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100',
               isMinimized && !isMobileNav ? 'justify-center' : 'justify-start gap-2.5',
               item.disabled && 'cursor-not-allowed opacity-80'
             )}
@@ -134,7 +141,7 @@ export default function DashboardNav({
               className={cn(
                 isChild ? 'size-4' : 'size-4.5',
                 'shrink-0 transition-colors',
-                isActive ? 'text-primary' : 'text-muted-foreground/70 group-hover:text-foreground'
+                isActive ? 'text-primary' : 'text-slate-500 dark:text-slate-400 group-hover:text-foreground'
               )}
             />
             {(!isMinimized || isMobileNav) && (

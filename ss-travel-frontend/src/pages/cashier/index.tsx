@@ -111,7 +111,7 @@ export default function CashierPage() {
   };
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <Heading
           title="Meja Kasir Pool & Settlement Kas Kru"

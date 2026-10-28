@@ -225,7 +225,7 @@ export default function OrganizationPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <Heading
         title="Pengaturan Struktur Organisasi & Dimensi"
         description="Konfigurasi profil entitas hukum perusahaan, unit bisnis operasional, hierarki cost center, dan profit center."

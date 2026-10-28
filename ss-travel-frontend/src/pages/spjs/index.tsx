@@ -266,7 +266,7 @@ export default function SpjsPage() {
   const settledCount = spjs.filter((s) => s.financialStatus === 'SETTLED').length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       {/* Header Halaman */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <Heading
