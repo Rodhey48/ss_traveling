@@ -464,7 +464,7 @@ export default function VehicleModal({
 
             <div className="space-y-2">
               {/* Header Kolom Konfigurasi Kursi */}
-              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-muted/70 rounded-md text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-slate-100 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 rounded-md text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                 <div className="w-1/3">Kelas Kursi</div>
                 <div className="w-1/4">Kapasitas (Seat)</div>
                 <div className="flex-1">Format Layout Denah</div>
@@ -476,7 +476,7 @@ export default function VehicleModal({
               {formData.seatClasses?.map((sc, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-2 p-2.5 bg-muted/30 rounded-lg border text-sm"
+                  className="flex items-center gap-2 p-2.5 bg-slate-50/80 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 rounded-lg text-sm"
                 >
                   <div className="w-1/3">
                     <Select

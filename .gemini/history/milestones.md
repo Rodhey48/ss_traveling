@@ -2,6 +2,34 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-10-28: Redesain UI/UX SiOlive Glassmorphism, Standarisasi Tombol & Tab Global, Dark Mode & Seeder Foto Bus Completed
+- **Redesain UI/UX Estetika SiOlive (Glassmorphism, Floating Capsule, & Ambient Glow)**:
+  - **Floating Capsule Sidebar**: Transformasi sidebar menjadi kapsul melayang melengkung (`rounded-[2rem] h-[calc(100vh-105px)] my-3 ml-4`) dengan background `bg-white/80 dark:bg-zinc-900/90`, bayangan lembut, dan item menu aktif bergradasi hijau emerald ke teal menyala.
+  - **Frosted Glass Header (Navbar)**: Header sticky full-width (`h-20 bg-white/80 dark:bg-zinc-900/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-zinc-800`), logo gradasi brand `SS Traveling ERP`, dan badge *Corporate Alignment (Command Center)* yang sejajar presisi dengan garis vertikal sidebar melayang.
+  - **Aktivasi Class-Based Dark Mode Tailwind CSS v4**: Menambahkan deklarasi `@custom-variant dark (&:where(.dark, .dark *));` pada `index.css` agar peralihan class `.dark` pada tag HTML langsung responsif dan menghasilkan kontras visual yang nyata.
+  - **Default Light Theme & Indikator Centang**: Menyetel default tema ke `light` pada `AppProvider` dan `use-theme.tsx`. Tombol `ThemeToggle` kini menampilkan ikon mode (*Sun*, *Moon*, *Laptop*) serta tanda centang hijau emerald (`Check`) pada opsi tema yang sedang aktif.
+  - **Standarisasi Padding Halaman**: Menyeragamkan seluruh 22 halaman utama ke wrapper konsisten `className="space-y-6 p-6"` (mengacu standar `/petty-cash`).
+  - **Tipografi Modern**: Memperbarui font global aplikasi ke **Plus Jakarta Sans**.
+- **Sistem Styling Button & Tab Global Terpusat (`index.css`)**:
+  - Terinspirasi dari preferensi warna di `/reports/trip-profitability`, dibuat sistem styling terpusat berbasis CSS Variables:
+    * `--theme-btn-emerald`, `--theme-btn-emerald-hover`, `--theme-tab-active`, `--theme-tab-active-hover`.
+    * Variasi Button Global: `.btn-emerald` (solid emerald), `.btn-gradient` (emerald-teal gradient), `.btn-glass` (frosted glass transparan).
+    * Variasi Tab & Toggle Global: `.tabs-container-pill` (kapsul melengkung frosted glass), `.tab-pill-active` (emerald menyala), `.tab-pill-inactive` (slate lembut), `.tab-pill-gradient`.
+  - Mengintegrasikan variabel ini ke komponen dasar `<Button>` dan `<Tabs>` (`components/ui/button.tsx` dan `components/ui/tabs.tsx`) sehingga seluruh tombol default dan active tab di seluruh aplikasi otomatis mengadopsi tema emerald yang elegan.
+  - Menyeragamkan selector sudut pandang (*viewMode*) pada `/reports/trip-profitability`, `/vehicles` (Kartu vs Tabel), `/accounts` (Hierarki Pohon vs Tabel), dan `/schedules` (Gantt 7 Hari, 14 Hari, 1 Bulan Penuh).
+- **Penyelarasan Warna Dark Mode Menyeluruh**:
+  - **`/dashboard`**: Seluruh 4 kartu metrik KPI, deretan pintasan cepat, widget rekening kas & bank, widget alert pengendalian internal, dan tabel monitoring operasional SPJ kini adaptif menggunakan `bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10` dengan teks kontras tinggi (`dark:text-white`).
+  - **`/vehicles`**: Kartu statistik armada, katalog kartu bus (*Card View*), tabel bus (*Table View*), badge kepemilikan Lunas vs Leasing, serta seluruh modal dialog (spesifikasi fisik `VehicleDetailModal`, konfigurasi kursi kabin `VehicleModal`, dan master kelas kursi `SeatClassMasterModal`) kini 100% bebas dari kebocoran warna abu-abu terang.
+  - **`/ap-invoices`**: Kartu metrik utang usaha, tombol servis makan RM dan bengkel, filter status/tipe vendor, serta tabel faktur tagihan dan riwayat pembayaran AP kini adaptif dalam tema gelap.
+  - **`/ar-invoices`**: Kartu metrik piutang dan uang muka sewa wisata, tombol penerimaan DP 30% dan pelunasan 70%, serta tabel invoice AR dan kwitansi penerimaan pembayaran kini adaptif dalam tema gelap.
+- **Investigasi & Perbaikan Seeder Foto Bus di Database PostgreSQL**:
+  - Mengidentifikasi akar masalah mengapa kartu armada bus sebelumnya menampilkan *"Belum ada foto"*: Migrasi tabel `vehicle_images` dijalankan sebelum tabel `vehicles` di-seed sehingga relasi foto tidak terbentuk (0 baris di database).
+  - Membuat migrasi seeder baru `ss-travel-backend/src/@configs/database/seeding/1888888888897-SeedVehicleImages.ts` dan mengeksekusinya via `yarn migration:run`.
+  - Berhasil menghubungkan 20 foto beresolusi tinggi (eksterior cover dan interior kabin) untuk seluruh 10 armada bus (`SS-01` s.d. `SS-10`), menampilkan foto asli di halaman web dan modal rincian armada.
+- **Verifikasi Kualitas Penuh**:
+  - Seluruh 27 unit test suites backend (160 unit tests) lulus 100% PASS.
+  - Build Frontend Vite TypeScript (`yarn build`) sukses 100% bebas error.
+
 ### 2026-10-25: Modul Treasury, Persetujuan Pemindahan Dana & Rekening Koran Digital Completed
 - **Pemisahan Tegas Master Data vs Operasional Likuiditas**:
   - Halaman **`/cash-bank`**: Dipertahankan murni sebagai **Master Data Kas & Rekening Bank** (CRUD data rekening kas fisik, rekening bank, pemetaan akun COA, cost center, dan masking nomor rekening).

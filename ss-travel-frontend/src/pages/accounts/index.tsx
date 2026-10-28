@@ -1,22 +1,13 @@
-import { useState, useEffect, useMemo } from 'react';
 import Heading from '@/components/shared/heading';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -25,24 +16,33 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Plus,
-  Search,
-  FolderTree,
-  Table2,
-  ChevronRight,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { usePermission } from '@/hooks/use-permission';
+import { AccountService } from '@/services/account.service';
+import type { Account, AccountFormData, AccountTreeNode, AccountType } from '@/types';
+import {
   ChevronDown,
+  ChevronRight,
   Edit,
-  Trash2,
-  PlusCircle,
   FileText,
   Folder,
+  FolderTree,
   Layers,
+  Plus,
+  PlusCircle,
+  Search,
+  Table2,
+  Trash2,
 } from 'lucide-react';
-import AccountModal from './components/account-modal';
-import { AccountService } from '@/services/account.service';
-import type { Account, AccountTreeNode, AccountFormData, AccountType } from '@/types';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { usePermission } from '@/hooks/use-permission';
+import AccountModal from './components/account-modal';
 
 export default function AccountsPage() {
   const { isCreate, isUpdate, isDelete } = usePermission();
@@ -258,19 +258,17 @@ export default function AccountsPage() {
         <div key={node.id} className="flex flex-col">
           {isVisible && (
             <div
-              className={`flex items-center justify-between py-2 px-3 hover:bg-accent/40 rounded-md transition-colors border-b border-border/40 ${
-                level === 0
+              className={`flex items-center justify-between py-2 px-3 hover:bg-accent/40 rounded-md transition-colors border-b border-border/40 ${level === 0
                   ? 'bg-muted/30 font-semibold'
                   : level === 1
-                  ? 'font-medium'
-                  : 'text-sm'
-              }`}
+                    ? 'font-medium'
+                    : 'text-sm'
+                }`}
               style={{ paddingLeft: `${level * 24 + 12}px` }}
             >
               <div
-                className={`flex items-center space-x-2 flex-1 min-w-0 ${
-                  hasChildren ? 'cursor-pointer select-none' : ''
-                }`}
+                className={`flex items-center space-x-2 flex-1 min-w-0 ${hasChildren ? 'cursor-pointer select-none' : ''
+                  }`}
                 onClick={() => hasChildren && toggleExpand(node.id)}
               >
                 {hasChildren ? (
@@ -317,9 +315,8 @@ export default function AccountsPage() {
 
                 <Badge
                   variant="outline"
-                  className={`text-[10px] py-0 px-1.5 ${
-                    node.normalBalance === 'DEBIT' ? 'text-blue-600' : 'text-purple-600'
-                  }`}
+                  className={`text-[10px] py-0 px-1.5 ${node.normalBalance === 'DEBIT' ? 'text-blue-600' : 'text-purple-600'
+                    }`}
                 >
                   {node.normalBalance}
                 </Badge>
@@ -469,7 +466,7 @@ export default function AccountsPage() {
       {/* Filter and View Toggle Controls */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2 flex-1">
-          <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <div className="relative flex-1 min-w-50 max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Cari kode akun atau nama..."
@@ -480,7 +477,7 @@ export default function AccountsPage() {
           </div>
 
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="w-40">
               <SelectValue placeholder="Semua Tipe" />
             </SelectTrigger>
             <SelectContent>
@@ -494,7 +491,7 @@ export default function AccountsPage() {
           </Select>
 
           <Select value={postableFilter} onValueChange={setPostableFilter}>
-            <SelectTrigger className="w-[150px]">
+            <SelectTrigger className="w-37.5">
               <SelectValue placeholder="Semua Status" />
             </SelectTrigger>
             <SelectContent>
@@ -528,15 +525,14 @@ export default function AccountsPage() {
             </div>
           )}
 
-          <div className="flex items-center bg-muted p-1 rounded-lg border">
+          <div className="tabs-container-pill">
             <button
               type="button"
               onClick={() => setViewMode('tree')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                viewMode === 'tree'
-                  ? 'bg-background shadow-xs text-foreground'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs transition-all ${viewMode === 'tree'
+                  ? 'tab-pill-active'
+                  : 'tab-pill-inactive'
+                }`}
             >
               <FolderTree className="h-3.5 w-3.5" />
               <span>Hierarki Pohon</span>
@@ -544,11 +540,10 @@ export default function AccountsPage() {
             <button
               type="button"
               onClick={() => setViewMode('table')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                viewMode === 'table'
-                  ? 'bg-background shadow-xs text-foreground'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs transition-all ${viewMode === 'table'
+                  ? 'tab-pill-active'
+                  : 'tab-pill-inactive'
+                }`}
             >
               <Table2 className="h-3.5 w-3.5" />
               <span>Daftar Tabel</span>
@@ -578,13 +573,13 @@ export default function AccountsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[120px]">Kode Akun</TableHead>
+                  <TableHead className="w-30">Kode Akun</TableHead>
                   <TableHead>Nama Akun</TableHead>
                   <TableHead>Tipe</TableHead>
-                  <TableHead className="w-[100px]">Normal</TableHead>
-                  <TableHead className="w-[120px]">Sifat</TableHead>
+                  <TableHead className="w-25">Normal</TableHead>
+                  <TableHead className="w-30">Sifat</TableHead>
                   <TableHead>Akun Induk</TableHead>
-                  <TableHead className="text-right w-[110px]">Aksi</TableHead>
+                  <TableHead className="text-right w-27.5">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

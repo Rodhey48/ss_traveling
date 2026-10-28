@@ -238,30 +238,30 @@ export default function DashboardPage() {
       {/* 4 Main KPI Cards (Role-Based Dynamic) */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* KPI 1 (All Roles): Status Armada Bus */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-all hover:shadow-md">
+        <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-5 shadow-sm transition-all hover:shadow-md">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
               Status Armada Bus
             </span>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400">
               <Bus className="h-5 w-5" />
             </div>
           </div>
           <div className="mt-3">
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-slate-900">
+              <span className="text-3xl font-black text-slate-900 dark:text-white">
                 {summary?.fleet.activeOnRoute ?? 0}
               </span>
-              <span className="text-sm font-semibold text-slate-400">
+              <span className="text-sm font-semibold text-slate-400 dark:text-slate-500">
                 / {summary?.fleet.total ?? 10} Bus
               </span>
             </div>
             <div className="mt-2 flex items-center justify-between text-xs">
-              <span className="text-emerald-700 font-semibold flex items-center gap-1">
+              <span className="text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                 Aktif di Rute
               </span>
-              <span className="text-slate-500">
+              <span className="text-slate-500 dark:text-slate-400">
                 {summary?.fleet.standbyPool ?? 0} Standby Garasi
               </span>
             </div>
@@ -269,27 +269,27 @@ export default function DashboardPage() {
         </div>
 
         {/* KPI 2 (All Roles): Pengemudi (Driver) */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-all hover:shadow-md">
+        <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-5 shadow-sm transition-all hover:shadow-md">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
               Pengemudi (Driver)
             </span>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400">
               <Users className="h-5 w-5" />
             </div>
           </div>
           <div className="mt-3">
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-teal-700">
+              <span className="text-3xl font-black text-teal-700 dark:text-teal-400">
                 {summary?.crew.activeDrivers ?? 0}
               </span>
-              <span className="text-sm font-semibold text-slate-400">
+              <span className="text-sm font-semibold text-slate-400 dark:text-slate-500">
                 / {summary?.crew.totalDrivers ?? 6} Driver
               </span>
             </div>
             <div className="mt-2 flex items-center justify-between text-xs">
-              <span className="text-teal-700 font-semibold">Berdinas Jalan</span>
-              <span className="text-slate-500">
+              <span className="text-teal-700 dark:text-teal-400 font-semibold">Berdinas Jalan</span>
+              <span className="text-slate-500 dark:text-slate-400">
                 {summary?.crew.standbyDrivers ?? 0} Standby Pool
               </span>
             </div>
@@ -297,27 +297,27 @@ export default function DashboardPage() {
         </div>
 
         {/* KPI 3 (All Roles): Perjalanan SPJ Aktif */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-all hover:shadow-md">
+        <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-5 shadow-sm transition-all hover:shadow-md">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
               Perjalanan SPJ Aktif
             </span>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400">
               <FileText className="h-5 w-5" />
             </div>
           </div>
           <div className="mt-3">
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-amber-600">
+              <span className="text-3xl font-black text-amber-600 dark:text-amber-400">
                 {summary?.trips.inProgress ?? 0}
               </span>
-              <span className="text-xs text-slate-400">Sedang di Jalan</span>
+              <span className="text-xs text-slate-400 dark:text-slate-500">Sedang di Jalan</span>
             </div>
             <div className="mt-2 flex items-center justify-between text-xs">
-              <span className="text-slate-600">
+              <span className="text-slate-600 dark:text-slate-300">
                 Menunggu Kasir: <strong>{summary?.trips.pendingCashierSettlement ?? 0}</strong>
               </span>
-              <span className="text-emerald-600 font-semibold">
+              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
                 {summary?.trips.completedThisMonth ?? 0} Selesai
               </span>
             </div>
@@ -327,47 +327,47 @@ export default function DashboardPage() {
         {/* KPI 4: Role-Based Differentiated */}
         {canViewFinance ? (
           /* Role Keuangan/Direksi: Likuiditas Kas & Bank */
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-all hover:shadow-md">
+          <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-5 shadow-sm transition-all hover:shadow-md">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                 Total Kas & Bank GL
               </span>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
                 <Wallet className="h-5 w-5" />
               </div>
             </div>
             <div className="mt-3">
-              <div className="text-2xl font-black text-emerald-700 truncate">
+              <div className="text-2xl font-black text-emerald-700 dark:text-emerald-400 truncate">
                 Rp {Number(summary?.cashAndBank?.totalLiquidity || 0).toLocaleString('id-ID')}
               </div>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                 Kas pool + kas kecil + rekening bank
               </p>
             </div>
           </div>
         ) : (
           /* Role Operasional/Kru: Pelayanan Kabin (Kondektur & Pramugari) */
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-all hover:shadow-md">
+          <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-5 shadow-sm transition-all hover:shadow-md">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                 Pelayanan Kabin (Kru)
               </span>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400">
                 <ShieldCheck className="h-5 w-5" />
               </div>
             </div>
             <div className="mt-3">
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-black text-purple-700">
+                <span className="text-3xl font-black text-purple-700 dark:text-purple-400">
                   {summary?.crew.activeConductors ?? 0}
                 </span>
-                <span className="text-sm font-semibold text-slate-400">
+                <span className="text-sm font-semibold text-slate-400 dark:text-slate-500">
                   / {summary?.crew.totalConductors ?? 4} Kru
                 </span>
               </div>
               <div className="mt-2 flex items-center justify-between text-xs">
-                <span className="text-purple-700 font-semibold">Aktif di Rute</span>
-                <span className="text-slate-500">Kondektur & Pramugari</span>
+                <span className="text-purple-700 dark:text-purple-400 font-semibold">Aktif di Rute</span>
+                <span className="text-slate-500 dark:text-slate-400">Kondektur & Pramugari</span>
               </div>
             </div>
           </div>
@@ -376,8 +376,8 @@ export default function DashboardPage() {
 
       {/* Quick Action Shortcuts Bar (Hanya menampilkan menu yang diizinkan) */}
       {permittedActions.length > 0 && (
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
-          <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+        <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-4 shadow-sm">
+          <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
             Pintas Operasional Cepat
           </span>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -388,12 +388,12 @@ export default function DashboardPage() {
                   key={action.url}
                   type="button"
                   onClick={() => navigate(action.url)}
-                  className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 p-3 text-left transition-all hover:bg-slate-100 hover:border-slate-300"
+                  className="flex items-center gap-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3 text-left transition-all hover:bg-slate-100 dark:hover:bg-white/10"
                 >
                   <IconComp className={`h-4 w-4 ${action.color} shrink-0`} />
                   <div className="truncate">
-                    <div className="text-xs font-bold text-slate-800">{action.label}</div>
-                    <div className="text-[10px] text-slate-500">{action.sub}</div>
+                    <div className="text-xs font-bold text-slate-800 dark:text-slate-100">{action.label}</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400">{action.sub}</div>
                   </div>
                 </button>
               );
@@ -407,11 +407,11 @@ export default function DashboardPage() {
         /* TAMPILAN KHUSUS DIREKSI & KEUANGAN */
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Left Column: Posisi Saldo Kas & Bank */}
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-5 shadow-sm">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/10 pb-3">
               <div className="flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-indigo-600" />
-                <h3 className="font-bold text-slate-900">
+                <Building2 className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                <h3 className="font-bold text-slate-900 dark:text-white">
                   Posisi Kas Operasional & Rekening Bank
                 </h3>
               </div>
@@ -419,42 +419,42 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => navigate('/cash-bank')}
-                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+                  className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1"
                 >
                   Kelola Kas <ArrowRight className="h-3 w-3" />
                 </button>
               )}
             </div>
 
-            <div className="mt-4 divide-y divide-slate-100">
+            <div className="mt-4 divide-y divide-slate-100 dark:divide-white/10">
               {summary?.cashAndBank?.accounts && summary.cashAndBank.accounts.length > 0 ? (
                 summary.cashAndBank.accounts.map((acc) => (
                   <div key={acc.id} className="flex items-center justify-between py-2.5">
                     <div className="flex items-center gap-3">
                       <div
                         className={`flex h-8 min-w-11 px-2 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold tracking-tight ${acc.type === 'BANK'
-                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                          : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60'
+                          : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60'
                           }`}
                       >
                         {acc.type === 'BANK' ? 'BANK' : 'KAS'}
                       </div>
                       <div>
-                        <div className="text-xs font-bold text-slate-800">
+                        <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
                           {acc.name}
                         </div>
-                        <div className="text-[10px] text-slate-400 font-mono">
+                        <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
                           {acc.code}
                         </div>
                       </div>
                     </div>
-                    <div className="text-sm font-extrabold text-slate-900">
+                    <div className="text-sm font-extrabold text-slate-900 dark:text-white">
                       Rp {Number(acc.balance).toLocaleString('id-ID')}
                     </div>
                   </div>
                 ))
               ) : (
-                <p className="py-4 text-xs text-slate-400 text-center">
+                <p className="py-4 text-xs text-slate-400 dark:text-slate-500 text-center">
                   Belum ada akun kas atau rekening bank terdaftar.
                 </p>
               )}
@@ -462,15 +462,15 @@ export default function DashboardPage() {
           </div>
 
           {/* Right Column: Alert Keuangan & Pengendalian Internal */}
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-5 shadow-sm">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/10 pb-3">
               <div className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-amber-600" />
-                <h3 className="font-bold text-slate-900">
+                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                <h3 className="font-bold text-slate-900 dark:text-white">
                   Pengendalian Internal & Alert Jatuh Tempo
                 </h3>
               </div>
-              <span className="text-xs font-semibold text-slate-400">
+              <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
                 Audit Otomatis
               </span>
             </div>
@@ -479,104 +479,104 @@ export default function DashboardPage() {
               {/* Alert 1: AP Invoices */}
               <div
                 onClick={() => hasMenuAccess('/ap-invoices') && navigate('/ap-invoices')}
-                className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/60 p-3 hover:bg-slate-100/60 cursor-pointer transition-all"
+                className="flex items-center justify-between rounded-xl border border-slate-100 dark:border-white/10 bg-slate-50/60 dark:bg-white/5 p-3 hover:bg-slate-100/60 dark:hover:bg-white/10 cursor-pointer transition-all"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400">
                     <FileDown className="h-4 w-4" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-slate-800">
+                    <div className="text-xs font-bold text-slate-800 dark:text-slate-100">
                       Tagihan Vendor Terbuka (AP)
                     </div>
-                    <div className="text-[11px] text-slate-500">
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
                       {summary?.financeAlerts?.openApCount ?? 0} faktur rumah makan & bengkel
                     </div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs font-bold text-slate-900">
+                  <div className="text-xs font-bold text-slate-900 dark:text-white">
                     Rp {Number(summary?.financeAlerts?.openApInvoicesAmount || 0).toLocaleString('id-ID')}
                   </div>
-                  <span className="text-[10px] text-slate-400">Belum dibayar</span>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500">Belum dibayar</span>
                 </div>
               </div>
 
               {/* Alert 2: AR Invoices */}
               <div
                 onClick={() => hasMenuAccess('/ar-invoices') && navigate('/ar-invoices')}
-                className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/60 p-3 hover:bg-slate-100/60 cursor-pointer transition-all"
+                className="flex items-center justify-between rounded-xl border border-slate-100 dark:border-white/10 bg-slate-50/60 dark:bg-white/5 p-3 hover:bg-slate-100/60 dark:hover:bg-white/10 cursor-pointer transition-all"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-50 text-purple-600">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400">
                     <FileUp className="h-4 w-4" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-slate-800">
+                    <div className="text-xs font-bold text-slate-800 dark:text-slate-100">
                       Piutang Pelanggan Wisata (AR)
                     </div>
-                    <div className="text-[11px] text-slate-500">
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
                       {summary?.financeAlerts?.openArCount ?? 0} invoice sewa wisata menunggu pelunasan
                     </div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs font-bold text-slate-900">
+                  <div className="text-xs font-bold text-slate-900 dark:text-white">
                     Rp {Number(summary?.financeAlerts?.openArInvoicesAmount || 0).toLocaleString('id-ID')}
                   </div>
-                  <span className="text-[10px] text-purple-600 font-semibold">Outstanding</span>
+                  <span className="text-[10px] text-purple-600 dark:text-purple-400 font-semibold">Outstanding</span>
                 </div>
               </div>
 
               {/* Alert 3: Selisih Kasir Akun 11999 */}
               <div
                 onClick={() => hasMenuAccess('/cashier') && navigate('/cashier')}
-                className="flex items-center justify-between rounded-xl border border-amber-100 bg-amber-50/40 p-3 hover:bg-amber-50 cursor-pointer transition-all"
+                className="flex items-center justify-between rounded-xl border border-amber-100 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-950/20 p-3 hover:bg-amber-50 dark:hover:bg-amber-950/30 cursor-pointer transition-all"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400">
                     <AlertTriangle className="h-4 w-4" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-slate-800">
+                    <div className="text-xs font-bold text-slate-800 dark:text-slate-100">
                       Selisih Kasir dalam Investigasi FM
                     </div>
-                    <div className="text-[11px] text-slate-500">
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
                       {summary?.financeAlerts?.pendingDiscrepancyCount ?? 0} kasus sengketa nota/tiket (Skenario 4)
                     </div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs font-bold text-amber-700">
+                  <div className="text-xs font-bold text-amber-700 dark:text-amber-400">
                     Rp {Number(summary?.financeAlerts?.unresolvedDiscrepancyAmount || 0).toLocaleString('id-ID')}
                   </div>
-                  <span className="text-[10px] text-amber-600 font-medium">Akun 11999</span>
+                  <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Akun 11999</span>
                 </div>
               </div>
 
               {/* Alert 4: Bon Kas Kecil Menunggu Approval */}
               <div
                 onClick={() => hasMenuAccess('/petty-cash') && navigate('/petty-cash')}
-                className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/60 p-3 hover:bg-slate-100/60 cursor-pointer transition-all"
+                className="flex items-center justify-between rounded-xl border border-slate-100 dark:border-white/10 bg-slate-50/60 dark:bg-white/5 p-3 hover:bg-slate-100/60 dark:hover:bg-white/10 cursor-pointer transition-all"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
                     <Clock className="h-4 w-4" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-slate-800">
+                    <div className="text-xs font-bold text-slate-800 dark:text-slate-100">
                       Kas Kecil Garasi Menunggu Verifikasi
                     </div>
-                    <div className="text-[11px] text-slate-500">
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
                       Nota pengeluaran garasi non-SPJ siap diposting ke GL
                     </div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs font-bold text-blue-700">
+                  <div className="text-xs font-bold text-blue-700 dark:text-blue-400">
                     {summary?.financeAlerts?.pendingPettyCashCount ?? 0} BKK
                   </div>
-                  <span className="text-[10px] text-slate-400">Status Submitted</span>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500">Status Submitted</span>
                 </div>
               </div>
             </div>
@@ -586,54 +586,54 @@ export default function DashboardPage() {
         /* TAMPILAN OPERASIONAL UNTUK KRU & DISPATCHER */
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Left Column: Kesiapan Armada & Garasi Pool */}
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-5 shadow-sm">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/10 pb-3">
               <div className="flex items-center gap-2">
-                <Bus className="h-5 w-5 text-indigo-600" />
-                <h3 className="font-bold text-slate-900">
+                <Bus className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                <h3 className="font-bold text-slate-900 dark:text-white">
                   Kesiapan Armada Bus Garasi Pool
                 </h3>
               </div>
-              <span className="text-xs font-semibold text-slate-400">
+              <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
                 Unit Operasional
               </span>
             </div>
 
             <div className="mt-4 space-y-3">
-              <div className="flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50/50 p-3.5">
+              <div className="flex items-center justify-between rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-950/20 p-3.5">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 font-bold">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 font-bold">
                     <Compass className="h-5 w-5" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-slate-900">
+                    <div className="text-xs font-bold text-slate-900 dark:text-white">
                       Armada Sedang Dinas di Rute
                     </div>
-                    <div className="text-[11px] text-slate-500">
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
                       Bus beroperasi aktif melayani penumpang rute PP / tour
                     </div>
                   </div>
                 </div>
-                <div className="text-lg font-black text-emerald-700">
+                <div className="text-lg font-black text-emerald-700 dark:text-emerald-400">
                   {summary?.fleet.activeOnRoute ?? 0} Unit
                 </div>
               </div>
 
-              <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+              <div className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3.5">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-200 text-slate-700 font-bold">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">
                     <Bus className="h-5 w-5" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-slate-900">
+                    <div className="text-xs font-bold text-slate-900 dark:text-white">
                       Armada Standby di Pool Ciputat
                     </div>
-                    <div className="text-[11px] text-slate-500">
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
                       Unit bersih, siap plotting jadwal dinas berikutnya
                     </div>
                   </div>
                 </div>
-                <div className="text-lg font-black text-slate-800">
+                <div className="text-lg font-black text-slate-800 dark:text-slate-200">
                   {summary?.fleet.standbyPool ?? 0} Unit
                 </div>
               </div>
@@ -641,22 +641,22 @@ export default function DashboardPage() {
           </div>
 
           {/* Right Column: SOP Keselamatan & Kepatuhan Lapangan */}
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-5 shadow-sm">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/10 pb-3">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-indigo-600" />
-                <h3 className="font-bold text-slate-900">
+                <ShieldCheck className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                <h3 className="font-bold text-slate-900 dark:text-white">
                   Panduan Keselamatan & Prosedur Kru
                 </h3>
               </div>
-              <span className="text-xs font-semibold text-amber-600">
+              <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
                 SOP Resmi
               </span>
             </div>
 
-            <div className="mt-4 space-y-2.5 text-xs text-slate-700 leading-relaxed">
-              <div className="flex items-start gap-2.5 rounded-lg border border-slate-100 bg-slate-50/60 p-2.5">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[10px] font-bold text-indigo-700">
+            <div className="mt-4 space-y-2.5 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+              <div className="flex items-start gap-2.5 rounded-lg border border-slate-100 dark:border-white/10 bg-slate-50/60 dark:bg-white/5 p-2.5">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-950/60 text-[10px] font-bold text-indigo-700 dark:text-indigo-400">
                   1
                 </span>
                 <div>
@@ -664,8 +664,8 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="flex items-start gap-2.5 rounded-lg border border-slate-100 bg-slate-50/60 p-2.5">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[10px] font-bold text-indigo-700">
+              <div className="flex items-start gap-2.5 rounded-lg border border-slate-100 dark:border-white/10 bg-slate-50/60 dark:bg-white/5 p-2.5">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-950/60 text-[10px] font-bold text-indigo-700 dark:text-indigo-400">
                   2
                 </span>
                 <div>
@@ -673,8 +673,8 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="flex items-start gap-2.5 rounded-lg border border-slate-100 bg-slate-50/60 p-2.5">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[10px] font-bold text-indigo-700">
+              <div className="flex items-start gap-2.5 rounded-lg border border-slate-100 dark:border-white/10 bg-slate-50/60 dark:bg-white/5 p-2.5">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-950/60 text-[10px] font-bold text-indigo-700 dark:text-indigo-400">
                   3
                 </span>
                 <div>
@@ -687,13 +687,13 @@ export default function DashboardPage() {
       )}
 
       {/* Bottom Section: Recent Trips & Operations Monitor (Aman untuk Semua Role) */}
-      <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+      <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-5 shadow-sm">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/10 pb-3">
           <div>
-            <h3 className="font-bold text-slate-900">
+            <h3 className="font-bold text-slate-900 dark:text-white">
               Monitoring Operasional SPJ Terbaru
             </h3>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Pergerakan dinas armada bus dan status penyelesaian kasir pool
             </p>
           </div>
@@ -701,7 +701,7 @@ export default function DashboardPage() {
             <button
               type="button"
               onClick={() => navigate('/spjs')}
-              className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+              className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1"
             >
               Lihat Semua SPJ <ArrowRight className="h-3 w-3" />
             </button>
@@ -710,7 +710,7 @@ export default function DashboardPage() {
 
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
+            <thead className="bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-white/10">
               <tr>
                 <th className="py-2.5 px-3 font-semibold">Nomor SPJ</th>
                 <th className="py-2.5 px-3 font-semibold">Layanan</th>
@@ -722,46 +722,46 @@ export default function DashboardPage() {
                 <th className="py-2.5 px-3 font-semibold text-center">Status Finansial</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-white/10">
               {summary?.recentSpjs && summary.recentSpjs.length > 0 ? (
                 summary.recentSpjs.map((spj) => (
                   <tr
                     key={spj.id}
                     onClick={() => hasMenuAccess('/spjs') && navigate('/spjs')}
-                    className="hover:bg-slate-50 cursor-pointer transition-colors"
+                    className="hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer transition-colors"
                   >
-                    <td className="py-3 px-3 font-bold text-slate-900">
+                    <td className="py-3 px-3 font-bold text-slate-900 dark:text-white">
                       {spj.spjNo}
                     </td>
                     <td className="py-3 px-3">
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${spj.serviceType === 'AKAP'
-                          ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                          : 'bg-amber-50 text-amber-700 border border-amber-200'
+                          ? 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60'
+                          : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60'
                           }`}
                       >
                         {spj.serviceType}
                       </span>
                     </td>
-                    <td className="py-3 px-3 font-medium text-slate-800">
+                    <td className="py-3 px-3 font-medium text-slate-800 dark:text-slate-200">
                       {spj.vehicleCode} ({spj.vehiclePlate})
                     </td>
-                    <td className="py-3 px-3 text-slate-700">
+                    <td className="py-3 px-3 text-slate-700 dark:text-slate-300">
                       {spj.driverName}
                     </td>
-                    <td className="py-3 px-3 text-slate-600">
+                    <td className="py-3 px-3 text-slate-600 dark:text-slate-400">
                       {spj.route}
                     </td>
-                    <td className="py-3 px-3 text-slate-600 whitespace-nowrap">
+                    <td className="py-3 px-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
                       {spj.departureDate}
                     </td>
                     <td className="py-3 px-3 text-center">
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${spj.operationalStatus === 'IN_PROGRESS'
-                          ? 'bg-blue-50 text-blue-700 border border-blue-200 animate-pulse'
+                          ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 animate-pulse'
                           : spj.operationalStatus === 'COMPLETED'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : 'bg-slate-100 text-slate-700'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60'
+                            : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300'
                           }`}
                       >
                         {spj.operationalStatus}
@@ -770,12 +770,12 @@ export default function DashboardPage() {
                     <td className="py-3 px-3 text-center">
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${spj.financialStatus === 'SETTLED'
-                          ? 'bg-emerald-50 text-emerald-700'
+                          ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
                           : spj.financialStatus === 'UNDER_REVIEW'
-                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                            ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60'
                             : spj.financialStatus === 'DISCREPANCY'
-                              ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                              : 'bg-slate-100 text-slate-600'
+                              ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60'
+                              : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-400'
                           }`}
                       >
                         {spj.financialStatus}
@@ -785,7 +785,7 @@ export default function DashboardPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={8} className="py-6 text-center text-slate-400">
+                  <td colSpan={8} className="py-6 text-center text-slate-400 dark:text-slate-500">
                     Belum ada data perjalanan SPJ.
                   </td>
                 </tr>

@@ -1,13 +1,20 @@
-import { useState, useEffect } from 'react';
+import ConfirmDialog from '@/components/shared/confirm-dialog';
 import Heading from '@/components/shared/heading';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardHeader,
 } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -17,41 +24,34 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Plus,
-  Calendar,
-  Clock,
-  Bus,
-  Search,
-  CheckCircle2,
-  Edit,
-  Trash2,
-  FileCheck,
-  Ban,
-  Info,
-  RotateCcw,
-} from 'lucide-react';
-import TimelineGantt, { type GanttViewMode } from './components/timeline-gantt';
-import ScheduleModal from './components/schedule-modal';
-import ReviewPublishSpjModal from './components/review-publish-spj-modal';
-import ConfirmDialog from '@/components/shared/confirm-dialog';
+import { usePermission } from '@/hooks/use-permission';
 import { TripScheduleService } from '@/services/trip-schedule.service';
 import { VehicleService } from '@/services/vehicle.service';
 import type {
   TripSchedule,
-  Vehicle,
-  TripServiceType,
   TripScheduleStatus,
+  TripServiceType,
+  Vehicle,
 } from '@/types';
+import {
+  Ban,
+  Bus,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  Edit,
+  FileCheck,
+  Info,
+  Plus,
+  RotateCcw,
+  Search,
+  Trash2,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { usePermission } from '@/hooks/use-permission';
+import ReviewPublishSpjModal from './components/review-publish-spj-modal';
+import ScheduleModal from './components/schedule-modal';
+import TimelineGantt, { type GanttViewMode } from './components/timeline-gantt';
 
 export default function SchedulesPage() {
   const { isCreate, isUpdate, isDelete } = usePermission();
@@ -105,7 +105,7 @@ export default function SchedulesPage() {
     title: '',
     description: '',
     variant: 'primary',
-    onConfirm: () => {},
+    onConfirm: () => { },
   });
 
   useEffect(() => {
@@ -286,7 +286,7 @@ export default function SchedulesPage() {
       <div className="p-4 rounded-xl border border-indigo-200/70 bg-indigo-50/50 dark:border-indigo-900/40 dark:bg-indigo-950/20 text-xs text-indigo-950 dark:text-indigo-200 flex items-start gap-3 shadow-2xs">
         <Info className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
         <div className="space-y-1">
-          <p className="font-bold text-sm">Prinsip Pemisahan Perencanaan vs Eksekusi (Blueprint Addendum v1.16)</p>
+          <p className="font-bold text-sm">Prinsip Pemisahan Perencanaan</p>
           <p>
             Surat Perintah Jalan (SPJ) tidak diterbitkan mendadak dari nol, melainkan bersumber dari dokumen <strong>Jadwal Dinas Terkonfirmasi (CONFIRMED)</strong>. Sistem otomatis menolak jadwal dinas yang saling bertabrakan (<em>overlap conflict</em>) dan memberikan peringatan jika sisa jeda istirahat supir/bus kurang dari 3 jam.
           </p>
@@ -308,7 +308,7 @@ export default function SchedulesPage() {
           {/* Filter Bar Global */}
           <div className="flex flex-wrap items-center gap-2">
             <Select value={serviceFilter} onValueChange={setServiceFilter}>
-              <SelectTrigger className="w-[140px] h-9 text-xs">
+              <SelectTrigger className="w-35 h-9 text-xs">
                 <SelectValue placeholder="Semua Layanan" />
               </SelectTrigger>
               <SelectContent>
@@ -320,7 +320,7 @@ export default function SchedulesPage() {
             </Select>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[140px] h-9 text-xs">
+              <SelectTrigger className="w-35 h-9 text-xs">
                 <SelectValue placeholder="Semua Status" />
               </SelectTrigger>
               <SelectContent>
@@ -388,7 +388,7 @@ export default function SchedulesPage() {
                         setStartDateFilter(e.target.value);
                         setPage(1);
                       }}
-                      className="h-8 text-xs w-[135px] px-2.5 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                      className="h-8 text-xs w-33.75 px-2.5 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                       placeholder="Dari Tanggal"
                     />
                     <span className="text-xs text-muted-foreground">s/d</span>
@@ -400,7 +400,7 @@ export default function SchedulesPage() {
                         setEndDateFilter(e.target.value);
                         setPage(1);
                       }}
-                      className="h-8 text-xs w-[135px] px-2.5 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                      className="h-8 text-xs w-33.75 px-2.5 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                       placeholder="Sampai Tanggal"
                     />
                   </div>
@@ -462,7 +462,7 @@ export default function SchedulesPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/40">
-                    <TableHead className="w-[140px]">No. Jadwal</TableHead>
+                    <TableHead className="w-35">No. Jadwal</TableHead>
                     <TableHead>Layanan</TableHead>
                     <TableHead>Armada Bus</TableHead>
                     <TableHead>Rute & Waktu Dinas</TableHead>

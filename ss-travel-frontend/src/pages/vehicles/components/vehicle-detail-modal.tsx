@@ -1,25 +1,25 @@
-import { useState, useEffect } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import type { Vehicle } from '@/types';
 import {
+  Armchair,
   Bus,
+  Calendar,
+  Edit,
+  Globe,
+  ShieldCheck,
   Sparkles,
   Users,
-  Calendar,
-  ShieldCheck,
-  Globe,
-  Armchair,
-  Edit,
 } from 'lucide-react';
-import type { Vehicle } from '@/types';
+import { useEffect, useState } from 'react';
 
 interface VehicleDetailModalProps {
   isOpen: boolean;
@@ -59,7 +59,7 @@ export default function VehicleDetailModal({
             alt={currentImage.caption || vehicle.nickname || vehicle.code}
             className="w-full h-full object-cover transition-all duration-300"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-black/30" />
 
           {/* Badge Atas */}
           <div className="absolute top-4 left-4 flex items-center gap-2">
@@ -112,17 +112,16 @@ export default function VehicleDetailModal({
 
         {/* Thumbnail Navigator Foto (jika foto > 1) */}
         {images.length > 1 && (
-          <div className="flex items-center gap-2 p-3 bg-muted/40 border-b overflow-x-auto">
+          <div className="flex items-center gap-2 p-3 bg-slate-100 dark:bg-white/5 border-b border-slate-200/80 dark:border-white/10 overflow-x-auto">
             {images.map((img, idx) => (
               <button
                 key={img.id || idx}
                 type="button"
                 onClick={() => setActiveImageIndex(idx)}
-                className={`relative h-14 w-24 rounded-md overflow-hidden border-2 transition-all flex-shrink-0 ${
-                  activeImageIndex === idx
+                className={`relative h-14 w-24 rounded-md overflow-hidden border-2 transition-all shrink-0 ${activeImageIndex === idx
                     ? 'border-primary ring-2 ring-primary/30'
                     : 'border-transparent opacity-60 hover:opacity-100'
-                }`}
+                  }`}
               >
                 <img
                   src={img.imageUrl}
@@ -151,7 +150,7 @@ export default function VehicleDetailModal({
               Spesifikasi Fisik & Karoseri Armada
             </h4>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-3 bg-card rounded-xl border space-y-0.5">
+              <div className="p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200/80 dark:border-white/10 space-y-0.5">
                 <div className="text-[11px] text-muted-foreground flex items-center gap-1">
                   <Bus className="h-3.5 w-3.5 text-primary" /> Tipe Bus
                 </div>
@@ -159,7 +158,7 @@ export default function VehicleDetailModal({
                   {vehicle.vehicleType.replace('_', ' ')}
                 </div>
               </div>
-              <div className="p-3 bg-card rounded-xl border space-y-0.5">
+              <div className="p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200/80 dark:border-white/10 space-y-0.5">
                 <div className="text-[11px] text-muted-foreground flex items-center gap-1">
                   <Users className="h-3.5 w-3.5 text-primary" /> Total Kapasitas
                 </div>
@@ -167,13 +166,13 @@ export default function VehicleDetailModal({
                   {vehicle.capacity} Penumpang
                 </div>
               </div>
-              <div className="p-3 bg-card rounded-xl border space-y-0.5">
+              <div className="p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200/80 dark:border-white/10 space-y-0.5">
                 <div className="text-[11px] text-muted-foreground flex items-center gap-1">
                   <Calendar className="h-3.5 w-3.5 text-primary" /> Tahun Rakit
                 </div>
                 <div className="font-bold text-sm">{vehicle.year || '-'}</div>
               </div>
-              <div className="p-3 bg-card rounded-xl border space-y-0.5">
+              <div className="p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200/80 dark:border-white/10 space-y-0.5">
                 <div className="text-[11px] text-muted-foreground flex items-center gap-1">
                   <ShieldCheck className="h-3.5 w-3.5 text-primary" /> Status Kepemilikan
                 </div>
@@ -188,7 +187,7 @@ export default function VehicleDetailModal({
 
           {/* Model Chasis & Karoseri */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="p-3.5 bg-muted/30 rounded-xl border">
+            <div className="p-3.5 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200/80 dark:border-white/10">
               <span className="text-xs font-semibold text-muted-foreground block">
                 Model Chasis Mesin:
               </span>
@@ -196,7 +195,7 @@ export default function VehicleDetailModal({
                 {vehicle.chassisModel || 'Chasis Standar Mercedes-Benz / Hino'}
               </span>
             </div>
-            <div className="p-3.5 bg-muted/30 rounded-xl border">
+            <div className="p-3.5 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200/80 dark:border-white/10">
               <span className="text-xs font-semibold text-muted-foreground block">
                 Model Bodi / Karoseri:
               </span>
@@ -221,7 +220,7 @@ export default function VehicleDetailModal({
               {vehicle.seatClasses?.map((sc) => {
                 const master = sc.seatClass;
                 return (
-                  <Card key={sc.id} className="border shadow-none bg-card/60">
+                  <Card key={sc.id} className="border border-slate-200/80 dark:border-white/10 shadow-none bg-slate-50 dark:bg-white/5">
                     <CardContent className="p-3.5 space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -264,7 +263,7 @@ export default function VehicleDetailModal({
           </div>
         </div>
 
-        <DialogFooter className="p-4 border-t bg-muted/20 gap-2">
+        <DialogFooter className="p-4 border-t border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 gap-2">
           {onEdit && (
             <Button
               variant="outline"

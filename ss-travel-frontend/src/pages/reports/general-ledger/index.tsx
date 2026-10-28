@@ -142,7 +142,7 @@ export default function GeneralLedgerPage() {
 
       {/* NAVIGATION TABS */}
       <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as any)} className="w-full">
-        <TabsList className="bg-gray-100 p-1 border border-gray-200 rounded-xl mb-4">
+        <TabsList className="mb-4">
           <TabsTrigger value="GL" className="text-xs px-4 py-2 flex items-center gap-1.5">
             <BookOpen className="h-3.5 w-3.5" />
             Buku Besar (General Ledger)

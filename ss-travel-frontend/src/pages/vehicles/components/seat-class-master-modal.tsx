@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -17,10 +17,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Armchair } from 'lucide-react';
 import { VehicleService } from '@/services/vehicle.service';
 import type { SeatClass } from '@/types';
+import { Armchair, Edit, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 interface SeatClassMasterModalProps {
@@ -128,7 +128,7 @@ export default function SeatClassMasterModal({
         {/* Form Input / Edit */}
         <form
           onSubmit={handleSave}
-          className="p-3 bg-muted/40 rounded-xl border space-y-3"
+          className="p-3 bg-slate-50/80 dark:bg-white/5 rounded-xl border border-slate-200/60 dark:border-white/10 space-y-3"
         >
           <div className="font-semibold text-xs text-primary">
             {editingId ? 'Edit Kelas Kursi' : '+ Tambah Master Kelas Kursi Baru'}
@@ -227,7 +227,7 @@ export default function SeatClassMasterModal({
                       {sc.defaultLayout || '-'}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-xs text-muted-foreground max-w-[180px] truncate" title={sc.description}>
+                  <TableCell className="text-xs text-muted-foreground max-w-45 truncate" title={sc.description}>
                     {sc.description || '-'}
                   </TableCell>
                   <TableCell className="text-right">

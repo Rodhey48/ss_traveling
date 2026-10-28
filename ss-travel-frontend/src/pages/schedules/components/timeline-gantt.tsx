@@ -1,7 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -9,19 +8,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import type { TripSchedule, Vehicle } from '@/types';
 import {
-  ChevronLeft,
-  ChevronRight,
+  ChevronLeft as ArrowLeft,
+  ChevronRight as ArrowRight,
   Bus,
   Calendar,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   FileCheck,
-  CheckCircle2,
-  ChevronRight as ArrowRight,
-  ChevronLeft as ArrowLeft,
   Sparkles,
 } from 'lucide-react';
-import type { TripSchedule, Vehicle } from '@/types';
 
 export type GanttViewMode = '7days' | '14days' | 'month';
 
@@ -291,8 +291,8 @@ export default function TimelineGantt({
   const minGridWidthClass = viewMode === 'month'
     ? 'min-w-[1750px]'
     : viewMode === '14days'
-    ? 'min-w-[1250px]'
-    : 'min-w-[950px]';
+      ? 'min-w-[1250px]'
+      : 'min-w-[950px]';
 
   return (
     <Card className="border shadow-xs overflow-hidden">
@@ -313,7 +313,7 @@ export default function TimelineGantt({
             {/* Filter Armada Bus Spesifik */}
             {onVehicleFilterChange && (
               <Select value={vehicleFilter} onValueChange={onVehicleFilterChange}>
-                <SelectTrigger className="h-8 text-xs w-[135px] bg-background">
+                <SelectTrigger className="h-8 text-xs w-33.75 bg-background">
                   <SelectValue placeholder="Semua Bus" />
                 </SelectTrigger>
                 <SelectContent>
@@ -328,9 +328,9 @@ export default function TimelineGantt({
             )}
 
             {/* Selector Mode Rentang Tampilan: 7 Hari, 14 Hari, 1 Bulan Penuh */}
-            <div className="flex items-center gap-1 border rounded-lg bg-background p-0.5">
+            <div className="tabs-container-pill">
               <Button
-                variant={viewMode === '7days' ? 'secondary' : 'ghost'}
+                variant={viewMode === '7days' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => onViewModeChange('7days')}
                 className="h-7 text-xs px-2.5 font-semibold"
@@ -338,7 +338,7 @@ export default function TimelineGantt({
                 7 Hari
               </Button>
               <Button
-                variant={viewMode === '14days' ? 'secondary' : 'ghost'}
+                variant={viewMode === '14days' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => onViewModeChange('14days')}
                 className="h-7 text-xs px-2.5 font-semibold"
@@ -346,7 +346,7 @@ export default function TimelineGantt({
                 14 Hari
               </Button>
               <Button
-                variant={viewMode === 'month' ? 'secondary' : 'ghost'}
+                variant={viewMode === 'month' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => onViewModeChange('month')}
                 className="h-7 text-xs px-2.5 font-semibold"
@@ -359,7 +359,7 @@ export default function TimelineGantt({
             {viewMode === 'month' && (
               <div className="flex items-center gap-1">
                 <Select value={String(currentMonthIdx)} onValueChange={handleMonthSelect}>
-                  <SelectTrigger className="h-8 text-xs w-[110px] bg-background">
+                  <SelectTrigger className="h-8 text-xs w-27.5 bg-background">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -372,7 +372,7 @@ export default function TimelineGantt({
                 </Select>
 
                 <Select value={String(currentYear)} onValueChange={handleYearSelect}>
-                  <SelectTrigger className="h-8 text-xs w-[80px] bg-background">
+                  <SelectTrigger className="h-8 text-xs w-20 bg-background">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -395,7 +395,7 @@ export default function TimelineGantt({
               <Button variant="ghost" size="icon" onClick={handlePrev} className="h-7 w-7">
                 <ChevronLeft className="w-4 h-4" />
               </Button>
-              <span className="text-xs font-semibold px-2 min-w-[130px] text-center">
+              <span className="text-xs font-semibold px-2 min-w-32.5 text-center">
                 {days[0].toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} –{' '}
                 {days[daysCount - 1].toLocaleDateString('id-ID', {
                   day: 'numeric',
@@ -416,7 +416,7 @@ export default function TimelineGantt({
           {/* Header Baris Hari (Sticky Kolom Bus di Kiri) */}
           <div className="flex border-b bg-muted/50 text-xs font-semibold">
             {/* Kolom Info Armada Bus (Sticky di Kiri) */}
-            <div className="w-[200px] sm:w-[220px] p-3 border-r flex items-center justify-between text-foreground sticky left-0 z-30 bg-muted/95 backdrop-blur-sm shrink-0 shadow-2xs">
+            <div className="w-50 sm:w-55 p-3 border-r flex items-center justify-between text-foreground sticky left-0 z-30 bg-muted/95 backdrop-blur-sm shrink-0 shadow-2xs">
               <span className="flex items-center gap-1.5 font-bold">
                 <Bus className="w-4 h-4 text-indigo-600" /> Armada ({filteredVehicles.length})
               </span>
@@ -433,11 +433,10 @@ export default function TimelineGantt({
                 return (
                   <div
                     key={i}
-                    className={`p-1.5 text-center border-r last:border-r-0 ${
-                      isToday
+                    className={`p-1.5 text-center border-r last:border-r-0 ${isToday
                         ? 'bg-primary/10 text-primary font-bold'
                         : 'text-foreground/80'
-                    }`}
+                      }`}
                   >
                     <div className="text-[10px] uppercase tracking-wider">{dayName}</div>
                     <div className="text-sm font-extrabold">{dateNum}</div>
@@ -458,13 +457,13 @@ export default function TimelineGantt({
               return (
                 <div key={v.id} className="flex hover:bg-muted/10 transition-colors">
                   {/* Kolom Info Armada Bus (Sticky di Kiri) */}
-                  <div className="w-[200px] sm:w-[220px] p-3 border-r flex items-center justify-between bg-card sticky left-0 z-20 shrink-0 shadow-2xs">
+                  <div className="w-50 sm:w-55 p-3 border-r flex items-center justify-between bg-card sticky left-0 z-20 shrink-0 shadow-2xs">
                     <div>
                       <div className="font-bold text-sm text-foreground flex items-center gap-1.5">
                         <span>{v.code}</span>
                         <span className="text-xs font-normal text-muted-foreground">({v.plateNumber})</span>
                       </div>
-                      <div className="text-[11px] text-muted-foreground truncate max-w-[130px]">
+                      <div className="text-[11px] text-muted-foreground truncate max-w-32.5">
                         {v.nickname || v.vehicleType}
                       </div>
                     </div>
@@ -488,9 +487,8 @@ export default function TimelineGantt({
                         return (
                           <div
                             key={dayIdx}
-                            className={`border-r last:border-r-0 h-full ${
-                              isToday ? 'bg-primary/5' : ''
-                            }`}
+                            className={`border-r last:border-r-0 h-full ${isToday ? 'bg-primary/5' : ''
+                              }`}
                           />
                         );
                       })}
@@ -512,8 +510,8 @@ export default function TimelineGantt({
                           const crewColorClass = isAkap
                             ? 'text-indigo-800 dark:text-indigo-300'
                             : isWisata
-                            ? 'text-amber-800 dark:text-amber-300'
-                            : 'text-emerald-800 dark:text-emerald-300';
+                              ? 'text-amber-800 dark:text-amber-300'
+                              : 'text-emerald-800 dark:text-emerald-300';
 
                           return (
                             <div
@@ -533,11 +531,9 @@ export default function TimelineGantt({
                                       onClick={() => onSelectSchedule(s)}
                                       className={`h-full px-2 py-1 border text-left cursor-pointer transition-all hover:brightness-105 hover:shadow-sm shadow-2xs flex flex-col justify-between overflow-hidden ${getServiceBadgeStyle(
                                         s.serviceType,
-                                      )} ${
-                                        bar.startsBeforeView ? 'rounded-l-none' : 'rounded-l-md'
-                                      } ${
-                                        bar.endsAfterView ? 'rounded-r-none' : 'rounded-r-md'
-                                      }`}
+                                      )} ${bar.startsBeforeView ? 'rounded-l-none' : 'rounded-l-md'
+                                        } ${bar.endsAfterView ? 'rounded-r-none' : 'rounded-r-md'
+                                        }`}
                                     >
                                       {/* Baris Atas Bar: No Jadwal, Waktu Keberangkatan, Durasi & Status */}
                                       <div className="flex items-center justify-between gap-1 leading-tight">
@@ -580,7 +576,7 @@ export default function TimelineGantt({
 
                                   <TooltipContent
                                     side="top"
-                                    className="bg-popover text-popover-foreground border shadow-xl max-w-[340px] p-3.5 space-y-2 z-50"
+                                    className="bg-popover text-popover-foreground border shadow-xl max-w-85 p-3.5 space-y-2 z-50"
                                   >
                                     <div className="flex items-center justify-between border-b pb-1.5">
                                       <div>

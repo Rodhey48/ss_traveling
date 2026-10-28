@@ -1,22 +1,13 @@
-import { useState, useEffect } from 'react';
 import Heading from '@/components/shared/heading';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -25,25 +16,34 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Plus,
-  Search,
-  Users2,
-  Building2,
-  GraduationCap,
-  Sparkles,
-  Phone,
-  Mail,
-  MapPin,
-  Edit,
-  Trash2,
-  Eye,
-} from 'lucide-react';
-import CustomerModal from './components/customer-modal';
-import CustomerDetailModal from './components/customer-detail-modal';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { usePermission } from '@/hooks/use-permission';
 import { CustomerService } from '@/services/customer.service';
 import type { Customer, CustomerFormData } from '@/types';
+import {
+  Building2,
+  Edit,
+  Eye,
+  GraduationCap,
+  Mail,
+  MapPin,
+  Phone,
+  Plus,
+  Search,
+  Sparkles,
+  Trash2,
+  Users2,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { usePermission } from '@/hooks/use-permission';
+import CustomerDetailModal from './components/customer-detail-modal';
+import CustomerModal from './components/customer-modal';
 
 export default function CustomersPage() {
   const { isCreate, isUpdate, isDelete } = usePermission();
@@ -101,8 +101,7 @@ export default function CustomersPage() {
   const handleDelete = async (customer: Customer) => {
     if (
       !confirm(
-        `Yakin ingin menghapus data pelanggan ${
-          customer.institutionName || customer.picName
+        `Yakin ingin menghapus data pelanggan ${customer.institutionName || customer.picName
         }?`,
       )
     ) {
@@ -173,14 +172,14 @@ export default function CustomersPage() {
 
       {/* Kartu Ringkasan Metrik */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-primary/5 border-primary/20">
+        <Card >
           <CardHeader className="p-4 pb-2">
             <CardDescription className="text-xs">
               Total Database Pelanggan
             </CardDescription>
             <CardTitle className="text-2xl font-black text-primary flex items-center justify-between">
               {totalCustomers} Klien
-              <Users2 className="h-6 w-6 opacity-40" />
+              <Users2 className="h-6 w-6 opacity-40 text-green-600" />
             </CardTitle>
           </CardHeader>
         </Card>
@@ -211,9 +210,9 @@ export default function CustomersPage() {
             <CardDescription className="text-xs">
               Pelanggan VIP Platinum
             </CardDescription>
-            <CardTitle className="text-2xl font-bold text-purple-600 flex items-center justify-between">
+            <CardTitle className="text-2xl font-bold flex items-center justify-between">
               {totalPlatinum} Klien
-              <Sparkles className="h-6 w-6 opacity-60" />
+              <Sparkles className="h-6 w-6 opacity-60 text-fuchsia-600" />
             </CardTitle>
           </CardHeader>
         </Card>
@@ -233,7 +232,7 @@ export default function CustomersPage() {
           </div>
 
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="w-40">
               <SelectValue placeholder="Tipe Klien" />
             </SelectTrigger>
             <SelectContent>
@@ -247,7 +246,7 @@ export default function CustomersPage() {
           </Select>
 
           <Select value={tierFilter} onValueChange={setTierFilter}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-35">
               <SelectValue placeholder="Semua Tier" />
             </SelectTrigger>
             <SelectContent>
@@ -312,7 +311,7 @@ export default function CustomersPage() {
                     {c.email && (
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Mail className="h-3 w-3" />
-                        <span className="truncate max-w-[150px]">{c.email}</span>
+                        <span className="truncate max-w-37.5">{c.email}</span>
                       </div>
                     )}
                   </TableCell>
@@ -322,7 +321,7 @@ export default function CustomersPage() {
                       {c.city || 'Jabodetabek'}
                     </div>
                     <div
-                      className="text-xs text-muted-foreground truncate max-w-[160px]"
+                      className="text-xs text-muted-foreground truncate max-w-40"
                       title={c.address}
                     >
                       {c.address || '-'}
@@ -350,10 +349,10 @@ export default function CustomersPage() {
                         c.customerTier === 'PLATINUM'
                           ? 'border-purple-300 bg-purple-50 text-purple-700'
                           : c.customerTier === 'GOLD'
-                          ? 'border-amber-300 bg-amber-50 text-amber-700'
-                          : c.customerTier === 'SILVER'
-                          ? 'border-blue-300 bg-blue-50 text-blue-700'
-                          : 'border-slate-300 bg-slate-50 text-slate-700'
+                            ? 'border-amber-300 bg-amber-50 text-amber-700'
+                            : c.customerTier === 'SILVER'
+                              ? 'border-blue-300 bg-blue-50 text-blue-700'
+                              : 'border-slate-300 bg-slate-50 text-slate-700'
                       }
                     >
                       {c.customerTier}
@@ -362,7 +361,7 @@ export default function CustomersPage() {
                       {c.totalTripsCount}x Sewa Wisata
                     </div>
                   </TableCell>
-                  <TableCell className="text-xs text-muted-foreground max-w-[200px]">
+                  <TableCell className="text-xs text-muted-foreground max-w-50">
                     <p className="line-clamp-2" title={c.specialNotes}>
                       {c.specialNotes || '-'}
                     </p>

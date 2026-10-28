@@ -1,22 +1,13 @@
-import { useState, useEffect } from 'react';
 import Heading from '@/components/shared/heading';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -25,28 +16,37 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Plus,
-  Search,
-  Bus,
-  Edit,
-  Trash2,
-  LayoutGrid,
-  List,
-  Sparkles,
-  Users,
-  CheckCircle2,
-  Clock,
-  Armchair,
-  Images,
-  Eye,
-} from 'lucide-react';
-import VehicleModal from './components/vehicle-modal';
-import SeatClassMasterModal from './components/seat-class-master-modal';
-import VehicleDetailModal from './components/vehicle-detail-modal';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { usePermission } from '@/hooks/use-permission';
 import { VehicleService } from '@/services/vehicle.service';
 import type { Vehicle, VehicleFormData } from '@/types';
+import {
+  Armchair,
+  Bus,
+  CheckCircle2,
+  Clock,
+  Edit,
+  Eye,
+  Images,
+  LayoutGrid,
+  List,
+  Plus,
+  Search,
+  Sparkles,
+  Trash2,
+  Users,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { usePermission } from '@/hooks/use-permission';
+import SeatClassMasterModal from './components/seat-class-master-modal';
+import VehicleDetailModal from './components/vehicle-detail-modal';
+import VehicleModal from './components/vehicle-modal';
 
 export default function VehiclesPage() {
   const { isCreate, isUpdate, isDelete } = usePermission();
@@ -173,7 +173,7 @@ export default function VehiclesPage() {
 
       {/* Kartu Statistik */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-primary/5 border-primary/20">
+        <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs">
           <CardHeader className="p-4 pb-2">
             <CardDescription className="text-xs">Total Unit Armada</CardDescription>
             <CardTitle className="text-2xl font-black text-primary flex items-center justify-between">
@@ -182,7 +182,7 @@ export default function VehiclesPage() {
             </CardTitle>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs">
           <CardHeader className="p-4 pb-2">
             <CardDescription className="text-xs">Big Bus Executive/Combi</CardDescription>
             <CardTitle className="text-2xl font-bold flex items-center justify-between">
@@ -191,19 +191,19 @@ export default function VehiclesPage() {
             </CardTitle>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs">
           <CardHeader className="p-4 pb-2">
             <CardDescription className="text-xs">Aset Milik Sendiri (Lunas)</CardDescription>
-            <CardTitle className="text-2xl font-bold text-emerald-600 flex items-center justify-between">
+            <CardTitle className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
               {totalOwned} Unit
               <CheckCircle2 className="h-6 w-6 opacity-60" />
             </CardTitle>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs">
           <CardHeader className="p-4 pb-2">
             <CardDescription className="text-xs">Cicilan Bank / Leasing</CardDescription>
-            <CardTitle className="text-2xl font-bold text-blue-600 flex items-center justify-between">
+            <CardTitle className="text-2xl font-bold text-blue-600 dark:text-blue-400 flex items-center justify-between">
               {totalLeasing} Unit
               <Clock className="h-6 w-6 opacity-60" />
             </CardTitle>
@@ -212,7 +212,7 @@ export default function VehiclesPage() {
       </div>
 
       {/* Filter & Toolbar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-card p-3 rounded-xl border">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-3 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-xs">
         <div className="flex items-center gap-3 w-full sm:w-auto flex-1 max-w-md">
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -224,7 +224,7 @@ export default function VehiclesPage() {
             />
           </div>
           <Select value={vehicleTypeFilter} onValueChange={setVehicleTypeFilter}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-45">
               <SelectValue placeholder="Semua Tipe" />
             </SelectTrigger>
             <SelectContent>
@@ -236,20 +236,20 @@ export default function VehiclesPage() {
           </Select>
         </div>
 
-        <div className="flex items-center gap-1 border rounded-lg p-1 bg-muted/40">
+        <div className="tabs-container-pill">
           <Button
-            variant={viewMode === 'card' ? 'secondary' : 'ghost'}
+            variant={viewMode === 'card' ? 'default' : 'ghost'}
             size="sm"
             onClick={() => setViewMode('card')}
-            className="h-8 px-2 gap-1.5 text-xs"
+            className="h-8 px-2.5 gap-1.5 text-xs"
           >
             <LayoutGrid className="h-4 w-4" /> Kartu
           </Button>
           <Button
-            variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+            variant={viewMode === 'table' ? 'default' : 'ghost'}
             size="sm"
             onClick={() => setViewMode('table')}
-            className="h-8 px-2 gap-1.5 text-xs"
+            className="h-8 px-2.5 gap-1.5 text-xs"
           >
             <List className="h-4 w-4" /> Tabel
           </Button>
@@ -258,7 +258,7 @@ export default function VehiclesPage() {
 
       {/* Tampilan Konten: Card vs Table */}
       {loading ? (
-        <div className="p-12 text-center text-sm text-muted-foreground border rounded-xl bg-card">
+        <div className="p-12 text-center text-sm text-muted-foreground border border-slate-200/80 dark:border-white/10 rounded-xl bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
           Memuat data armada bus...
         </div>
       ) : viewMode === 'card' ? (
@@ -271,7 +271,7 @@ export default function VehiclesPage() {
               <Card
                 key={v.id}
                 onClick={() => handleViewDetail(v)}
-                className="group overflow-hidden border hover:border-primary/60 transition-all hover:shadow-lg cursor-pointer bg-card flex flex-col justify-between"
+                className="group overflow-hidden border border-slate-200/80 dark:border-white/10 hover:border-primary/60 transition-all hover:shadow-lg cursor-pointer bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md flex flex-col justify-between shadow-xs"
               >
                 <div>
                   {/* Foto Sampul Bus (Landing Page Ready) */}
@@ -288,7 +288,7 @@ export default function VehiclesPage() {
                         <span className="text-[11px]">Belum ada foto</span>
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20" />
+                    <div className="absolute inset-0 bg-linear-to-t from-black/70 via-transparent to-black/20" />
 
                     {/* Badge Nomor Lambung & Nopol */}
                     <div className="absolute top-3 left-3 flex items-center gap-1.5">
@@ -342,11 +342,11 @@ export default function VehiclesPage() {
                   {/* Body Kartu */}
                   <div className="p-4 space-y-3">
                     {/* Spesifikasi Chasis & Bodi */}
-                    <div className="bg-muted/40 p-2.5 rounded-lg text-xs space-y-1">
+                    <div className="bg-slate-50 dark:bg-white/5 p-2.5 rounded-lg text-xs space-y-1 border border-slate-200/60 dark:border-white/5">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Chasis:</span>
                         <span
-                          className="font-medium truncate max-w-[170px]"
+                          className="font-medium truncate max-w-42.5"
                           title={v.chassisModel}
                         >
                           {v.chassisModel || '-'}
@@ -355,7 +355,7 @@ export default function VehiclesPage() {
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Karoseri:</span>
                         <span
-                          className="font-medium truncate max-w-[170px]"
+                          className="font-medium truncate max-w-42.5"
                           title={v.bodyModel}
                         >
                           {v.bodyModel || '-'}
@@ -378,7 +378,7 @@ export default function VehiclesPage() {
                           <Badge
                             key={sc.id}
                             variant="secondary"
-                            className="text-[10px] font-medium py-0.5 px-1.5 bg-background border"
+                            className="text-[10px] font-medium py-0.5 px-1.5 bg-background dark:bg-white/10 border border-slate-200/60 dark:border-white/10"
                           >
                             {sc.className === 'SLEEPER' && '🛏️ Sleeper: '}
                             {sc.className === 'LUXURY_2_1' && '👑 Luxury: '}
@@ -393,7 +393,7 @@ export default function VehiclesPage() {
                 </div>
 
                 {/* Footer Kartu & Aksi */}
-                <div className="p-4 pt-2 border-t flex items-center justify-between">
+                <div className="p-4 pt-2 border-t border-slate-200/60 dark:border-white/10 flex items-center justify-between">
                   <span className="text-[11px] text-muted-foreground flex items-center gap-1">
                     <Eye className="h-3 w-3" /> Klik untuk rincian
                   </span>
@@ -432,10 +432,10 @@ export default function VehiclesPage() {
         </div>
       ) : (
         /* Tabel View */
-        <div className="rounded-xl border bg-card overflow-hidden">
+        <div className="rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md overflow-hidden shadow-xs">
           <Table>
-            <TableHeader>
-              <TableRow>
+            <TableHeader className="bg-slate-50/80 dark:bg-white/5">
+              <TableRow className="border-b border-slate-200 dark:border-white/10">
                 <TableHead>Nomor Lambung</TableHead>
                 <TableHead>Plat Nomor</TableHead>
                 <TableHead>Julukan</TableHead>
@@ -446,12 +446,12 @@ export default function VehiclesPage() {
                 <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <TableBody className="divide-y divide-slate-100 dark:divide-white/5">
               {vehicles.map((v) => (
                 <TableRow
                   key={v.id}
                   onClick={() => handleViewDetail(v)}
-                  className="cursor-pointer hover:bg-muted/40"
+                  className="cursor-pointer hover:bg-slate-50/80 dark:hover:bg-white/5 transition-colors"
                 >
                   <TableCell className="font-bold flex items-center gap-2">
                     {v.code}
@@ -489,8 +489,8 @@ export default function VehiclesPage() {
                       variant="outline"
                       className={
                         v.ownershipStatus === 'OWNED_PAID_OFF'
-                          ? 'text-emerald-600 bg-emerald-50'
-                          : 'text-blue-600 bg-blue-50'
+                          ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60'
+                          : 'text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/60'
                       }
                     >
                       {v.ownershipStatus === 'OWNED_PAID_OFF'
