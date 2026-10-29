@@ -144,6 +144,10 @@ export class CreateSpjDto {
   @IsOptional()
   profitCenterId?: string;
 
+  @IsUUID()
+  @IsOptional()
+  costCenterId?: string;
+
   @IsString()
   @IsOptional()
   notes?: string;

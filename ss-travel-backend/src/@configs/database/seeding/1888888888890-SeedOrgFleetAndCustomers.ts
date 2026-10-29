@@ -50,13 +50,17 @@ export class SeedOrgFleetAndCustomers1888888888890
     const ccOpsPoolId = uuidv4();
     const ccMntGarasiId = uuidv4();
     const ccAdmHqId = uuidv4();
+    const ccOpsAkapId = uuidv4();
+    const ccOpsWisataId = uuidv4();
 
     await queryRunner.query(`
       INSERT INTO "cost_centers" ("id", "company_id", "code", "name", "description", "is_active")
       VALUES
         ('${ccOpsPoolId}', '${activeCompanyId}', 'CC-OPS-POOL', 'Operasional Pool Ciputat', 'Biaya operasional perjalanan, solar, tol, dan pool garasi', true),
         ('${ccMntGarasiId}', '${activeCompanyId}', 'CC-MNT-GARASI', 'Bengkel Garasi & Pemeliharaan', 'Biaya suku cadang, oli, ban, servis mekanik internal', true),
-        ('${ccAdmHqId}', '${activeCompanyId}', 'CC-ADM-HQ', 'Administrasi Kantor Pusat', 'Biaya umum, overhead kantor, utilitas, dan legalitas', true)
+        ('${ccAdmHqId}', '${activeCompanyId}', 'CC-ADM-HQ', 'Administrasi Kantor Pusat', 'Biaya umum, overhead kantor, utilitas, dan legalitas', true),
+        ('${ccOpsAkapId}', '${activeCompanyId}', 'CC-OPS-AKAP', 'Operasional Divisi AKAP', 'Biaya operasional perjalanan, BBM solar, tol, komisi agen, dan kupon makan AKAP', true),
+        ('${ccOpsWisataId}', '${activeCompanyId}', 'CC-OPS-WISATA', 'Operasional Divisi Pariwisata', 'Biaya operasional perjalanan wisata, BBM solar, tol, parkir, dan komisi rekanan', true)
       ON CONFLICT ("code") DO NOTHING
     `);
 

@@ -15,6 +15,7 @@ import { VehicleEntity } from '../../@models/fleet/vehicle.entity';
 import { CustomerEntity } from '../../@models/customer/customer.entity';
 import { UsersEntity } from '../../@models/user/user.entity';
 import { BusinessUnitEntity } from '../../@models/organization/business-unit.entity';
+import { CostCenterEntity } from '../../@models/organization/cost-center.entity';
 import { DocumentSequenceService } from '../../finance/services/document-sequence.service';
 import {
   CreateTripScheduleDto,
@@ -50,6 +51,8 @@ export class TripSchedulesService {
     private readonly userRepo: Repository<UsersEntity>,
     @InjectRepository(BusinessUnitEntity)
     private readonly businessUnitRepo: Repository<BusinessUnitEntity>,
+    @InjectRepository(CostCenterEntity)
+    private readonly costCenterRepo: Repository<CostCenterEntity>,
     private readonly sequenceService: DocumentSequenceService,
   ) {}
 
@@ -205,6 +208,7 @@ export class TripSchedulesService {
       .leftJoinAndSelect('s.plannedDriver2', 'driver2')
       .leftJoinAndSelect('s.plannedConductor', 'conductor')
       .leftJoinAndSelect('s.businessUnit', 'businessUnit')
+      .leftJoinAndSelect('s.costCenter', 'costCenter')
       .leftJoinAndSelect('s.spj', 'spj')
       .orderBy('s.plannedDepartureAt', 'ASC');
 
@@ -280,6 +284,7 @@ export class TripSchedulesService {
         'plannedDriver2',
         'plannedConductor',
         'businessUnit',
+        'costCenter',
         'spj',
       ],
     });
@@ -360,6 +365,14 @@ export class TripSchedulesService {
       if (bu) buId = bu.id;
     }
 
+    // Dapatkan cost center otomatis berdasarkan tipe layanan jika tidak diinput
+    let ccId = dto.costCenterId;
+    if (!ccId) {
+      const ccCode = dto.serviceType === TripServiceType.AKAP ? 'CC-OPS-AKAP' : 'CC-OPS-WISATA';
+      const cc = await this.costCenterRepo.findOne({ where: { code: ccCode } });
+      if (cc) ccId = cc.id;
+    }
+
     const schedule = this.scheduleRepo.create({
       scheduleNo,
       serviceType: dto.serviceType,
@@ -379,6 +392,7 @@ export class TripSchedulesService {
       status: TripScheduleStatus.DRAFT,
       notes: dto.notes,
       businessUnitId: buId,
+      costCenterId: ccId,
       companyId: dto.companyId,
     });
 

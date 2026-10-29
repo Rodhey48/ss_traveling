@@ -436,6 +436,29 @@ Setiap tahap dikerjakan secara paralel per fitur (*Vertical Slice*): **Database 
 
 ---
 
+### 📌 Penyempurnaan Dimensi Finansial: Pemisahan Cost Center AKAP & Wisata serta Auto-Mapping SPJ (Completed)
+* [x] **Backend Implementation (`ss-travel-backend`)**:
+  * [x] **2 Cost Center Operasional Khusus**:
+    * [x] `CC-OPS-AKAP` (*Operasional Divisi AKAP*): Seluruh biaya operasional perjalanan AKAP reguler.
+    * [x] `CC-OPS-WISATA` (*Operasional Divisi Pariwisata*): Seluruh biaya operasional perjalanan wisata/charter.
+    * [x] Melengkapi struktur 5 Cost Center: `CC-ADM-HQ`, `CC-MNT-GARASI`, `CC-OPS-POOL`, `CC-OPS-AKAP`, dan `CC-OPS-WISATA`.
+  * [x] **Migrasi Database & Backfill (`1782800000000-add-ops-cost-centers-and-spj-mapping.ts`)**:
+    * [x] Seeding 2 cost center baru ke tabel `cost_centers`.
+    * [x] Penambahan kolom `cost_center_id` (UUID, nullable, FK `cost_centers`) pada `spjs` dan `trip_schedules`.
+    * [x] Backfill otomatis data historis `spjs`, `trip_schedules`, dan `journal_lines` berdasarkan `serviceType`.
+  * [x] **Auto-Mapping Cerdas Dimensi Finansial**:
+    * [x] `TripSchedulesService` & `SpjService`: Otomatis memetakan `costCenterId` saat pembuatan jadwal baru, penerbitan SPJ (`generateFromSchedule`), dan penggantian darurat breakdown (`emergencyReplaceBus`).
+    * [x] `CashierSettlementService`: Jurnal rekonsiliasi SPJ pool otomatis menyertakan dimensi `costCenterId`, `businessUnitId`, dan `profitCenterId` pada seluruh baris debit beban operasional dan kredit pendapatan.
+    * [x] `CashierDiscrepancyService`: Jurnal penyesuaian selisih investigasi kasir mewarisi dimensi Cost Center dari SPJ terkait.
+    * [x] `ApService`: Faktur tagihan restoran mitra kupon makan otomatis memetakan `costCenterId = CC-OPS-AKAP` dan `businessUnitId = AKAP` dari SPJ terkait.
+  * [x] **Automated Tests**:
+    * [x] 160 unit tests backend passing 100%.
+* [x] **Frontend Implementation (`ss-travel-frontend`)**:
+  * [x] **Penyelarasan Tipe (`src/types/index.ts`)**: Penambahan field `costCenterId?: string` dan `costCenter?: CostCenter` pada interface `TripSchedule` dan `Spj`.
+  * [x] Build frontend Vite TypeScript bebas error.
+
+---
+
 ### 📌 Tahap 10: E2E Simulation Testing & System Polish (Final Verification)
 * [ ] **Simulasi End-to-End Penuh di Browser**:
   * [ ] **Simulasi Skenario 1**: Penerbitan Jadwal & SPJ AKAP PP Bus SS-01 $\to$ Pencairan UJ Rp 3.5jt $\to$ Penjualan Tiket Bruto & Kargo Motor Komisi 20% $\to$ Rekonsiliasi Kasir Pool (Kantong UJ Balanced Rp 0 + Kantong Setoran Matched) $\to$ Posting Jurnal SPJ Rp 16.68jt $\to$ Penagihan AP Servis Makan RM Taman Selera Subang $\to$ Cek Laporan Margin Trip (+Rp 6.57jt).

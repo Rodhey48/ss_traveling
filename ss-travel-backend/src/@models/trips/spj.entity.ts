@@ -9,6 +9,7 @@ import {
 import { BaseEntity } from '../base.entity';
 import { CompanyEntity } from '../organization/company.entity';
 import { BusinessUnitEntity } from '../organization/business-unit.entity';
+import { CostCenterEntity } from '../organization/cost-center.entity';
 import { ProfitCenterEntity } from '../organization/profit-center.entity';
 import { VehicleEntity } from '../fleet/vehicle.entity';
 import { TripScheduleEntity } from './trip-schedule.entity';
@@ -98,6 +99,13 @@ export class SpjEntity extends BaseEntity {
   @ManyToOne(() => ProfitCenterEntity, { onDelete: 'RESTRICT', nullable: true })
   @JoinColumn({ name: 'profit_center_id' })
   profitCenter?: ProfitCenterEntity;
+
+  @Column({ type: 'uuid', name: 'cost_center_id', nullable: true })
+  costCenterId?: string;
+
+  @ManyToOne(() => CostCenterEntity, { onDelete: 'RESTRICT', nullable: true })
+  @JoinColumn({ name: 'cost_center_id' })
+  costCenter?: CostCenterEntity;
 
   // Blueprint Bab 8.2: Status Ganda Independen
   @Column({

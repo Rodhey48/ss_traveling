@@ -519,6 +519,23 @@ Response error autentikasi menggunakan struktur terstandar:
         *   `ConfirmDialog`: Menghilangkan alert bawaan browser (`window.confirm`) dengan modal konfirmasi bertema primary untuk approval dan danger dengan prompt input alasan untuk penolakan.
 
     ---
+
+    ## 16. Pemisahan Cost Center Operasional & Auto-Mapping Finansial SPJ
+
+    ### A. Struktur 5 Cost Center Korporat
+    1.  `CC-ADM-HQ`: Kantor Pusat & Beban Administrasi Umum.
+    2.  `CC-MNT-GARASI`: Bengkel & Pemeliharaan Armada.
+    3.  `CC-OPS-POOL`: Meja Kasir Pool & Fasilitas Garasi.
+    4.  `CC-OPS-AKAP`: Operasional Divisi AKAP (BBM solar reguler, tol, retribusi terminal, komisi agen, servis kupon makan penumpang).
+    5.  `CC-OPS-WISATA`: Operasional Divisi Pariwisata (BBM carter, tol wisata, parkir, komisi rekanan B2B).
+
+    ### B. Auto-Mapping Dimensi Finansial Berdasarkan Service Type
+    *   **Jadwal & SPJ (`TripScheduleEntity` & `SpjEntity`)**: Kolom `cost_center_id` terhubung langsung ke `cost_centers`. Pada pembuatan jadwal atau penerbitan SPJ, sistem otomatis menetapkan `costCenterId` sesuai `serviceType` (`AKAP` $\to$ `CC-OPS-AKAP`, `WISATA` $\to$ `CC-OPS-WISATA`).
+    *   **Jurnal Rekonsiliasi Kasir Pool (`CashierSettlementService`)**: Seluruh baris debit beban operasional perjalanan (BBM, tol, parkir, premi kru) dan kredit pelunasan UJ (`13101`) otomatis dibubuhi dimensi `cost_center_id`, `business_unit_id`, dan `profit_center_id`.
+    *   **Jurnal Resolusi Selisih Kasir (`CashierDiscrepancyService`)**: Penyesuaian selisih investigasi (beban dispensasi `58101` atau piutang kru `12901`) mewarisi dimensi Cost Center dari SPJ terkait.
+    *   **Faktur Tagihan AP Restoran (`ApService`)**: Tagihan kupon makan penumpang restoran mitra otomatis memetakan `costCenterId = CC-OPS-AKAP` dan `businessUnitId = AKAP` dari SPJ yang ditagihkan.
+
+    ---
     *Gunakan dokumen ini sebagai referensi saat melakukan pengembangan fitur baru atau debugging sistem otorisasi.*
 
 

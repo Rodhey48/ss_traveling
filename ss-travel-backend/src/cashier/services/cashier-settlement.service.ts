@@ -19,6 +19,7 @@ import {
   SpjFinancialStatus,
   SpjOperationalStatus,
   SpjExpenseType,
+  TripServiceType,
   SpjRevenueDeclarationEntity,
   CrewMealPaymentEntity,
   CrewMealPaymentStatus,
@@ -669,6 +670,18 @@ export class CashierSettlementService {
       throw new BadRequestException('Akun Kas Pool atau UJ Kru tidak ditemukan dalam bagan akun COA.');
     }
 
+    // Auto-map Cost Center & Dimensi SPJ
+    let costCenterId = spj.costCenterId;
+    if (!costCenterId) {
+      const ccCode = spj.serviceType === TripServiceType.AKAP ? 'CC-OPS-AKAP' : 'CC-OPS-WISATA';
+      if (typeof manager?.query === 'function') {
+        const ccRows = await manager.query(`SELECT id FROM "cost_centers" WHERE code = $1 LIMIT 1`, [ccCode]);
+        if (ccRows && ccRows.length > 0) costCenterId = ccRows[0].id;
+      }
+    }
+    const businessUnitId = spj.businessUnitId;
+    const profitCenterId = spj.profitCenterId;
+
     const lines: any[] = [];
 
     // --- SISI DEBIT ---
@@ -683,6 +696,9 @@ export class CashierSettlementService {
         description: `Penerimaan kas fisik meja kasir SPJ ${spj.spjNo} (${settlement.bkmNo || 'BKM'})`,
         tripId: spj.id,
         vehicleId: spj.vehicleId,
+        businessUnitId,
+        profitCenterId,
+        costCenterId,
       });
     }
 
@@ -699,6 +715,9 @@ export class CashierSettlementService {
           description: `${exp.type} operasional SPJ ${spj.spjNo}${exp.notes ? ' - ' + exp.notes : ''}`,
           tripId: spj.id,
           vehicleId: spj.vehicleId,
+          businessUnitId,
+          profitCenterId,
+          costCenterId,
         });
       }
     }
@@ -712,6 +731,9 @@ export class CashierSettlementService {
         description: `Pelunasan tuntas Uang Jalan SPJ ${spj.spjNo}`,
         tripId: spj.id,
         vehicleId: spj.vehicleId,
+        businessUnitId,
+        profitCenterId,
+        costCenterId,
       });
     }
 
@@ -738,6 +760,9 @@ export class CashierSettlementService {
         description: `Pendapatan tiket kas tunai perjalanan SPJ ${spj.spjNo}`,
         tripId: spj.id,
         vehicleId: spj.vehicleId,
+        businessUnitId,
+        profitCenterId,
+        costCenterId,
       });
     }
 
@@ -749,6 +774,9 @@ export class CashierSettlementService {
         description: `Pendapatan paket kargo bagasi SPJ ${spj.spjNo}`,
         tripId: spj.id,
         vehicleId: spj.vehicleId,
+        businessUnitId,
+        profitCenterId,
+        costCenterId,
       });
     }
 
@@ -797,6 +825,17 @@ export class CashierSettlementService {
         throw new BadRequestException('Akun penampung 11999 atau 11101 tidak ditemukan dalam COA.');
       }
 
+      let costCenterId = settlement.spj?.costCenterId;
+      if (!costCenterId && settlement.spj) {
+        const ccCode = settlement.spj.serviceType === TripServiceType.AKAP ? 'CC-OPS-AKAP' : 'CC-OPS-WISATA';
+        if (typeof manager?.query === 'function') {
+          const ccRows = await manager.query(`SELECT id FROM "cost_centers" WHERE code = $1 LIMIT 1`, [ccCode]);
+          if (ccRows && ccRows.length > 0) costCenterId = ccRows[0].id;
+        }
+      }
+      const businessUnitId = settlement.spj?.businessUnitId;
+      const profitCenterId = settlement.spj?.profitCenterId;
+
       const diff = settlement.ujBalance || settlement.revenueBalance || 0;
 
       const lines = [
@@ -805,12 +844,22 @@ export class CashierSettlementService {
           debit: settlement.totalCashReceived,
           credit: 0,
           description: `Kas fisik riil diterima kasir pool SPJ ${settlement.spj?.spjNo}`,
+          tripId: settlement.spj?.id,
+          vehicleId: settlement.spj?.vehicleId,
+          businessUnitId,
+          profitCenterId,
+          costCenterId,
         },
         {
           accountId: account11999.id,
           debit: diff,
           credit: 0,
           description: `Selisih kas operasional sementara dalam investigasi (Unblock Tutup Buku Bulanan)`,
+          tripId: settlement.spj?.id,
+          vehicleId: settlement.spj?.vehicleId,
+          businessUnitId,
+          profitCenterId,
+          costCenterId,
         },
         {
           accountId: kasPoolAcc.id,
@@ -819,6 +868,11 @@ export class CashierSettlementService {
             MoneyHelper.add(settlement.totalCashReceived, diff),
           ),
           description: `Kliring alokasi penerimaan SPJ ${settlement.spj?.spjNo}`,
+          tripId: settlement.spj?.id,
+          vehicleId: settlement.spj?.vehicleId,
+          businessUnitId,
+          profitCenterId,
+          costCenterId,
         },
       ];
 

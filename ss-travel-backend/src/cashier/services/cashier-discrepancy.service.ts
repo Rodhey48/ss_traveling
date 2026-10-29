@@ -17,6 +17,7 @@ import {
   SpjEntity,
   SpjFinancialStatus,
   SpjOperationalStatus,
+  TripServiceType,
   AccountEntity,
   CashAccountEntity,
   JournalSourceType,
@@ -315,6 +316,18 @@ export class CashierDiscrepancyService {
       throw new BadRequestException('Akun Kas Pool atau UJ Kru tidak ditemukan dalam COA.');
     }
 
+    // Auto-map Cost Center & Dimensi SPJ
+    let costCenterId = spj.costCenterId;
+    if (!costCenterId) {
+      const ccCode = spj.serviceType === TripServiceType.AKAP ? 'CC-OPS-AKAP' : 'CC-OPS-WISATA';
+      if (typeof manager?.query === 'function') {
+        const ccRows = await manager.query(`SELECT id FROM "cost_centers" WHERE code = $1 LIMIT 1`, [ccCode]);
+        if (ccRows && ccRows.length > 0) costCenterId = ccRows[0].id;
+      }
+    }
+    const businessUnitId = spj.businessUnitId;
+    const profitCenterId = spj.profitCenterId;
+
     const lines: any[] = [];
 
     // --- SISI DEBIT ---
@@ -329,6 +342,9 @@ export class CashierDiscrepancyService {
         description: `Penerimaan fisik meja kasir SPJ ${spj.spjNo} (${settlement.bkmNo || 'BKM'})`,
         tripId: spj.id,
         vehicleId: spj.vehicleId,
+        businessUnitId,
+        profitCenterId,
+        costCenterId,
       });
     }
 
@@ -341,6 +357,9 @@ export class CashierDiscrepancyService {
         description: `Beban operasional BBM sah SPJ ${spj.spjNo}`,
         tripId: spj.id,
         vehicleId: spj.vehicleId,
+        businessUnitId,
+        profitCenterId,
+        costCenterId,
       });
     }
 
@@ -352,6 +371,9 @@ export class CashierDiscrepancyService {
         description: `Hasil Investigasi Kasir FM (${discrepancy.resolutionDecision}): ${discrepancy.reason}`,
         tripId: spj.id,
         vehicleId: spj.vehicleId,
+        businessUnitId,
+        profitCenterId,
+        costCenterId,
       });
     }
 
@@ -364,6 +386,9 @@ export class CashierDiscrepancyService {
         description: `Pelunasan tuntas Uang Jalan SPJ ${spj.spjNo}`,
         tripId: spj.id,
         vehicleId: spj.vehicleId,
+        businessUnitId,
+        profitCenterId,
+        costCenterId,
       });
     }
 
@@ -376,6 +401,9 @@ export class CashierDiscrepancyService {
         description: `Pendapatan tiket kas perjalanan SPJ ${spj.spjNo}`,
         tripId: spj.id,
         vehicleId: spj.vehicleId,
+        businessUnitId,
+        profitCenterId,
+        costCenterId,
       });
     }
 

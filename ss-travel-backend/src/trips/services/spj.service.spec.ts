@@ -20,6 +20,7 @@ import { VehicleEntity } from '../../@models/fleet/vehicle.entity';
 import { UsersEntity } from '../../@models/user/user.entity';
 import { BusinessUnitEntity } from '../../@models/organization/business-unit.entity';
 import { ProfitCenterEntity } from '../../@models/organization/profit-center.entity';
+import { CostCenterEntity } from '../../@models/organization/cost-center.entity';
 import { DocumentSequenceService } from '../../finance/services/document-sequence.service';
 import { CrewRatesService } from '../../master-rules/services/crew-rates.service';
 
@@ -33,6 +34,7 @@ describe('SpjService', () => {
   let userRepo: any;
   let businessUnitRepo: any;
   let profitCenterRepo: any;
+  let costCenterRepo: any;
   let sequenceService: any;
   let crewRatesService: any;
 
@@ -96,6 +98,10 @@ describe('SpjService', () => {
       findOne: jest.fn().mockResolvedValue({ id: 'pc-1', code: 'PC-AKAP' }),
     };
 
+    costCenterRepo = {
+      findOne: jest.fn().mockResolvedValue({ id: 'cc-1', code: 'CC-OPS-AKAP' }),
+    };
+
     sequenceService = {
       getNextDocumentNumber: jest.fn().mockResolvedValue('SPJ/AKP/2610/0001'),
     };
@@ -119,6 +125,7 @@ describe('SpjService', () => {
         { provide: getRepositoryToken(UsersEntity), useValue: userRepo },
         { provide: getRepositoryToken(BusinessUnitEntity), useValue: businessUnitRepo },
         { provide: getRepositoryToken(ProfitCenterEntity), useValue: profitCenterRepo },
+        { provide: getRepositoryToken(CostCenterEntity), useValue: costCenterRepo },
         { provide: DocumentSequenceService, useValue: sequenceService },
         { provide: CrewRatesService, useValue: crewRatesService },
       ],

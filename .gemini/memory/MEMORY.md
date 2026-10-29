@@ -2,4 +2,5 @@
 - [Core Features & Architecture](core-features-architecture.md) — Technical summary of implemented features, data models, and security flows.
 - [Auth Specification & FE Guide](../plan/AUTH_SPECIFICATION_AND_FE_GUIDE.md) — Dual-Strategy Auth (HttpOnly Cookie + Bearer), Machine-Readable Error Codes, and Axios integration guide.
 - [Test Cases Blueprint](../blueprint/test-cases/) — Dokumen simulasi pengujian bisnis & akuntansi per skenario (Skenario 1 s.d. 4 locked).
+- [Panduan Alur Jurnal & Kasus Akuntansi](../blueprint/PANDUAN_ALUR_JURNAL_DAN_KASUS_AKUNTANSI.md) — Panduan komprehensif logika Debet/Kredit dan studi kasus riil seluruh transaksi operasional bus.
 - [Project Milestones](../history/milestones.md) — Timeline of major technical achievements and feature completions.

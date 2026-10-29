@@ -909,6 +909,8 @@ export interface TripSchedule {
   serviceType: TripServiceType;
   businessUnitId?: string;
   businessUnit?: BusinessUnit;
+  costCenterId?: string;
+  costCenter?: CostCenter;
   vehicleId?: string;
   vehicle?: Vehicle;
   plannedDepartureAt: string;
@@ -989,6 +991,8 @@ export interface Spj {
   businessUnit?: BusinessUnit;
   profitCenterId?: string;
   profitCenter?: ProfitCenter;
+  costCenterId?: string;
+  costCenter?: CostCenter;
   operationalStatus: SpjOperationalStatus;
   financialStatus: SpjFinancialStatus;
   issuedAt?: string;

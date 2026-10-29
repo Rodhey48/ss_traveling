@@ -8,6 +8,7 @@ import {
 import { BaseEntity } from '../base.entity';
 import { CompanyEntity } from '../organization/company.entity';
 import { BusinessUnitEntity } from '../organization/business-unit.entity';
+import { CostCenterEntity } from '../organization/cost-center.entity';
 import { VehicleEntity } from '../fleet/vehicle.entity';
 import { CustomerEntity } from '../customer/customer.entity';
 import { UsersEntity } from '../user/user.entity';
@@ -47,6 +48,13 @@ export class TripScheduleEntity extends BaseEntity {
   @ManyToOne(() => BusinessUnitEntity, { onDelete: 'RESTRICT', nullable: true })
   @JoinColumn({ name: 'business_unit_id' })
   businessUnit?: BusinessUnitEntity;
+
+  @Column({ type: 'uuid', name: 'cost_center_id', nullable: true })
+  costCenterId?: string;
+
+  @ManyToOne(() => CostCenterEntity, { onDelete: 'RESTRICT', nullable: true })
+  @JoinColumn({ name: 'cost_center_id' })
+  costCenter?: CostCenterEntity;
 
   @Column({ type: 'uuid', name: 'vehicle_id', nullable: true })
   vehicleId?: string;

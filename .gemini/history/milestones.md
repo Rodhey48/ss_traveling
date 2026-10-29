@@ -2,6 +2,32 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-10-29: Penambahan Cost Center CC-OPS-AKAP & CC-OPS-WISATA serta Auto-Mapping Finansial SPJ Completed
+- **Penambahan 2 Cost Center Operasional Khusus**:
+  - `CC-OPS-AKAP` (*Operasional Divisi AKAP*): Menampung seluruh biaya operasional perjalanan AKAP reguler (BBM solar, tol, retribusi terminal, komisi agen, dan servis kupon makan penumpang).
+  - `CC-OPS-WISATA` (*Operasional Divisi Pariwisata*): Menampung seluruh biaya operasional perjalanan wisata/charter (BBM solar carter, tol, parkir wisata, komisi rekanan).
+  - Menjaga kelengkapan total 5 Cost Center: `CC-ADM-HQ`, `CC-MNT-GARASI`, `CC-OPS-AKAP`, `CC-OPS-POOL`, dan `CC-OPS-WISATA`.
+- **Migrasi Database & Backfill Otomatis (`1782800000000-add-ops-cost-centers-and-spj-mapping.ts`)**:
+  - Menyisipkan cost center baru ke tabel `cost_centers` jika belum ada.
+  - Menambahkan kolom `cost_center_id` (uuid nullable) dengan foreign key ke `cost_centers(id)` pada tabel `trip_schedules` dan tabel `spjs`.
+  - Melakukan backfill historis:
+    * `trip_schedules` & `spjs` AKAP otomatis terhubung ke `CC-OPS-AKAP`.
+    * `trip_schedules` & `spjs` WISATA otomatis terhubung ke `CC-OPS-WISATA`.
+    * Seluruh baris jurnal GL (`journal_lines`) yang memiliki `trip_id` otomatis diperbarui dimensi `cost_center_id`, `business_unit_id`, dan `profit_center_id`-nya sesuai service type SPJ.
+- **Auto-Mapping Cerdas di Layer Service Backend**:
+  - `TripSchedulesService`: Pembuatan rencana jadwal baru otomatis memetakan `costCenterId` berdasarkan `serviceType` (`AKAP` -> `CC-OPS-AKAP`, `WISATA` -> `CC-OPS-WISATA`).
+  - `SpjService`: Pembuatan SPJ mandiri maupun penerbitan 1-klik dari jadwal (`generateFromSchedule`) dan penggantian darurat breakdown (`emergencyReplaceBus`) secara otomatis mewariskan `costCenterId`.
+  - `CashierSettlementService`: Seluruh baris debit (kas fisik, beban BBM, tol, parkir) dan kredit (pelunasan UJ, pendapatan tiket, pendapatan kargo) pada jurnal rekonsiliasi SPJ pool otomatis dibubuhi `costCenterId`, `businessUnitId`, dan `profitCenterId`.
+  - `CashierDiscrepancyService`: Jurnal penyelesaian selisih investigasi (beban dispensasi 58101 atau piutang kru 12901) otomatis terlabeli Cost Center operasional.
+  - `ApService`: Faktur tagihan restoran mitra kupon makan penumpang (`ApInvoiceLineEntity`) otomatis memetakan `costCenterId = CC-OPS-AKAP` dan `businessUnitId = AKAP` dari SPJ terkait, mengalir mulus ke jurnal utang usaha AP.
+- **Penyelarasan Tipe Frontend (`ss-travel-frontend/src/types/index.ts`)**:
+  - Menambahkan `costCenterId?: string` dan relasi `costCenter?: CostCenter` pada antarmuka `TripSchedule` dan `Spj`.
+- **Verifikasi Kualitas Penuh**:
+  - Migrasi database dieksekusi sukses (`Migration AddOpsCostCentersAndSpjMapping1782800000000 has been executed successfully`).
+  - Seluruh 27 unit test suites backend (160 unit tests) lulus 100% PASS.
+  - Build frontend Vite React (`yarn build`) sukses 100% bebas error.
+  - Verifikasi live API query via JWT auth mengonfirmasi seluruh 5 Cost Center dan dokumen SPJ tersaji lengkap dengan `costCenterId` & `costCenter`.
+
 ### 2026-10-28: Redesain UI/UX SiOlive Glassmorphism, Standarisasi Tombol & Tab Global, Dark Mode & Seeder Foto Bus Completed
 - **Redesain UI/UX Estetika SiOlive (Glassmorphism, Floating Capsule, & Ambient Glow)**:
   - **Floating Capsule Sidebar**: Transformasi sidebar menjadi kapsul melayang melengkung (`rounded-[2rem] h-[calc(100vh-105px)] my-3 ml-4`) dengan background `bg-white/80 dark:bg-zinc-900/90`, bayangan lembut, dan item menu aktif bergradasi hijau emerald ke teal menyala.

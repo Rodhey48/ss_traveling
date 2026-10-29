@@ -87,6 +87,10 @@ export class CreateTripScheduleDto {
 
   @IsUUID()
   @IsOptional()
+  costCenterId?: string;
+
+  @IsUUID()
+  @IsOptional()
   companyId?: string;
 }
 
@@ -160,6 +164,10 @@ export class UpdateTripScheduleDto {
   @IsUUID()
   @IsOptional()
   businessUnitId?: string;
+
+  @IsUUID()
+  @IsOptional()
+  costCenterId?: string;
 }
 
 export class TripScheduleQueryFilterDto {

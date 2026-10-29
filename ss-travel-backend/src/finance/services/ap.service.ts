@@ -240,6 +240,15 @@ export class ApService {
           discNote = `Peringatan: Kupon (${item.couponCount}) melebihi manifes fisik (${manifestPax}).`;
         }
 
+        let costCenterId = spj?.costCenterId;
+        if (!costCenterId && spj) {
+          const ccCode = spj.serviceType === 'AKAP' ? 'CC-OPS-AKAP' : 'CC-OPS-WISATA';
+          if (typeof manager?.query === 'function') {
+            const ccRows = await manager.query(`SELECT id FROM "cost_centers" WHERE code = $1 LIMIT 1`, [ccCode]);
+            if (ccRows && ccRows.length > 0) costCenterId = ccRows[0].id;
+          }
+        }
+
         const line = manager.create(ApInvoiceLineEntity, {
           lineNo: i + 1,
           description: `Servis Makan Penumpang ${restaurant.name} - ${spj?.spjNo || '-'}`,
@@ -250,6 +259,8 @@ export class ApService {
           tripId: item.tripId,
           tripLegId: item.tripLegId || leg?.id,
           vehicleId: spj?.vehicleId,
+          costCenterId,
+          businessUnitId: spj?.businessUnitId,
           manifestPaxCount: manifestPax,
           couponCount: item.couponCount,
           discrepancyNotes: discNote,

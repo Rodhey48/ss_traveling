@@ -11,6 +11,7 @@ import { VehicleEntity } from '../../@models/fleet/vehicle.entity';
 import { CustomerEntity } from '../../@models/customer/customer.entity';
 import { UsersEntity } from '../../@models/user/user.entity';
 import { BusinessUnitEntity } from '../../@models/organization/business-unit.entity';
+import { CostCenterEntity } from '../../@models/organization/cost-center.entity';
 import { DocumentSequenceService } from '../../finance/services/document-sequence.service';
 
 describe('TripSchedulesService', () => {
@@ -20,6 +21,7 @@ describe('TripSchedulesService', () => {
   let customerRepo: any;
   let userRepo: any;
   let businessUnitRepo: any;
+  let costCenterRepo: any;
   let sequenceService: any;
 
   const mockSchedule = {
@@ -61,6 +63,10 @@ describe('TripSchedulesService', () => {
       findOne: jest.fn().mockResolvedValue({ id: 'bu-akap', code: 'AKAP' }),
     };
 
+    costCenterRepo = {
+      findOne: jest.fn().mockResolvedValue({ id: 'cc-ops-akap', code: 'CC-OPS-AKAP' }),
+    };
+
     sequenceService = {
       getNextDocumentNumber: jest.fn().mockResolvedValue('SCH/AKP/2610/0001'),
     };
@@ -73,6 +79,7 @@ describe('TripSchedulesService', () => {
         { provide: getRepositoryToken(CustomerEntity), useValue: customerRepo },
         { provide: getRepositoryToken(UsersEntity), useValue: userRepo },
         { provide: getRepositoryToken(BusinessUnitEntity), useValue: businessUnitRepo },
+        { provide: getRepositoryToken(CostCenterEntity), useValue: costCenterRepo },
         { provide: DocumentSequenceService, useValue: sequenceService },
       ],
     }).compile();

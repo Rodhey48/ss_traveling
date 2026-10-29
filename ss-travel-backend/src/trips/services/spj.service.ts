@@ -23,6 +23,7 @@ import { VehicleEntity } from '../../@models/fleet/vehicle.entity';
 import { UsersEntity } from '../../@models/user/user.entity';
 import { BusinessUnitEntity } from '../../@models/organization/business-unit.entity';
 import { ProfitCenterEntity } from '../../@models/organization/profit-center.entity';
+import { CostCenterEntity } from '../../@models/organization/cost-center.entity';
 import { CrewRole, CrewServiceType } from '../../@models/master-rules/crew-rate-rule.entity';
 import { DocumentSequenceService } from '../../finance/services/document-sequence.service';
 import { CrewRatesService } from '../../master-rules/services/crew-rates.service';
@@ -54,6 +55,8 @@ export class SpjService {
     private readonly businessUnitRepo: Repository<BusinessUnitEntity>,
     @InjectRepository(ProfitCenterEntity)
     private readonly profitCenterRepo: Repository<ProfitCenterEntity>,
+    @InjectRepository(CostCenterEntity)
+    private readonly costCenterRepo: Repository<CostCenterEntity>,
     private readonly sequenceService: DocumentSequenceService,
     private readonly crewRatesService: CrewRatesService,
   ) {}
@@ -134,6 +137,7 @@ export class SpjService {
       .leftJoinAndSelect('crewAssignments.crew', 'crew')
       .leftJoinAndSelect('s.businessUnit', 'businessUnit')
       .leftJoinAndSelect('s.profitCenter', 'profitCenter')
+      .leftJoinAndSelect('s.costCenter', 'costCenter')
       .orderBy('s.createdAt', 'DESC');
 
     if (query.serviceType) {
@@ -196,6 +200,7 @@ export class SpjService {
         'crewAssignments.replacementCrew',
         'businessUnit',
         'profitCenter',
+        'costCenter',
       ],
       order: {
         legs: { sequenceNo: 'ASC' },
@@ -261,6 +266,14 @@ export class SpjService {
       if (pc) pcId = pc.id;
     }
 
+    // Auto-map cost center berdasarkan serviceType jika tidak disediakan
+    let ccId = dto.costCenterId;
+    if (!ccId && this.costCenterRepo) {
+      const ccCode = dto.serviceType === TripServiceType.AKAP ? 'CC-OPS-AKAP' : 'CC-OPS-WISATA';
+      const cc = await this.costCenterRepo.findOne({ where: { code: ccCode } });
+      if (cc) ccId = cc.id;
+    }
+
     const spj = this.spjRepo.create({
       spjNo,
       serviceType: dto.serviceType,
@@ -269,6 +282,7 @@ export class SpjService {
       parentSpjId: dto.parentSpjId,
       businessUnitId: buId,
       profitCenterId: pcId,
+      costCenterId: ccId,
       operationalStatus: SpjOperationalStatus.DRAFT,
       financialStatus: SpjFinancialStatus.PENDING_SETTLEMENT,
       notes: dto.notes,
@@ -501,6 +515,7 @@ export class SpjService {
       tripScheduleId: schedule.id,
       notes: dto?.notes || schedule.notes,
       businessUnitId: schedule.businessUnitId,
+      costCenterId: schedule.costCenterId,
       legs,
       crewAssignments,
     });
@@ -743,6 +758,7 @@ export class SpjService {
       parentSpjId: oldSpj.id, // KUNCI UTAMA RELASI PERJALANAN EKONOMI
       businessUnitId: oldSpj.businessUnitId,
       profitCenterId: oldSpj.profitCenterId,
+      costCenterId: oldSpj.costCenterId,
       operationalStatus: SpjOperationalStatus.IN_PROGRESS, // Langsung aktif melanjutkan perjalanan
       financialStatus: SpjFinancialStatus.PENDING_SETTLEMENT,
       issuedAt: new Date(),

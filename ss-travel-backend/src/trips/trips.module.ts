@@ -19,6 +19,7 @@ import { CustomerEntity } from '../@models/customer/customer.entity';
 import { UsersEntity } from '../@models/user/user.entity';
 import { BusinessUnitEntity } from '../@models/organization/business-unit.entity';
 import { ProfitCenterEntity } from '../@models/organization/profit-center.entity';
+import { CostCenterEntity } from '../@models/organization/cost-center.entity';
 import { CashAccountEntity } from '../@models/finance/cash-account.entity';
 import { BankAccountEntity } from '../@models/finance/bank-account.entity';
 
@@ -55,6 +56,7 @@ import { JWTService } from '../@services/jwt/jwt.service';
       UsersEntity,
       BusinessUnitEntity,
       ProfitCenterEntity,
+      CostCenterEntity,
       CashAccountEntity,
       BankAccountEntity,
     ]),
