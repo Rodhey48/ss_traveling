@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { AuthService } from '@/services/auth.service';
 import { getDeviceId } from '@/lib/axiosClient';
 import type { UserLoginInfo } from '@/types';
+import { BrandLoader } from '@/components/shared/brand-loader';
 
 const formSchema = z.object({
   identifier: z.string().min(3, { message: 'Masukkan email atau NIP yang valid' }),
@@ -36,6 +37,13 @@ export default function UserAuthForm() {
   const router = useRouter();
   const { setAuthData } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [isSuccessLoading, setIsSuccessLoading] = useState(false);
+  const [pendingAuth, setPendingAuth] = useState<{
+    user: UserLoginInfo;
+    menus: any[];
+    token?: string;
+    refreshToken?: string;
+  } | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [errorFields, setErrorFields] = useState<{
     identifier?: string;
@@ -46,6 +54,16 @@ export default function UserAuthForm() {
     resolver: zodResolver(formSchema),
     defaultValues: { identifier: '', password: '', type: 'admin' }
   });
+
+  const handleLoadingFinished = () => {
+    if (pendingAuth) {
+      setAuthData(pendingAuth);
+    }
+    toast.success('Login Berhasil', {
+      description: 'Selamat datang di SS Traveling ERP.'
+    });
+    router.push('/');
+  };
 
   const onSubmit = async (data: UserFormValue) => {
     setLoading(true);
@@ -73,20 +91,17 @@ export default function UserAuthForm() {
         roles: payload.user.roles
       };
 
-      // 2. Store all tokens and user data via AuthContext
-      setAuthData({
+      // Simpan data autentikasi sementara, jangan panggil setAuthData sekarang
+      // agar GuestRoute tidak langsung me-redirect sebelum animasi 2 detik tuntas!
+      setPendingAuth({
         user,
         menus: payload.menus,
         token: payload.token,
         refreshToken: payload.refreshToken
       });
 
-      toast.success('Login Berhasil', {
-        description: 'Anda akan dialihkan ke dashboard.'
-      });
-      setTimeout(() => {
-        router.push('/');
-      }, 1000);
+      // Tampilkan BrandLoader khusus SS Traveling minimal 2 detik sebelum masuk ke dashboard
+      setIsSuccessLoading(true);
     } catch (error: any) {
       if (error.response) {
         const { status } = error.response;
@@ -108,13 +123,20 @@ export default function UserAuthForm() {
       } else {
         toast.error('Gagal terhubung ke server');
       }
-    } finally {
       setLoading(false);
     }
   };
 
   return (
     <>
+      {isSuccessLoading && (
+        <BrandLoader
+          message="Login Berhasil"
+          subMessage="Menyiapkan hak akses & mengalihkan ke dashboard..."
+          minDuration={2200}
+          onFinished={handleLoadingFinished}
+        />
+      )}
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}

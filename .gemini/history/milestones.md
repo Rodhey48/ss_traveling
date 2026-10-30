@@ -2,20 +2,28 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
-### 2026-10-30: Pemulihan Menu Sidebar Treasury (Mutasi Kas & Transfer Antar Rekening) Completed
-- **Akar Masalah**:
-  - Menu operasional likuiditas dan transfer antar rekening bank (`/treasury` - *Mutasi Kas & Rekening Bank*) sempat tidak muncul di sidebar menu.
-  - Investigasi menemukan bahwa migrasi `1782600000000-add-treasury-menu.ts` sebelumnya dilewati (*skipped*) karena dijalankan sebelum seeder baseline `1888888888889-SeedStandardRolesMenusAndUsers.ts` yang membuat grup induk `Meja Kasir Pool`.
-- **Perbaikan Database & Seeder**:
+### 2026-10-30: Pemulihan Menu Sidebar Treasury, Migrasi Fund Transfers & Komponen BrandLoader Khusus SS Traveling Completed
+- **Akar Masalah Menu Treasury & Tabel `fund_transfers`**:
+  - Menu operasional likuiditas dan transfer antar rekening bank (`/treasury` - *Mutasi Kas & Rekening Bank*) sempat tidak muncul di sidebar menu karena migrasi `1782600000000-add-treasury-menu.ts` sebelumnya dilewati (*skipped*).
+  - Endpoint `GET /api/v1/fund-transfers` sempat melempar error `relation "fund_transfers" does not exist` karena migrasi `1782500000000-create-fund-transfers.ts` memiliki pengecekan `isCompanyExists` yang me-return *skip* saat dijalankan sebelum seeder company `SST`.
+- **Perbaikan Database, Seeder, & Migrasi Backend**:
+  - Memperbarui `1782500000000-create-fund-transfers.ts` agar membuat entitas perusahaan `SST` secara fallback jika belum ada, menjamin tabel `fund_transfers`, enum status, COA bank, dan bank accounts selalu dibuat tanpa pernah terlewat.
+  - Mendaftarkan tabel `fund_transfers` dan 6 rekening bank korporat (2 Induk BCA/Mandiri + 4 Operasional AKAP/Wisata) ke database PostgreSQL aktif.
   - Mendaftarkan menu `/treasury` ke database PostgreSQL aktif di bawah induk `Meja Kasir Pool` (sequence: 3, icon: `ArrowRightLeft`, aclName: `CashBank`, availableActions: `["approve"]`).
   - Mengonfigurasi permission `role-menus` untuk role `SUPER_ADMIN`, `DIRECTOR`, `FINANCE_MANAGER` (lengkap dengan `actions: {"approve": true}` untuk otorisasi transfer), serta `ACCOUNTANT`, `FINANCE_AR_AP`, dan `POOL_CASHIER`.
-  - Memperbarui seeder dasar `1888888888889-SeedStandardRolesMenusAndUsers.ts` agar menyertakan menu `/treasury` dan custom actions persetujuan secara permanen pada proses seed masa depan.
+  - Memperbarui seeder dasar `1888888888889-SeedStandardRolesMenusAndUsers.ts` dan `1888888888891-SeedFinanceMaster.ts` agar menyertakan menu `/treasury`, custom actions persetujuan, 6 akun COA bank, dan 6 rekening bank korporat secara permanen.
 - **Peningkatan Sinkronisasi Frontend (`use-auth.tsx`)**:
   - Menambahkan *Background Profile & Dynamic Menu Synchronization* pada hook `useAuth` saat inisialisasi sesi pengguna terautentikasi (`AuthService.getMe()`), sehingga pembaruan izin dan menu di backend langsung tersinkronisasi otomatis ke browser tanpa kendala *stale cache* localStorage.
+- **Komponen BrandLoader Khusus SS Traveling (`brand-loader.tsx`)**:
+  - Membangun komponen loading animasi berdedikasi menampilkan logo pendopo SS Transport (`/asset/ss-transport-pendopo.png` dan `src/assets/ss-transport-pendopo.png`).
+  - Ring berputar 280px (`border: 5px solid #dce3f1; border-top-color: #2878f0`) dengan animasi 1,2 detik, mengitari logo pendopo yang berdiri tegak stabil di tengah (`w-[72%] h-[72%] object-contain`).
+  - Progress bar animasi dinamis 0% hingga 100% dengan timer durasi minimal 2,2 detik (`minDuration={2200}`).
+  - Mengatasi kendala stacking context CSS `backdrop-blur-xl` kartu login dengan merender loader via **React Portal (`createPortal` ke `document.body`)**, menjamin tampilan *fullscreen overlay* murni bebas dari batasan kontainer parent.
+  - Alur *Optimistic Transition* pada login (`user-auth-form.tsx`): menahan eksekusi `setAuthData` hingga durasi 2,2 detik selesai dan animasi fade-out tuntas, memberikan pengalaman transisi brand yang mulus menuju Dashboard.
 - **Verifikasi Kualitas Penuh**:
   - Seluruh 27 unit test suites backend (160 unit tests) lulus 100% PASS.
   - Build frontend Vite React (`yarn build`) sukses 100% bebas error.
-  - Verifikasi kueri database mengonfirmasi menu `/treasury` tersaji aktif dengan hak akses dan custom action `approve`.
+  - Verifikasi kueri database mengonfirmasi tabel `fund_transfers`, 8 rekening bank, dan menu `/treasury` tersaji aktif dengan hak akses approval.
 
 ### 2026-10-29: Penambahan Cost Center CC-OPS-AKAP & CC-OPS-WISATA serta Auto-Mapping Finansial SPJ Completed
 - **Penambahan 2 Cost Center Operasional Khusus**:

@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { useAuth } from '@/hooks/use-auth';
+import { BrandLoader } from '@/components/shared/brand-loader';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -11,9 +12,11 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (loading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
+      <BrandLoader
+        message="Memverifikasi Sesi Operasional…"
+        subMessage="Menghubungkan ke SS Traveling ERP"
+        minDuration={1200}
+      />
     );
   }
 
