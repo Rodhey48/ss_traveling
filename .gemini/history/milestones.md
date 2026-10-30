@@ -2,6 +2,21 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-10-30: Pemulihan Menu Sidebar Treasury (Mutasi Kas & Transfer Antar Rekening) Completed
+- **Akar Masalah**:
+  - Menu operasional likuiditas dan transfer antar rekening bank (`/treasury` - *Mutasi Kas & Rekening Bank*) sempat tidak muncul di sidebar menu.
+  - Investigasi menemukan bahwa migrasi `1782600000000-add-treasury-menu.ts` sebelumnya dilewati (*skipped*) karena dijalankan sebelum seeder baseline `1888888888889-SeedStandardRolesMenusAndUsers.ts` yang membuat grup induk `Meja Kasir Pool`.
+- **Perbaikan Database & Seeder**:
+  - Mendaftarkan menu `/treasury` ke database PostgreSQL aktif di bawah induk `Meja Kasir Pool` (sequence: 3, icon: `ArrowRightLeft`, aclName: `CashBank`, availableActions: `["approve"]`).
+  - Mengonfigurasi permission `role-menus` untuk role `SUPER_ADMIN`, `DIRECTOR`, `FINANCE_MANAGER` (lengkap dengan `actions: {"approve": true}` untuk otorisasi transfer), serta `ACCOUNTANT`, `FINANCE_AR_AP`, dan `POOL_CASHIER`.
+  - Memperbarui seeder dasar `1888888888889-SeedStandardRolesMenusAndUsers.ts` agar menyertakan menu `/treasury` dan custom actions persetujuan secara permanen pada proses seed masa depan.
+- **Peningkatan Sinkronisasi Frontend (`use-auth.tsx`)**:
+  - Menambahkan *Background Profile & Dynamic Menu Synchronization* pada hook `useAuth` saat inisialisasi sesi pengguna terautentikasi (`AuthService.getMe()`), sehingga pembaruan izin dan menu di backend langsung tersinkronisasi otomatis ke browser tanpa kendala *stale cache* localStorage.
+- **Verifikasi Kualitas Penuh**:
+  - Seluruh 27 unit test suites backend (160 unit tests) lulus 100% PASS.
+  - Build frontend Vite React (`yarn build`) sukses 100% bebas error.
+  - Verifikasi kueri database mengonfirmasi menu `/treasury` tersaji aktif dengan hak akses dan custom action `approve`.
+
 ### 2026-10-29: Penambahan Cost Center CC-OPS-AKAP & CC-OPS-WISATA serta Auto-Mapping Finansial SPJ Completed
 - **Penambahan 2 Cost Center Operasional Khusus**:
   - `CC-OPS-AKAP` (*Operasional Divisi AKAP*): Menampung seluruh biaya operasional perjalanan AKAP reguler (BBM solar, tol, retribusi terminal, komisi agen, dan servis kupon makan penumpang).

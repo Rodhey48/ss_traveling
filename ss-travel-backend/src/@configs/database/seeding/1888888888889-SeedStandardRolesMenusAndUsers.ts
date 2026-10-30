@@ -446,6 +446,16 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
         parentId: cashierGroupId,
         moduleId: finModId,
       },
+      {
+        id: uuidv4(),
+        name: 'Mutasi Kas & Rekening Bank',
+        url: '/treasury',
+        icon: 'ArrowRightLeft',
+        sequence: 3,
+        aclName: 'CashBank',
+        parentId: cashierGroupId,
+        moduleId: finModId,
+      },
 
       // Keuangan & Akuntansi
       {
@@ -723,6 +733,23 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
         await assignPermission('CREW_STEWARDESS', mId, { isRead: true, isCreate: false, isUpdate: false, isDelete: false });
       }
     }
+
+    // 7. Konfigurasi custom availableActions & hak persetujuan (approval desk) untuk menu /treasury
+    await queryRunner.query(`
+      UPDATE "menus"
+      SET "availableActions" = '["approve"]'::jsonb
+      WHERE "url" = '/treasury'
+    `);
+
+    await queryRunner.query(`
+      UPDATE "role-menus" rm
+      SET "actions" = '{"approve": true}'::jsonb
+      FROM "menus" m, "roles" r
+      WHERE rm."menuId" = m."id"
+        AND rm."roleId" = r."id"
+        AND m."url" = '/treasury'
+        AND r."name" IN ('SUPER_ADMIN', 'DIRECTOR', 'FINANCE_MANAGER')
+    `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

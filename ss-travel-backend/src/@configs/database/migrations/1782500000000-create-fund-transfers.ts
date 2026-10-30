@@ -8,11 +8,17 @@ export class CreateFundTransfers1782500000000 implements MigrationInterface {
     const isCompanyExists = await queryRunner.query(
       `SELECT id FROM "companies" WHERE code = 'SST' LIMIT 1`,
     );
-    if (!isCompanyExists || isCompanyExists.length === 0) {
-      console.log('Skipping Fund Transfers Migration because Company SST not found.');
-      return;
+    let companyId: string;
+    if (isCompanyExists && isCompanyExists.length > 0) {
+      companyId = isCompanyExists[0].id;
+    } else {
+      companyId = uuidv4();
+      await queryRunner.query(
+        `INSERT INTO "companies" ("id", "code", "name", "currency", "timezone", "is_active", "createdAt", "updatedAt")
+         VALUES ($1, 'SST', 'PT SS Traveling Official', 'IDR', 'Asia/Jakarta', true, NOW(), NOW())`,
+        [companyId],
+      );
     }
-    const companyId = isCompanyExists[0].id;
 
     // 1. Create Enums if not exist (FundTransferStatus, FundTransferType)
     await queryRunner.query(`

@@ -45,6 +45,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (storedMenus) {
         setMenus(storedMenus);
       }
+
+      // Background synchronization: refresh user profile & latest dynamic menus
+      AuthService.getMe()
+        .then((res) => {
+          if (res?.data) {
+            if (res.data.user) {
+              setUser(res.data.user);
+              storage.set('user', res.data.user);
+            }
+            if (res.data.menus) {
+              setMenus(res.data.menus);
+              storage.set('menus', res.data.menus);
+            }
+          }
+        })
+        .catch((err) => {
+          // Silent fallback on network error/offline
+          console.warn('[Auth] Background menu/profile sync skipped:', err?.message);
+        });
     } else {
       setIsAuthenticated(false);
       setUser(null);

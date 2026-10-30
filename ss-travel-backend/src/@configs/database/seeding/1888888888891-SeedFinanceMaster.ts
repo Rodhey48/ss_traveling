@@ -47,6 +47,12 @@ export class SeedFinanceMaster1888888888891 implements MigrationInterface {
       { code: '11103', name: 'Kas Kecil (Petty Cash Garasi)', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Kas kecil biaya harian operasional & mekanik bengkel' },
       { code: '11104', name: 'Bank Operasional Perusahaan', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Rekening bank operasional utama perusahaan' },
       { code: '11105', name: 'Kas Kartu Uang Elektronik (Pool E-Toll)', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Saldo kartu e-toll pool untuk perjalanan bus' },
+      { code: '11111', name: 'Bank BCA Induk (Pusat Penerimaan)', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Rekening induk penerimaan tiket & charter via BCA' },
+      { code: '11112', name: 'Bank Mandiri Induk (Pusat Penerimaan)', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Rekening induk penerimaan tiket & charter via Mandiri' },
+      { code: '11121', name: 'Bank BCA Operasional AKAP', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Rekening operasional pengeluaran armada AKAP BCA' },
+      { code: '11122', name: 'Bank BCA Operasional Wisata', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Rekening operasional pengeluaran armada Wisata BCA' },
+      { code: '11123', name: 'Bank Mandiri Operasional AKAP', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Rekening operasional pengeluaran armada AKAP Mandiri' },
+      { code: '11124', name: 'Bank Mandiri Operasional Wisata', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Rekening operasional pengeluaran armada Wisata Mandiri' },
       { code: '11999', name: 'Selisih Kas Operasional Sementara (Penampung Skenario 4)', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Akun penampung neraca selisih kas kasir belum investigasi agar tutup buku unblocked' },
 
       { code: '12', name: 'Piutang Usaha (AR)', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '1', isPostable: false },
@@ -318,6 +324,29 @@ export class SeedFinanceMaster1888888888891 implements MigrationInterface {
           'Rekening cadangan penerimaan transfer bank Mandiri',
         ],
       );
+
+      // 6 Rekening Bank Treasury Terpisah (2 Induk + 4 Operasional)
+      const corporateBankConfigs = [
+        { code: 'BANK-BCA-MAIN', name: 'BCA', accName: 'PT SS Traveling Official (Induk)', accNo: '8830192801', mask: '•••• •••• 2801', glCode: '11111', desc: 'Rekening Induk Pusat Penerimaan BCA' },
+        { code: 'BANK-MANDIRI-MAIN', name: 'Bank Mandiri', accName: 'PT SS Traveling Official (Induk)', accNo: '1560012341112', mask: '•••• •••• 1112', glCode: '11112', desc: 'Rekening Induk Pusat Penerimaan Mandiri' },
+        { code: 'BANK-BCA-OPS-AKAP', name: 'BCA', accName: 'PT SS Traveling Official (Ops AKAP)', accNo: '8830192821', mask: '•••• •••• 2821', glCode: '11121', desc: 'Rekening Pengeluaran Operasional Armada Bus AKAP BCA' },
+        { code: 'BANK-BCA-OPS-WIS', name: 'BCA', accName: 'PT SS Traveling Official (Ops Wisata)', accNo: '8830192822', mask: '•••• •••• 2822', glCode: '11122', desc: 'Rekening Pengeluaran Operasional Armada Pariwisata BCA' },
+        { code: 'BANK-MANDIRI-OPS-AKAP', name: 'Bank Mandiri', accName: 'PT SS Traveling Official (Ops AKAP)', accNo: '1560012341123', mask: '•••• •••• 1123', glCode: '11123', desc: 'Rekening Pengeluaran Operasional Armada Bus AKAP Mandiri' },
+        { code: 'BANK-MANDIRI-OPS-WIS', name: 'Bank Mandiri', accName: 'PT SS Traveling Official (Ops Wisata)', accNo: '1560012341124', mask: '•••• •••• 1124', glCode: '11124', desc: 'Rekening Pengeluaran Operasional Armada Pariwisata Mandiri' },
+      ];
+
+      for (const cbc of corporateBankConfigs) {
+        const cbcGlId = accountIdMap.get(cbc.glCode);
+        if (cbcGlId) {
+          await queryRunner.query(
+            `INSERT INTO "bank_accounts" 
+              ("id", "company_id", "code", "bank_name", "account_name", "account_number", "account_number_masked", "account_id", "currency", "description", "is_active")
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'IDR', $9, true)
+             ON CONFLICT ("code") DO NOTHING`,
+            [uuidv4(), companyId, cbc.code, cbc.name, cbc.accName, cbc.accNo, cbc.mask, cbcGlId, cbc.desc],
+          );
+        }
+      }
     }
 
     // 6. Seed Fiscal Year 2026 & 12 Periods
