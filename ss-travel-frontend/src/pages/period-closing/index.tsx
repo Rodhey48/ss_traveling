@@ -137,7 +137,7 @@ export default function PeriodClosingPage() {
               Tutup Buku Bulanan (Period Closing)
             </h1>
             <p className="text-sm text-gray-500">
-              Wizard checklist otomatis penutupan periode akuntansi PT SS Traveling Official
+              Wizard checklist otomatis penutupan periode akuntansi PT SS Travelink Official
             </p>
           </div>
         </div>
@@ -294,7 +294,7 @@ export default function PeriodClosingPage() {
             <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
             <div className="space-y-1">
               <span className="font-bold">
-                Kepatuhan Standar Akuntansi Bus PT SS Traveling Official (Skenario 4 — Kemerdekaan Tutup Buku):
+                Kepatuhan Standar Akuntansi Bus PT SS Travelink Official (Skenario 4 — Kemerdekaan Tutup Buku):
               </span>
               <p className="text-blue-800 leading-relaxed">
                 Perselisihan kasir di meja pool atau sengketa uang kru di jalan <strong>TIDAK MEMBLOKIR</strong> proses

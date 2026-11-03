@@ -8,13 +8,13 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, company } = useAuth();
 
   if (loading) {
     return (
       <BrandLoader
         message="Memverifikasi Sesi Operasional…"
-        subMessage="Menghubungkan ke SS Traveling ERP"
+        subMessage={company?.name ? `Menghubungkan ke ${company.name.replace(/^PT\s+/i, '')} ERP` : 'Menghubungkan ke SS Travelink ERP'}
         minDuration={1200}
       />
     );

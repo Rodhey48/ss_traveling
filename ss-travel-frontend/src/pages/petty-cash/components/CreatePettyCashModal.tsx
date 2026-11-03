@@ -19,6 +19,7 @@ import type {
 } from '@/types';
 import { PettyCashService } from '@/services/petty-cash.service';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/use-auth';
 
 interface CreatePettyCashModalProps {
   isOpen: boolean;
@@ -39,6 +40,8 @@ export default function CreatePettyCashModal({
   vehicles,
   defaultCashAccountId,
 }: CreatePettyCashModalProps) {
+  const { company } = useAuth();
+  const companyName = company?.name || 'PT SS Travelink Official';
   const [cashAccountId, setCashAccountId] = useState('');
   const [transactionDate, setTransactionDate] = useState(
     new Date().toISOString().slice(0, 10),
@@ -188,7 +191,7 @@ export default function CreatePettyCashModal({
                 Input Pengeluaran Kas Kecil Pool (BKK)
               </h3>
               <p className="text-xs text-slate-500">
-                Pencatatan beban operasional non-SPJ garasi PT SS Traveling Official
+                Pencatatan beban operasional non-SPJ garasi {companyName}
               </p>
             </div>
           </div>

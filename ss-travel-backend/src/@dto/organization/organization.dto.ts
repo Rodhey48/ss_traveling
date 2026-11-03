@@ -14,7 +14,7 @@ export class CreateCompanyDto {
   @IsNotEmpty()
   code: string;
 
-  @ApiProperty({ example: 'PT SS Traveling Official' })
+  @ApiProperty({ example: 'PT SS Travelink Official' })
   @IsString()
   @IsNotEmpty()
   name: string;

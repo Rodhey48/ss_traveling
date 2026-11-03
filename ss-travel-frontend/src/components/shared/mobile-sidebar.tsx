@@ -16,7 +16,8 @@ export default function MobileSidebar({
   setSidebarOpen,
   sidebarOpen
 }: TMobileSidebarProps) {
-  const { menus: authMenus } = useAuth();
+  const { menus: authMenus, company } = useAuth();
+  const brandTitle = company?.name ? company.name.replace(/^PT\s+/i, '').toUpperCase() : 'SS TRAVELINK';
 
   const navItems = useMemo<NavItem[]>(() => {
     if (!authMenus) return [];
@@ -45,9 +46,9 @@ export default function MobileSidebar({
             <Link
               to="/"
               onClick={() => setSidebarOpen(false)}
-              className="text-lg font-black tracking-widest bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-400 bg-clip-text text-transparent"
+              className="text-lg font-black tracking-widest bg-linear-to-r from-emerald-600 via-emerald-500 to-teal-400 bg-clip-text text-transparent"
             >
-              SS TRAVELING ERP
+              {brandTitle} ERP
             </Link>
           </div>
           <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar px-3 py-2">

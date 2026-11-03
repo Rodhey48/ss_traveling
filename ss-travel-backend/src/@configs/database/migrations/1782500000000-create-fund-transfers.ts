@@ -15,7 +15,7 @@ export class CreateFundTransfers1782500000000 implements MigrationInterface {
       companyId = uuidv4();
       await queryRunner.query(
         `INSERT INTO "companies" ("id", "code", "name", "currency", "timezone", "is_active", "createdAt", "updatedAt")
-         VALUES ($1, 'SST', 'PT SS Traveling Official', 'IDR', 'Asia/Jakarta', true, NOW(), NOW())`,
+         VALUES ($1, 'SST', 'PT SS Travelink Official', 'IDR', 'Asia/Jakarta', true, NOW(), NOW())`,
         [companyId],
       );
     }
@@ -110,7 +110,7 @@ export class CreateFundTransfers1782500000000 implements MigrationInterface {
       {
         code: 'BANK-BCA-MAIN',
         bankName: 'BCA',
-        accountName: 'PT SS Traveling Official (Induk)',
+        accountName: 'PT SS Travelink Official (Induk)',
         accountNumber: '8830192801',
         mask: '•••• •••• 2801',
         glCode: '11111',
@@ -119,7 +119,7 @@ export class CreateFundTransfers1782500000000 implements MigrationInterface {
       {
         code: 'BANK-MANDIRI-MAIN',
         bankName: 'Bank Mandiri',
-        accountName: 'PT SS Traveling Official (Induk)',
+        accountName: 'PT SS Travelink Official (Induk)',
         accountNumber: '1560012341112',
         mask: '•••• •••• 1112',
         glCode: '11112',
@@ -128,7 +128,7 @@ export class CreateFundTransfers1782500000000 implements MigrationInterface {
       {
         code: 'BANK-BCA-OPS-AKAP',
         bankName: 'BCA',
-        accountName: 'PT SS Traveling Official (Ops AKAP)',
+        accountName: 'PT SS Travelink Official (Ops AKAP)',
         accountNumber: '8830192821',
         mask: '•••• •••• 2821',
         glCode: '11121',
@@ -137,7 +137,7 @@ export class CreateFundTransfers1782500000000 implements MigrationInterface {
       {
         code: 'BANK-BCA-OPS-WIS',
         bankName: 'BCA',
-        accountName: 'PT SS Traveling Official (Ops Wisata)',
+        accountName: 'PT SS Travelink Official (Ops Wisata)',
         accountNumber: '8830192822',
         mask: '•••• •••• 2822',
         glCode: '11122',
@@ -146,7 +146,7 @@ export class CreateFundTransfers1782500000000 implements MigrationInterface {
       {
         code: 'BANK-MANDIRI-OPS-AKAP',
         bankName: 'Bank Mandiri',
-        accountName: 'PT SS Traveling Official (Ops AKAP)',
+        accountName: 'PT SS Travelink Official (Ops AKAP)',
         accountNumber: '1560012341123',
         mask: '•••• •••• 1123',
         glCode: '11123',
@@ -155,7 +155,7 @@ export class CreateFundTransfers1782500000000 implements MigrationInterface {
       {
         code: 'BANK-MANDIRI-OPS-WIS',
         bankName: 'Bank Mandiri',
-        accountName: 'PT SS Traveling Official (Ops Wisata)',
+        accountName: 'PT SS Travelink Official (Ops Wisata)',
         accountNumber: '1560012341124',
         mask: '•••• •••• 1124',
         glCode: '11124',

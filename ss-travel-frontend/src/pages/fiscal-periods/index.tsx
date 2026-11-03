@@ -1,21 +1,12 @@
-import { useState, useEffect } from 'react';
 import Heading from '@/components/shared/heading';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import {
   Select,
   SelectContent,
@@ -24,25 +15,34 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  CalendarRange,
-  Plus,
-  Lock,
-  Unlock,
-  CheckCircle2,
-  Clock,
-} from 'lucide-react';
-import FiscalYearModal from './components/fiscal-year-modal';
-import UpdateStatusModal from './components/update-status-modal';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { usePermission } from '@/hooks/use-permission';
 import { FiscalPeriodService } from '@/services/fiscal-period.service';
 import type {
-  FiscalYear,
-  FiscalPeriod,
   CreateFiscalYearFormData,
-  UpdatePeriodStatusFormData,
+  FiscalPeriod,
   FiscalPeriodStatus,
+  FiscalYear,
+  UpdatePeriodStatusFormData,
 } from '@/types';
+import {
+  CalendarRange,
+  CheckCircle2,
+  Clock,
+  Lock,
+  Plus,
+  Unlock,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { usePermission } from '@/hooks/use-permission';
+import FiscalYearModal from './components/fiscal-year-modal';
+import UpdateStatusModal from './components/update-status-modal';
 
 export default function FiscalPeriodsPage() {
   const { isCreate, isUpdate } = usePermission();
@@ -177,7 +177,7 @@ export default function FiscalPeriodsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <Heading
           title="Periode Fiskal Akuntansi"
-          description="Kalender penutupan buku bulanan dan tahun fiskal PT SS Traveling Official."
+          description="Kalender penutupan buku bulanan dan tahun fiskal PT SS Travelink Official."
         />
         {isCreate && (
           <Button onClick={() => setIsYearModalOpen(true)}>
@@ -194,7 +194,7 @@ export default function FiscalPeriodsPage() {
             <div className="text-xs text-muted-foreground">Pilih Tahun Fiskal:</div>
             <div className="flex items-center space-x-2 mt-1">
               <Select value={selectedYearId} onValueChange={handleYearChange}>
-                <SelectTrigger className="w-[180px] bg-background font-bold text-base">
+                <SelectTrigger className="w-45 bg-background font-bold text-base">
                   <SelectValue placeholder="Pilih Tahun" />
                 </SelectTrigger>
                 <SelectContent>
@@ -246,12 +246,12 @@ export default function FiscalPeriodsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[80px]">Periode</TableHead>
+                <TableHead className="w-20">Periode</TableHead>
                 <TableHead>Nama Periode</TableHead>
                 <TableHead>Rentang Tanggal</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Keterangan & Catatan Tutup Buku</TableHead>
-                <TableHead className="text-right w-[140px]">Aksi</TableHead>
+                <TableHead className="text-right w-35">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

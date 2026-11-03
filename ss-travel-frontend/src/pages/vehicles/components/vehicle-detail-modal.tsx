@@ -46,7 +46,7 @@ export default function VehicleDetailModal({
   const currentImage = images[activeImageIndex] || {
     imageUrl:
       'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1200&q=80',
-    caption: 'Foto Armada SS Traveling',
+    caption: 'Foto Armada SS Travelink',
   };
 
   return (

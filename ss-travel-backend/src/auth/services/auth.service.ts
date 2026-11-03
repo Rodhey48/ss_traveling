@@ -13,7 +13,7 @@ import { Response } from 'express';
 import { Repository } from 'typeorm';
 import { INTERNAL_SERVER_ERROR_MESSAGE } from '../../@common';
 import { ResponseInterface, UserLoggedInterface } from '../../@interfaces';
-import { RolesEntity, UserRolesEntity, UsersEntity } from '../../@models';
+import { CompanyEntity, RolesEntity, UserRolesEntity, UsersEntity } from '../../@models';
 import { BcryptService } from '../../@services/bcrypt/bcrypt.service';
 import { JWTService } from '../../@services/jwt/jwt.service';
 import { MenusService } from '../../menus/services/menus.service';
@@ -30,6 +30,8 @@ export class AuthService {
     private userRoleRepo: Repository<UserRolesEntity>,
     @InjectRepository(RolesEntity)
     private roleRepo: Repository<RolesEntity>,
+    @InjectRepository(CompanyEntity)
+    private companyRepo: Repository<CompanyEntity>,
     private bcryptService: BcryptService,
     private jwtService: JWTService,
     private menusService: MenusService,
@@ -116,6 +118,9 @@ export class AuthService {
       }));
       const roleIds = foundUser.roles.map((ur) => ur.role.id);
       const menus = await this.menusService.findMenusByRole(roleIds);
+      const company = await this.companyRepo.findOne({
+        where: { code: 'SST', isActive: true },
+      });
 
       return {
         status: true,
@@ -132,10 +137,30 @@ export class AuthService {
             roles,
           },
           menus,
+          company: company || null,
         },
       };
     } catch (error) {
       this.logger.error(`GetMe error: ${error.message}`);
+      throw new InternalServerErrorException(INTERNAL_SERVER_ERROR_MESSAGE);
+    }
+  }
+
+  /**
+   * Get public company profile
+   */
+  async getPublicCompany(): Promise<ResponseInterface> {
+    try {
+      const company = await this.companyRepo.findOne({
+        where: { code: 'SST', isActive: true },
+      });
+      return {
+        status: true,
+        message: 'Company profile fetched',
+        data: company || null,
+      };
+    } catch (err: any) {
+      this.logger.error(`Failed to fetch public company profile: ${err.message}`);
       throw new InternalServerErrorException(INTERNAL_SERVER_ERROR_MESSAGE);
     }
   }
@@ -192,6 +217,9 @@ export class AuthService {
       const menus = await this.menusService.findMenusByRole(roleIds);
       const permissions =
         await this.menusService.getPermissionsByRoles(roleIds);
+      const company = await this.companyRepo.findOne({
+        where: { code: 'SST', isActive: true },
+      });
 
       // 1. Generate Session Token (UUID) & Fingerprint
       const sessionToken = crypto.randomUUID();
@@ -246,6 +274,7 @@ export class AuthService {
           token: accessToken,
           refreshToken,
           menus,
+          company: company || null,
         },
       });
     } catch (error) {

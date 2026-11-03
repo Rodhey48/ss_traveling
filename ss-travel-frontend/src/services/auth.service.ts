@@ -1,5 +1,5 @@
 import api from '@/lib/axiosClient';
-import type { BaseResponse, LoginResponseData } from '@/types';
+import type { BaseResponse, Company, LoginResponseData } from '@/types';
 import { storage } from '@/lib/storage';
 
 export const AuthService = {
@@ -19,6 +19,14 @@ export const AuthService = {
     return response.data;
   },
 
+  getPublicCompany: async (): Promise<BaseResponse<Company>> => {
+    const response = await api.get<BaseResponse<Company>>(
+      'api/v1/auth/company',
+      { silent: true }
+    );
+    return response.data;
+  },
+
   logout: async () => {
     try {
       // Panggil backend untuk membatalkan sessionToken di database & membersihkan HttpOnly cookie
@@ -31,6 +39,7 @@ export const AuthService = {
       storage.remove('refreshToken');
       storage.remove('user');
       storage.remove('menus');
+      storage.remove('company');
       window.location.href = '/login';
     }
   },

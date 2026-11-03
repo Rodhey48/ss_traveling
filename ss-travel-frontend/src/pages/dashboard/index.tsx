@@ -26,7 +26,7 @@ import { toast } from 'sonner';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { user, menus } = useAuth();
+  const { user, menus, company } = useAuth();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
@@ -173,7 +173,7 @@ export default function DashboardPage() {
             <div className="flex flex-wrap items-center gap-2.5">
               <span className="inline-flex items-center rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold text-emerald-400 backdrop-blur-md border border-emerald-500/30 shadow-xs">
                 <Sparkles className="mr-1.5 h-3.5 w-3.5 text-emerald-400" />
-                SS Traveling ERP
+                {company?.name ? company.name.replace(/^PT\s+/i, '') : 'SS Travelink'} ERP
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold text-slate-300 backdrop-blur-sm border border-white/10">
                 <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />

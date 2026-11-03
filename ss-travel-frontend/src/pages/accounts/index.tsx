@@ -376,7 +376,7 @@ export default function AccountsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <Heading
           title="Bagan Akun (Chart of Accounts)"
-          description="Master struktur rekening akuntansi (COA) standar operasional bus SS Traveling."
+          description="Master struktur rekening akuntansi (COA) standar operasional bus SS Travelink."
         />
         {isCreate && (
           <Button onClick={handleOpenCreate} className="shrink-0">

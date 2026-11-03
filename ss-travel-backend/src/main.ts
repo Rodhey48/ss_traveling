@@ -34,8 +34,8 @@ async function bootstrap() {
 
   // Swagger Configuration
   const config = new DocumentBuilder()
-    .setTitle('SS Traveling ERP API')
-    .setDescription('The monolithic core API for SS Traveling ERP')
+    .setTitle('SS Travelink ERP API')
+    .setDescription('The monolithic core API for SS Travelink ERP')
     .setVersion('1.0')
     .addTag('Auth')
     .addBearerAuth()

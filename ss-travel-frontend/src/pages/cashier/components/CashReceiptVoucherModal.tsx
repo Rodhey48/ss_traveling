@@ -8,6 +8,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Printer, X, Bus, CheckCircle2 } from 'lucide-react';
 import type { CrewCashSettlement } from '@/types';
+import { useAuth } from '@/hooks/use-auth';
 
 interface CashReceiptVoucherModalProps {
   isOpen: boolean;
@@ -20,6 +21,9 @@ export const CashReceiptVoucherModal: React.FC<CashReceiptVoucherModalProps> = (
   onClose,
   settlement,
 }) => {
+  const { company } = useAuth();
+  const companyName = company?.name || 'PT SS Travelink Official';
+
   if (!settlement) return null;
 
   const handlePrint = () => {
@@ -44,8 +48,8 @@ export const CashReceiptVoucherModal: React.FC<CashReceiptVoucherModalProps> = (
                 <Bus className="h-6 w-6" />
               </div>
               <div>
-                <DialogTitle className="text-xl font-bold tracking-tight text-slate-900">
-                  PT SS TRAVELING INDONESIA
+                <DialogTitle className="text-xl font-bold tracking-tight text-slate-900 uppercase">
+                  {companyName}
                 </DialogTitle>
                 <p className="text-xs text-slate-500">
                   Layanan Bus Pariwisata & AKAP (Tangerang - Yogyakarta PP)

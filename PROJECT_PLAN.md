@@ -1,4 +1,4 @@
-# 📋 Blueprint Proyek: ERP SS Traveling
+# 📋 Blueprint Proyek: ERP SS Travelink (PT SS Travelink Official)
 
 ## 1. Visi Proyek
 Transformasi operasional manual (Excel/kertas) menjadi sistem ERP berbasis web yang terintegrasi, *auditable*, dan *scalable* untuk mengelola bisnis utama (Bus Pariwisata & AKAP) serta bisnis penunjang (Karoseri, Pom Bensin, Gudang).

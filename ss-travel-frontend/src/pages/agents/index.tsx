@@ -1,8 +1,6 @@
-import { useState, useEffect } from 'react';
 import Heading from '@/components/shared/heading';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -10,6 +8,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -19,39 +25,33 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Plus,
-  Search,
-  Building2,
-  Globe,
-  Percent,
-  Calculator,
-  Edit,
-  Trash2,
-  Coins,
-  Route,
-  ShieldAlert,
-} from 'lucide-react';
-import AgentModal from './components/agent-modal';
-import CommissionRulesModal from './components/commission-rules-modal';
+import { usePermission } from '@/hooks/use-permission';
 import { AgentService } from '@/services/agent.service';
 import { VehicleService } from '@/services/vehicle.service';
 import type {
   Agent,
   AgentFormData,
   AgentType,
-  SeatClass,
   CalculatedCommissionResult,
+  SeatClass,
 } from '@/types';
+import {
+  Building2,
+  Calculator,
+  Coins,
+  Edit,
+  Globe,
+  Percent,
+  Plus,
+  Route,
+  Search,
+  ShieldAlert,
+  Trash2,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { usePermission } from '@/hooks/use-permission';
+import AgentModal from './components/agent-modal';
+import CommissionRulesModal from './components/commission-rules-modal';
 
 export default function AgentsPage() {
   const { isCreate, isUpdate, isDelete } = usePermission();
@@ -311,7 +311,7 @@ export default function AgentsPage() {
           {/* Filters */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-card p-3 rounded-xl border">
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-              <div className="relative w-full sm:w-[240px]">
+              <div className="relative w-full sm:w-60">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Cari agen, kode, telepon..."
@@ -322,7 +322,7 @@ export default function AgentsPage() {
               </div>
 
               <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger className="w-[160px] h-9">
+                <SelectTrigger className="w-40 h-9">
                   <SelectValue placeholder="Semua Kategori" />
                 </SelectTrigger>
                 <SelectContent>
@@ -333,7 +333,7 @@ export default function AgentsPage() {
               </Select>
 
               <Select value={selectedCity} onValueChange={setSelectedCity}>
-                <SelectTrigger className="w-[150px] h-9">
+                <SelectTrigger className="w-37.5 h-9">
                   <SelectValue placeholder="Semua Kota" />
                 </SelectTrigger>
                 <SelectContent>
@@ -557,7 +557,7 @@ export default function AgentsPage() {
                 </CardTitle>
               </div>
               <CardDescription>
-                Simulasi pemotongan hak agen (Flat per Tiket vs Persentase OTA) & Net Payout Kas SS Traveling
+                Simulasi pemotongan hak agen (Flat per Tiket vs Persentase OTA) & Net Payout Kas SS Travelink
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -642,7 +642,7 @@ export default function AgentsPage() {
                     </div>
 
                     <div className="text-right pl-6 border-l">
-                      <div className="text-xs text-muted-foreground font-medium">Net Disetor ke SS Traveling</div>
+                      <div className="text-xs text-muted-foreground font-medium">Net Disetor ke SS Travelink</div>
                       <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
                         Rp {commissionResult.netPayoutToCompany.toLocaleString('id-ID')}
                       </div>

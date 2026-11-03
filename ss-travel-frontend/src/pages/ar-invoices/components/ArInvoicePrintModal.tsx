@@ -1,5 +1,6 @@
 import { Printer, X, FileText } from 'lucide-react';
 import type { ArInvoice } from '@/types';
+import { useAuth } from '@/hooks/use-auth';
 
 interface ArInvoicePrintModalProps {
   open: boolean;
@@ -12,6 +13,9 @@ export default function ArInvoicePrintModal({
   onOpenChange,
   invoice,
 }: ArInvoicePrintModalProps) {
+  const { company } = useAuth();
+  const companyName = company?.name || 'PT SS Travelink Official';
+
   if (!open || !invoice) return null;
 
   const handlePrint = () => {
@@ -50,7 +54,7 @@ export default function ArInvoicePrintModal({
                 Pratinjau Cetak Faktur Tagihan (Invoice AR)
               </h3>
               <p className="text-xs text-slate-500">
-                Format resmi penagihan pelanggan sewa bus PT SS Traveling Official
+                Format resmi penagihan pelanggan sewa bus {companyName}
               </p>
             </div>
           </div>
@@ -82,14 +86,14 @@ export default function ArInvoicePrintModal({
                 SS
               </div>
               <div>
-                <h1 className="text-xl font-black tracking-tight text-slate-900">
-                  PT SS TRAVELINK OFFICIAL INDONESIA
+                <h1 className="text-xl font-black tracking-tight text-slate-900 uppercase">
+                  {companyName}
                 </h1>
                 <p className="text-xs font-bold text-amber-600">
                   Layanan Bus Pariwisata Mewah & AKAP Eksekutif (Luxury Seat 2-1 • Combi • Sleeper)
                 </p>
                 <p className="text-[11px] text-slate-600 mt-0.5">
-                  Jl. Pahlawan Gerbang No. 08 Rempoa, Ciputat Timur, Tangerang Selatan • Telp: 0822-9994-3700 • www.sstravelink.id
+                  {company?.address || 'Jl. Pahlawan Gerbang No. 08 Rempoa, Ciputat Timur, Tangerang Selatan'} • Telp: {company?.phone || '0822-9994-3700'} • {company?.website ? company.website.replace(/^https?:\/\//, '') : 'www.sstravelink.id'}
                 </p>
               </div>
             </div>

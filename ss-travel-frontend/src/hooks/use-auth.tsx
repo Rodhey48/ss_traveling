@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
-import type { UserLoginInfo, BackendMenu } from '@/types';
+import type { UserLoginInfo, BackendMenu, Company } from '@/types';
 import { storage } from '@/lib/storage';
 import { AuthService } from '@/services/auth.service';
 
@@ -8,12 +8,16 @@ interface AuthContextType {
   loading: boolean;
   user: UserLoginInfo | null;
   menus: BackendMenu[];
+  company: Company | null;
   setAuthData: (data: { 
     user: UserLoginInfo; 
     menus: BackendMenu[]; 
+    company?: Company;
     token?: string; 
     refreshToken?: string 
   }) => void;
+  setCompany: (company: Company) => void;
+  refreshCompany: () => Promise<Company | null>;
   logout: () => Promise<void>;
 }
 
@@ -22,7 +26,10 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   user: null,
   menus: [],
+  company: null,
   setAuthData: () => {},
+  setCompany: () => {},
+  refreshCompany: async () => null,
   logout: async () => {},
 });
 
@@ -31,12 +38,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState<boolean>(true);
   const [user, setUser] = useState<UserLoginInfo | null>(null);
   const [menus, setMenus] = useState<BackendMenu[]>([]);
+  const [company, setCompanyState] = useState<Company | null>(() => {
+    return storage.get('company') || null;
+  });
+
+  const setCompany = useCallback((comp: Company) => {
+    setCompanyState(comp);
+    storage.set('company', comp);
+  }, []);
+
+  const refreshCompany = useCallback(async (): Promise<Company | null> => {
+    try {
+      const res = await AuthService.getPublicCompany();
+      if (res?.data) {
+        setCompanyState(res.data);
+        storage.set('company', res.data);
+        return res.data;
+      }
+    } catch (err: any) {
+      console.warn('[Auth] Company fetch skipped:', err?.message);
+    }
+    return null;
+  }, []);
 
   const loadStoredData = useCallback(() => {
     const token = storage.get('token');
     const refreshToken = storage.get('refreshToken');
     const storedUser = storage.get('user');
     const storedMenus = storage.get('menus');
+    const storedCompany = storage.get('company');
+
+    if (storedCompany) {
+      setCompanyState(storedCompany);
+    } else {
+      // Fetch public company info immediately on boot if not stored yet
+      refreshCompany();
+    }
 
     // Pengguna terautentikasi jika terdapat sesi user & token/refresh token
     if (storedUser && (refreshToken || token)) {
@@ -46,7 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setMenus(storedMenus);
       }
 
-      // Background synchronization: refresh user profile & latest dynamic menus
+      // Background synchronization: refresh user profile & latest dynamic menus & company
       AuthService.getMe()
         .then((res) => {
           if (res?.data) {
@@ -57,6 +94,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (res.data.menus) {
               setMenus(res.data.menus);
               storage.set('menus', res.data.menus);
+            }
+            if (res.data.company) {
+              setCompanyState(res.data.company);
+              storage.set('company', res.data.company);
             }
           }
         })
@@ -70,7 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setMenus([]);
     }
     setLoading(false);
-  }, []);
+  }, [refreshCompany]);
 
   useEffect(() => {
     loadStoredData();
@@ -79,11 +120,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const setAuthData = useCallback((data: { 
     user: UserLoginInfo; 
     menus: BackendMenu[]; 
+    company?: Company;
     token?: string; 
     refreshToken?: string 
   }) => {
     setUser(data.user);
     setMenus(data.menus);
+    if (data.company) {
+      setCompanyState(data.company);
+      storage.set('company', data.company);
+    }
     setIsAuthenticated(true);
     
     // Simpan token jika disertakan dalam respons
@@ -107,10 +153,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       loading,
       user,
       menus,
+      company,
       setAuthData,
+      setCompany,
+      refreshCompany,
       logout,
     }),
-    [isAuthenticated, loading, user, menus, setAuthData, logout]
+    [isAuthenticated, loading, user, menus, company, setAuthData, setCompany, refreshCompany, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -123,3 +172,4 @@ export function useAuth() {
   }
   return context;
 }
+

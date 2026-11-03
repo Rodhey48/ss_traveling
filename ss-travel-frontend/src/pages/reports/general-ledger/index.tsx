@@ -118,7 +118,7 @@ export default function GeneralLedgerPage() {
               Laporan Finansial & Akuntansi
             </h1>
             <p className="text-sm text-gray-500">
-              Buku Besar (GL), Neraca Saldo, Laba Rugi Komprehensif, dan Neraca Keuangan PT SS Traveling Official
+              Buku Besar (GL), Neraca Saldo, Laba Rugi Komprehensif, dan Neraca Keuangan PT SS Travelink Official
             </p>
           </div>
         </div>

@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthController } from './controllers/auth.controller';
 import { AuthService } from './services/auth.service';
 import {
+  CompanyEntity,
   RoleMenusEntity,
   RolesEntity,
   UserRolesEntity,
@@ -20,6 +21,7 @@ import { MenusModule } from '../menus/menus.module';
       RolesEntity,
       UserRolesEntity,
       RoleMenusEntity,
+      CompanyEntity,
     ]),
     MenusModule,
   ],

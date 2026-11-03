@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -7,7 +7,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -17,7 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { BankAccount, BankAccountFormData, Account } from '@/types';
+import { useAuth } from '@/hooks/use-auth';
+import type { Account, BankAccount, BankAccountFormData } from '@/types';
+import { useEffect, useState } from 'react';
 
 interface BankAccountModalProps {
   isOpen: boolean;
@@ -36,10 +37,13 @@ export default function BankAccountModal({
   glAccounts,
   isLoading,
 }: BankAccountModalProps) {
+  const { company } = useAuth();
+  const defaultAccountName = company?.name || 'PT SS Travelink Official';
+
   const [formData, setFormData] = useState<BankAccountFormData>({
     code: '',
     bankName: 'BCA',
-    accountName: 'PT SS Traveling Official',
+    accountName: defaultAccountName,
     accountNumber: '',
     accountId: '',
     currency: 'IDR',
@@ -52,7 +56,7 @@ export default function BankAccountModal({
       setFormData({
         code: bankAccount.code || '',
         bankName: bankAccount.bankName || 'BCA',
-        accountName: bankAccount.accountName || 'PT SS Traveling Official',
+        accountName: bankAccount.accountName || defaultAccountName,
         accountNumber: bankAccount.accountNumber || '',
         accountId: bankAccount.accountId || '',
         currency: bankAccount.currency || 'IDR',
@@ -63,7 +67,7 @@ export default function BankAccountModal({
       setFormData({
         code: '',
         bankName: 'BCA',
-        accountName: 'PT SS Traveling Official',
+        accountName: defaultAccountName,
         accountNumber: '',
         accountId: glAccounts[0]?.id || '',
         currency: 'IDR',
@@ -71,7 +75,7 @@ export default function BankAccountModal({
         isActive: true,
       });
     }
-  }, [bankAccount, glAccounts, isOpen]);
+  }, [bankAccount, glAccounts, isOpen, defaultAccountName]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,7 +84,7 @@ export default function BankAccountModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-125">
         <DialogHeader>
           <DialogTitle>
             {bankAccount ? 'Edit Rekening Bank' : 'Tambah Rekening Bank Baru'}
@@ -131,7 +135,7 @@ export default function BankAccountModal({
             </Label>
             <Input
               id="accountName"
-              placeholder="Contoh: PT SS Traveling Official"
+              placeholder="Contoh: PT SS Travelink Official"
               value={formData.accountName}
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, accountName: e.target.value }))
@@ -182,7 +186,7 @@ export default function BankAccountModal({
               <SelectTrigger>
                 <SelectValue placeholder="Pilih Akun Buku Besar" />
               </SelectTrigger>
-              <SelectContent className="max-h-[200px]">
+              <SelectContent className="max-h-50">
                 {glAccounts.map((acc) => (
                   <SelectItem key={acc.id} value={acc.id}>
                     {acc.code} - {acc.name}

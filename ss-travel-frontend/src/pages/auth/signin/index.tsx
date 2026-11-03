@@ -1,6 +1,6 @@
 import pendopoLogo from '@/assets/ss_travel/ss-transport-pendopo.webp';
 import ssTransportWordmark from '@/assets/ss_travel/ss-transport-wordmark.webp';
-import ssTravelingWordmark from '@/assets/ss_travel/ss-traveling-wordmark.webp';
+import ssTravelinkWordmark from '@/assets/ss_travel/ss-travelink-wordmark.webp';
 import {
   Carousel,
   CarouselContent,
@@ -8,14 +8,15 @@ import {
 } from '@/components/ui/carousel';
 import Autoplay from 'embla-carousel-autoplay';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/hooks/use-auth';
 import UserAuthForm from './components/user-auth-form';
 
-// Background Carousel Imagery (Custom Generated for SS Traveling & SS Transport)
-import slideAkapNavy from '@/assets/ss_travel/carausel/slide-akap-navy.webp';
-import slideAkap from '@/assets/ss_travel/carausel/slide-akap.webp';
-import slideGarage from '@/assets/ss_travel/carausel/slide-garage.webp';
-import slideInterior from '@/assets/ss_travel/carausel/slide-interior.webp';
-import slideWisata from '@/assets/ss_travel/carausel/slide-wisata.webp';
+// Background Carousel Imagery (Custom Generated for SS Travelink & SS Transport)
+import slideAkapNavy from '@/assets/ss_travel/carousel/slide-akap-navy.webp';
+import slideAkap from '@/assets/ss_travel/carousel/slide-akap.webp';
+import slideGarage from '@/assets/ss_travel/carousel/slide-garage.webp';
+import slideInterior from '@/assets/ss_travel/carousel/slide-interior.webp';
+import slideWisata from '@/assets/ss_travel/carousel/slide-wisata.webp';
 
 const carouselSlides = [
   {
@@ -25,17 +26,17 @@ const carouselSlides = [
   },
   {
     src: slideInterior,
-    alt: 'Interior Kabin Mewah Sleeper & Luxury 2-1 SS Travel',
+    alt: 'Interior Kabin Mewah Sleeper & Luxury 2-1 SS Travelink',
     caption: 'Kabin Eksekutif Mewah Sleeper & Luxury Seat',
   },
   {
     src: slideWisata,
-    alt: 'Layanan Bus Pariwisata & Charter SS Traveling',
+    alt: 'Layanan Bus Pariwisata & Charter SS Travelink',
     caption: 'Layanan Sewa Pariwisata & Tour Wisata Domestik',
   },
   {
     src: slideGarage,
-    alt: 'Depot & Garasi Pusat Armada Bus SS Traveling',
+    alt: 'Depot & Garasi Pusat Armada Bus SS Travelink',
     caption: 'Manajemen Pemeliharaan & Kesiapan Armada',
   },
   {
@@ -46,6 +47,8 @@ const carouselSlides = [
 ];
 
 export default function SignInPage() {
+  const { company } = useAuth();
+  const companyName = company?.name || 'PT SS Travelink Official';
   return (
     <div className="relative flex min-h-screen w-full overflow-hidden bg-zinc-950 font-sans">
       <div className="absolute inset-0 z-0">
@@ -87,13 +90,13 @@ export default function SignInPage() {
             <div className="w-16 h-16 rounded-2xl bg-white/95 p-2 shadow-xl border border-white/30 backdrop-blur-md flex items-center justify-center shrink-0">
               <img
                 src={pendopoLogo}
-                alt="SS Traveling Emblem"
+                alt="SS Travelink Emblem"
                 className="w-full h-full object-contain filter drop-shadow-sm"
               />
             </div>
             <div className="flex flex-col">
               <span className="text-2xl font-black tracking-widest text-white uppercase drop-shadow-md">
-                PT SS Traveling Official
+                {companyName}
               </span>
               <span className="text-xs font-bold text-emerald-400 tracking-wider uppercase">
                 Transport & Fleet Management System
@@ -134,7 +137,7 @@ export default function SignInPage() {
               </p>
             </div>
 
-            {/* Division 2: SS Traveling (Wisata & Charter) */}
+            {/* Division 2: SS Travelink (Wisata & Charter) */}
             <div className="rounded-2xl border border-white/15 bg-white/10 hover:bg-white/15 backdrop-blur-md p-4 transition-all duration-300 shadow-lg">
               <div className="flex items-center justify-between mb-3">
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/25 text-cyan-300 text-[10px] font-extrabold tracking-wider border border-cyan-400/40 uppercase">
@@ -144,8 +147,8 @@ export default function SignInPage() {
               </div>
               <div className="bg-white/95 rounded-xl p-2.5 flex items-center justify-center shadow-inner h-12 mb-3">
                 <img
-                  src={ssTravelingWordmark}
-                  alt="SS Traveling Wordmark"
+                  src={ssTravelinkWordmark}
+                  alt="SS Travelink Wordmark"
                   className="max-h-8 w-auto object-contain filter drop-shadow-xs"
                 />
               </div>
@@ -187,7 +190,7 @@ export default function SignInPage() {
               <div className="w-16 h-16 rounded-2xl bg-white/95 p-2 shadow-md border border-white/20 mb-2.5 flex items-center justify-center">
                 <img
                   src={pendopoLogo}
-                  alt="SS Traveling Logo"
+                  alt="SS Travelink Logo"
                   className="w-full h-full object-contain"
                 />
               </div>
@@ -208,7 +211,7 @@ export default function SignInPage() {
                 Selamat Datang
               </h2>
               <p className="text-xs sm:text-sm text-zinc-400 font-medium">
-                Masuk ke sistem operasional internal SS Traveling ERP
+                Masuk ke sistem operasional internal {company?.name ? company.name.replace(/^PT\s+/i, '') : 'SS Travelink'} ERP
               </p>
             </div>
 

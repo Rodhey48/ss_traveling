@@ -72,7 +72,7 @@ export default function TripProfitabilityPage() {
                 Laporan Profitabilitas & Margin Trip SPJ
               </h1>
               <p className="text-sm text-gray-500">
-                Analisis margin kontribusi perjalanan armada bus (AKAP & Pariwisata) PT SS Traveling Official
+                Analisis margin kontribusi perjalanan armada bus (AKAP & Pariwisata) PT SS Travelink Official
               </p>
             </div>
           </div>

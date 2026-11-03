@@ -24,12 +24,19 @@ import {
 } from '../dto/auth.dto';
 import { Response } from 'express';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
-import { RequestInterface } from '@interfaces';
+import { RequestInterface, ResponseInterface } from '@interfaces';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @Get('company')
+  @ApiOperation({ summary: 'Get active company basic profile (Public)' })
+  @ApiResponse({ status: 200, description: 'Company profile fetched.' })
+  async getPublicCompany(): Promise<ResponseInterface> {
+    return this.authService.getPublicCompany();
+  }
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })

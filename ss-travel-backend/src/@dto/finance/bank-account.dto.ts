@@ -21,7 +21,7 @@ export class CreateBankAccountDto {
   @MaxLength(50)
   bankName!: string;
 
-  @ApiProperty({ description: 'Nama pemilik rekening', example: 'PT SS Traveling Official' })
+  @ApiProperty({ description: 'Nama pemilik rekening', example: 'PT SS Travelink Official' })
   @IsNotEmpty()
   @IsString()
   @MaxLength(100)

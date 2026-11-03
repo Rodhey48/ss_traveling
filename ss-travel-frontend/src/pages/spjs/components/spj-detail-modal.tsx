@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import ConfirmDialog from '@/components/shared/confirm-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -7,9 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -18,24 +18,25 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
-import {
-  Clock,
-  MapPin,
-  Users,
-  Play,
-  CheckCircle2,
-  AlertTriangle,
-  Wrench,
-  FileText,
-  Wallet,
-  Printer,
-} from 'lucide-react';
-import ConfirmDialog from '@/components/shared/confirm-dialog';
-import SpjPrintModal from './spj-print-modal';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/hooks/use-auth';
 import { SpjService } from '@/services/spj.service';
 import type { Spj, SpjLeg } from '@/types';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  FileText,
+  MapPin,
+  Play,
+  Printer,
+  Users,
+  Wallet,
+  Wrench,
+} from 'lucide-react';
+import { useState } from 'react';
 import { toast } from 'sonner';
+import SpjPrintModal from './spj-print-modal';
 
 interface SpjDetailModalProps {
   open: boolean;
@@ -56,6 +57,8 @@ export default function SpjDetailModal({
   onOpenEmergencyReplace,
   onOpenFinance,
 }: SpjDetailModalProps) {
+  const { company } = useAuth();
+  const companyName = company?.name || 'PT SS Travelink Official';
   const [activeTab, setActiveTab] = useState<'legs' | 'crew'>('legs');
   const [actionLoading, setActionLoading] = useState(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
@@ -79,7 +82,7 @@ export default function SpjDetailModal({
     title: '',
     description: '',
     variant: 'primary',
-    onConfirm: () => {},
+    onConfirm: () => { },
   });
 
   if (!spj) return null;
@@ -269,7 +272,7 @@ export default function SpjDetailModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-[880px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-220 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3">
               <div className="flex items-center gap-2.5">
@@ -279,7 +282,7 @@ export default function SpjDetailModal({
                 <div>
                   <DialogTitle className="text-xl font-bold">{spj.spjNo}</DialogTitle>
                   <DialogDescription className="text-xs">
-                    Surat Perintah Jalan Dinas Operasional PT SS Traveling Official
+                    Surat Perintah Jalan Dinas Operasional {companyName}
                   </DialogDescription>
                 </div>
               </div>
@@ -363,7 +366,7 @@ export default function SpjDetailModal({
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/40 text-xs">
-                      <TableHead className="w-[80px]">Leg #</TableHead>
+                      <TableHead className="w-20">Leg #</TableHead>
                       <TableHead>Arah & Rute</TableHead>
                       <TableHead>Waktu Dinas</TableHead>
                       <TableHead>Manifes Kursi</TableHead>
@@ -430,261 +433,261 @@ export default function SpjDetailModal({
                             {isEditing ? (
                               <div className="space-y-1">
                                 <Input
-                                type="number"
-                                value={mealPaxCount}
-                                onChange={(e) => setMealPaxCount(Number(e.target.value))}
-                                placeholder="Kupon RM"
-                                className="h-8 w-24 text-xs font-semibold"
-                              />
-                              <Input
-                                value={mealNotes}
-                                onChange={(e) => setMealNotes(e.target.value)}
-                                placeholder="Catatan selisih kupon"
-                                className="h-7 text-[10px]"
-                              />
-                            </div>
-                          ) : (
-                            <div>
-                              <span className="font-semibold text-foreground">
-                                {leg.mealPaxCount || 0} Kupon
-                              </span>
-                              {leg.mealDiscrepancyNotes && (
-                                <p className="text-[10px] text-muted-foreground italic">
-                                  "{leg.mealDiscrepancyNotes}"
-                                </p>
-                              )}
+                                  type="number"
+                                  value={mealPaxCount}
+                                  onChange={(e) => setMealPaxCount(Number(e.target.value))}
+                                  placeholder="Kupon RM"
+                                  className="h-8 w-24 text-xs font-semibold"
+                                />
+                                <Input
+                                  value={mealNotes}
+                                  onChange={(e) => setMealNotes(e.target.value)}
+                                  placeholder="Catatan selisih kupon"
+                                  className="h-7 text-[10px]"
+                                />
+                              </div>
+                            ) : (
+                              <div>
+                                <span className="font-semibold text-foreground">
+                                  {leg.mealPaxCount || 0} Kupon
+                                </span>
+                                {leg.mealDiscrepancyNotes && (
+                                  <p className="text-[10px] text-muted-foreground italic">
+                                    "{leg.mealDiscrepancyNotes}"
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </TableCell>
+
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] font-medium"
+                            >
+                              {leg.status}
+                            </Badge>
+                          </TableCell>
+
+                          <TableCell className="text-right">
+                            {isEditing ? (
+                              <div className="flex items-center justify-end gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setEditingLegId(null)}
+                                  className="h-7 text-[10px] px-2"
+                                >
+                                  Batal
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleSaveLeg(leg.id)}
+                                  disabled={actionLoading}
+                                  className="h-7 text-[10px] px-2 bg-primary text-primary-foreground font-semibold"
+                                >
+                                  Simpan
+                                </Button>
+                              </div>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleStartEditLeg(leg)}
+                                className="h-7 text-[11px] font-medium text-primary hover:bg-primary/10"
+                              >
+                                Edit Kupon/Pax
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+
+            {/* Tab 2: Penugasan Kru & Snapshot Tarif */}
+            <TabsContent value="crew" className="space-y-3">
+              <div className="rounded-lg border overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/40 text-xs">
+                      <TableHead>Nama Personel</TableHead>
+                      <TableHead>Peran (Role)</TableHead>
+                      <TableHead>Uang Makan (SPJ)</TableHead>
+                      <TableHead>Premi Ritase</TableHead>
+                      <TableHead>Bonus Full Seat (100%)</TableHead>
+                      <TableHead>Status Penugasan</TableHead>
+                    </TableRow>
+                  </TableHeader>
+
+                  <TableBody>
+                    {spj.crewAssignments?.map((c) => (
+                      <TableRow key={c.id} className="text-xs hover:bg-muted/30">
+                        <TableCell className="font-bold text-foreground">
+                          {c.crew?.name}
+                          <div className="text-[10px] text-muted-foreground font-normal">{c.crew?.nip || c.crew?.email}</div>
+                          {c.replacementCrew && (
+                            <div className="text-[10px] text-amber-700 dark:text-amber-400 mt-0.5 font-medium">
+                              ➔ Digantikan oleh: {c.replacementCrew.name}
                             </div>
                           )}
                         </TableCell>
 
                         <TableCell>
-                          <Badge
-                            variant="outline"
-                            className="text-[10px] font-medium"
-                          >
-                            {leg.status}
+                          <Badge variant="outline" className="text-[10px] font-normal">
+                            {c.role}
                           </Badge>
                         </TableCell>
 
-                        <TableCell className="text-right">
-                          {isEditing ? (
-                            <div className="flex items-center justify-end gap-1">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setEditingLegId(null)}
-                                className="h-7 text-[10px] px-2"
-                              >
-                                Batal
-                              </Button>
-                              <Button
-                                size="sm"
-                                onClick={() => handleSaveLeg(leg.id)}
-                                disabled={actionLoading}
-                                className="h-7 text-[10px] px-2 bg-primary text-primary-foreground font-semibold"
-                              >
-                                Simpan
-                              </Button>
-                            </div>
-                          ) : (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleStartEditLeg(leg)}
-                              className="h-7 text-[11px] font-medium text-primary hover:bg-primary/10"
-                            >
-                              Edit Kupon/Pax
-                            </Button>
-                          )}
+                        <TableCell className="font-medium text-foreground">
+                          Rp {Number(c.mealAllowanceSnapshot || 0).toLocaleString('id-ID')}
+                        </TableCell>
+
+                        <TableCell className="font-medium text-foreground">
+                          Rp {Number(c.incentiveSnapshot || 0).toLocaleString('id-ID')}
+                        </TableCell>
+
+                        <TableCell className="font-medium text-foreground">
+                          Rp {Number(c.fullSeatBonusSnapshot || 0).toLocaleString('id-ID')}
+                        </TableCell>
+
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={
+                              c.status === 'REPLACED'
+                                ? 'bg-amber-50/70 text-amber-800 border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300'
+                                : c.status === 'ACTIVE'
+                                  ? 'bg-emerald-50/70 text-emerald-800 border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300'
+                                  : 'text-muted-foreground'
+                            }
+                          >
+                            {c.status}
+                          </Badge>
                         </TableCell>
                       </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          {/* Footer Tombol Aksi Operasional */}
+          <DialogFooter className="pt-4 border-t flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+            {/* Tombol aksi khusus insiden darurat */}
+            <div className="flex items-center gap-2">
+              {spj.operationalStatus === 'IN_PROGRESS' && (
+                <>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={onOpenReplaceCrew}
+                    className="text-xs h-9 text-amber-800 border-amber-300/80 hover:bg-amber-50 dark:text-amber-300 dark:border-amber-800/80 font-medium"
+                  >
+                    <Users className="w-3.5 h-3.5 mr-1.5" /> Ganti Kru Sakit
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={onOpenEmergencyReplace}
+                    className="text-xs h-9 text-red-700 border-red-300/80 hover:bg-red-50 dark:text-red-400 dark:border-red-800/80 font-medium"
+                  >
+                    <AlertTriangle className="w-3.5 h-3.5 mr-1.5" /> Breakdown Tol
+                  </Button>
+                </>
+              )}
             </div>
-          </TabsContent>
 
-          {/* Tab 2: Penugasan Kru & Snapshot Tarif */}
-          <TabsContent value="crew" className="space-y-3">
-            <div className="rounded-lg border overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/40 text-xs">
-                    <TableHead>Nama Personel</TableHead>
-                    <TableHead>Peran (Role)</TableHead>
-                    <TableHead>Uang Makan (SPJ)</TableHead>
-                    <TableHead>Premi Ritase</TableHead>
-                    <TableHead>Bonus Full Seat (100%)</TableHead>
-                    <TableHead>Status Penugasan</TableHead>
-                  </TableRow>
-                </TableHeader>
-
-                <TableBody>
-                  {spj.crewAssignments?.map((c) => (
-                    <TableRow key={c.id} className="text-xs hover:bg-muted/30">
-                      <TableCell className="font-bold text-foreground">
-                        {c.crew?.name}
-                        <div className="text-[10px] text-muted-foreground font-normal">{c.crew?.nip || c.crew?.email}</div>
-                        {c.replacementCrew && (
-                          <div className="text-[10px] text-amber-700 dark:text-amber-400 mt-0.5 font-medium">
-                            ➔ Digantikan oleh: {c.replacementCrew.name}
-                          </div>
-                        )}
-                      </TableCell>
-
-                      <TableCell>
-                        <Badge variant="outline" className="text-[10px] font-normal">
-                          {c.role}
-                        </Badge>
-                      </TableCell>
-
-                      <TableCell className="font-medium text-foreground">
-                        Rp {Number(c.mealAllowanceSnapshot || 0).toLocaleString('id-ID')}
-                      </TableCell>
-
-                      <TableCell className="font-medium text-foreground">
-                        Rp {Number(c.incentiveSnapshot || 0).toLocaleString('id-ID')}
-                      </TableCell>
-
-                      <TableCell className="font-medium text-foreground">
-                        Rp {Number(c.fullSeatBonusSnapshot || 0).toLocaleString('id-ID')}
-                      </TableCell>
-
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={
-                            c.status === 'REPLACED'
-                              ? 'bg-amber-50/70 text-amber-800 border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300'
-                              : c.status === 'ACTIVE'
-                              ? 'bg-emerald-50/70 text-emerald-800 border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300'
-                              : 'text-muted-foreground'
-                          }
-                        >
-                          {c.status}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        {/* Footer Tombol Aksi Operasional */}
-        <DialogFooter className="pt-4 border-t flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-          {/* Tombol aksi khusus insiden darurat */}
-          <div className="flex items-center gap-2">
-            {spj.operationalStatus === 'IN_PROGRESS' && (
-              <>
+            <div className="flex items-center justify-end gap-2">
+              {onOpenFinance && (
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
-                  onClick={onOpenReplaceCrew}
-                  className="text-xs h-9 text-amber-800 border-amber-300/80 hover:bg-amber-50 dark:text-amber-300 dark:border-amber-800/80 font-medium"
+                  onClick={() => {
+                    onOpenChange(false);
+                    onOpenFinance();
+                  }}
+                  className="text-xs h-9 font-semibold bg-emerald-50/70 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 border-emerald-300 dark:border-emerald-800"
                 >
-                  <Users className="w-3.5 h-3.5 mr-1.5" /> Ganti Kru Sakit
+                  <Wallet className="w-3.5 h-3.5 mr-1.5 text-emerald-600" /> Keuangan & UJ
                 </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={onOpenEmergencyReplace}
-                  className="text-xs h-9 text-red-700 border-red-300/80 hover:bg-red-50 dark:text-red-400 dark:border-red-800/80 font-medium"
-                >
-                  <AlertTriangle className="w-3.5 h-3.5 mr-1.5" /> Breakdown Tol
-                </Button>
-              </>
-            )}
-          </div>
+              )}
 
-          <div className="flex items-center justify-end gap-2">
-            {onOpenFinance && (
               <Button
                 type="button"
                 size="sm"
                 variant="outline"
-                onClick={() => {
-                  onOpenChange(false);
-                  onOpenFinance();
-                }}
-                className="text-xs h-9 font-semibold bg-emerald-50/70 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 border-emerald-300 dark:border-emerald-800"
+                onClick={() => setIsPrintModalOpen(true)}
+                className="text-xs h-9 font-semibold text-indigo-700 bg-indigo-50/60 border-indigo-200 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800"
               >
-                <Wallet className="w-3.5 h-3.5 mr-1.5 text-emerald-600" /> Keuangan & UJ
+                <Printer className="w-3.5 h-3.5 mr-1.5 text-indigo-600" /> Cetak SPJ Fisik
               </Button>
-            )}
 
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => setIsPrintModalOpen(true)}
-              className="text-xs h-9 font-semibold text-indigo-700 bg-indigo-50/60 border-indigo-200 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800"
-            >
-              <Printer className="w-3.5 h-3.5 mr-1.5 text-indigo-600" /> Cetak SPJ Fisik
-            </Button>
-
-            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="text-xs h-9">
-              Tutup
-            </Button>
-
-            {spj.operationalStatus === 'DRAFT' && (
-              <Button
-                size="sm"
-                onClick={handleIssue}
-                disabled={actionLoading}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs h-9 font-semibold"
-              >
-                <CheckCircle2 className="w-4 h-4 mr-1.5" /> Terbitkan SPJ
+              <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="text-xs h-9">
+                Tutup
               </Button>
-            )}
 
-            {spj.operationalStatus === 'ISSUED' && (
-              <Button
-                size="sm"
-                onClick={handleStart}
-                disabled={actionLoading}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-9 font-semibold shadow-2xs"
-              >
-                <Play className="w-4 h-4 mr-1.5" /> Berangkatkan Bus
-              </Button>
-            )}
+              {spj.operationalStatus === 'DRAFT' && (
+                <Button
+                  size="sm"
+                  onClick={handleIssue}
+                  disabled={actionLoading}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs h-9 font-semibold"
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-1.5" /> Terbitkan SPJ
+                </Button>
+              )}
 
-            {spj.operationalStatus === 'IN_PROGRESS' && (
-              <Button
-                size="sm"
-                onClick={handleComplete}
-                disabled={actionLoading}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-9 font-semibold shadow-2xs"
-              >
-                <CheckCircle2 className="w-4 h-4 mr-1.5" /> Selesai / Tiba di Pool
-              </Button>
-            )}
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+              {spj.operationalStatus === 'ISSUED' && (
+                <Button
+                  size="sm"
+                  onClick={handleStart}
+                  disabled={actionLoading}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-9 font-semibold shadow-2xs"
+                >
+                  <Play className="w-4 h-4 mr-1.5" /> Berangkatkan Bus
+                </Button>
+              )}
 
-    {/* Reusable Confirm Dialog */}
-    <ConfirmDialog
-      open={confirmDialog.open}
-      onOpenChange={(open) => setConfirmDialog((prev) => ({ ...prev, open }))}
-      title={confirmDialog.title}
-      description={confirmDialog.description}
-      variant={confirmDialog.variant}
-      confirmText={confirmDialog.confirmText}
-      onConfirm={confirmDialog.onConfirm}
-    />
+              {spj.operationalStatus === 'IN_PROGRESS' && (
+                <Button
+                  size="sm"
+                  onClick={handleComplete}
+                  disabled={actionLoading}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-9 font-semibold shadow-2xs"
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-1.5" /> Selesai / Tiba di Pool
+                </Button>
+              )}
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-    {/* Physical Document Print Modal */}
-    <SpjPrintModal
-      open={isPrintModalOpen}
-      onOpenChange={setIsPrintModalOpen}
-      spj={spj}
-    />
-  </>
+      {/* Reusable Confirm Dialog */}
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog((prev) => ({ ...prev, open }))}
+        title={confirmDialog.title}
+        description={confirmDialog.description}
+        variant={confirmDialog.variant}
+        confirmText={confirmDialog.confirmText}
+        onConfirm={confirmDialog.onConfirm}
+      />
+
+      {/* Physical Document Print Modal */}
+      <SpjPrintModal
+        open={isPrintModalOpen}
+        onOpenChange={setIsPrintModalOpen}
+        spj={spj}
+      />
+    </>
   );
 }

@@ -42,9 +42,11 @@ import { OrganizationService } from '@/services/organization.service';
 import type { Company, BusinessUnit, CostCenter, ProfitCenter } from '@/types';
 import { toast } from 'sonner';
 import { usePermission } from '@/hooks/use-permission';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function OrganizationPage() {
   const { isCreate, isUpdate, isDelete } = usePermission();
+  const { setCompany: setAuthCompany } = useAuth();
 
   // State Data
   const [company, setCompany] = useState<Company | null>(null);
@@ -89,6 +91,7 @@ export default function OrganizationPage() {
 
       if (compRes.status && compRes.data) {
         setCompany(compRes.data);
+        setAuthCompany(compRes.data);
         setCompanyForm({
           name: compRes.data.name || '',
           code: compRes.data.code || '',
@@ -121,7 +124,10 @@ export default function OrganizationPage() {
     if (!company) return;
     setSubmitting(true);
     try {
-      await OrganizationService.updateCompany(company.id, companyForm);
+      const res = await OrganizationService.updateCompany(company.id, companyForm);
+      if (res?.data) {
+        setAuthCompany(res.data);
+      }
       toast.success('Profil perusahaan berhasil diperbarui');
       fetchAllData();
     } catch (error: any) {
@@ -257,7 +263,7 @@ export default function OrganizationPage() {
           <Card className="max-w-3xl">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Building className="h-5 w-5 text-primary" /> Entitas Hukum PT SS Traveling Official
+                <Building className="h-5 w-5 text-primary" /> Entitas Hukum {companyForm.name || 'PT SS Travelink Official'}
               </CardTitle>
               <CardDescription className="text-xs">
                 Informasi dasar perusahaan yang tercetak pada kop faktur, invoice AR, dan dokumen SPJ.

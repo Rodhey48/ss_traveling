@@ -14,7 +14,7 @@ export class SeedOrgFleetAndCustomers1888888888890
       VALUES (
         '${companyId}',
         'SST',
-        'PT SS Traveling Official',
+        'PT SS Travelink Official',
         'IDR',
         'Asia/Jakarta',
         'Jl Pahlawan Gerbang No 08 Rempoa Ciputat Timur, South Tangerang',
@@ -82,7 +82,7 @@ export class SeedOrgFleetAndCustomers1888888888890
       ON CONFLICT ("code") DO NOTHING
     `);
 
-    // 5. Seed 10 Unit Bus Existing SS Traveling (7 Lunas, 3 Cicilan Leasing sesuai Addendum v1.13)
+    // 5. Seed 10 Unit Bus Existing SS Travelink (7 Lunas, 3 Cicilan Leasing sesuai Addendum v1.13)
     const fleetData = [
       {
         code: 'SS-01',

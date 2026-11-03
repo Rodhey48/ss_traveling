@@ -543,7 +543,7 @@ export default function VehicleModal({
                   <ImageIcon className="h-4 w-4 text-primary" /> Galeri Foto Armada (*Landing Page Catalog*)
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Foto bus akan ditampilkan di katalog publik / website SS Traveling.
+                  Foto bus akan ditampilkan di katalog publik / website SS Travelink.
                 </p>
               </div>
               <Button

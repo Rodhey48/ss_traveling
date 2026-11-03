@@ -7,12 +7,15 @@ import { cn } from '@/lib/utils';
 import { Menu } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/hooks/use-auth';
 import pendopoLogo from '@/assets/ss_travel/ss-transport-pendopo.webp';
 import ssTransportWordmark from '@/assets/ss_travel/ss-transport-wordmark.webp';
-import ssTravelingWordmark from '@/assets/ss_travel/ss-traveling-wordmark.webp';
+import ssTravelinkWordmark from '@/assets/ss_travel/ss-travelink-wordmark.webp';
 
 export default function Header() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { company } = useAuth();
+  const brandTitle = company?.name ? company.name.replace(/^PT\s+/i, '') : (import.meta.env.VITE_APP_NAME || 'SS Travelink');
 
   return (
     <header className="flex justify-between items-center px-6 md:px-8 bg-white/80 dark:bg-zinc-900/90 w-full sticky top-0 z-50 shadow-[0_4px_30px_rgba(0,0,0,0.03)] border-b border-slate-200/80 dark:border-zinc-800 backdrop-blur-xl transition-all duration-300 h-20 shrink-0">
@@ -45,7 +48,7 @@ export default function Header() {
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
               <span className="font-extrabold tracking-tight bg-linear-to-r from-emerald-600 via-emerald-500 to-teal-400 bg-clip-text text-transparent drop-shadow-sm text-xl md:text-2xl leading-none">
-                {import.meta.env.VITE_APP_NAME || 'SS Traveling'}
+                {brandTitle}
               </span>
               <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 tracking-wide uppercase select-none leading-none">
                 ERP
@@ -76,13 +79,13 @@ export default function Header() {
 
           <span className="text-slate-300 dark:text-zinc-700 text-xs font-mono">•</span>
 
-          {/* Wing 2: SS Traveling */}
+          {/* Wing 2: SS Travelink */}
           <div className="flex items-center gap-2 rounded-xl border border-slate-200/70 dark:border-zinc-700/80 bg-white/70 dark:bg-zinc-800/60 px-2.5 py-1 shadow-2xs">
             <span className="size-2 rounded-full bg-cyan-500 shrink-0" />
             <div className="bg-white px-1.5 py-0.5 rounded-md flex items-center">
               <img
-                src={ssTravelingWordmark}
-                alt="SS Traveling"
+                src={ssTravelinkWordmark}
+                alt="SS Travelink"
                 className="h-3.5 w-auto object-contain"
               />
             </div>

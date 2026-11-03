@@ -1,5 +1,6 @@
 import { Printer, X, Bus } from 'lucide-react';
 import type { Spj } from '@/types';
+import { useAuth } from '@/hooks/use-auth';
 
 interface SpjPrintModalProps {
   open: boolean;
@@ -12,6 +13,9 @@ export default function SpjPrintModal({
   onOpenChange,
   spj,
 }: SpjPrintModalProps) {
+  const { company } = useAuth();
+  const companyName = company?.name || 'PT SS Travelink Official';
+
   if (!open || !spj) return null;
 
   const handlePrint = () => {
@@ -53,7 +57,7 @@ export default function SpjPrintModal({
                 Pratinjau Cetak Surat Perintah Jalan (SPJ)
               </h3>
               <p className="text-xs text-slate-500">
-                Format dokumen fisik resmi supir PT SS Traveling Official
+                Format dokumen fisik resmi supir {companyName}
               </p>
             </div>
           </div>
@@ -85,14 +89,14 @@ export default function SpjPrintModal({
                 SS
               </div>
               <div>
-                <h1 className="text-xl font-black tracking-tight text-slate-900">
-                  PT SS TRAVELINK OFFICIAL INDONESIA
+                <h1 className="text-xl font-black tracking-tight text-slate-900 uppercase">
+                  {companyName}
                 </h1>
                 <p className="text-xs font-bold text-amber-600">
                   Layanan Bus AKAP Eksekutif & Pariwisata Mewah (Luxury Seat 2-1 • Combi • Sleeper)
                 </p>
                 <p className="text-[11px] text-slate-600 mt-0.5">
-                  Jl. Pahlawan Gerbang No. 08 Rempoa, Ciputat Timur, Tangerang Selatan • Telp: 0822-9994-3700 • www.sstravelink.id
+                  {company?.address || 'Jl. Pahlawan Gerbang No. 08 Rempoa, Ciputat Timur, Tangerang Selatan'} • Telp: {company?.phone || '0822-9994-3700'} • {company?.website ? company.website.replace(/^https?:\/\//, '') : 'www.sstravelink.id'}
                 </p>
               </div>
             </div>
@@ -268,7 +272,7 @@ export default function SpjPrintModal({
           {/* SECTION 4: TATA TERTIB OPERASIONAL & KESELAMATAN (SOP RESMI) */}
           <div className="mt-3 rounded-lg border border-slate-300 bg-slate-50/50 p-2.5 text-[11px] leading-relaxed text-slate-700">
             <span className="font-bold text-slate-900 block mb-0.5">
-              Instruksi Keselamatan & Kepatuhan Keuangan (SOP PT SS Traveling):
+              Instruksi Keselamatan & Kepatuhan Keuangan (SOP {companyName}):
             </span>
             <ol className="list-decimal pl-4 space-y-0.5">
               <li>

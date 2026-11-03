@@ -2,6 +2,23 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-11-03: Migrasi Branding Global ke PT SS Travelink Official, Dynamic Company Name & Asset Refactoring Completed
+- **Global Corporate Branding ("PT SS Travelink Official")**:
+  - Melakukan refactoring menyeluruh nama korporasi dari "SS Traveling" / "PT SS Traveling" menjadi "PT SS Travelink Official" (Case Sensitive) di 40+ file UI frontend, backend migrations, seeders, serta database PostgreSQL aktif (entitas perusahaan `companies` dan 8 rekening bank `bank_accounts`).
+- **Arsitektur Nama Perusahaan Dinamis (Zero-Hardcode)**:
+  - **Backend (`AuthController` & `AuthService`)**:
+    * Menyediakan endpoint publik `@Get('auth/company')` yang mengembalikan data profil perusahaan aktif untuk kebutuhan inisialisasi branding sebelum login.
+    * Menyertakan objek relasi `company` di payload `login` dan `getMe`.
+  - **Frontend (`useAuth` & Service)**:
+    * Mengelola state `company: Company | null` pada hook `useAuth`, lengkap dengan helper `refreshCompany` dan caching lokal di `localStorage`.
+    * Memodifikasi halaman Sign-in (`SignInPage`) agar secara dinamis menampilkan nama perusahaan dari API/database alih-alih hardcode string.
+- **Pembersihan Aset & Standardisasi Paket**:
+  - Mengoreksi penamaan folder typo `carausel` menjadi `carousel/` di `src/assets/ss_travel/`.
+  - Memperbarui file wordmark resmi ke `ss-travelink-wordmark.webp`.
+  - Menghapus file `package-lock.json` yang tidak sengaja terbuat untuk memastikan kepatuhan strict Yarn lockfile.
+- **Verifikasi Kualitas Penuh**:
+  - Kompilasi backend NestJS (`yarn build`) dan frontend Vite React (`yarn build`) sukses 100% tanpa error.
+
 ### 2026-11-03: UI/UX Brand Overhaul — Favicon Pendopo, Dual-Division Showcase, AI Carousel & Obsidian Glass Login Completed
 - **Tab Browser Favicon Resmi (Logo Pendopo SS Transport)**:
   - Membuat aset favicon persegi proporsional (*square-padded transparent canvas*) dari `ss-transport-pendopo.webp` untuk mencegah logo gepeng.

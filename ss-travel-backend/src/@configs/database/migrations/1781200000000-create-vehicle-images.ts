@@ -26,7 +26,7 @@ export class CreateVehicleImages1781200000000 implements MigrationInterface {
       CREATE INDEX "IDX_vehicle_images_vehicle_id" ON "vehicle_images" ("vehicle_id")
     `);
 
-    // 2. Seed Foto Sampel untuk 10 Armada Bus SS Traveling
+    // 2. Seed Foto Sampel untuk 10 Armada Bus SS Travelink
     const vehicles = await queryRunner.query(
       `SELECT "id", "code", "nickname", "vehicle_type" FROM "vehicles" ORDER BY "code" ASC`,
     );

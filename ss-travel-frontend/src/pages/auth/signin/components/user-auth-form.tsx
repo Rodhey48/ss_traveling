@@ -41,6 +41,7 @@ export default function UserAuthForm() {
   const [pendingAuth, setPendingAuth] = useState<{
     user: UserLoginInfo;
     menus: any[];
+    company?: any;
     token?: string;
     refreshToken?: string;
   } | null>(null);
@@ -60,7 +61,7 @@ export default function UserAuthForm() {
       setAuthData(pendingAuth);
     }
     toast.success('Login Berhasil', {
-      description: 'Selamat datang di SS Traveling ERP.'
+      description: 'Selamat datang di SS Travelink ERP.'
     });
     router.push('/');
   };
@@ -96,11 +97,12 @@ export default function UserAuthForm() {
       setPendingAuth({
         user,
         menus: payload.menus,
+        company: payload.company,
         token: payload.token,
         refreshToken: payload.refreshToken
       });
 
-      // Tampilkan BrandLoader khusus SS Traveling minimal 2 detik sebelum masuk ke dashboard
+      // Tampilkan BrandLoader khusus SS Travelink minimal 2 detik sebelum masuk ke dashboard
       setIsSuccessLoading(true);
     } catch (error: any) {
       if (error.response) {

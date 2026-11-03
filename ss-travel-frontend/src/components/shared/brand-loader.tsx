@@ -1,7 +1,7 @@
+import pendopoLogo from '@/assets/ss_travel/ss-transport-pendopo.webp';
+import { cn } from '@/lib/utils';
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { cn } from '@/lib/utils';
-import pendopoLogo from '@/assets/ss_travel/ss-transport-pendopo.webp';
 
 interface BrandLoaderProps {
   /**
@@ -11,7 +11,7 @@ interface BrandLoaderProps {
   message?: string;
   /**
    * Sub-pesan / keterangan tambahan
-   * @default 'PT SS Traveling Official'
+   * @default 'PT SS Travelink Official'
    */
   subMessage?: string;
   /**
@@ -43,7 +43,7 @@ interface BrandLoaderProps {
 
 export const BrandLoader: React.FC<BrandLoaderProps> = ({
   message = 'Memuat…',
-  subMessage = 'Menyiapkan sistem operasional SS Traveling ERP',
+  subMessage = 'Menyiapkan sistem operasional SS Travelink ERP',
   minDuration = 2000,
   onFinished,
   fullScreen = true,
@@ -93,20 +93,20 @@ export const BrandLoader: React.FC<BrandLoaderProps> = ({
       className={cn(
         'select-none transition-all duration-500 ease-out',
         fullScreen
-          ? 'fixed inset-0 z-[99999999] h-screen w-screen flex flex-col items-center justify-center bg-white/95 dark:bg-zinc-950/95 backdrop-blur-2xl'
-          : 'min-h-[400px] w-full flex flex-col items-center justify-center p-8',
+          ? 'fixed inset-0 z-99999999 h-screen w-screen flex flex-col items-center justify-center bg-white/95 dark:bg-zinc-950/95 backdrop-blur-2xl'
+          : 'min-h-100 w-full flex flex-col items-center justify-center p-8',
         isFadingOut && 'opacity-0 scale-[0.98] pointer-events-none',
         className
       )}
     >
       {/* Ambient Glow */}
-      <div className="absolute -z-10 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-blue-500/10 via-emerald-500/10 to-indigo-500/10 blur-3xl pointer-events-none animate-pulse" />
+      <div className="absolute -z-10 w-125 h-125 rounded-full bg-linear-to-tr from-blue-500/10 via-emerald-500/10 to-indigo-500/10 blur-3xl pointer-events-none animate-pulse" />
 
       {/* Main Container sesuai gap 28px referensi */}
       <div className="flex flex-col items-center justify-center text-center gap-7 px-4">
         {/* Ring & Logo Section (Dimensi 280px sesuai spesifikasi referensi) */}
         {variant === 'orbit' ? (
-          <div className="relative w-[280px] h-[280px] flex items-center justify-center">
+          <div className="relative w-70 h-70 flex items-center justify-center">
             {/* Outer Spinning Ring (border-top-color: #2878f0, border: #dce3f1, 5px) */}
             <div
               className="absolute inset-0 rounded-full border-[5px] border-[#dce3f1] dark:border-zinc-800 border-t-[#2878f0] animate-spin shadow-sm"
@@ -132,7 +132,7 @@ export const BrandLoader: React.FC<BrandLoaderProps> = ({
         ) : (
           /* Varian Spin-All: Seluruh ring dan logo ikut berputar sesuai snippet referensi */
           <div
-            className="w-[280px] h-[280px] rounded-full border-[5px] border-[#dce3f1] dark:border-zinc-800 border-t-[#2878f0] grid place-items-center animate-spin p-5"
+            className="w-70 h-70 rounded-full border-[5px] border-[#dce3f1] dark:border-zinc-800 border-t-[#2878f0] grid place-items-center animate-spin p-5"
             style={{ animationDuration: '1.2s' }}
           >
             <img
@@ -160,7 +160,7 @@ export const BrandLoader: React.FC<BrandLoaderProps> = ({
         <div className="flex flex-col items-center gap-1.5 w-64">
           <div className="w-full h-1.5 bg-[#dce3f1] dark:bg-zinc-800 rounded-full overflow-hidden shadow-inner">
             <div
-              className="h-full bg-gradient-to-r from-[#2878f0] to-[#1cb85a] rounded-full transition-all duration-75 ease-out"
+              className="h-full bg-linear-to-r from-[#2878f0] to-[#1cb85a] rounded-full transition-all duration-75 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>

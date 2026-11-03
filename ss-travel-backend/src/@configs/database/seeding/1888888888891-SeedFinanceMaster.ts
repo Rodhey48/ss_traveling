@@ -5,7 +5,7 @@ export class SeedFinanceMaster1888888888891 implements MigrationInterface {
   name = 'SeedFinanceMaster1888888888891';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // 1. Get Company ID (PT SS Traveling Official)
+    // 1. Get Company ID (PT SS Travelink Official)
     const companyRows = await queryRunner.query(
       `SELECT id FROM "companies" WHERE code = 'SST' LIMIT 1`,
     );
@@ -299,7 +299,7 @@ export class SeedFinanceMaster1888888888891 implements MigrationInterface {
           companyId,
           'BANK-BCA-OPS',
           'BCA',
-          'PT SS Traveling Official',
+          'PT SS Travelink Official',
           '8229994370',
           '•••• •••• 4370',
           bankGlAccountId,
@@ -317,7 +317,7 @@ export class SeedFinanceMaster1888888888891 implements MigrationInterface {
           companyId,
           'BANK-MANDIRI-OPS',
           'Bank Mandiri',
-          'PT SS Traveling Official',
+          'PT SS Travelink Official',
           '1560012345678',
           '•••• •••• 5678',
           bankGlAccountId,
@@ -327,12 +327,12 @@ export class SeedFinanceMaster1888888888891 implements MigrationInterface {
 
       // 6 Rekening Bank Treasury Terpisah (2 Induk + 4 Operasional)
       const corporateBankConfigs = [
-        { code: 'BANK-BCA-MAIN', name: 'BCA', accName: 'PT SS Traveling Official (Induk)', accNo: '8830192801', mask: '•••• •••• 2801', glCode: '11111', desc: 'Rekening Induk Pusat Penerimaan BCA' },
-        { code: 'BANK-MANDIRI-MAIN', name: 'Bank Mandiri', accName: 'PT SS Traveling Official (Induk)', accNo: '1560012341112', mask: '•••• •••• 1112', glCode: '11112', desc: 'Rekening Induk Pusat Penerimaan Mandiri' },
-        { code: 'BANK-BCA-OPS-AKAP', name: 'BCA', accName: 'PT SS Traveling Official (Ops AKAP)', accNo: '8830192821', mask: '•••• •••• 2821', glCode: '11121', desc: 'Rekening Pengeluaran Operasional Armada Bus AKAP BCA' },
-        { code: 'BANK-BCA-OPS-WIS', name: 'BCA', accName: 'PT SS Traveling Official (Ops Wisata)', accNo: '8830192822', mask: '•••• •••• 2822', glCode: '11122', desc: 'Rekening Pengeluaran Operasional Armada Pariwisata BCA' },
-        { code: 'BANK-MANDIRI-OPS-AKAP', name: 'Bank Mandiri', accName: 'PT SS Traveling Official (Ops AKAP)', accNo: '1560012341123', mask: '•••• •••• 1123', glCode: '11123', desc: 'Rekening Pengeluaran Operasional Armada Bus AKAP Mandiri' },
-        { code: 'BANK-MANDIRI-OPS-WIS', name: 'Bank Mandiri', accName: 'PT SS Traveling Official (Ops Wisata)', accNo: '1560012341124', mask: '•••• •••• 1124', glCode: '11124', desc: 'Rekening Pengeluaran Operasional Armada Pariwisata Mandiri' },
+        { code: 'BANK-BCA-MAIN', name: 'BCA', accName: 'PT SS Travelink Official (Induk)', accNo: '8830192801', mask: '•••• •••• 2801', glCode: '11111', desc: 'Rekening Induk Pusat Penerimaan BCA' },
+        { code: 'BANK-MANDIRI-MAIN', name: 'Bank Mandiri', accName: 'PT SS Travelink Official (Induk)', accNo: '1560012341112', mask: '•••• •••• 1112', glCode: '11112', desc: 'Rekening Induk Pusat Penerimaan Mandiri' },
+        { code: 'BANK-BCA-OPS-AKAP', name: 'BCA', accName: 'PT SS Travelink Official (Ops AKAP)', accNo: '8830192821', mask: '•••• •••• 2821', glCode: '11121', desc: 'Rekening Pengeluaran Operasional Armada Bus AKAP BCA' },
+        { code: 'BANK-BCA-OPS-WIS', name: 'BCA', accName: 'PT SS Travelink Official (Ops Wisata)', accNo: '8830192822', mask: '•••• •••• 2822', glCode: '11122', desc: 'Rekening Pengeluaran Operasional Armada Pariwisata BCA' },
+        { code: 'BANK-MANDIRI-OPS-AKAP', name: 'Bank Mandiri', accName: 'PT SS Travelink Official (Ops AKAP)', accNo: '1560012341123', mask: '•••• •••• 1123', glCode: '11123', desc: 'Rekening Pengeluaran Operasional Armada Bus AKAP Mandiri' },
+        { code: 'BANK-MANDIRI-OPS-WIS', name: 'Bank Mandiri', accName: 'PT SS Travelink Official (Ops Wisata)', accNo: '1560012341124', mask: '•••• •••• 1124', glCode: '11124', desc: 'Rekening Pengeluaran Operasional Armada Pariwisata Mandiri' },
       ];
 
       for (const cbc of corporateBankConfigs) {

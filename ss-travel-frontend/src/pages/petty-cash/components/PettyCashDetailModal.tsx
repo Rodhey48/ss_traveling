@@ -11,6 +11,7 @@ import {
 import type { CashTransaction } from '@/types';
 import { PettyCashService } from '@/services/petty-cash.service';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/use-auth';
 
 interface PettyCashDetailModalProps {
   isOpen: boolean;
@@ -25,6 +26,8 @@ export default function PettyCashDetailModal({
   onSuccess,
   transaction,
 }: PettyCashDetailModalProps) {
+  const { company } = useAuth();
+  const companyName = company?.name || 'PT SS Travelink Official';
   const [rejectReason, setRejectReason] = useState('');
   const [isRejecting, setIsRejecting] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -119,7 +122,7 @@ export default function PettyCashDetailModal({
                 </span>
               </div>
               <p className="text-xs text-slate-500">
-                Dokumen Kas Kecil Pool PT SS Traveling Official
+                Dokumen Kas Kecil Pool {companyName}
               </p>
             </div>
           </div>

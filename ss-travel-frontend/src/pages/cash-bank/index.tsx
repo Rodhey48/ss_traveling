@@ -1,8 +1,6 @@
-import { useState, useEffect } from 'react';
 import Heading from '@/components/shared/heading';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -11,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -20,35 +19,36 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Plus,
-  Search,
-  Wallet,
-  Landmark,
-  CreditCard,
-  User as UserIcon,
-  Building,
-  Edit,
-  Trash2,
-  ShieldCheck,
-} from 'lucide-react';
-import CashAccountModal from './components/cash-account-modal';
-import BankAccountModal from './components/bank-account-modal';
-import { CashBankService } from '@/services/cash-bank.service';
+import { usePermission } from '@/hooks/use-permission';
 import { AccountService } from '@/services/account.service';
-import { UserService } from '@/services/user.service';
+import { CashBankService } from '@/services/cash-bank.service';
 import { OrganizationService } from '@/services/organization.service';
+import { UserService } from '@/services/user.service';
 import type {
-  CashAccount,
-  CashAccountFormData,
+  Account,
   BankAccount,
   BankAccountFormData,
-  Account,
-  User,
+  CashAccount,
+  CashAccountFormData,
   CostCenter,
+  User,
 } from '@/types';
+import {
+  Building,
+  CreditCard,
+  Edit,
+  Landmark,
+  Plus,
+  Search,
+  ShieldCheck,
+  Trash2,
+  User as UserIcon,
+  Wallet,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { usePermission } from '@/hooks/use-permission';
+import BankAccountModal from './components/bank-account-modal';
+import CashAccountModal from './components/cash-account-modal';
 
 export default function CashBankPage() {
   const { isCreate, isUpdate, isDelete } = usePermission();
@@ -210,7 +210,7 @@ export default function CashBankPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <Heading
           title="Kas & Rekening Bank"
-          description="Manajemen rekening kas operasional pool, kas kecil garasi, dan rekening bank korporat SS Traveling."
+          description="Manajemen rekening kas operasional pool, kas kecil garasi, dan rekening bank korporat SS Travelink."
         />
         <div className="flex items-center space-x-2">
           {activeTab === 'cash' ? (
@@ -280,7 +280,7 @@ export default function CashBankPage() {
       {/* Tabs View */}
       <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as 'cash' | 'bank')} className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <TabsList className="grid w-full sm:w-[420px] grid-cols-2">
+          <TabsList className="grid w-full sm:w-105 grid-cols-2">
             <TabsTrigger value="cash" className="flex items-center space-x-2">
               <Wallet className="h-4 w-4" />
               <span>Kas Fisik ({cashAccounts.length})</span>
@@ -309,7 +309,7 @@ export default function CashBankPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[180px]">Kode Kas</TableHead>
+                    <TableHead className="w-45">Kode Kas</TableHead>
                     <TableHead>Nama Kas</TableHead>
                     <TableHead>Akun Buku Besar (GL)</TableHead>
                     <TableHead>Petugas Kasir</TableHead>

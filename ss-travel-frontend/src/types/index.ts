@@ -72,6 +72,7 @@ export interface LoginResponseData {
   token: string;
   refreshToken: string;
   menus: BackendMenu[];
+  company?: Company;
 }
 
 /**
