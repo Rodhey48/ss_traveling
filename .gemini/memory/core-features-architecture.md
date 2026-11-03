@@ -536,6 +536,32 @@ Response error autentikasi menggunakan struktur terstandar:
     *   **Faktur Tagihan AP Restoran (`ApService`)**: Tagihan kupon makan penumpang restoran mitra otomatis memetakan `costCenterId = CC-OPS-AKAP` dan `businessUnitId = AKAP` dari SPJ yang ditagihkan.
 
     ---
+
+    ## 17. Arsitektur Dynamic Branding & Zero-Hardcode Corporate Identity
+
+    ### A. Kebijakan Identitas Resmi Korporat
+    *   **Nama Resmi**: **"PT SS Travelink Official"** (Case Sensitive).
+    *   **Dua Lini Bisnis Utama**:
+        *   🚌 **Divisi AKAP**: Menggunakan brand/wordmark **SS Transport** (*Trayek Reguler Tangerang – Yogya PP*).
+        *   🌴 **Divisi Wisata**: Menggunakan brand/wordmark **SS Traveling** (*Sewa Bus Pariwisata & Tour Charter*).
+    *   **Aturan Zero-Hardcode**: Dilarang keras menuliskan nama korporasi secara statis/hardcode di kode frontend. Seluruh tampilan nama perusahaan wajib bersumber dinamis dari database.
+
+    ### B. Backend Dynamic Company Provider
+    *   **Single Source of Truth**: Tabel `companies` di database PostgreSQL (ID Perusahaan Utama: `7b62f929-969b-4d5f-8be2-bf927fb2afb0`).
+    *   **Endpoint Publik Bootstrapping (`@Get('auth/company')`)**: Disediakan oleh `AuthController` tanpa memerlukan autentikasi JWT (`@Public()`), memungkinkan halaman login dan halaman publik memuat profil dan nama perusahaan terkini saat boot awal aplikasi.
+    *   **Payload Autentikasi Diperkaya (*Enriched Payloads*)**: Objek profil perusahaan (`company`) disertakan secara otomatis di dalam payload respons login (`POST /api/v1/auth/login`) dan profil pengguna aktif (`GET /api/v1/auth/me`).
+
+    ### C. Frontend State Management (`useAuth`)
+    *   **State Global**: Hook `useAuth` mengelola state `company: Company | null` yang disimpan aman di `localStorage` (`storage.get('company')`).
+    *   **Sinkronisasi Latar Belakang**: Saat sesi aktif di-load atau user login, hook otomatis memutakhirkan state perusahaan dari server dan menyediakan fungsi `refreshCompany()` untuk inisialisasi awal.
+    *   **Konsumsi UI**: Seluruh komponen (SignInPage, Header, BrandLoader, Dokumen Cetak SPJ & AR Invoice) mengonsumsi `company?.name` secara reaktif.
+
+    ### D. Standardisasi Aset Visual
+    *   **Folder Carousel Widescreen**: Terstandarisasi di `src/assets/ss_travel/carousel/` berisi 5 slide WebP rasio 16:9 beresolusi tinggi dengan vignette sinematik.
+    *   **Wordmark Korporat**: Menggunakan aset resmi `src/assets/ss_travel/ss-travelink-wordmark.webp`.
+    *   **Watermark & Favicon Pendopo**: Watermark 420px logo Pendopo SS Transport pada kartu login dan multi-format favicon persegi di `public/` (`favicon.webp`, `favicon.png`, `favicon.ico`, `apple-touch-icon.png`).
+
+    ---
     *Gunakan dokumen ini sebagai referensi saat melakukan pengembangan fitur baru atau debugging sistem otorisasi.*
 
 

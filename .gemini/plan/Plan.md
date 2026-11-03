@@ -459,6 +459,46 @@ Setiap tahap dikerjakan secara paralel per fitur (*Vertical Slice*): **Database 
 
 ---
 
+### 📌 UI/UX Brand Overhaul & Identitas Visual Korporat (Completed — 2026-11-03)
+* [x] **Aset Resmi & Favicon Pendopo**:
+  * [x] Favicon proporsional persegi (*square-padded*) multi-format (`favicon.webp`, `favicon.png`, `favicon.ico`, `apple-touch-icon.png`) di folder `public/`.
+* [x] **Showcase Dua Divisi Bisnis (AKAP & Wisata)**:
+  * [x] Showcase visual di halaman login hero: 🚌 Divisi AKAP (**SS Transport**) dan 🌴 Divisi Wisata (**SS Traveling**).
+  * [x] Header Navbar: Emblem Pendopo dan *Dual Business Wings Indicator* di command bar.
+* [x] **Background Carousel AI Sinematik (5 Slide Widescreen 16:9 WebP)**:
+  * [x] 5 slide autentik armada bus di `src/assets/ss_travel/carousel/`: `slide-akap.webp`, `slide-interior.webp`, `slide-wisata.webp`, `slide-garage.webp`, `slide-akap-navy.webp`.
+  * [x] Autoplay 6 detik, perbesaran `scale-120`, posisi fokus `object-[center_35%]`, dan vignette sinematik gelap.
+* [x] **Redesain Form Login Obsidian Frosted Glass**:
+  * [x] Obsidian dark glass card (`bg-zinc-950/80 backdrop-blur-2xl border border-white/15`).
+  * [x] Watermark logo Pendopo SS Transport (420px) dengan pendaran zamrud (*emerald glow* 18% opacity).
+  * [x] Input field modern dengan ikon `Mail` & `Lock` serta focus ring emerald menyala.
+  * [x] Tombol login sosial modern (Google, Facebook, Microsoft).
+* [x] **BrandLoader Khusus SS Travelink**:
+  * [x] Loader animasi 2,2 detik dengan ring berputar 280px dan logo pendopo stabil di tengah.
+  * [x] Render via React Portal (`document.body`) untuk mencegah pemotongan stacking context backdrop blur.
+
+---
+
+### 📌 Migrasi Branding ke PT SS Travelink Official & Dynamic Company Architecture (Completed — 2026-11-03)
+* [x] **Global Corporate Branding ("PT SS Travelink Official")**:
+  * [x] Refactoring nama perusahaan dari "SS Traveling" / "PT SS Traveling" menjadi "PT SS Travelink Official" (Case Sensitive) di 40+ file frontend.
+  * [x] Sinkronisasi data live di database PostgreSQL: tabel `companies` (ID: `7b62f929-969b-4d5f-8be2-bf927fb2afb0`) dan 8 record `bank_accounts`.
+  * [x] Pembaruan migrations (`1781200000000-create-vehicle-images.ts`, `1782500000000-create-fund-transfers.ts`) dan seeders (`1888888888890-SeedOrgFleetAndCustomers.ts`, `1888888888891-SeedFinanceMaster.ts`).
+* [x] **Arsitektur Dynamic Company Name (Zero-Hardcode)**:
+  * [x] **Backend**: Endpoint publik `@Get('auth/company')` di `AuthController` dan method `getPublicCompany` di `AuthService`.
+  * [x] **Backend Payload**: Menyertakan relasi profil `company` pada payload `login` dan `getMe`.
+  * [x] **Frontend `useAuth`**: Mengelola state `company: Company | null`, sinkronisasi ke `localStorage`, dan helper `refreshCompany()`.
+  * [x] **Konsumsi UI Dinamis**: Halaman login (`SignInPage`), layout dokumen cetak (`SpjPrintModal`, `ArInvoicePrintModal`), dan header navbar membaca langsung dari database.
+* [x] **Pembersihan Aset & Standardisasi Paket**:
+  * [x] Memperbaiki nama folder typo `carausel` menjadi `carousel/` di `src/assets/ss_travel/`.
+  * [x] Mengganti wordmark lama ke `ss-travelink-wordmark.webp`.
+  * [x] Menghapus `package-lock.json` untuk menjaga kepatuhan aturan strict Yarn lockfile.
+* [x] **Kompilasi & Pengujian**:
+  * [x] Backend NestJS (`yarn build`) sukses 100%.
+  * [x] Frontend Vite React (`yarn build`) sukses 100%.
+
+---
+
 ### 📌 Tahap 10: E2E Simulation Testing & System Polish (Final Verification)
 * [ ] **Simulasi End-to-End Penuh di Browser**:
   * [ ] **Simulasi Skenario 1**: Penerbitan Jadwal & SPJ AKAP PP Bus SS-01 $\to$ Pencairan UJ Rp 3.5jt $\to$ Penjualan Tiket Bruto & Kargo Motor Komisi 20% $\to$ Rekonsiliasi Kasir Pool (Kantong UJ Balanced Rp 0 + Kantong Setoran Matched) $\to$ Posting Jurnal SPJ Rp 16.68jt $\to$ Penagihan AP Servis Makan RM Taman Selera Subang $\to$ Cek Laporan Margin Trip (+Rp 6.57jt).

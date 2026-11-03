@@ -1,13 +1,13 @@
 ---
-name: Project Context: SS Traveling
-description: Overview of the ERP SS Traveling project goals, architecture, and roadmap for Phase 3 implementation.
+name: Project Context: SS Travelink
+description: Overview of the ERP SS Travelink (PT SS Travelink Official) project goals, architecture, and roadmap for Phase 3 implementation.
 type: project
 ---
 
-# Project Context: SS Traveling ERP
+# Project Context: SS Travelink ERP
 
 ## Goals
-Membangun sistem ERP komprehensif untuk SS Traveling Official (layanan Bus AKAP Tangerang-Yogya, Pariwisata/Charter Luxury Seat 2-1, Combi, Sleeper, Executive) yang mengintegrasikan manajemen armada, Surat Perintah Jalan (SPJ), kasir pool, serta akuntansi berbasis jurnal atomik (*Journal-First Accounting*) dengan auditabilitas tinggi (SAP-grade).
+Membangun sistem ERP komprehensif untuk **PT SS Travelink Official** (layanan Bus AKAP Tangerang-Yogya, Pariwisata/Charter Luxury Seat 2-1, Combi, Sleeper, Executive) yang mengintegrasikan manajemen armada, Surat Perintah Jalan (SPJ), kasir pool, serta akuntansi berbasis jurnal atomik (*Journal-First Accounting*) dengan auditabilitas tinggi (SAP-grade).
 
 ## Architecture & Tech Stack
 - **Architecture**: Modular Monolith.
@@ -16,7 +16,7 @@ Membangun sistem ERP komprehensif untuk SS Traveling Official (layanan Bus AKAP 
 - **Frontend**: React + TypeScript + Vite di `ss-travel-frontend/`.
 - **Security & Auth**: Dual-Strategy Auth (`HttpOnly` Cookie untuk Web, Bearer Token untuk Mobile/API), Single Device Login (SDL), Stateless Device Fingerprinting (`x-device-id` + User-Agent), Machine-Readable Error Codes (401), dan RBAC dengan Separation of Duties (SoD).
 
-## Status Fase Saat Ini (Per 25 Oktober 2026)
+## Status Fase Saat Ini (Per 3 November 2026)
 - **Fase 1: Infrastructure & Auth**: [COMPLETED]
   - Autentikasi hybrid stabil, RBAC dynamic menu hierarkis, JSONB action-based permissions.
 - **Fase 2: Design Verification & Specs**: [COMPLETED & LOCKED]
@@ -26,7 +26,7 @@ Membangun sistem ERP komprehensif untuk SS Traveling Official (layanan Bus AKAP 
     2. Skenario 2: Sewa Wisata / Charter Multi-Day & B2B Partner Cashback.
     3. Skenario 3: Anomali AKAP Breakdown, Penggantian Armada (`parent_spj_id`) & Estafet UJ.
     4. Skenario 4: Rekonsiliasi Kasir Bermasalah, Musyawarah Kru & Resolusi Selisih Kas.
-- **Fase 3: Core Implementation**: [SELESAI TAHAP 0 S.D. 9 + KAS KECIL + DASHBOARD + PRINT DOKUMEN]
+- **Fase 3: Core Implementation**: [SELESAI TAHAP 0 S.D. 9 + KAS KECIL + DASHBOARD + BRAND OVERHAUL & DYNAMIC BRANDING]
   - **Master Plan Terkunci**: Roadmap implementasi terdokumentasi lengkap di `.gemini/plan/Plan.md`.
   - **Progres Selesai**: 
     - Tahap 0 s.d. Tahap 8: RBAC 11 Role, Master Organisasi & 10 Bus, COA Kelompok 1-8, Matriks Tarif & Kompensasi Kru, Accounting Posting & Reversal Engine, Penjadwalan Gantt & SPJ Lifecycle, Uang Jalan Multi-Line, Biaya BBM Odometer, Deklarasi Kas Anti-Netting, Meja Kasir Pool & Resolusi Selisih, Modul AR & AP.
@@ -34,6 +34,8 @@ Membangun sistem ERP komprehensif untuk SS Traveling Official (layanan Bus AKAP 
     - Modul Kas Kecil Pool (Petty Cash): Pencatatan biaya non-SPJ garasi via voucher BKK & replenishment BKM plafon Rp 10jt dengan auto-posting GL.
     - Dashboard Utama Live & Role-Based Protection: Pengamanan ketat data finansial (kas/bank, AR/AP, selisih kasir) sehingga hanya terlihat oleh role Keuangan/Direksi; peran operasional (supir/kru/dispatcher) hanya melihat status armada, penugasan kru jalan vs standby, dan monitoring rute. Pintasan cepat disaring sesuai hak akses menu pengguna.
     - Cetak Dokumen Operasional Fisik: Cetak Surat Perintah Jalan (SPJ) resmi supir A4 dengan 4 kolom tanda tangan dan Cetak Faktur Invoice Tagihan AR / Kwitansi DP Wisata.
+    - UI/UX Brand Overhaul (2026-11-03): Favicon resmi Pendopo multi-size, Showcase Dua Divisi (AKAP SS Transport & Wisata SS Traveling), Background Carousel AI Sinematik 5 Slide, Obsidian Frosted Glass Login, dan BrandLoader 2,2s via React Portal.
+    - Global Corporate Branding & Dynamic Architecture (2026-11-03): Migrasi menyeluruh ke "PT SS Travelink Official", public API `@Get('auth/company')`, integrasi objek `company` pada payload `login`/`getMe`, dan sinkronisasi `useAuth` dinamis bebas hardcode.
   - **Fokus Berikutnya (Tahap 10)**: E2E Simulation Testing di Browser untuk seluruh Skenario 1 s.d. 4, Audit Keamanan, dan Final System Polish.
 
 ## Rencana Eksekusi Bertahap (Fase 3)
