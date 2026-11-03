@@ -37,6 +37,7 @@ import {
 import { CashBankService } from '@/services/cash-bank.service';
 import type { BankAccount, CashAccount, StatementReport } from '@/types';
 import { toast } from 'sonner';
+import { StatementTableSkeletonRows } from '@/components/shared/skeleton-loaders';
 
 interface BankStatementViewProps {
   bankAccounts: BankAccount[];
@@ -666,12 +667,7 @@ export default function BankStatementView({
               )}
 
               {loading ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    <RotateCw className="w-4 h-4 animate-spin mx-auto mb-2 text-muted-foreground" />
-                    Memuat rincian mutasi...
-                  </TableCell>
-                </TableRow>
+                <StatementTableSkeletonRows rows={6} />
               ) : paginatedLines.length > 0 ? (
                 paginatedLines.map((line) => {
                   const isDebit = Number(line.debit) > 0;

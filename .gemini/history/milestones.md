@@ -2,6 +2,26 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-11-03: Implementasi Skeleton UI & Global API Call Loading Indicator Completed
+- **Komponen Atomik Skeleton (`src/components/ui/skeleton.tsx`)**:
+  - Membangun komponen dasar `Skeleton` berbasis Tailwind CSS v4 (`animate-pulse`) dengan styling netral transparan elegan (`bg-slate-200/70 dark:bg-zinc-800/70`).
+- **Global Network Tracker & Hook Reaktif (`axiosClient.ts` & `use-api-loading.ts`)**:
+  - Mengintegrasikan penghitung request in-flight (`activeRequestsCount`) dan listener reactive subscriber pada interceptor request/response/error Axios.
+  - Membangun custom hook `useApiLoading()` yang secara sinergis mendengarkan pemanggilan HTTP Axios serta query aktif TanStack Query (`useIsFetching` & `useIsMutating`).
+- **Visual Indikator Pemuatan Global**:
+  - **Top Progress Bar (`ApiLoadingBar.tsx`)**: Bar loading indeterminate fixed di bagian paling atas layar (`z-[9999]`) bergradasi zamrud (*emerald-to-teal*) dengan animasi *sliding beam* berkecepatan 1.4s.
+  - **Header Network Status Badge (`header.tsx`)**: Kapsul status di command bar sisi kanan header yang memunculkan ikon `Loader2` berputar lembut dengan keterangan *"Sinkronisasi..."* secara otomatis setiap ada aktivitas call API.
+- **Composite Skeleton Presets (`skeleton-loaders.tsx`)**:
+  - Menyediakan preset reusable: `MetricCardSkeleton`, `MetricCardGridSkeleton`, `BankAccountCardSkeleton`, `TableSkeletonRows`, `TransferTableSkeletonRows`, dan `StatementTableSkeletonRows`.
+- **Integrasi Penuh Halaman Treasury (`/treasury`)**:
+  - Memasang `MetricCardGridSkeleton` pada 4 kartu ringkasan likuiditas untuk mengeliminasi flash nilai Rp 0.
+  - Memasang `BankAccountCardSkeleton` pada section Rekening Induk, Rekening Ops Armada, dan Kas Fisik Pool.
+  - Mengganti teks spinner statis tabel dengan `TransferTableSkeletonRows` pada Tab Riwayat Mutasi.
+  - Menampilkan skeleton kartu pengajuan pada Tab Meja Persetujuan Maker-Checker.
+  - Mengintegrasikan `StatementTableSkeletonRows` pada komponen `BankStatementView` saat berganti akun atau filter periode.
+- **Verifikasi Kualitas Penuh**:
+  - Kompilasi TypeScript frontend `yarn build` sukses 100% bebas error.
+
 ### 2026-11-03: Migrasi Branding Global ke PT SS Travelink Official, Dynamic Company Name & Asset Refactoring Completed
 - **Global Corporate Branding ("PT SS Travelink Official")**:
   - Melakukan refactoring menyeluruh nama korporasi dari "SS Traveling" / "PT SS Traveling" menjadi "PT SS Travelink Official" (Case Sensitive) di 40+ file UI frontend, backend migrations, seeders, serta database PostgreSQL aktif (entitas perusahaan `companies` dan 8 rekening bank `bank_accounts`).

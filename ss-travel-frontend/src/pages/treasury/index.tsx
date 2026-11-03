@@ -50,6 +50,12 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  MetricCardGridSkeleton,
+  BankAccountCardSkeleton,
+  TransferTableSkeletonRows,
+} from '@/components/shared/skeleton-loaders';
 import BankStatementView from './components/bank-statement-view';
 import CreateTransferModal from './components/create-transfer-modal';
 import TransferDetailModal from './components/transfer-detail-modal';
@@ -66,6 +72,7 @@ export default function TreasuryPage() {
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [transfers, setTransfers] = useState<FundTransfer[]>([]);
 
+  const [accountsLoading, setAccountsLoading] = useState(true);
   const [transfersLoading, setTransfersLoading] = useState(false);
   const [transferFilterStatus, setTransferFilterStatus] = useState<string>('ALL');
 
@@ -100,6 +107,7 @@ export default function TreasuryPage() {
   const [selectedStatementType, setSelectedStatementType] = useState<'BANK' | 'CASH'>('BANK');
 
   const fetchData = async () => {
+    setAccountsLoading(true);
     try {
       const [cashRes, bankRes] = await Promise.all([
         CashBankService.findAllCashAccounts(),
@@ -118,6 +126,8 @@ export default function TreasuryPage() {
       toast.error('Gagal memuat data kas & rekening bank', {
         description: err?.response?.data?.message || err.message,
       });
+    } finally {
+      setAccountsLoading(false);
     }
   };
 
@@ -284,87 +294,91 @@ export default function TreasuryPage() {
       </div>
 
       {/* 4 Summary Cards Clean with Tasteful Icon Colors */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Card 1: Total Saldo Likuiditas */}
-        <Card className="shadow-xs">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">
-                Total Likuiditas Kas & Bank
-              </span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-                <Wallet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+      {accountsLoading ? (
+        <MetricCardGridSkeleton count={4} />
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Card 1: Total Saldo Likuiditas */}
+          <Card className="shadow-xs">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-muted-foreground">
+                  Total Likuiditas Kas & Bank
+                </span>
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
+                  <Wallet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
               </div>
-            </div>
-            <div className="mt-2 text-xl font-bold font-mono text-foreground">
-              {formatRupiah(totalLiquidity)}
-            </div>
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              {bankAccounts.length} Rekening Bank &bull; {cashAccounts.length} Kas Fisik
-            </p>
-          </CardContent>
-        </Card>
+              <div className="mt-2 text-xl font-bold font-mono text-foreground">
+                {formatRupiah(totalLiquidity)}
+              </div>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                {bankAccounts.length} Rekening Bank &bull; {cashAccounts.length} Kas Fisik
+              </p>
+            </CardContent>
+          </Card>
 
-        {/* Card 2: Rekening Induk */}
-        <Card className="shadow-xs">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">
-                Rekening Induk (Penerimaan)
-              </span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-                <Landmark className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          {/* Card 2: Rekening Induk */}
+          <Card className="shadow-xs">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-muted-foreground">
+                  Rekening Induk (Penerimaan)
+                </span>
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
+                  <Landmark className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                </div>
               </div>
-            </div>
-            <div className="mt-2 text-xl font-bold font-mono text-foreground">
-              {formatRupiah(totalMainBalance)}
-            </div>
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              Penampung omzet tiket & sewa
-            </p>
-          </CardContent>
-        </Card>
+              <div className="mt-2 text-xl font-bold font-mono text-foreground">
+                {formatRupiah(totalMainBalance)}
+              </div>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Penampung omzet tiket & sewa
+              </p>
+            </CardContent>
+          </Card>
 
-        {/* Card 3: Rekening Operasional Armada */}
-        <Card className="shadow-xs">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">
-                Rekening Operasional Armada
-              </span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-                <CreditCard className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+          {/* Card 3: Rekening Operasional Armada */}
+          <Card className="shadow-xs">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-muted-foreground">
+                  Rekening Operasional Armada
+                </span>
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
+                  <CreditCard className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                </div>
               </div>
-            </div>
-            <div className="mt-2 text-xl font-bold font-mono text-foreground">
-              {formatRupiah(totalOpsBalance)}
-            </div>
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              Plafon UJ & pengeluaran armada
-            </p>
-          </CardContent>
-        </Card>
+              <div className="mt-2 text-xl font-bold font-mono text-foreground">
+                {formatRupiah(totalOpsBalance)}
+              </div>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Plafon UJ & pengeluaran armada
+              </p>
+            </CardContent>
+          </Card>
 
-        {/* Card 4: Antrean Persetujuan */}
-        <Card className="shadow-xs">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">
-                Antrean Persetujuan Dropping
-              </span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-                <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          {/* Card 4: Antrean Persetujuan */}
+          <Card className="shadow-xs">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-muted-foreground">
+                  Antrean Persetujuan Dropping
+                </span>
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
+                  <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                </div>
               </div>
-            </div>
-            <div className="mt-2 text-xl font-bold font-mono text-foreground">
-              {pendingTransfers.length} Pengajuan
-            </div>
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              Menunggu otorisasi Maker-Checker
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+              <div className="mt-2 text-xl font-bold font-mono text-foreground">
+                {pendingTransfers.length} Pengajuan
+              </div>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Menunggu otorisasi Maker-Checker
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Main Tabs Navigation */}
       <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as any)} className="space-y-6">
@@ -420,53 +434,60 @@ export default function TreasuryPage() {
                 Inflow
               </Badge>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {mainBanks.map((bank) => {
-                const isSelected = selectedStatementId === bank.id && selectedStatementType === 'BANK';
-                return (
-                  <Card
-                    key={bank.id}
-                    onClick={() => {
-                      setSelectedStatementId(bank.id);
-                      setSelectedStatementType('BANK');
-                    }}
-                    className={`cursor-pointer transition-all duration-150 ${isSelected
-                        ? 'border-primary ring-1 ring-primary/20 shadow-sm'
-                        : 'hover:border-primary/40 shadow-xs'
-                      }`}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center">
-                            <Landmark className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                          </div>
-                          <div>
-                            <div className="font-semibold text-sm text-foreground">{getBankTitle(bank)}</div>
-                            <div className="text-xs text-muted-foreground font-mono mt-0.5">
-                              {bank.accountNumberMasked || bank.accountNumber}
+            {accountsLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <BankAccountCardSkeleton />
+                <BankAccountCardSkeleton />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {mainBanks.map((bank) => {
+                  const isSelected = selectedStatementId === bank.id && selectedStatementType === 'BANK';
+                  return (
+                    <Card
+                      key={bank.id}
+                      onClick={() => {
+                        setSelectedStatementId(bank.id);
+                        setSelectedStatementType('BANK');
+                      }}
+                      className={`cursor-pointer transition-all duration-150 ${isSelected
+                          ? 'border-primary ring-1 ring-primary/20 shadow-sm'
+                          : 'hover:border-primary/40 shadow-xs'
+                        }`}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center">
+                              <Landmark className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                             </div>
-                            <div className="text-[11px] text-muted-foreground truncate mt-0.5">
-                              a.n. {bank.accountName}
+                            <div>
+                              <div className="font-semibold text-sm text-foreground">{getBankTitle(bank)}</div>
+                              <div className="text-xs text-muted-foreground font-mono mt-0.5">
+                                {bank.accountNumberMasked || bank.accountNumber}
+                              </div>
+                              <div className="text-[11px] text-muted-foreground truncate mt-0.5">
+                                a.n. {bank.accountName}
+                              </div>
                             </div>
                           </div>
+                          <Badge variant="outline" className="text-[10px] font-normal text-muted-foreground">
+                            {getBankBadgeLabel(bank)}
+                          </Badge>
                         </div>
-                        <Badge variant="outline" className="text-[10px] font-normal text-muted-foreground">
-                          {getBankBadgeLabel(bank)}
-                        </Badge>
-                      </div>
 
-                      <div className="mt-4 pt-3 border-t flex items-baseline justify-between">
-                        <span className="text-xs text-muted-foreground">Saldo Buku Besar:</span>
-                        <span className="text-base font-bold font-mono text-foreground">
-                          {formatRupiah((bank as any).currentBalance || 0)}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+                        <div className="mt-4 pt-3 border-t flex items-baseline justify-between">
+                          <span className="text-xs text-muted-foreground">Saldo Buku Besar:</span>
+                          <span className="text-base font-bold font-mono text-foreground">
+                            {formatRupiah((bank as any).currentBalance || 0)}
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Section 2: Rekening Operasional (Disbursement Outflow) */}
@@ -482,55 +503,63 @@ export default function TreasuryPage() {
                 Outflow
               </Badge>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {opsBanks.map((bank) => {
-                const isSelected = selectedStatementId === bank.id && selectedStatementType === 'BANK';
-                const iconColor = getBankIconColor(bank);
-                return (
-                  <Card
-                    key={bank.id}
-                    onClick={() => {
-                      setSelectedStatementId(bank.id);
-                      setSelectedStatementType('BANK');
-                    }}
-                    className={`cursor-pointer transition-all duration-150 ${isSelected
-                        ? 'border-primary ring-1 ring-primary/20 shadow-sm'
-                        : 'hover:border-primary/40 shadow-xs'
-                      }`}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center">
-                          <CreditCard className={`w-4 h-4 ${iconColor}`} />
+            {accountsLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <BankAccountCardSkeleton />
+                <BankAccountCardSkeleton />
+                <BankAccountCardSkeleton />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {opsBanks.map((bank) => {
+                  const isSelected = selectedStatementId === bank.id && selectedStatementType === 'BANK';
+                  const iconColor = getBankIconColor(bank);
+                  return (
+                    <Card
+                      key={bank.id}
+                      onClick={() => {
+                        setSelectedStatementId(bank.id);
+                        setSelectedStatementType('BANK');
+                      }}
+                      className={`cursor-pointer transition-all duration-150 ${isSelected
+                          ? 'border-primary ring-1 ring-primary/20 shadow-sm'
+                          : 'hover:border-primary/40 shadow-xs'
+                        }`}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center">
+                            <CreditCard className={`w-4 h-4 ${iconColor}`} />
+                          </div>
+                          <Badge variant="outline" className="text-[10px] font-normal text-muted-foreground">
+                            {getBankBadgeLabel(bank)}
+                          </Badge>
                         </div>
-                        <Badge variant="outline" className="text-[10px] font-normal text-muted-foreground">
-                          {getBankBadgeLabel(bank)}
-                        </Badge>
-                      </div>
 
-                      <div className="mt-3">
-                        <div className="font-semibold text-xs truncate text-foreground" title={getBankTitle(bank)}>
-                          {getBankTitle(bank)}
+                        <div className="mt-3">
+                          <div className="font-semibold text-xs truncate text-foreground" title={getBankTitle(bank)}>
+                            {getBankTitle(bank)}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground font-mono mt-0.5">
+                            {bank.accountNumberMasked || bank.accountNumber}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground truncate mt-0.5" title={bank.accountName}>
+                            a.n. {bank.accountName}
+                          </div>
                         </div>
-                        <div className="text-[11px] text-muted-foreground font-mono mt-0.5">
-                          {bank.accountNumberMasked || bank.accountNumber}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground truncate mt-0.5" title={bank.accountName}>
-                          a.n. {bank.accountName}
-                        </div>
-                      </div>
 
-                      <div className="mt-3 pt-2.5 border-t flex items-baseline justify-between">
-                        <span className="text-[11px] text-muted-foreground">Saldo:</span>
-                        <span className="text-xs font-bold font-mono text-foreground">
-                          {formatRupiah((bank as any).currentBalance || 0)}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+                        <div className="mt-3 pt-2.5 border-t flex items-baseline justify-between">
+                          <span className="text-[11px] text-muted-foreground">Saldo:</span>
+                          <span className="text-xs font-bold font-mono text-foreground">
+                            {formatRupiah((bank as any).currentBalance || 0)}
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Section 3: Kas Fisik Pool */}
@@ -543,48 +572,56 @@ export default function TreasuryPage() {
                 Kas Fisik Operasional Pool & Kas Kecil Garasi
               </span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {cashAccounts.map((cash) => {
-                const isSelected = selectedStatementId === cash.id && selectedStatementType === 'CASH';
-                const isPetty = cash.code.includes('PETTY');
-                return (
-                  <Card
-                    key={cash.id}
-                    onClick={() => {
-                      setSelectedStatementId(cash.id);
-                      setSelectedStatementType('CASH');
-                    }}
-                    className={`cursor-pointer transition-all duration-150 ${isSelected
-                        ? 'border-primary ring-1 ring-primary/20 shadow-sm'
-                        : 'hover:border-primary/40 shadow-xs'
-                      }`}
-                  >
-                    <CardContent className="p-3.5">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center">
-                            <Wallet className={`w-4 h-4 ${isPetty ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`} />
+            {accountsLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <BankAccountCardSkeleton />
+                <BankAccountCardSkeleton />
+                <BankAccountCardSkeleton />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {cashAccounts.map((cash) => {
+                  const isSelected = selectedStatementId === cash.id && selectedStatementType === 'CASH';
+                  const isPetty = cash.code.includes('PETTY');
+                  return (
+                    <Card
+                      key={cash.id}
+                      onClick={() => {
+                        setSelectedStatementId(cash.id);
+                        setSelectedStatementType('CASH');
+                      }}
+                      className={`cursor-pointer transition-all duration-150 ${isSelected
+                          ? 'border-primary ring-1 ring-primary/20 shadow-sm'
+                          : 'hover:border-primary/40 shadow-xs'
+                        }`}
+                    >
+                      <CardContent className="p-3.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center">
+                              <Wallet className={`w-4 h-4 ${isPetty ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`} />
+                            </div>
+                            <div>
+                              <span className="font-semibold text-xs text-foreground">{cash.name}</span>
+                              <div className="text-[10px] text-muted-foreground font-mono">{cash.code}</div>
+                            </div>
                           </div>
-                          <div>
-                            <span className="font-semibold text-xs text-foreground">{cash.name}</span>
-                            <div className="text-[10px] text-muted-foreground font-mono">{cash.code}</div>
-                          </div>
+                          <Badge variant="outline" className="text-[10px] font-normal text-muted-foreground">
+                            {isPetty ? 'Kas Kecil' : 'Kas Fisik'}
+                          </Badge>
                         </div>
-                        <Badge variant="outline" className="text-[10px] font-normal text-muted-foreground">
-                          {isPetty ? 'Kas Kecil' : 'Kas Fisik'}
-                        </Badge>
-                      </div>
-                      <div className="mt-3 pt-2 border-t flex items-baseline justify-between">
-                        <span className="text-[11px] text-muted-foreground">Saldo Fisik:</span>
-                        <span className="text-xs font-bold font-mono text-foreground">
-                          {formatRupiah((cash as any).currentBalance || 0)}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+                        <div className="mt-3 pt-2 border-t flex items-baseline justify-between">
+                          <span className="text-[11px] text-muted-foreground">Saldo Fisik:</span>
+                          <span className="text-xs font-bold font-mono text-foreground">
+                            {formatRupiah((cash as any).currentBalance || 0)}
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Digital Statement Component */}
@@ -658,12 +695,7 @@ export default function TreasuryPage() {
                 </TableHeader>
                 <TableBody className="text-xs">
                   {transfersLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                        <RotateCw className="w-4 h-4 animate-spin mx-auto mb-2 text-muted-foreground" />
-                        Memuat riwayat transfer kas/bank...
-                      </TableCell>
-                    </TableRow>
+                    <TransferTableSkeletonRows rows={5} />
                   ) : transfers.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
@@ -772,7 +804,32 @@ export default function TreasuryPage() {
             </CardHeader>
 
             <CardContent className="p-4">
-              {pendingTransfers.length === 0 ? (
+              {transfersLoading ? (
+                <div className="space-y-3">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="rounded-lg border bg-card p-4 space-y-3">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Skeleton className="h-4 w-28 rounded-md" />
+                            <Skeleton className="h-4 w-16 rounded-full" />
+                            <Skeleton className="h-3.5 w-36 rounded-md" />
+                          </div>
+                          <Skeleton className="h-4 w-64 rounded-md" />
+                          <Skeleton className="h-3.5 w-48 rounded-md" />
+                        </div>
+                        <div className="flex flex-col items-end gap-2.5 min-w-50">
+                          <Skeleton className="h-6 w-32 rounded-md" />
+                          <div className="flex gap-2">
+                            <Skeleton className="h-8 w-16 rounded-md" />
+                            <Skeleton className="h-8 w-24 rounded-md" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : pendingTransfers.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <CheckCircle2 className="w-8 h-8 mx-auto mb-2 opacity-50" />
                   <p className="font-medium text-sm text-foreground">Tidak ada pengajuan tertunda</p>

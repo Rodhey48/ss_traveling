@@ -34,3 +34,5 @@ SS Travelink ERP (PT SS Travelink Official) adalah sistem ERP manajemen transpor
 - [x] Global Branding Migration to PT SS Travelink Official (40+ file frontend & seeder backend).
 - [x] Dynamic Company Name Architecture (Public `@Get('auth/company')` & `useAuth` dynamic resolution).
 - [x] Asset Structure Refactoring (`carousel/` & `ss-travelink-wordmark.webp`) & Strict Yarn Cleanup.
+- [x] Global API Call Loading Tracker & Indicator (Top emerald indeterminate progress bar & header sync badge).
+- [x] Skeleton UI Infrastructure & Treasury Page Integration (MetricCardGridSkeleton, BankAccountCardSkeleton, and Table Skeletons).

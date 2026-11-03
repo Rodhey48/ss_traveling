@@ -23,6 +23,38 @@ declare module "axios" {
 const rawBaseURL = import.meta.env.VITE_API_URL || "http://localhost:3000/";
 const baseURL = rawBaseURL.endsWith("/") ? rawBaseURL : `${rawBaseURL}/`;
 
+// Global API Loading Tracker for Network Activity Indicator
+type ApiLoadingListener = (isLoading: boolean, count: number) => void;
+const loadingListeners = new Set<ApiLoadingListener>();
+let activeRequestsCount = 0;
+
+const notifyLoading = () => {
+  const isLoading = activeRequestsCount > 0;
+  loadingListeners.forEach((listener) => listener(isLoading, activeRequestsCount));
+};
+
+export const subscribeApiLoading = (listener: ApiLoadingListener) => {
+  loadingListeners.add(listener);
+  listener(activeRequestsCount > 0, activeRequestsCount);
+  return () => {
+    loadingListeners.delete(listener);
+  };
+};
+
+const incrementLoading = (config?: { silent?: boolean }) => {
+  if (!config?.silent) {
+    activeRequestsCount++;
+    notifyLoading();
+  }
+};
+
+const decrementLoading = (config?: { silent?: boolean }) => {
+  if (!config?.silent) {
+    activeRequestsCount = Math.max(0, activeRequestsCount - 1);
+    notifyLoading();
+  }
+};
+
 // Utility for Device ID (Fixed: Use plain localStorage for absolute fingerprint stability)
 export const getDeviceId = (): string => {
   let deviceId = localStorage.getItem("ss_device_id");
@@ -66,6 +98,7 @@ const api = axios.create({
 // Request Interceptor: Selalu pasang x-device-id dan Authorization token jika ada
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    incrementLoading(config);
     const token = getToken();
     const deviceId = getDeviceId();
 
@@ -79,7 +112,10 @@ api.interceptors.request.use(
 
     return config;
   },
-  (error) => Promise.reject(error),
+  (error) => {
+    decrementLoading(error?.config);
+    return Promise.reject(error);
+  },
 );
 
 let isRefreshing = false;
@@ -101,8 +137,12 @@ const processQueue = (error: any, token: string | null = null) => {
 
 // Response Interceptor
 api.interceptors.response.use(
-  (response: AxiosResponse) => response,
+  (response: AxiosResponse) => {
+    decrementLoading(response.config);
+    return response;
+  },
   async (error) => {
+    decrementLoading(error?.config);
     const originalRequest = error.config;
     const isSilent = originalRequest?.silent === true;
     const errData = error.response?.data;

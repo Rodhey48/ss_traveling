@@ -1,10 +1,14 @@
 import Header from '@/components/shared/header';
 import Sidebar from '@/components/shared/sidebar';
+import ApiLoadingBar from '@/components/shared/api-loading-bar';
 import { Outlet } from 'react-router-dom';
 
 export default function DashboardLayout() {
   return (
     <div className="relative h-screen flex flex-col overflow-hidden bg-slate-50 dark:bg-zinc-950 transition-colors duration-300">
+      {/* Global API Call Progress Bar */}
+      <ApiLoadingBar />
+
       {/* Background Ambient Glows (SiOlive Style) */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-emerald-500/10 dark:bg-emerald-600/5 blur-[120px]" />

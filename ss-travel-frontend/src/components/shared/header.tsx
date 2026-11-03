@@ -4,10 +4,11 @@ import { ThemeToggle } from '@/components/shared/theme-toggle';
 import UserNav from '@/components/shared/user-nav';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Menu } from 'lucide-react';
+import { Menu, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
+import { useApiLoading } from '@/hooks/use-api-loading';
 import pendopoLogo from '@/assets/ss_travel/ss-transport-pendopo.webp';
 import ssTransportWordmark from '@/assets/ss_travel/ss-transport-wordmark.webp';
 import ssTravelinkWordmark from '@/assets/ss_travel/ss-travelink-wordmark.webp';
@@ -15,6 +16,7 @@ import ssTravelinkWordmark from '@/assets/ss_travel/ss-travelink-wordmark.webp';
 export default function Header() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { company } = useAuth();
+  const isApiLoading = useApiLoading();
   const brandTitle = company?.name ? company.name.replace(/^PT\s+/i, '') : (import.meta.env.VITE_APP_NAME || 'SS Travelink');
 
   return (
@@ -98,6 +100,19 @@ export default function Header() {
 
       {/* Right Controls */}
       <div className="flex items-center gap-3">
+        {/* Live Network Sync Indicator */}
+        <div
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs transition-all duration-300 ${
+            isApiLoading
+              ? 'opacity-100 bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shadow-2xs'
+              : 'opacity-0 pointer-events-none w-0 px-0 overflow-hidden border-0'
+          }`}
+          title="Menyinkronkan data dengan server..."
+        >
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <span className="text-[11px] font-semibold whitespace-nowrap hidden sm:inline">Sinkronisasi...</span>
+        </div>
+
         <NotificationNav />
         <ThemeToggle />
         <div className="h-6 w-px bg-slate-200/80 dark:bg-zinc-800 mx-1 hidden sm:block" />
