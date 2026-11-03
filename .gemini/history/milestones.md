@@ -2,6 +2,32 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-11-03: UI/UX Brand Overhaul — Favicon Pendopo, Dual-Division Showcase, AI Carousel & Obsidian Glass Login Completed
+- **Tab Browser Favicon Resmi (Logo Pendopo SS Transport)**:
+  - Membuat aset favicon persegi proporsional (*square-padded transparent canvas*) dari `ss-transport-pendopo.webp` untuk mencegah logo gepeng.
+  - Menyediakan multi-format lengkap di folder `public/`: `/favicon.webp`, `/favicon.png` (32x32), `/favicon.ico` (multi-size 16x16 s.d. 64x64), dan `/apple-touch-icon.png` (180x180) dengan meta `theme-color: #059669`.
+- **Dual-Division Showcase (SS Transport & SS Traveling)**:
+  - **Halaman Login (`SignInPage`)**: Memasang showcase visual 2 lini bisnis utama di sisi kiri hero:
+    * 🚌 **Divisi AKAP**: Wordmark resmi **SS Transport** dalam badge putih elegan (*Trayek Reguler Tangerang – Yogya PP*).
+    * 🌴 **Divisi Wisata**: Wordmark resmi **SS Traveling** dalam badge putih elegan (*Sewa Bus Pariwisata & Tour Charter*).
+  - **Navbar Header (`Header`)**: Menambahkan emblem Pendopo di samping logo teks serta *Dual Business Wings Indicator* di area command bar yang menyandingkan kedua unit usaha secara harmonis.
+- **Background Carousel AI Sinematik (5 Slide Widescreen 16:9 WebP)**:
+  - Mengintegrasikan 5 slide foto armada otentik khusus SS Travel di `src/assets/ss_travel/carausel/`:
+    * `slide-akap.webp` (Armada bus AKAP di Tol Trans-Jawa).
+    * `slide-interior.webp` (Kabin mewah Sleeper & Luxury Seat 2-1).
+    * `slide-wisata.webp` (Layanan pariwisata resort & destinasi wisata).
+    * `slide-garage.webp` (Barisan armada di garasi pusat malam hari).
+    * `slide-akap-navy.webp` (Lineup armada eksekutif livery navy).
+  - Optimalisasi visual: Autoplay 6 detik, skala pembesaran `scale-120` dengan titik fokus `object-[center_35%]`, serta lapisan vignette sinematik (`from-black/80 via-black/35 to-black/75`) agar armada bus tampil lebih dekat, gagah, dan ter-highlight.
+- **Redesain Form Login Obsidian Frosted Glass**:
+  - Menggantikan kotak putih kaku dengan kartu kaca buram obsidian gelap (`bg-zinc-950/80 backdrop-blur-2xl border border-white/15`).
+  - Menanamkan watermark logo **Pendopo SS Transport** berukuran besar (384px s.d. 420px) dengan pendaran hijau zamrud (*emerald glow* & opasitas 18%) di sudut kanan bawah kartu.
+  - Input field modern bergaya kapsul kaca dengan ikon `Mail` & `Lock` serta focus ring emerald menyala.
+  - Tombol masuk gradasi zamrud (`from-emerald-600 via-teal-600 to-emerald-500`).
+  - Tombol login sosial modern bergaya dark glass: Google, Facebook, dan Microsoft.
+- **Verifikasi Kualitas Penuh**:
+  - Kompilasi TypeScript frontend `yarn build` sukses 100% bebas error.
+
 ### 2026-10-30: Pemulihan Menu Sidebar Treasury, Migrasi Fund Transfers & Komponen BrandLoader Khusus SS Traveling Completed
 - **Akar Masalah Menu Treasury & Tabel `fund_transfers`**:
   - Menu operasional likuiditas dan transfer antar rekening bank (`/treasury` - *Mutasi Kas & Rekening Bank*) sempat tidak muncul di sidebar menu karena migrasi `1782600000000-add-treasury-menu.ts` sebelumnya dilewati (*skipped*).
