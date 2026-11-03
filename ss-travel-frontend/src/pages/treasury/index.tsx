@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import ConfirmDialog from '@/components/shared/confirm-dialog';
 import Heading from '@/components/shared/heading';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -9,6 +9,13 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -18,41 +25,34 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Plus,
-  Wallet,
-  Landmark,
-  CreditCard,
-  ArrowRightLeft,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  ShieldAlert,
-  FileText,
-  Check,
-  X,
-  RotateCw,
-  Eye,
-} from 'lucide-react';
-import CreateTransferModal from './components/create-transfer-modal';
-import TransferDetailModal from './components/transfer-detail-modal';
-import BankStatementView from './components/bank-statement-view';
-import ConfirmDialog from '@/components/shared/confirm-dialog';
+import { usePermission } from '@/hooks/use-permission';
 import { CashBankService } from '@/services/cash-bank.service';
 import type {
-  CashAccount,
   BankAccount,
+  CashAccount,
   FundTransfer,
 } from '@/types';
+import {
+  ArrowRightLeft,
+  Check,
+  CheckCircle2,
+  Clock,
+  CreditCard,
+  Eye,
+  FileText,
+  Landmark,
+  Plus,
+  RotateCw,
+  ShieldAlert,
+  Wallet,
+  X,
+  XCircle,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { usePermission } from '@/hooks/use-permission';
+import BankStatementView from './components/bank-statement-view';
+import CreateTransferModal from './components/create-transfer-modal';
+import TransferDetailModal from './components/transfer-detail-modal';
 
 export default function TreasuryPage() {
   const { isCreate, actions } = usePermission();
@@ -92,7 +92,7 @@ export default function TreasuryPage() {
     open: false,
     title: '',
     description: '',
-    onConfirm: async () => {},
+    onConfirm: async () => { },
   });
 
   // Statement Selection
@@ -369,7 +369,7 @@ export default function TreasuryPage() {
       {/* Main Tabs Navigation */}
       <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as any)} className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b pb-3">
-          <TabsList className="grid w-full sm:w-[480px] grid-cols-3">
+          <TabsList className="grid w-full sm:w-120 grid-cols-3">
             <TabsTrigger value="statement" className="text-xs flex items-center gap-1.5">
               <FileText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
               <span>Rekening Koran</span>
@@ -430,11 +430,10 @@ export default function TreasuryPage() {
                       setSelectedStatementId(bank.id);
                       setSelectedStatementType('BANK');
                     }}
-                    className={`cursor-pointer transition-all duration-150 ${
-                      isSelected
+                    className={`cursor-pointer transition-all duration-150 ${isSelected
                         ? 'border-primary ring-1 ring-primary/20 shadow-sm'
                         : 'hover:border-primary/40 shadow-xs'
-                    }`}
+                      }`}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
@@ -494,11 +493,10 @@ export default function TreasuryPage() {
                       setSelectedStatementId(bank.id);
                       setSelectedStatementType('BANK');
                     }}
-                    className={`cursor-pointer transition-all duration-150 ${
-                      isSelected
+                    className={`cursor-pointer transition-all duration-150 ${isSelected
                         ? 'border-primary ring-1 ring-primary/20 shadow-sm'
                         : 'hover:border-primary/40 shadow-xs'
-                    }`}
+                      }`}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
@@ -556,11 +554,10 @@ export default function TreasuryPage() {
                       setSelectedStatementId(cash.id);
                       setSelectedStatementType('CASH');
                     }}
-                    className={`cursor-pointer transition-all duration-150 ${
-                      isSelected
+                    className={`cursor-pointer transition-all duration-150 ${isSelected
                         ? 'border-primary ring-1 ring-primary/20 shadow-sm'
                         : 'hover:border-primary/40 shadow-xs'
-                    }`}
+                      }`}
                   >
                     <CardContent className="p-3.5">
                       <div className="flex items-center justify-between">
@@ -648,15 +645,15 @@ export default function TreasuryPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[140px]">No. Transfer</TableHead>
-                    <TableHead className="w-[110px]">Tanggal</TableHead>
-                    <TableHead className="w-[140px]">Tipe Mutasi</TableHead>
+                    <TableHead className="w-35">No. Transfer</TableHead>
+                    <TableHead className="w-27.5">Tanggal</TableHead>
+                    <TableHead className="w-35">Tipe Mutasi</TableHead>
                     <TableHead>Alur Pemindahan Dana</TableHead>
-                    <TableHead className="text-right w-[140px]">Nominal (Rp)</TableHead>
+                    <TableHead className="text-right w-35">Nominal (Rp)</TableHead>
                     <TableHead>Keperluan</TableHead>
-                    <TableHead className="w-[130px]">Pemohon</TableHead>
-                    <TableHead className="w-[120px]">Status</TableHead>
-                    <TableHead className="w-[70px] text-center">Aksi</TableHead>
+                    <TableHead className="w-32.5">Pemohon</TableHead>
+                    <TableHead className="w-30">Status</TableHead>
+                    <TableHead className="w-17.5 text-center">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="text-xs">
@@ -824,7 +821,7 @@ export default function TreasuryPage() {
                           </div>
 
                           {/* Nominal & Actions */}
-                          <div className="flex flex-col items-end gap-2.5 min-w-[200px]">
+                          <div className="flex flex-col items-end gap-2.5 min-w-50">
                             <div className="text-right">
                               <div className="text-[11px] text-muted-foreground">Nominal:</div>
                               <div className="text-lg font-bold font-mono text-foreground">
