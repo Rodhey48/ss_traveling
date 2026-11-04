@@ -5,12 +5,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Briefcase } from 'lucide-react';
+import { Briefcase, Check, Loader2, Sparkles } from 'lucide-react';
 import type { BusinessUnit } from '@/types';
+import { toast } from 'sonner';
 
 interface BusinessUnitModalProps {
   isOpen: boolean;
@@ -47,64 +49,125 @@ export default function BusinessUnitModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(formData);
+    if (!formData.code.trim()) {
+      toast.error('Kode unik unit bisnis wajib diisi');
+      return;
+    }
+    if (!formData.name.trim()) {
+      toast.error('Nama unit bisnis wajib diisi');
+      return;
+    }
+
+    await onSubmit({
+      code: formData.code.trim().toUpperCase(),
+      name: formData.name.trim(),
+      description: formData.description.trim() || undefined,
+    });
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg font-bold">
-            <Briefcase className="h-5 w-5 text-primary" />
-            {item ? 'Edit Unit Bisnis' : 'Tambah Unit Bisnis'}
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <Briefcase className="h-5 w-5" />
+            </div>
+            <div>
+              {item ? 'Edit Unit Bisnis Operasional' : 'Tambah Unit Bisnis Operasional'}
+            </div>
           </DialogTitle>
+          <DialogDescription className="text-xs">
+            {item
+              ? 'Perbarui data lini bisnis atau klasifikasi layanan armada bus.'
+              : 'Daftarkan klasifikasi unit bisnis baru (misal: AKAP, Wisata, atau Shuttle).'}
+          </DialogDescription>
         </DialogHeader>
+
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
-          <div className="space-y-1">
-            <Label htmlFor="code" className="text-xs font-semibold">
-              Kode Unit Bisnis <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="code"
-              placeholder="Contoh: AKAP / WISATA"
-              value={formData.code}
-              onChange={(e) =>
-                setFormData({ ...formData, code: e.target.value.toUpperCase() })
-              }
-              required
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="code" className="text-xs font-semibold">
+                Kode Unit Bisnis <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="code"
+                placeholder="misal: AKAP / WISATA"
+                value={formData.code}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    code: e.target.value.toUpperCase(),
+                  }))
+                }
+                disabled={Boolean(item) || loading}
+                className="font-mono text-xs font-bold uppercase h-8.5"
+                required
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="name" className="text-xs font-semibold">
+                Nama Unit Bisnis <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="name"
+                placeholder="misal: AKAP Reguler"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, name: e.target.value }))
+                }
+                className="text-xs h-8.5 font-medium"
+                required
+                disabled={loading}
+              />
+            </div>
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="name" className="text-xs font-semibold">
-              Nama Unit Bisnis <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="name"
-              placeholder="Contoh: AKAP Reguler"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-            />
-          </div>
-          <div className="space-y-1">
+
+          <div className="space-y-1.5">
             <Label htmlFor="desc" className="text-xs font-semibold">
-              Deskripsi / Keterangan
+              Deskripsi / Cakupan Layanan
             </Label>
             <Input
               id="desc"
-              placeholder="Keterangan lini bisnis"
+              placeholder="misal: Trayek reguler bus antarkota antarprovinsi rute Tangerang - Yogya"
               value={formData.description}
               onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
+                setFormData((prev) => ({ ...prev, description: e.target.value }))
               }
+              className="text-xs h-8.5"
+              disabled={loading}
             />
           </div>
-          <DialogFooter className="pt-2">
-            <Button type="button" variant="outline" onClick={onClose}>
+
+          <DialogFooter className="pt-3 border-t border-slate-200/80 dark:border-white/10 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={loading}
+              className="text-xs h-8.5"
+            >
               Batal
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Menyimpan...' : 'Simpan'}
+            <Button
+              type="submit"
+              disabled={loading}
+              className="text-xs h-8.5 gap-1.5"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Menyimpan...
+                </>
+              ) : item ? (
+                <>
+                  <Check className="h-3.5 w-3.5" /> Simpan Perubahan
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-3.5 w-3.5" /> Tambah Unit Bisnis
+                </>
+              )}
             </Button>
           </DialogFooter>
         </form>

@@ -1,3 +1,4 @@
+import ConfirmDialog from '@/components/shared/confirm-dialog';
 import Heading from '@/components/shared/heading';
 import {
   MetricCardGridSkeleton,
@@ -45,13 +46,17 @@ import {
   ArrowRight,
   Calculator,
   Calendar,
+  CheckCircle2,
   Edit,
   Plus,
+  RotateCcw,
+  Search,
   Sparkles,
   Ticket,
   Trash2,
+  X,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import FareMatrixModal from './components/fare-matrix-modal';
 import FareSeasonModal from './components/fare-season-modal';
@@ -64,11 +69,16 @@ export default function FaresPage() {
   const [seatClasses, setSeatClasses] = useState<SeatClass[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Search & Debounce
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
   // Filters
   const [selectedSeasonFilter, setSelectedSeasonFilter] = useState<string>('ALL');
   const [selectedClassFilter, setSelectedClassFilter] = useState<string>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
 
-  // Modals
+  // Modals state
   const [isSeasonModalOpen, setIsSeasonModalOpen] = useState(false);
   const [selectedSeason, setSelectedSeason] = useState<FareSeason | null>(null);
 
@@ -76,6 +86,13 @@ export default function FaresPage() {
   const [selectedMatrix, setSelectedMatrix] = useState<FareMatrix | null>(null);
 
   const [modalLoading, setModalLoading] = useState(false);
+
+  // Confirm Dialog state
+  const [itemToDelete, setItemToDelete] = useState<{
+    type: 'season' | 'matrix';
+    item: FareSeason | FareMatrix;
+  } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Simulation calculator state
   const [simOrigin, setSimOrigin] = useState('TANGERANG');
@@ -87,6 +104,22 @@ export default function FaresPage() {
   const [calcResult, setCalcResult] = useState<CalculatedFareResult | null>(null);
   const [calculating, setCalculating] = useState(false);
 
+  const formatCurrency = (val: number | string) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      maximumFractionDigits: 0,
+    }).format(Number(val) || 0);
+  };
+
+  // Debounce search effect (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput.trim().toUpperCase());
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
   const fetchDependencies = async () => {
     try {
       const scRes = await VehicleService.getSeatClasses();
@@ -96,7 +129,7 @@ export default function FaresPage() {
           setSimSeatClassId(scRes.data[0].id);
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed fetching seat classes', err);
     }
   };
@@ -112,7 +145,9 @@ export default function FaresPage() {
       if (seasonRes?.data) setSeasons(seasonRes.data);
       if (matrixRes?.data) setMatrices(matrixRes.data);
     } catch (err: any) {
-      toast.error('Gagal memuat data matriks tarif tiket');
+      toast.error('Gagal memuat data matriks tarif tiket', {
+        description: err?.response?.data?.message || err.message,
+      });
     } finally {
       setLoading(false);
     }
@@ -123,16 +158,30 @@ export default function FaresPage() {
     fetchData();
   }, []);
 
+  const isFilterActive =
+    searchInput.trim() !== '' ||
+    selectedSeasonFilter !== 'ALL' ||
+    selectedClassFilter !== 'ALL' ||
+    statusFilter !== 'ALL';
+
+  const handleResetFilters = () => {
+    setSearchInput('');
+    setDebouncedSearch('');
+    setSelectedSeasonFilter('ALL');
+    setSelectedClassFilter('ALL');
+    setStatusFilter('ALL');
+  };
+
   // Handle Season CRUD
   const handleSeasonSubmit = async (formData: FareSeasonFormData) => {
     setModalLoading(true);
     try {
       if (selectedSeason) {
         await FareService.updateSeason(selectedSeason.id, formData);
-        toast.success('Kalender musim tarif berhasil diperbarui');
+        toast.success(`Kalender musim '${formData.name}' berhasil diperbarui`);
       } else {
         await FareService.createSeason(formData);
-        toast.success('Musim tarif baru berhasil dibuat');
+        toast.success(`Musim tarif baru '${formData.name}' berhasil dibuat`);
       }
       setIsSeasonModalOpen(false);
       fetchData();
@@ -140,22 +189,6 @@ export default function FaresPage() {
       toast.error(err.response?.data?.message || 'Gagal menyimpan musim tarif');
     } finally {
       setModalLoading(false);
-    }
-  };
-
-  const handleSeasonDelete = async (season: FareSeason) => {
-    if (season.code === 'REGULER') {
-      toast.error('Musim tarif REGULER tidak boleh dihapus.');
-      return;
-    }
-    if (confirm(`Hapus musim tarif '${season.name}'? Seluruh matriks terkait akan ikut terhapus.`)) {
-      try {
-        await FareService.deleteSeason(season.id);
-        toast.success('Musim tarif berhasil dihapus');
-        fetchData();
-      } catch (err: any) {
-        toast.error(err.response?.data?.message || 'Gagal menghapus musim tarif');
-      }
     }
   };
 
@@ -168,7 +201,7 @@ export default function FaresPage() {
         toast.success('Matriks tarif tiket berhasil diperbarui');
       } else {
         await FareService.createMatrix(formData);
-        toast.success('Matriks tarif baru berhasil ditambahkan');
+        toast.success('Matriks tarif tiket baru berhasil ditambahkan');
       }
       setIsMatrixModalOpen(false);
       fetchData();
@@ -179,19 +212,36 @@ export default function FaresPage() {
     }
   };
 
-  const handleMatrixDelete = async (matrix: FareMatrix) => {
-    if (confirm(`Hapus entri tarif ${matrix.origin} -> ${matrix.destination}?`)) {
-      try {
+  // Confirm Delete Handler
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return;
+    setIsDeleting(true);
+    try {
+      if (itemToDelete.type === 'season') {
+        const season = itemToDelete.item as FareSeason;
+        if (season.code === 'REGULER') {
+          toast.error('Musim tarif REGULER tidak boleh dihapus.');
+          return;
+        }
+        await FareService.deleteSeason(season.id);
+        toast.success(`Musim tarif '${season.name}' berhasil dihapus`);
+      } else {
+        const matrix = itemToDelete.item as FareMatrix;
         await FareService.deleteMatrix(matrix.id);
-        toast.success('Matriks tarif berhasil dihapus');
-        fetchData();
-      } catch (err: any) {
-        toast.error(err.response?.data?.message || 'Gagal menghapus tarif');
+        toast.success(
+          `Tarif rute ${matrix.origin} -> ${matrix.destination} berhasil dihapus`,
+        );
       }
+      setItemToDelete(null);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Gagal menghapus entri');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
-  // Live Simulation
+  // Live Simulation Calculation
   const handleSimulateCalculation = async () => {
     if (!simSeatClassId) {
       toast.error('Pilih kelas kursi terlebih dahulu');
@@ -216,21 +266,61 @@ export default function FaresPage() {
     }
   };
 
-  const filteredMatrices = matrices.filter((m) => {
-    if (selectedSeasonFilter !== 'ALL' && m.fareSeasonId !== selectedSeasonFilter) {
-      return false;
-    }
-    if (selectedClassFilter !== 'ALL' && m.seatClassId !== selectedClassFilter) {
-      return false;
-    }
-    return true;
-  });
+  // Filtered Matrices Logic
+  const filteredMatrices = useMemo(() => {
+    return matrices.filter((m) => {
+      if (selectedSeasonFilter !== 'ALL' && m.fareSeasonId !== selectedSeasonFilter) {
+        return false;
+      }
+      if (selectedClassFilter !== 'ALL' && m.seatClassId !== selectedClassFilter) {
+        return false;
+      }
+      if (statusFilter === 'ACTIVE' && !m.isActive) {
+        return false;
+      }
+      if (statusFilter === 'INACTIVE' && m.isActive) {
+        return false;
+      }
+      if (debouncedSearch) {
+        const matchOrigin = m.origin.toUpperCase().includes(debouncedSearch);
+        const matchDestination = m.destination.toUpperCase().includes(debouncedSearch);
+        const matchSeason = (m.fareSeason?.name || '').toUpperCase().includes(debouncedSearch);
+        const matchClass = (m.seatClass?.name || '').toUpperCase().includes(debouncedSearch);
+        if (!matchOrigin && !matchDestination && !matchSeason && !matchClass) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [matrices, selectedSeasonFilter, selectedClassFilter, statusFilter, debouncedSearch]);
+
+  // Statistik Ringkas
+  const regulerMatrices = useMemo(
+    () => matrices.filter((m) => m.fareSeason?.code === 'REGULER'),
+    [matrices],
+  );
+  const avgRegulerFare = useMemo(() => {
+    if (regulerMatrices.length === 0) return 0;
+    const total = regulerMatrices.reduce((sum, m) => sum + Number(m.amount), 0);
+    return Math.round(total / regulerMatrices.length);
+  }, [regulerMatrices]);
+
+  const seasonalMatrices = useMemo(
+    () => matrices.filter((m) => m.fareSeason?.code !== 'REGULER'),
+    [matrices],
+  );
+  const avgSeasonalFare = useMemo(() => {
+    if (seasonalMatrices.length === 0) return 0;
+    const total = seasonalMatrices.reduce((sum, m) => sum + Number(m.amount), 0);
+    return Math.round(total / seasonalMatrices.length);
+  }, [seasonalMatrices]);
 
   return (
     <div className="space-y-6 p-6">
+      {/* Header Halaman */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <Heading
-          title="Matriks Tarif & Musim Tiket"
+          title="Matriks Tarif & Kalender Musim Tiket"
           description="Konfigurasi kalender musim dinamis (Reguler, Tuslah Lebaran, Libur Sekolah) & matriks tarif per kelas kursi bus."
         />
         <div className="flex items-center gap-2">
@@ -240,8 +330,9 @@ export default function FaresPage() {
                 setSelectedSeason(null);
                 setIsSeasonModalOpen(true);
               }}
+              className="h-9 text-xs gap-1.5"
             >
-              <Plus className="mr-2 h-4 w-4" /> Tambah Musim
+              <Plus className="h-4 w-4" /> Tambah Musim Tarif
             </Button>
           )}
           {activeTab === 'matrix' && isCreate && (
@@ -250,8 +341,9 @@ export default function FaresPage() {
                 setSelectedMatrix(null);
                 setIsMatrixModalOpen(true);
               }}
+              className="h-9 text-xs gap-1.5"
             >
-              <Plus className="mr-2 h-4 w-4" /> Tambah Matriks Tarif
+              <Plus className="h-4 w-4" /> Tambah Matriks Tarif
             </Button>
           )}
         </div>
@@ -262,62 +354,65 @@ export default function FaresPage() {
         <MetricCardGridSkeleton count={4} />
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="shadow-xs border-l-4 border-l-primary">
+          <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs border-l-4 border-l-primary">
             <CardHeader className="p-4 pb-2">
               <CardDescription className="text-xs">Kalender Musim Tarif</CardDescription>
-              <CardTitle className="text-2xl font-bold text-primary flex items-center justify-between">
-                {seasons.length} Musim
-                <Calendar className="h-5 w-5 opacity-40" />
+              <CardTitle className="text-2xl font-black text-primary flex items-center justify-between">
+                <span>{seasons.length} <span className="text-sm font-semibold text-muted-foreground">Musim</span></span>
+                <Calendar className="h-5 w-5 opacity-40 text-primary" />
               </CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-3">
-              <p className="text-xs text-muted-foreground">
-                {seasons.filter((s) => s.isActive).length} Musim Aktif
+              <p className="text-[11px] text-muted-foreground">
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                  {seasons.filter((s) => s.isActive).length} musim aktif
+                </span>{' '}
+                termasuk REGULER
               </p>
             </CardContent>
           </Card>
 
-          <Card className="shadow-xs border-l-4 border-l-blue-600">
+          <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs border-l-4 border-l-blue-600">
             <CardHeader className="p-4 pb-2">
-              <CardDescription className="text-xs">Matriks Tarif Terkonfigurasi</CardDescription>
-              <CardTitle className="text-2xl font-bold text-blue-600 flex items-center justify-between">
-                {matrices.length} Kombinasi
-                <Ticket className="h-5 w-5 opacity-40" />
+              <CardDescription className="text-xs">Matriks Terkonfigurasi</CardDescription>
+              <CardTitle className="text-2xl font-bold text-blue-600 dark:text-blue-400 flex items-center justify-between">
+                <span>{matrices.length} <span className="text-sm font-semibold text-muted-foreground">Entri</span></span>
+                <Ticket className="h-5 w-5 opacity-40 text-blue-600" />
               </CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-3">
-              <p className="text-xs text-muted-foreground">
-                Rute Jakarta/Tangerang &lt;-&gt; Yogya
+              <p className="text-[11px] text-muted-foreground">
+                Kombinasi rute AKAP & kelas kabin
               </p>
             </CardContent>
           </Card>
 
-          <Card className="shadow-xs border-l-4 border-l-purple-600">
+          <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs border-l-4 border-l-emerald-600">
             <CardHeader className="p-4 pb-2">
-              <CardDescription className="text-xs">Tarif Dasar Sleeper</CardDescription>
-              <CardTitle className="text-2xl font-bold text-purple-700 dark:text-purple-400 flex items-center justify-between">
-                Rp 420.000
-                <Sparkles className="h-5 w-5 opacity-40" />
+              <CardDescription className="text-xs">Rata-Rata Tarif Reguler</CardDescription>
+              <CardTitle className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
+                <span>{formatCurrency(avgRegulerFare)}</span>
+                <Sparkles className="h-5 w-5 opacity-40 text-emerald-600" />
               </CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-3">
-              <p className="text-xs text-muted-foreground">
-                Tuslah Lebaran: Rp 650.000
+              <p className="text-[11px] text-muted-foreground">
+                Dari {regulerMatrices.length} entri tarif standar harian
               </p>
             </CardContent>
           </Card>
 
-          <Card className="shadow-xs border-l-4 border-l-amber-500">
+          <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs border-l-4 border-l-amber-500">
             <CardHeader className="p-4 pb-2">
-              <CardDescription className="text-xs">Tarif Dasar Executive</CardDescription>
-              <CardTitle className="text-2xl font-bold text-amber-700 dark:text-amber-400 flex items-center justify-between">
-                Rp 250.000
-                <Ticket className="h-5 w-5 opacity-40" />
+              <CardDescription className="text-xs">Rata-Rata Tarif Peak / Tuslah</CardDescription>
+              <CardTitle className="text-2xl font-bold text-amber-600 dark:text-amber-400 flex items-center justify-between">
+                <span>{formatCurrency(avgSeasonalFare)}</span>
+                <Ticket className="h-5 w-5 opacity-40 text-amber-500" />
               </CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-3">
-              <p className="text-xs text-muted-foreground">
-                Tuslah Lebaran: Rp 400.000
+              <p className="text-[11px] text-muted-foreground">
+                Dari {seasonalMatrices.length} entri kalender musim khusus
               </p>
             </CardContent>
           </Card>
@@ -331,88 +426,92 @@ export default function FaresPage() {
         className="space-y-4"
       >
         <div className="flex justify-start">
-          <TabsList className="bg-muted p-1 rounded-xl h-auto flex flex-wrap gap-1 justify-start">
+          <TabsList className="bg-muted/70 p-1 rounded-xl h-auto flex flex-wrap gap-1 justify-start">
             <TabsTrigger
               value="matrix"
-              className="gap-2 py-1.5 px-3 text-xs sm:text-sm"
+              className="gap-2 py-1.5 px-3.5 text-xs font-semibold"
             >
-              <Ticket className="h-4 w-4" /> Matriks Tarif Tiket
+              <Ticket className="h-4 w-4" /> Matriks Tarif Tiket ({matrices.length})
             </TabsTrigger>
             <TabsTrigger
               value="seasons"
-              className="gap-2 py-1.5 px-3 text-xs sm:text-sm"
+              className="gap-2 py-1.5 px-3.5 text-xs font-semibold"
             >
-              <Calendar className="h-4 w-4" /> Kalender Musim Tarif
+              <Calendar className="h-4 w-4" /> Kalender Musim Tarif ({seasons.length})
             </TabsTrigger>
           </TabsList>
         </div>
 
-        {/* TAB 1: MATRIKS TARIF TIKET */}
-        <TabsContent value="matrix" className="space-y-6 pt-2">
+        {/* ==================== TAB 1: MATRIKS TARIF TIKET ==================== */}
+        <TabsContent value="matrix" className="space-y-6 pt-1">
           {/* Kalkulator Simulasi Dinamis Widget */}
-          <Card className="shadow-xs">
-            <CardHeader className="pb-3">
+          <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs">
+            <CardHeader className="p-4 pb-2">
               <div className="flex items-center gap-2">
-                <Calculator className="h-5 w-5 text-primary" />
-                <CardTitle className="text-base font-semibold">
-                  Simulasi Engine Dynamic Pricing (Formula Addendum v1.6 & v1.17)
-                </CardTitle>
-              </div>
-              <CardDescription>
-                Uji perhitungan harga tiket otomatis: f(Rute, Tanggal Musim, Kelas Kursi)
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 items-end">
+                <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                  <Calculator className="h-4 w-4" />
+                </div>
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground">Kota Asal</label>
+                  <CardTitle className="text-sm font-bold text-foreground">
+                    Simulator Engine Dynamic Pricing (Formula Addendum v1.6 & v1.17)
+                  </CardTitle>
+                  <CardDescription className="text-[11px]">
+                    Uji perhitungan tarif tiket real-time: f(Rute, Tanggal Musim, Kelas Kursi)
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 items-end">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-muted-foreground">Kota Asal</label>
                   <Input
                     value={simOrigin}
                     onChange={(e) => setSimOrigin(e.target.value.toUpperCase())}
                     placeholder="TANGERANG"
-                    className="h-9 mt-1"
+                    className="h-8.5 text-xs font-mono font-bold uppercase"
                   />
                 </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground">Kota Tujuan</label>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-muted-foreground">Kota Tujuan</label>
                   <Input
                     value={simDestination}
                     onChange={(e) => setSimDestination(e.target.value.toUpperCase())}
                     placeholder="YOGYAKARTA"
-                    className="h-9 mt-1"
+                    className="h-8.5 text-xs font-mono font-bold uppercase"
                   />
                 </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground">Kelas Kursi</label>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-muted-foreground">Kelas Kursi Bus</label>
                   <Select value={simSeatClassId} onValueChange={setSimSeatClassId}>
-                    <SelectTrigger className="h-9 mt-1">
+                    <SelectTrigger className="h-8.5 text-xs">
                       <SelectValue placeholder="Pilih Kelas" />
                     </SelectTrigger>
                     <SelectContent>
                       {seatClasses.map((sc) => (
-                        <SelectItem key={sc.id} value={sc.id}>
-                          {sc.name}
+                        <SelectItem key={sc.id} value={sc.id} className="text-xs">
+                          {sc.name} ({sc.code})
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-muted-foreground">
                     Tanggal Perjalanan
                   </label>
                   <Input
                     type="date"
                     value={simTravelDate}
                     onChange={(e) => setSimTravelDate(e.target.value)}
-                    className="h-9 mt-1"
+                    className="h-8.5 text-xs font-mono"
                   />
                 </div>
                 <div>
                   <Button
                     onClick={handleSimulateCalculation}
                     disabled={calculating}
-                    className="w-full h-9"
+                    className="w-full h-8.5 text-xs gap-1.5"
                   >
                     {calculating ? 'Menghitung...' : 'Hitung Tarif'}
                   </Button>
@@ -420,29 +519,33 @@ export default function FaresPage() {
               </div>
 
               {calcResult && (
-                <div className="mt-4 p-4 rounded-lg bg-muted/40 border flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="mt-3.5 p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-3">
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm">
-                        {calcResult.origin} &rarr; {calcResult.destination}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-bold text-xs flex items-center gap-1.5">
+                        {calcResult.origin} <ArrowRight className="h-3 w-3 text-muted-foreground" /> {calcResult.destination}
                       </span>
-                      <Badge variant="outline">{calcResult.seatClass.name}</Badge>
+                      <Badge variant="outline" className="text-[10px] font-mono">
+                        {calcResult.seatClass.name}
+                      </Badge>
                       {calcResult.isSeasonal ? (
-                        <Badge className="bg-amber-600/15 text-amber-700 dark:text-amber-400 border-amber-200">
+                        <Badge className="bg-amber-600/15 text-amber-700 dark:text-amber-400 border-amber-200 text-[10px]">
                           Musim: {calcResult.seasonName}
                         </Badge>
                       ) : (
-                        <Badge variant="secondary">Reguler Harian</Badge>
+                        <Badge variant="secondary" className="text-[10px]">
+                          Tarif Reguler Harian
+                        </Badge>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Tanggal Keberangkatan: {calcResult.travelDate}
+                    <p className="text-[11px] text-muted-foreground">
+                      Tanggal Keberangkatan Terpilih: <strong className="text-foreground">{calcResult.travelDate}</strong>
                     </p>
                   </div>
-                  <div className="text-right">
-                    <div className="text-xs text-muted-foreground font-medium">Harga Tiket Final</div>
-                    <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-                      Rp {Number(calcResult.amount).toLocaleString('id-ID')}
+                  <div className="text-right shrink-0">
+                    <div className="text-[11px] text-muted-foreground font-medium">Harga Tiket Final</div>
+                    <div className="text-xl font-black text-emerald-600 dark:text-emerald-400">
+                      {formatCurrency(calcResult.amount)}
                     </div>
                   </div>
                 </div>
@@ -450,92 +553,185 @@ export default function FaresPage() {
             </CardContent>
           </Card>
 
-          {/* Filter Bar */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-card p-3 rounded-xl border">
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+          {/* Filter & Live Search Toolbar */}
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-3.5 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-xs">
+            <div className="flex flex-wrap items-center gap-2.5 flex-1">
+              {/* Input Search Debounced */}
+              <div className="relative w-full sm:w-60">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cari rute, musim, kelas..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  className="pl-9 pr-8 h-8.5 text-xs uppercase"
+                />
+                {searchInput && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchInput('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    title="Hapus pencarian"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Filter Musim */}
               <Select
                 value={selectedSeasonFilter}
                 onValueChange={setSelectedSeasonFilter}
               >
-                <SelectTrigger className="w-50 h-9">
+                <SelectTrigger className="w-full sm:w-48 h-8.5 text-xs">
                   <SelectValue placeholder="Semua Musim" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">Semua Musim Tarif</SelectItem>
+                  <SelectItem value="ALL" className="text-xs">Semua Musim Tarif</SelectItem>
                   {seasons.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
+                    <SelectItem key={s.id} value={s.id} className="text-xs">
+                      {s.name} ({s.code})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
+              {/* Filter Kelas */}
               <Select
                 value={selectedClassFilter}
                 onValueChange={setSelectedClassFilter}
               >
-                <SelectTrigger className="w-45 h-9">
+                <SelectTrigger className="w-full sm:w-44 h-8.5 text-xs">
                   <SelectValue placeholder="Semua Kelas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">Semua Kelas Kursi</SelectItem>
+                  <SelectItem value="ALL" className="text-xs">Semua Kelas Kursi</SelectItem>
                   {seatClasses.map((sc) => (
-                    <SelectItem key={sc.id} value={sc.id}>
-                      {sc.name}
+                    <SelectItem key={sc.id} value={sc.id} className="text-xs">
+                      {sc.name} ({sc.code})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+
+              {/* Filter Status */}
+              <Select
+                value={statusFilter}
+                onValueChange={(val: 'ALL' | 'ACTIVE' | 'INACTIVE') =>
+                  setStatusFilter(val)
+                }
+              >
+                <SelectTrigger className="w-full sm:w-36 h-8.5 text-xs">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL" className="text-xs">Semua Status</SelectItem>
+                  <SelectItem value="ACTIVE" className="text-xs">Hanya Aktif</SelectItem>
+                  <SelectItem value="INACTIVE" className="text-xs">Non-Aktif</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Reset Filter Button */}
+              {isFilterActive && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleResetFilters}
+                  className="h-8.5 px-2.5 text-xs text-muted-foreground hover:text-foreground gap-1.5"
+                  title="Reset seluruh filter"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" /> Reset
+                </Button>
+              )}
             </div>
-            <div className="text-xs text-muted-foreground font-medium">
-              Menampilkan {filteredMatrices.length} dari {matrices.length} tarif tiket
+
+            <div className="text-xs text-muted-foreground font-medium shrink-0 self-end lg:self-auto">
+              Menampilkan <strong className="text-foreground">{filteredMatrices.length}</strong> dari {matrices.length} entri tarif
             </div>
           </div>
 
           {/* Matrix Table */}
-          <Card className="shadow-xs">
+          <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs overflow-hidden">
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Rute Perjalanan</TableHead>
-                  <TableHead>Musim Tarif</TableHead>
-                  <TableHead>Kelas Kursi</TableHead>
-                  <TableHead className="text-right">Tarif Dasar Tiket</TableHead>
-                  <TableHead>Mulai Berlaku</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Aksi</TableHead>
+              <TableHeader className="bg-slate-50/80 dark:bg-white/5">
+                <TableRow className="border-b border-slate-200/80 dark:border-white/10">
+                  <TableHead className="w-52">Rute Perjalanan</TableHead>
+                  <TableHead className="w-48">Musim Tarif</TableHead>
+                  <TableHead className="w-40">Kelas Kursi Bus</TableHead>
+                  <TableHead className="text-right w-40">Tarif Dasar Tiket</TableHead>
+                  <TableHead className="w-32">Mulai Berlaku</TableHead>
+                  <TableHead className="w-24 text-center">Status</TableHead>
+                  <TableHead className="text-right w-24">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
+              <TableBody className="divide-y divide-slate-100 dark:divide-white/5">
                 {loading ? (
                   <TableSkeletonRows
-                    rows={5}
+                    rows={6}
                     colWidths={[
                       'w-36',
+                      'w-28',
                       'w-24',
-                      'w-20',
                       'w-24 ml-auto',
                       'w-24',
-                      'w-16',
+                      'w-16 mx-auto',
                       'w-16 ml-auto',
                     ]}
                   />
                 ) : filteredMatrices.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      Tidak ada tarif yang cocok dengan filter.
+                    <TableCell colSpan={7} className="py-12 text-center">
+                      <div className="flex flex-col items-center justify-center space-y-2">
+                        <div className="p-3 rounded-full bg-primary/10 text-primary">
+                          <Ticket className="h-8 w-8 opacity-60" />
+                        </div>
+                        <h4 className="text-sm font-semibold text-foreground">
+                          Tidak ada tarif tiket yang cocok
+                        </h4>
+                        <p className="text-xs text-muted-foreground max-w-sm">
+                          {isFilterActive
+                            ? 'Tidak ada entri matriks tarif yang cocok dengan kombinasi filter atau kata kunci rute.'
+                            : 'Belum ada konfigurasi matriks tarif tiket yang terdaftar.'}
+                        </p>
+                        {isFilterActive ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleResetFilters}
+                            className="text-xs gap-1.5 h-8 mt-1"
+                          >
+                            <RotateCcw className="h-3.5 w-3.5" /> Reset Filter
+                          </Button>
+                        ) : (
+                          isCreate && (
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                setSelectedMatrix(null);
+                                setIsMatrixModalOpen(true);
+                              }}
+                              className="text-xs gap-1.5 h-8 mt-1"
+                            >
+                              <Plus className="h-3.5 w-3.5" /> Tambah Matriks Tarif Baru
+                            </Button>
+                          )
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredMatrices.map((m) => (
-                    <TableRow key={m.id}>
-                      <TableCell className="font-semibold">
+                    <TableRow
+                      key={m.id}
+                      className="hover:bg-slate-50/80 dark:hover:bg-white/5 transition-colors"
+                    >
+                      <TableCell className="font-semibold text-xs">
                         <div className="flex items-center gap-1.5">
-                          <span>{m.origin}</span>
+                          <span className="font-mono font-bold text-foreground">{m.origin}</span>
                           <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                          <span>{m.destination}</span>
+                          <span className="font-mono font-bold text-foreground">{m.destination}</span>
                         </div>
                       </TableCell>
+
                       <TableCell>
                         <Badge
                           variant={
@@ -543,57 +739,68 @@ export default function FaresPage() {
                           }
                           className={
                             m.fareSeason?.code === 'LEBARAN_2026'
-                              ? 'bg-amber-600/15 text-amber-700 dark:text-amber-400 border-amber-200'
-                              : ''
+                              ? 'bg-amber-600/15 text-amber-700 dark:text-amber-400 border-amber-200 text-[10px]'
+                              : 'text-[10px]'
                           }
                         >
                           {m.fareSeason?.name || m.fareSeasonId}
                         </Badge>
                       </TableCell>
+
                       <TableCell>
-                        <Badge variant="outline">
+                        <Badge variant="outline" className="text-[10px] font-mono">
                           {m.seatClass?.name || 'Kelas Kursi'}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right font-mono font-bold text-base text-emerald-700 dark:text-emerald-400">
-                        Rp {Number(m.amount).toLocaleString('id-ID')}
+
+                      <TableCell className="text-right font-mono font-black text-sm text-emerald-700 dark:text-emerald-400">
+                        {formatCurrency(m.amount)}
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
+
+                      <TableCell className="text-xs text-muted-foreground font-mono">
                         {m.effectiveFrom ? m.effectiveFrom.split('T')[0] : '-'}
                       </TableCell>
-                      <TableCell>
+
+                      <TableCell className="text-center">
                         <Badge
-                          variant="outline"
                           className={
                             m.isActive
-                              ? 'text-emerald-700 dark:text-emerald-400 border-emerald-300 bg-emerald-600/10'
-                              : 'text-zinc-500'
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[10px]'
+                              : 'bg-zinc-500/10 text-zinc-500 border-zinc-500/20 text-[10px]'
                           }
                         >
+                          <span className="h-1.5 w-1.5 rounded-full bg-current mr-1 inline-block" />
                           {m.isActive ? 'Aktif' : 'Non-Aktif'}
                         </Badge>
                       </TableCell>
+
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           {isUpdate && (
                             <Button
                               variant="ghost"
-                              size="sm"
+                              size="icon"
+                              className="h-7 w-7"
                               onClick={() => {
                                 setSelectedMatrix(m);
                                 setIsMatrixModalOpen(true);
                               }}
+                              title="Edit Matriks Tarif"
                             >
-                              <Edit className="h-3.5 w-3.5 text-primary" />
+                              <Edit className="h-3.5 w-3.5" />
                             </Button>
                           )}
                           {isDelete && (
                             <Button
                               variant="ghost"
-                              size="sm"
-                              onClick={() => handleMatrixDelete(m)}
+                              size="icon"
+                              className="h-7 w-7 text-destructive hover:bg-destructive/10"
+                              onClick={() =>
+                                setItemToDelete({ type: 'matrix', item: m })
+                              }
+                              title="Hapus Matriks Tarif"
                             >
-                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                              <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           )}
                         </div>
@@ -606,12 +813,12 @@ export default function FaresPage() {
           </Card>
         </TabsContent>
 
-        {/* TAB 2: KALENDER MUSIM TARIF */}
-        <TabsContent value="seasons" className="space-y-4 pt-2">
+        {/* ==================== TAB 2: KALENDER MUSIM TARIF ==================== */}
+        <TabsContent value="seasons" className="space-y-4 pt-1">
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {Array.from({ length: 3 }).map((_, i) => (
-                <Card key={i} className="shadow-xs">
+                <Card key={i} className="shadow-xs bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md">
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <Skeleton className="h-5 w-20 rounded" />
@@ -627,54 +834,87 @@ export default function FaresPage() {
                 </Card>
               ))}
             </div>
+          ) : seasons.length === 0 ? (
+            <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-dashed border-slate-300 dark:border-white/15 p-12 text-center flex flex-col items-center justify-center space-y-2">
+              <div className="p-3 rounded-full bg-primary/10 text-primary">
+                <Calendar className="h-8 w-8 opacity-60" />
+              </div>
+              <h4 className="text-sm font-semibold text-foreground">
+                Belum ada kalender musim tarif
+              </h4>
+              <p className="text-xs text-muted-foreground max-w-sm">
+                Tambahkan kalender musim seperti Tuslah Lebaran atau Libur Sekolah untuk penyesuaian tarif musiman.
+              </p>
+              {isCreate && (
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setSelectedSeason(null);
+                    setIsSeasonModalOpen(true);
+                  }}
+                  className="text-xs gap-1.5 h-8 mt-1"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Buat Kalender Musim Baru
+                </Button>
+              )}
+            </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {seasons.map((s) => (
                 <Card
                   key={s.id}
-                  className="shadow-xs flex flex-col justify-between"
+                  className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow"
                 >
-                  <CardHeader>
+                  <CardHeader className="p-4 pb-2">
                     <div className="flex items-center justify-between">
-                      <Badge variant="outline" className="font-mono text-xs">
+                      <Badge variant="outline" className="font-mono text-[10px] bg-background">
                         {s.code}
                       </Badge>
                       <Badge
                         className={
                           s.isActive
-                            ? 'bg-emerald-600/15 text-emerald-700 dark:text-emerald-400 border-emerald-200'
-                            : 'bg-muted text-muted-foreground'
+                            ? 'bg-emerald-600/15 text-emerald-700 dark:text-emerald-400 border-emerald-200 text-[10px]'
+                            : 'bg-muted text-muted-foreground text-[10px]'
                         }
                       >
-                        {s.isActive ? 'Aktif' : 'Non-Aktif'}
+                        <span className="h-1.5 w-1.5 rounded-full bg-current mr-1 inline-block" />
+                        {s.isActive ? 'Aktif Berlaku' : 'Non-Aktif'}
                       </Badge>
                     </div>
-                    <CardTitle className="text-lg font-bold mt-2">{s.name}</CardTitle>
-                    <CardDescription className="text-xs">
-                      {s.description || 'Tidak ada deskripsi tambahan.'}
+                    <CardTitle className="text-base font-bold mt-2 text-foreground">
+                      {s.name}
+                    </CardTitle>
+                    <CardDescription className="text-xs line-clamp-2">
+                      {s.description || 'Tidak ada keterangan tambahan.'}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="p-2.5 rounded-lg bg-muted/40 text-xs space-y-1">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Mulai:</span>
-                        <span className="font-semibold">
+
+                  <CardContent className="p-4 space-y-3 pt-2">
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 text-xs space-y-1.5">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground flex items-center gap-1">
+                          <Calendar className="h-3 w-3" /> Tanggal Mulai:
+                        </span>
+                        <span className="font-mono font-semibold">
                           {s.startDate ? s.startDate.split('T')[0] : '-'}
                         </span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Selesai:</span>
-                        <span className="font-semibold">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" /> Tanggal Selesai:
+                        </span>
+                        <span className="font-mono font-semibold">
                           {s.endDate ? s.endDate.split('T')[0] : '-'}
                         </span>
                       </div>
                     </div>
 
-                    <div className="text-xs text-muted-foreground">
-                      Jumlah Matriks Terkait: <strong>{s.matrices?.length || 0}</strong>
+                    <div className="text-xs text-muted-foreground flex items-center justify-between">
+                      <span>Jumlah Matriks Terkait:</span>
+                      <strong className="text-foreground font-mono">{s.matrices?.length || 0} Entri</strong>
                     </div>
 
-                    <div className="flex items-center justify-end gap-2 pt-2 border-t">
+                    <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-slate-200/60 dark:border-white/10">
                       {isUpdate && (
                         <Button
                           variant="outline"
@@ -683,17 +923,23 @@ export default function FaresPage() {
                             setSelectedSeason(s);
                             setIsSeasonModalOpen(true);
                           }}
+                          className="h-7 text-xs gap-1"
+                          title="Edit Kalender Musim"
                         >
-                          <Edit className="h-3.5 w-3.5 mr-1 text-primary" /> Edit
+                          <Edit className="h-3.5 w-3.5" /> Edit
                         </Button>
                       )}
                       {isDelete && s.code !== 'REGULER' && (
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           size="sm"
-                          onClick={() => handleSeasonDelete(s)}
+                          onClick={() =>
+                            setItemToDelete({ type: 'season', item: s })
+                          }
+                          className="h-7 text-xs text-destructive hover:bg-destructive/10 gap-1"
+                          title="Hapus Musim Tarif"
                         >
-                          <Trash2 className="h-3.5 w-3.5 mr-1 text-destructive" /> Hapus
+                          <Trash2 className="h-3.5 w-3.5" /> Hapus
                         </Button>
                       )}
                     </div>
@@ -705,7 +951,7 @@ export default function FaresPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Modals */}
+      {/* Modal Kalender Musim Tarif */}
       <FareSeasonModal
         isOpen={isSeasonModalOpen}
         onClose={() => setIsSeasonModalOpen(false)}
@@ -714,6 +960,7 @@ export default function FaresPage() {
         loading={modalLoading}
       />
 
+      {/* Modal Matriks Tarif Tiket */}
       <FareMatrixModal
         isOpen={isMatrixModalOpen}
         onClose={() => setIsMatrixModalOpen(false)}
@@ -722,6 +969,28 @@ export default function FaresPage() {
         seasons={seasons}
         seatClasses={seatClasses}
         loading={modalLoading}
+      />
+
+      {/* Confirm Dialog Hapus Musim / Matriks */}
+      <ConfirmDialog
+        open={!!itemToDelete}
+        onOpenChange={(open) => !open && setItemToDelete(null)}
+        title={
+          itemToDelete?.type === 'season'
+            ? 'Hapus Kalender Musim Tarif'
+            : 'Hapus Entri Matriks Tarif Tiket'
+        }
+        description={
+          itemToDelete?.type === 'season'
+            ? `Apakah Anda yakin ingin menghapus musim tarif '${(itemToDelete?.item as FareSeason)?.name}'? Seluruh matriks tarif yang terikat dengan musim ini akan ikut terhapus.`
+            : `Apakah Anda yakin ingin menghapus tarif rute ${(itemToDelete?.item as FareMatrix)?.origin} -> ${(itemToDelete?.item as FareMatrix)?.destination}? Tindakan ini akan menghapus acuan harga dinamis rute terkait.`
+        }
+        variant="danger"
+        confirmText={
+          itemToDelete?.type === 'season' ? 'Hapus Musim' : 'Hapus Tarif'
+        }
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
       />
     </div>
   );

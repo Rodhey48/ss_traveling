@@ -146,4 +146,28 @@ describe('CustomersService', () => {
       expect(result.data[0].institutionName).toBe('PT Mitra Sejahtera');
     });
   });
+
+  describe('update', () => {
+    it('should update customer data', async () => {
+      const mockCust = { id: 'c1', code: 'CUST-0001', picName: 'Aris' };
+      customerRepo.findOne.mockResolvedValueOnce(mockCust); // findOne
+      customerRepo.save.mockResolvedValueOnce({ ...mockCust, picName: 'Aris Pratama' });
+
+      const result = await service.update('c1', { picName: 'Aris Pratama' });
+      expect(result.status).toBe(true);
+      expect(result.data.picName).toBe('Aris Pratama');
+    });
+  });
+
+  describe('remove', () => {
+    it('should delete customer if found', async () => {
+      const mockCust = { id: 'c1', code: 'CUST-0001', picName: 'Aris' };
+      customerRepo.findOne.mockResolvedValueOnce(mockCust);
+      customerRepo.remove.mockResolvedValueOnce(mockCust);
+
+      const result = await service.remove('c1');
+      expect(result.status).toBe(true);
+      expect(customerRepo.remove).toHaveBeenCalledWith(mockCust);
+    });
+  });
 });

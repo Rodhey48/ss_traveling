@@ -2,6 +2,271 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-11-04: Penyempurnaan Standar Produksi Halaman /customers (Database Pelanggan & CRM Prospek Sewa Wisata) Completed
+- **Zero Native Alerts (`ConfirmDialog` Integrasi Penuh)**:
+  - Menggantikan dialog native `window.confirm()` dengan komponen modal dialog terstandar `ConfirmDialog` (`variant="danger"`).
+  - Dialog penghapusan pelanggan mengonfirmasi nama instansi/PIC dan kode unik (`CUST-XXXX`) serta memberikan peringatan bahwa tindakan tidak dapat dibatalkan.
+- **Pencarian Live Real-Time (Debounced 300ms) & Multi-Filter Terpadu**:
+  - Implementasi *Debounced Search* (300ms) untuk nama instansi/perusahaan, nama PIC, nomor WhatsApp, dan kota domisili dengan tombol pembersih cepat (ikon X) guna memangkas *excessive network requests*.
+  - Multi-filter Segmen Pelanggan (`Semua Segmen`, `🏢 Korporat / Pabrik`, `🎓 Sekolah / Kampus`, `🚴 Komunitas / EO`, `🏛️ Instansi Pemerintah`, `👤 Pribadi / Keluarga`).
+  - Multi-filter Tier Prioritas Pelanggan (`Semua Tier`, `💎 Platinum`, `🥇 Gold`, `🥈 Silver`, `🥉 Bronze`).
+  - Multi-filter Status Keaktifan Pelanggan (`Semua Status`, `Hanya Aktif`, `Non-Aktif`).
+  - Tombol **Reset Semua Filter** dinamis (`RotateCcw`) yang muncul otomatis saat salah satu parameter filter atau pencarian aktif.
+- **Paginasi Server-Side Lengkap**:
+  - Kontrol paginasi server-side lengkap (`page`, `limit` dengan opsi 10, 25, 50, 100 baris per halaman, `total`, `totalPages`).
+  - Navigasi tombol Halaman Sebelumnya/Berikutnya dan informasi baris: *"Menampilkan X - Y dari Z pelanggan"*.
+- **Statistik KPI Header Dinamis Real-Time**:
+  - 4 Kartu Metrik Header dengan aksen warna border dinamis: Total Database Pelanggan & Klien Aktif, Segmen Korporat / Pabrik Industri, Segmen Sekolah & Kampus (Study Tour), dan Pelanggan VIP Platinum & Gold (Prioritas Repeat Order).
+- **Aksi Cepat & Salin Kontak (Quick Copy & Direct WhatsApp)**:
+  - Tombol salin satu sentuhan (Quick Copy) untuk nomor WhatsApp, email faktur, dan alamat penjemputan armada dengan konfirmasi toast Sonner.
+  - Tautan WhatsApp langsung terformat `wa.me/62...` di tabel dan modal detail untuk kecepatan respon tim sales pariwisata.
+- **Overhaul Modal Form Pendaftaran Pelanggan (`CustomerModal`)**:
+  - Pelebaran modal menjadi `sm:max-w-2xl` (`max-h-[90vh] overflow-y-auto`) dengan tata letak form 2-kolom yang nyaman.
+  - Auto-uppercase pada kode pelanggan (`CUST-XXXX`).
+  - Penambahan field **Status Keaktifan** (`isActive`: *Aktif Operasional* vs *Non-Aktif*).
+  - Indikator status simpan dengan `Loader2` spinner.
+- **Overhaul Modal Detail Pelanggan (`CustomerDetailModal`)**:
+  - Tampilan Glassmorphism kontras tinggi, ringkasan frekuensi sewa & histori trip, salin kontak instan, serta banner kesiapan integrasi jadwal dinas & kontrak SPJ pariwisata (/schedules & /spjs).
+- **DTO Backend Transformation & Backend Unit Test Expansion**:
+  - Penambahan decorator `@Transform` pada query filter `isActive` di `CustomerQueryFilterDto` backend agar kebal terhadap konversi string `"true"`/`"false"` dari query URL browser.
+  - Penambahan unit test untuk `update` dan `remove` pada `CustomersService` di backend (`customers.service.spec.ts`).
+- **Verifikasi Kualitas Penuh**:
+  - Seluruh 29 backend test suites (186 unit tests total) lulus 100%.
+  - Backend build `yarn build` sukses 100%.
+  - Frontend build `yarn build` sukses 100% (`✓ built in 2.17s`).
+
+### 2026-11-04: Penyempurnaan Standar Produksi Halaman /fiscal-periods (Tahun & Periode Fiskal Bulanan) Completed
+- **Integrasi Statistik KPI Header Dinamis Real-Time**:
+  - 4 Kartu Metrik Header kini menyajikan data riil kalender akuntansi: Tahun Fiskal Aktif (misal: `2026`, status `Tahun OPEN`), Total Periode Terbuka (`OPEN` — aktif menerima posting jurnal GL), Total Periode Ditutup (`CLOSED` — terkunci rapat dari posting transaksi), dan Total Periode Dalam Pengawasan Audit (`CLOSING` atau `REOPENED`).
+- **Pencarian Live Real-Time (Debounced 300ms) & Multi-Filter Terpadu**:
+  - Implementasi *Debounced Search* (300ms) untuk nama bulan/periode (misal: "Januari", "Juni") dan kode periode (`P-01`, `P-12`), lengkap dengan tombol pembersih cepat (ikon X).
+  - Filter Status Periode (`Semua Status`, `Hanya OPEN`, `Hanya CLOSING`, `Hanya CLOSED`, `Hanya REOPENED`).
+  - Tombol **Reset Semua Filter** dinamis (`RotateCcw`) yang muncul otomatis saat filter atau pencarian aktif.
+- **SOP Banner Pengendalian Fiskal & Pintasan ke /period-closing**:
+  - Banner edukatif tata kelola fiskal PT SS Travelink Official (Blueprint Bab 8.4): Menegaskan bahwa posting jurnal GL dari modul SPJ, Kasir, AP/AR otomatis ditolak pada periode berstatus `CLOSED`.
+  - Tombol aksi langsung terhubung ke **Meja Tutup Buku Bulanan (`/period-closing`)** untuk menjalankan audit 6-point checklist sebelum mengunci periode.
+- **Overhaul Modal Form Kalender Fiskal (`FiscalYearModal` & `UpdateStatusModal`)**:
+  - `FiscalYearModal`: Pelebaran modal menjadi `sm:max-w-xl` dengan ikon tematik `CalendarRange`, validasi tahun kalender (2020 - 2100), auto-generate rentang tanggal, dan indikator spinner `Loader2`.
+  - `UpdateStatusModal`: Pelebaran modal menjadi `sm:max-w-xl`, kotak peringatan interaktif penolakan posting jurnal saat memilih `CLOSED`, kewajiban input alasan bisnis saat memilih `REOPENED` untuk rekam jejak audit, dan indikator spinner `Loader2`.
+- **Empty State Komprehensif**:
+  - State kosong ramah pengguna pada tabel periode bulanan saat filter pencarian menghasilkan 0 baris, lengkap dengan ikon `CalendarRange` dan tombol reset filter.
+- **Backend Unit Testing Baru & Verifikasi Kualitas Penuh**:
+  - Menulis test suite komprehensif baru `fiscal-periods.service.spec.ts` (10 unit tests) mencakup auto-generate 12 bulan (termasuk tahun kabisat), pencegahan duplikasi tahun (`ConflictException`), sorting periode, audit update status `CLOSED`/`REOPENED`, dan validasi pembatasan posting jurnal pada tanggal transaksi tertentu via `findOpenPeriodForDate` (100% PASS).
+  - Seluruh 29 unit test suites backend (184 tests total) lulus 100%.
+  - Backend build `yarn build` sukses 100%.
+  - Frontend build `yarn build` sukses 100% (`✓ built in 2.31s`).
+
+### 2026-11-04: Penyempurnaan Standar Produksi Halaman /organization (Struktur Organisasi & Dimensi) Completed
+- **Zero Native Alerts (`ConfirmDialog` Integrasi Penuh)**:
+  - Menggantikan seluruh `window.confirm()` bawaan browser pada penghapusan Unit Bisnis, Cost Center, dan Profit Center dengan modal dialog `ConfirmDialog` terstandar (`variant="danger"`).
+  - Dialog mengonfirmasi nama entitas serta kode unik secara transparan sebelum aksi penghapusan dieksekusi.
+- **Pencarian Live Real-Time (Debounced 300ms) & Multi-Filter Terpadu**:
+  - Tab 2 (Unit Bisnis): Implementasi *Debounced Search* (300ms) untuk kode unit bisnis, nama unit, dan deskripsi dengan tombol pembersih cepat (ikon X).
+  - Tab 3 (Cost Centers): *Debounced Search* (300ms) untuk kode CC, nama CC, dan filter dropdown hierarki induk (`Semua Tingkatan`, `Pusat / Tanpa Induk`, atau sub dari CC tertentu).
+  - Tab 4 (Profit Centers): *Debounced Search* (300ms) untuk kode PC, nama PC, dan filter dropdown penautan Unit Bisnis terkait (`Semua Unit Bisnis` vs unit tertentu).
+  - Tombol **Reset Semua Filter** dinamis (`RotateCcw`) pada masing-masing tab yang muncul otomatis saat kriteria pencarian/filter aktif.
+- **Statistik KPI Header Dinamis Real-Time**:
+  - 4 Kartu Metrik Header kini menyajikan ringkasan riil struktur korporat: Entitas Perusahaan Resmi (`PT SS Travelink Official`, kode `SST`), Total Lini Unit Bisnis (AKAP, Wisata, Shuttle), Total Pusat Biaya Cost Center (Pool, Garasi, HQ, Ops AKAP, Ops Wisata), dan Total Pusat Laba Profit Center.
+- **Penyempurnaan Profil Entitas Perusahaan (Tab 1)**:
+  - Form profil perusahaan dirapikan dengan ikon tematik (`Building`, `Coins`, `Clock`, `Phone`, `Mail`, `MapPin`, `Globe`), indikator loading spinner `Loader2` saat proses simpan, dan sinkronisasi otomatis ke `useAuth().setCompany`.
+- **Overhaul Modal Form Dimensi Organisasi (`BusinessUnitModal`, `CostCenterModal`, `ProfitCenterModal`)**:
+  - Pelebaran seluruh modal menjadi `sm:max-w-xl` (`max-w-2xl`) dengan deskripsi bantuan dan penataan form ergonomis.
+  - Auto-uppercase pada seluruh input kode (`code.toUpperCase()`).
+  - Indikator spinner `Loader2` saat proses penyimpanan berlangsung.
+- **Empty State Komprehensif**:
+  - State kosong ramah pengguna pada Tab Unit Bisnis, Tab Cost Center, dan Tab Profit Center saat tidak ada data yang cocok dengan kriteria filter, lengkap dengan ikon ilustrasi tematik dan tombol aksi cepat.
+- **Backend Unit Testing Baru & Verifikasi Kualitas Penuh**:
+  - Menulis test suite komprehensif baru `organization.service.spec.ts` (14 unit tests) mencakup Company Profile, Business Units, Cost Centers, dan Profit Centers (100% PASS).
+  - Seluruh 28 unit test suites backend (174 tests total) lulus 100%.
+  - Backend build `yarn build` sukses 100%.
+  - Frontend build `yarn build` sukses 100% (`✓ built in 2.16s`).
+
+### 2026-11-04: Penyempurnaan Standar Produksi Halaman /partners (Restoran Mitra & Korlap Lapangan) Completed
+- **Zero Native Alerts (`ConfirmDialog` Integrasi Penuh)**:
+  - Menggantikan seluruh `window.confirm()` bawaan browser pada aksi hapus rumah makan mitra dan hapus aturan fee korlap dengan `ConfirmDialog` terstandar (`variant="danger"`).
+  - Dialog mengonfirmasi nama RM, kode RM, atau zona wilayah korlap sebelum penghapusan data dieksekusi.
+- **Pencarian Live Real-Time (Debounced 300ms) & Multi-Filter Terpadu**:
+  - Tab 1 (Rumah Makan): Implementasi *Debounced Search* (300ms) untuk nama RM, kota, lokasi rest area, atau nama PIC dengan tombol reset X instan.
+  - Filter Kota Lokasi RM (`Semua Kota`, `Subang`, `Gringsing`, `Batang`).
+  - Filter Mekanisme Pembayaran (`Semua Pembayaran`, `Tagihan AP Bulanan`, `Tunai Kru / UJ SPJ`).
+  - Filter Status Keaktifan pada kedua tab (`Semua Status`, `Hanya Aktif`, `Non-Aktif`).
+  - Tab 2 (Koordinator Lapangan): Filter Zonasi Wilayah (`Semua Zona`, `Zona WEST`, `Zona EAST`).
+  - Tombol **Reset Semua Filter** dinamis (`RotateCcw`) pada masing-masing tab yang muncul otomatis saat filter atau pencarian aktif.
+- **Statistik KPI Header Dinamis Real-Time**:
+  - 4 Kartu Metrik Header kini menghitung data riil: Total Rumah Makan Mitra & RM Aktif, Rata-Rata Tarif Kupon Makan per Pax dinamis, Fee Korlap Wilayah Barat (Ciputat), dan Fee Korlap Wilayah Timur (Yogya).
+- **Overhaul Modal Form Rumah Makan (`RestaurantModal`)**:
+  - Pelebaran modal menjadi `sm:max-w-xl` (`max-w-2xl`) dengan layout ergonomis dan ikon tematik `Utensils`.
+  - Auto-uppercase pada kode RM dan kota.
+  - Live formatted Rupiah preview di samping input tarif kupon makan per pax.
+  - Penambahan field **Status Operasional** (`isActive`: *Aktif Operasional* vs *Non-Aktif*).
+  - Indikator spinner `Loader2` saat proses penyimpanan berlangsung.
+- **Overhaul Modal Form Fee Korlap (`CoordinatorFeeModal`)**:
+  - Pelebaran modal menjadi `sm:max-w-xl` dengan ikon tematik `UserCheck`.
+  - Live formatted Rupiah preview di samping input fee jasa korlap per pax.
+  - Penambahan field **Status Aturan** (`isActive`: *Aktif Berlaku* vs *Non-Aktif*).
+  - Indikator spinner `Loader2` saat proses penyimpanan berlangsung.
+- **Penyempurnaan Simulator Beban Kupon & Fee Korlap (Tab 3)**:
+  - Preset Pax cepat (12, 24, 32, 48 Pax) untuk kemudahan pengujian kalkulasi biaya servis makan dan fee korlap.
+  - Kartu hasil kalkulasi kontras tinggi dengan format Rupiah tebal, rincian kupon, dan badge penanda akun pembukuan akuntansi (`21101 Utang Usaha AP` vs `13101 Kasir / UJ Kru SPJ`).
+  - Empty State ramah pengguna pada Tab Rumah Makan dan Tab Koordinator Lapangan dengan ilustrasi bertema dan tombol call-to-action.
+- **Verifikasi Kualitas Penuh**:
+  - Backend unit test `partners.service.spec.ts` lulus 100% (5 tests passed).
+  - Backend build `yarn build` sukses 100%.
+  - Frontend build `yarn build` sukses 100% (`✓ built in 2.11s`).
+
+### 2026-11-04: Penyempurnaan Standar Produksi Halaman /agents (Mitra Agen & Aturan Komisi Tiket) Completed
+- **Zero Native Alerts (`ConfirmDialog` Integrasi Penuh)**:
+  - Menggantikan seluruh `window.confirm()` pada penghapusan mitra agen dan penghapusan aturan komisi dengan modal dialog `ConfirmDialog` terstandar (`variant="danger"`).
+  - Dialog penghapusan agen mengonfirmasi nama dan kode agen serta memperingatkan bahwa seluruh aturan komisi terkait akan ikut terhapus.
+  - Dialog penghapusan aturan komisi mengonfirmasi kelas kabin bus dan skema komisi terkait.
+- **Pencarian Live Real-Time (Debounced 300ms) & Multi-Filter Terpadu**:
+  - Implementasi *Debounced Search* (300ms) untuk nama agen, kode unik, dan nomor kontak dengan tombol pembersih cepat (ikon X) untuk mengeliminasi *excessive API requests*.
+  - Filter Kategori Agen (`Semua Kategori`, `Loket Fisik Terminal`, `Online OTA`).
+  - Filter Kota Domisili (`Semua Kota`, `Jakarta`, `Tangerang`, `Yogyakarta`).
+  - Filter Status Keaktifan (`Semua Status`, `Hanya Aktif`, `Non-Aktif`).
+  - Tombol **Reset Semua Filter** dinamis (`RotateCcw`) yang muncul otomatis saat kriteria filter atau pencarian aktif.
+- **Statistik KPI Header Dinamis**:
+  - 4 Kartu Metrik Header kini menyajikan data riil: Total Mitra Agen & Agen Aktif, Jumlah Agen Fisik Loket, Jumlah Online OTA Partners, dan Jalur Penyetoran Kas (Titip Kru SPJ, Kasir Pool, Bank Transfer).
+- **Overhaul Modal Form Pendaftaran Agen (`AgentModal`)**:
+  - Pelebaran modal menjadi `sm:max-w-xl` (`max-w-2xl`) dengan layout ergonomis dan ikon tematik `Building2`.
+  - Auto-uppercase pada input kode agen.
+  - Penambahan field **Status Operasional** (`isActive`: *Aktif Operasional* vs *Non-Aktif*).
+  - Indikator spinner `Loader2` saat proses penyimpanan berlangsung.
+- **Penyempurnaan Modal Aturan Komisi (`CommissionRulesModal`)**:
+  - Mengeliminasi native alert dengan `ConfirmDialog` pada aksi hapus aturan komisi.
+  - Live formatted Rupiah preview di samping input nominal flat komisi.
+  - Form penambahan aturan komisi yang rapi dengan indikator pemrosesan `Loader2`.
+- **Penyempurnaan Tab Smart Route Filter & Kalkulator Komisi**:
+  - Fitur verifikasi Smart Route Filter arah dinas rute bus AKAP (Addendum v1.7) untuk mencegah human error pemilihan agen kota tujuan.
+  - Tombol pintas harga tiket (`250k`, `330k`, `420k`) pada kalkulator komisi otomatis.
+  - Kartu hasil kalkulasi komisi kontras tinggi dengan rincian potongan komisi agen dan Net Disetor ke Perusahaan.
+  - Empty State ramah pengguna pada Tab Daftar Agen dengan ikon bertema dan tombol call-to-action.
+- **Verifikasi Kualitas Penuh**:
+  - Backend unit test `agents.service.spec.ts` lulus 100% (6 tests passed).
+  - Backend build `yarn build` sukses 100%.
+  - Frontend build `yarn build` sukses 100% (`✓ built in 2.11s`).
+
+### 2026-11-04: Penyempurnaan Standar Produksi Halaman /crew-rates (Standar Kompensasi & Tarif Kru Bus) Completed
+- **Zero Native Alerts (`ConfirmDialog` Integrasi Penuh)**:
+  - Mengonfirmasi penghapusan standar kompensasi kru dengan modal `ConfirmDialog` terstandar (`variant="danger"`), menampilkan nama jabatan dan jenis layanan SPJ secara eksplisit.
+- **Pencarian Live Real-Time (Debounced 300ms) & Multi-Filter Terpadu**:
+  - Implementasi *Debounced Search* (300ms) untuk jabatan kru (Driver Utama, Co-Driver, Kondektur, Pramugari), jenis layanan, dan cakupan rute dengan tombol pembersih cepat (ikon X).
+  - Filter Jenis Layanan (`Semua Layanan`, `AKAP Reguler`, `Pariwisata / Charter`).
+  - Filter Jabatan Kru (`Semua Jabatan`, `DRIVER`, `CO_DRIVER`, `CONDUCTOR`, `STEWARDESS`).
+  - Filter Status Keaktifan (`Semua Status`, `Hanya Aktif`, `Non-Aktif`).
+  - Tombol **Reset Semua Filter** dinamis (`RotateCcw`) yang muncul otomatis saat filter atau pencarian aktif.
+- **Statistik KPI Header Dinamis Real-Time**:
+  - 4 Kartu Metrik Header kini menghitung data riil dari database aturan tarif aktif:
+    * AKAP Driver (Per Rit PP): Uang makan + premi ritase riil supir 1.
+    * AKAP Kondektur (Per Rit PP): Uang makan + premi ritase riil kondektur.
+    * Wisata Driver (Per Hari): Uang makan harian + premi harian riil supir pariwisata.
+    * Bonus Full Seat: Insentif okupansi 100% tertinggi untuk trayek AKAP.
+- **Overhaul Modal Form Standar Kompensasi (`CrewRateModal`)**:
+  - Pelebaran modal menjadi `sm:max-w-xl` (`max-w-2xl`) dengan layout ergonomis.
+  - Live formatted Rupiah preview di samping input uang makan, premi ritase/harian, dan bonus full seat.
+  - Penambahan field **Status Keaktifan** (`isActive`: *Aktif Berlaku* vs *Non-Aktif*).
+  - Validasi otomatis: Bonus Full Seat otomatis dinonaktifkan untuk layanan sewa wisata (`TOURISM`) dan hanya aktif pada trayek AKAP.
+  - Indikator live total standar acuan dasar (Uang Makan + Premi) sebelum disimpan.
+  - Indikator spinner `Loader2` saat proses penyimpanan berlangsung.
+- **Penyempurnaan Simulator Rate Snapshotting SPJ & Empty State**:
+  - Tab Simulator dilengkapi tombol pintas durasi sewa wisata (`1h`, `3h`, `5h`, `7h`) untuk kalkulasi instan.
+  - Hasil kalkulasi menampilkan breakdown Uang Makan, Premi Dinas, Potensi Bonus Full Seat, dan Total Standar Rekomendasi SPJ berformat Rupiah tebal.
+  - Empty State ramah pengguna pada Tab Master dengan ilustrasi koin tematik dan tombol aksi cepat.
+- **Verifikasi Kualitas Penuh**:
+  - Backend unit test `crew-rates.service.spec.ts` lulus 100% (4 tests passed).
+  - Backend build `yarn build` sukses 100%.
+  - Frontend build `yarn build` sukses 100% (`✓ built in 955ms`).
+
+### 2026-11-04: Penyempurnaan Standar Produksi Halaman /fares (Matriks Tarif & Kalender Musim Tiket) Completed
+- **Zero Native Alerts (`ConfirmDialog` Integrasi Penuh)**:
+  - Menggantikan seluruh `window.confirm()` bawaan browser pada penghapusan musim tarif dan matriks tarif tiket dengan `ConfirmDialog` terstandar (`variant="danger"`).
+  - Dialog penghapusan musim tarif mengonfirmasi dampak keterikatan seluruh matriks tarif terkait.
+  - Dialog penghapusan matriks tarif mengonfirmasi rute kota asal -> tujuan serta kelas kabin kursi.
+  - Proteksi bawaan yang mencegah penghapusan musim wajib `REGULER` dengan notifikasi toast error.
+- **Pencarian Live Real-Time (Debounced 300ms) & Multi-Filter Terpadu**:
+  - Implementasi *Debounced Search* (300ms) untuk rute (kota asal dan tujuan), nama musim, dan kelas kursi dengan tombol pembersih instan (ikon X).
+  - Filter Musim Tarif (`Semua Musim`, `Reguler`, `Tuslah Lebaran`, dll.).
+  - Filter Kelas Kursi Bus (`Semua Kelas`, `Sleeper`, `Luxury 2-1`, `Executive`, `Standard`).
+  - Filter Status Keaktifan (`Semua Status`, `Hanya Aktif`, `Non-Aktif`).
+  - Tombol **Reset Semua Filter** dinamis (`RotateCcw`) yang muncul otomatis saat kriteria pencarian/filter aktif.
+- **Penyempurnaan KPI Cards & Live Rata-Rata Tarif**:
+  - 4 Kartu Metrik Header kini menghitung data riil: Total Musim Tarif & Musim Aktif, Total Matriks Kombinasi Rute Terkonfigurasi, Rata-Rata Tarif Dasar Tiket Reguler, dan Rata-Rata Tarif Musim Khusus/Tuslah format Rupiah.
+- **Overhaul Modal Form (`FareMatrixModal` & `FareSeasonModal`)**:
+  - Pelebaran modal menjadi `sm:max-w-xl` (`max-w-2xl`) untuk ergonomi input yang lega.
+  - Tombol pintas rute populer (*Quick Route Buttons*: `TNG->YOG`, `YOG->TNG`, `JKT->YOG`).
+  - Live formatted Rupiah preview di samping label tarif tiket dasar (`Rp XX.XXX.XXX`).
+  - Penambahan field **Status Keaktifan** (`isActive`: *Aktif Berlaku* vs *Non-Aktif*) pada kedua modal.
+  - Validasi ketat tanggal musim (`startDate <= endDate`) dengan error feedback yang jelas.
+  - Indikator spinner `Loader2` saat proses penyimpanan berlangsung.
+- **Penyempurnaan Simulator Dynamic Pricing & Empty State**:
+  - Simulasi perhitungan tarif real-time otomatis berdasarkan formula Addendum v1.6 & v1.17: $f(\text{Rute}, \text{Tanggal Musim}, \text{Kelas Kursi})$.
+  - Desain kartu hasil kalkulasi tiket yang kontras dengan format Rupiah tebal dan penanda musim aktif.
+  - State kosong (*Empty State*) ramah pengguna pada Tab Matriks Tarif dan Tab Kalender Musim Tarif dengan ikon bertema dan tombol call-to-action.
+- **Verifikasi Kualitas Penuh**:
+  - Backend unit test `fares.service.spec.ts` lulus 100% (7 tests passed).
+  - Backend build `yarn build` sukses 100%.
+  - Frontend build `yarn build` sukses 100% (`✓ built in 1.04s`).
+
+### 2026-11-04: Penyempurnaan Standar Produksi Halaman /cash-bank (Master Kas & Rekening Bank) Completed
+- **Zero Native Alerts (`ConfirmDialog` Integrasi Penuh)**:
+  - Menggantikan seluruh `window.confirm()` bawaan browser pada aksi penonaktifan rekening kas dan rekening bank dengan `ConfirmDialog` terstandar (`variant="danger"`).
+  - Dialog mengonfirmasi nama rekening, kode, dan nomor rekening masked, serta menjelaskan konsekuensi penonaktifan rekening terhadap pencairan SPJ dan transfer kasir.
+- **Pencarian Real-Time (Debounced 300ms) & Multi-Filter Terpadu**:
+  - Implementasi *Debounced Search* (300ms) untuk kode, nama rekening, nomor rekening, dan deskripsi dengan tombol pembersih instan (ikon X).
+  - Filter Status Keaktifan: `Semua Status`, `Hanya Aktif`, `Non-Aktif`.
+  - Filter Khusus Tab Kas: Pemilihan berdasarkan unit Cost Center (`CC-OPS-POOL`, `CC-MNT-GARASI`, dll.).
+  - Filter Khusus Tab Bank: Pemilihan berdasarkan bank mitra (`BCA`, `Bank Mandiri`, `BRI`, `BNI`).
+  - Tombol **Reset Semua Filter** dinamis (`RotateCcw`) yang muncul otomatis saat kriteria pencarian/filter aktif.
+- **Integrasi Saldo GL Real-Time & Kartu Likuiditas**:
+  - 3 Kartu Metrik Header kini menyajikan saldo berjalan GL riil: Total Saldo Kas Fisik Pool, Total Saldo Bank Korporat, dan Total Likuiditas Kas & Bank Korporat gabungan.
+  - Tabel Kas Fisik kini menampilkan kolom **Saldo Berjalan GL** (`currentBalance`) format Rupiah.
+  - Kartu Rekening Bank kini menampilkan banner **Saldo GL Berjalan** real-time.
+- **Penyempurnaan Modal Form (`CashAccountModal` & `BankAccountModal`)**:
+  - Pelebaran modal menjadi `sm:max-w-xl` (`max-w-2xl`) untuk layout input yang lega.
+  - Penambahan field **Status Operasional** (`isActive`: *Aktif Operasional* vs *Non-Aktif*).
+  - Auto-uppercase pada input kode kas/bank dan pembersihan spasi nomor rekening.
+  - Dropdown akun GL terkelompok dan indikator spinner `Loader2` saat proses penyimpanan berlangsung.
+- **Penyempurnaan Kartu Bank & Tabel Kas**:
+  - Tombol 1-klik **Salin Nomor Rekening Publik** (`Copy` icon) dengan notifikasi toast Sonner.
+  - Badge status keaktifan visual (`● Aktif` vs `Non-Aktif`) pada tabel kas dan kartu bank.
+  - State kosong ramah pengguna (*Empty State*) pada kedua tab jika tidak ada data yang cocok dengan kriteria pencarian.
+- **Verifikasi Kualitas Penuh**:
+  - Backend unit test `accounts.service.spec.ts` lulus 100% (9 tests passed).
+  - Backend build `yarn build` sukses 100%.
+  - Frontend build `yarn build` sukses 100% (`✓ built in 998ms`).
+
+### 2026-11-04: Penyempurnaan Standar Produksi Halaman /vehicles (Armada Bus) Completed
+- **Zero Native Alerts (`ConfirmDialog` Integrasi Penuh)**:
+  - Mengganti seluruh native browser `confirm()` pada `VehiclesPage` dan `SeatClassMasterModal` dengan `ConfirmDialog` terstandar (`variant="danger"`).
+  - Dialog penghapusan bus menampilkan kode lambung, plat nomor, dan peringatan dampak spesifikasi/kabin.
+  - Dialog penghapusan master kelas kursi memberikan konfirmasi proteksi terhadap armada bus yang aktif menggunakannya.
+- **Pencarian & Multi-Filter Terstandar Produksi**:
+  - Implementasi *Debounced Search* (300ms) untuk nomor lambung, plat nomor, dan julukan bus dengan tombol reset instan (ikon X).
+  - Penambahan filter Tipe Bus (`ALL`, `BIG_BUS`, `MEDIUM_BUS`, `MINIBUS`).
+  - Penambahan filter Status Kepemilikan (`ALL`, `OWNED_PAID_OFF`, `LEASING`, `RENTAL`).
+  - Penambahan filter Status Kesiapan Operasional (`ALL`, `ACTIVE`, `INACTIVE`).
+  - Tombol **Reset Semua Filter** dinamis yang muncul otomatis saat kriteria pencarian/filter diubah.
+- **Paginasi & Total Data**:
+  - Integrasi paginasi server-side lengkap (`page`, `limit` selector 6, 12, 24, 48 baris/kartu, `total`, `totalPages`).
+  - Indikator informatif: *"Menampilkan X - Y dari Z armada bus"*.
+- **Overhaul Modal Form Tambah / Edit Armada (`VehicleModal`)**:
+  - Memperlebar modal dialog menjadi `max-w-4xl` dengan tata letak 3 seksi ergonomis (*Identitas & Fisik Kendaraan*, *Zona Kabin Multi-Class*, dan *Galeri Foto Showcase*).
+  - Penambahan field **Status Kesiapan Operasional** (`isActive`: *Aktif Beroperasi* vs *Non-Aktif / Perawatan Garasi*).
+  - Preview thumbnail foto langsung (*Live Image Thumbnail Preview*) di samping input URL gambar dengan penanganan error.
+  - Dukungan penandaan foto sampul utama (*Cover Utama*) dan penambahan/penghapusan dinamis.
+- **Penyempurnaan Modal Detail Armada (`VehicleDetailModal`)**:
+  - Penanganan fallback gambar error (*graceful image fallback*) pada hero banner bus maupun galeri thumbnail.
+  - Penambahan fitur **Salin Ringkasan Bus** (Nomor lambung, nopol, julukan, kapasitas, status) ke clipboard dengan notifikasi toast Sonner.
+  - Badge kesiapan operasional dinamis (*Siap Operasi* vs *Perawatan Garasi*) dan status pembiayaan (*Aset Lunas* vs *Cicilan Leasing*).
+- **Empty State Komprehensif**:
+  - State kosong ramah pengguna pada Card View dan Table View saat tidak ada data armada bus yang cocok dengan filter, dilengkapi ikon ilustrasi bus dan tombol aksi reset filter.
+- **Backend & DTO Reliability**:
+  - Penambahan decorator `@Transform` pada `isActive` di `VehicleQueryFilterDto` dan query builder `VehiclesService` agar kompatibel menangani parameter boolean maupun string HTTP GET query.
+- **Verifikasi Kualitas Penuh**:
+  - Backend unit test `vehicles.service.spec.ts` lulus 100% (10 tests passed).
+  - Backend build `yarn build` sukses 100%.
+  - Frontend build `yarn build` sukses 100% (`✓ built in 1.49s`).
+
 ### 2026-11-04: Ekspansi Skeleton UI ke Seluruh Modul Finansial, Akuntansi, Tarif & Master Administratif Completed
 - **Modul Keuangan & Utang/Piutang (AP & AR Invoices)**:
   - **Tagihan Vendor / Utang Usaha (`src/pages/ap-invoices/index.tsx`)**: Mengintegrasikan `MetricCardGridSkeleton` pada 4 kartu ringkasan utang vendor dan `TableSkeletonRows` pada Tab Faktur Tagihan serta Tab Riwayat Pembayaran Bank/Kas.

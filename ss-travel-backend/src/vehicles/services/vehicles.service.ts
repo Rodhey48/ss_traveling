@@ -185,9 +185,11 @@ export class VehiclesService {
       });
     }
 
-    if (typeof query.isActive === 'boolean') {
+    if (query.isActive !== undefined) {
+      const activeBool =
+        query.isActive === true || (query.isActive as any) === 'true';
       queryBuilder.andWhere('vehicle.is_active = :isActive', {
-        isActive: query.isActive,
+        isActive: activeBool,
       });
     }
 

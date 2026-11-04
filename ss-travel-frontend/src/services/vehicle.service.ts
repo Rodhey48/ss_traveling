@@ -7,6 +7,7 @@ import type {
   VehicleSeatClass,
   SeatClass,
   SeatClassName,
+  VehicleImage,
 } from '@/types';
 
 export const VehicleService = {
@@ -129,8 +130,8 @@ export const VehicleService = {
       isPrimary?: boolean;
       sequence?: number;
     },
-  ): Promise<BaseResponse<any>> => {
-    const response = await api.post<BaseResponse<any>>(
+  ): Promise<BaseResponse<VehicleImage>> => {
+    const response = await api.post<BaseResponse<VehicleImage>>(
       `api/v1/vehicles/${vehicleId}/images`,
       data,
     );
