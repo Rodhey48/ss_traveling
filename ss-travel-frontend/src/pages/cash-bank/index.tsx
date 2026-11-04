@@ -49,6 +49,11 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import BankAccountModal from './components/bank-account-modal';
 import CashAccountModal from './components/cash-account-modal';
+import {
+  MetricCardGridSkeleton,
+  TableSkeletonRows,
+  BankAccountCardSkeleton,
+} from '@/components/shared/skeleton-loaders';
 
 export default function CashBankPage() {
   const { isCreate, isUpdate, isDelete } = usePermission();
@@ -230,52 +235,56 @@ export default function CashBankPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="shadow-xs border-l-4 border-l-primary">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
-              Kas Operasional & Petty Cash
-              <Wallet className="h-4 w-4 text-primary" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{cashAccounts.length} Titik Kas</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Pool Ciputat, Cabang Yogya, Kas Kecil Garasi
-            </p>
-          </CardContent>
-        </Card>
+      {loading ? (
+        <MetricCardGridSkeleton count={3} />
+      ) : (
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="shadow-xs border-l-4 border-l-primary">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+                Kas Operasional & Petty Cash
+                <Wallet className="h-4 w-4 text-primary" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{cashAccounts.length} Titik Kas</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Pool Ciputat, Cabang Yogya, Kas Kecil Garasi
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-xs border-l-4 border-l-blue-600">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
-              Rekening Bank Korporat
-              <Landmark className="h-4 w-4 text-blue-600" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{bankAccounts.length} Rekening Aktif</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              BCA KCU Ciputat, Bank Mandiri Utama
-            </p>
-          </CardContent>
-        </Card>
+          <Card className="shadow-xs border-l-4 border-l-blue-600">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+                Rekening Bank Korporat
+                <Landmark className="h-4 w-4 text-blue-600" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{bankAccounts.length} Rekening Aktif</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                BCA KCU Ciputat, Bank Mandiri Utama
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-xs border-l-4 border-l-emerald-600">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
-              Keamanan Rekening
-              <ShieldCheck className="h-4 w-4 text-emerald-600" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-emerald-600">Masked Security</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Nomor rekening diproteksi otomatis untuk audit publik
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+          <Card className="shadow-xs border-l-4 border-l-emerald-600">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+                Keamanan Rekening
+                <ShieldCheck className="h-4 w-4 text-emerald-600" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-emerald-600">Masked Security</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Nomor rekening diproteksi otomatis untuk audit publik
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Tabs View */}
       <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as 'cash' | 'bank')} className="space-y-4">
@@ -319,11 +328,17 @@ export default function CashBankPage() {
                 </TableHeader>
                 <TableBody>
                   {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        Memuat data kas operasional...
-                      </TableCell>
-                    </TableRow>
+                    <TableSkeletonRows
+                      rows={5}
+                      colWidths={[
+                        'w-28',
+                        'w-36',
+                        'w-32',
+                        'w-28',
+                        'w-24',
+                        'w-16 ml-auto',
+                      ]}
+                    />
                   ) : cashAccounts.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
@@ -409,8 +424,10 @@ export default function CashBankPage() {
         {/* Tab 2: Rekening Bank Korporat */}
         <TabsContent value="bank" className="space-y-4">
           {loading ? (
-            <div className="p-12 text-center text-muted-foreground">
-              Memuat data rekening bank...
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <BankAccountCardSkeleton key={i} />
+              ))}
             </div>
           ) : bankAccounts.length === 0 ? (
             <Card className="p-8 text-center text-muted-foreground">

@@ -28,6 +28,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePermission } from '@/hooks/use-permission';
 import { AgentService } from '@/services/agent.service';
 import { VehicleService } from '@/services/vehicle.service';
+import {
+  MetricCardGridSkeleton,
+  TableSkeletonRows,
+} from '@/components/shared/skeleton-loaders';
 import type {
   Agent,
   AgentFormData,
@@ -221,67 +225,71 @@ export default function AgentsPage() {
       </div>
 
       {/* Metrics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="shadow-xs border-l-4 border-l-primary">
-          <CardHeader className="p-4 pb-2">
-            <CardDescription className="text-xs">Total Mitra Agen</CardDescription>
-            <CardTitle className="text-2xl font-bold text-primary flex items-center justify-between">
-              {agents.length} Mitra
-              <Building2 className="h-5 w-5 opacity-40" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <p className="text-xs text-muted-foreground">
-              {activeCount} Agen Status Aktif
-            </p>
-          </CardContent>
-        </Card>
+      {loading ? (
+        <MetricCardGridSkeleton count={4} />
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="shadow-xs border-l-4 border-l-primary">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Total Mitra Agen</CardDescription>
+              <CardTitle className="text-2xl font-bold text-primary flex items-center justify-between">
+                {agents.length} Mitra
+                <Building2 className="h-5 w-5 opacity-40" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-xs text-muted-foreground">
+                {activeCount} Agen Status Aktif
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-xs border-l-4 border-l-blue-600">
-          <CardHeader className="p-4 pb-2">
-            <CardDescription className="text-xs">Agen Fisik Loket</CardDescription>
-            <CardTitle className="text-2xl font-bold text-blue-600 flex items-center justify-between">
-              {offlineCount} Loket
-              <Building2 className="h-5 w-5 opacity-40" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <p className="text-xs text-muted-foreground">
-              Komisi Flat per Tiket Terjual
-            </p>
-          </CardContent>
-        </Card>
+          <Card className="shadow-xs border-l-4 border-l-blue-600">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Agen Fisik Loket</CardDescription>
+              <CardTitle className="text-2xl font-bold text-blue-600 flex items-center justify-between">
+                {offlineCount} Loket
+                <Building2 className="h-5 w-5 opacity-40" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-xs text-muted-foreground">
+                Komisi Flat per Tiket Terjual
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-xs border-l-4 border-l-purple-600">
-          <CardHeader className="p-4 pb-2">
-            <CardDescription className="text-xs">Online OTA Partners</CardDescription>
-            <CardTitle className="text-2xl font-bold text-purple-700 dark:text-purple-400 flex items-center justify-between">
-              {otaCount} Platform
-              <Globe className="h-5 w-5 opacity-40" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <p className="text-xs text-muted-foreground">
-              Komisi Persentase (10%)
-            </p>
-          </CardContent>
-        </Card>
+          <Card className="shadow-xs border-l-4 border-l-purple-600">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Online OTA Partners</CardDescription>
+              <CardTitle className="text-2xl font-bold text-purple-700 dark:text-purple-400 flex items-center justify-between">
+                {otaCount} Platform
+                <Globe className="h-5 w-5 opacity-40" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-xs text-muted-foreground">
+                Komisi Persentase (10%)
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-xs border-l-4 border-l-amber-500">
-          <CardHeader className="p-4 pb-2">
-            <CardDescription className="text-xs">Sistem Penyetoran</CardDescription>
-            <CardTitle className="text-2xl font-bold text-amber-700 dark:text-amber-400 flex items-center justify-between">
-              3 Jalur Kas
-              <Coins className="h-5 w-5 opacity-40" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <p className="text-xs text-muted-foreground">
-              Titip Kru SPJ, Kasir Pool, Bank
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+          <Card className="shadow-xs border-l-4 border-l-amber-500">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Sistem Penyetoran</CardDescription>
+              <CardTitle className="text-2xl font-bold text-amber-700 dark:text-amber-400 flex items-center justify-between">
+                3 Jalur Kas
+                <Coins className="h-5 w-5 opacity-40" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-xs text-muted-foreground">
+                Titip Kru SPJ, Kasir Pool, Bank
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Main Tabs */}
       <Tabs
@@ -366,11 +374,19 @@ export default function AgentsPage() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                      Memuat data mitra agen...
-                    </TableCell>
-                  </TableRow>
+                  <TableSkeletonRows
+                    rows={5}
+                    colWidths={[
+                      'w-36',
+                      'w-24',
+                      'w-24',
+                      'w-28',
+                      'w-24',
+                      'w-24 mx-auto',
+                      'w-16',
+                      'w-16 ml-auto',
+                    ]}
+                  />
                 ) : agents.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">

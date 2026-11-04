@@ -28,6 +28,10 @@ import { VehicleService } from '@/services/vehicle.service';
 import CreatePettyCashModal from './components/CreatePettyCashModal';
 import ReplenishPettyCashModal from './components/ReplenishPettyCashModal';
 import PettyCashDetailModal from './components/PettyCashDetailModal';
+import {
+  MetricCardGridSkeleton,
+  TableSkeletonRows,
+} from '@/components/shared/skeleton-loaders';
 import { toast } from 'sonner';
 
 export default function PettyCashPage() {
@@ -194,90 +198,94 @@ export default function PettyCashPage() {
       </div>
 
       {/* 4 Metric Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Card 1: Sisa Saldo Kas Kecil */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">
-              Sisa Saldo Kas Kecil
-            </span>
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-              <Wallet className="h-5 w-5" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl font-black text-slate-900">
-              Rp {Number(summary?.currentBalance || 0).toLocaleString('id-ID')}
-            </div>
-            <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500">
-              <span className="inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5 font-medium text-slate-700">
-                {summary?.cashAccount.code || 'CASH-PETTY'}
+      {isLoading ? (
+        <MetricCardGridSkeleton count={4} />
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Card 1: Sisa Saldo Kas Kecil */}
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500">
+                Sisa Saldo Kas Kecil
               </span>
-              <span>{summary?.cashAccount.name}</span>
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                <Wallet className="h-5 w-5" />
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="text-2xl font-black text-slate-900">
+                Rp {Number(summary?.currentBalance || 0).toLocaleString('id-ID')}
+              </div>
+              <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500">
+                <span className="inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5 font-medium text-slate-700">
+                  {summary?.cashAccount.code || 'CASH-PETTY'}
+                </span>
+                <span>{summary?.cashAccount.name}</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Card 2: Pengeluaran Bulan Ini */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">
-              Pengeluaran Bulan Ini
-            </span>
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
-              <TrendingDown className="h-5 w-5" />
+          {/* Card 2: Pengeluaran Bulan Ini */}
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500">
+                Pengeluaran Bulan Ini
+              </span>
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
+                <TrendingDown className="h-5 w-5" />
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="text-2xl font-black text-rose-600">
+                Rp {Number(summary?.thisMonthExpenses || 0).toLocaleString('id-ID')}
+              </div>
+              <p className="mt-1 text-xs text-slate-500">
+                Beban operasional non-SPJ terverifikasi
+              </p>
             </div>
           </div>
-          <div className="mt-3">
-            <div className="text-2xl font-black text-rose-600">
-              Rp {Number(summary?.thisMonthExpenses || 0).toLocaleString('id-ID')}
-            </div>
-            <p className="mt-1 text-xs text-slate-500">
-              Beban operasional non-SPJ terverifikasi
-            </p>
-          </div>
-        </div>
 
-        {/* Card 3: Menunggu Verifikasi */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">
-              Menunggu Verifikasi Akuntan
-            </span>
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-              <Clock className="h-5 w-5" />
+          {/* Card 3: Menunggu Verifikasi */}
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500">
+                Menunggu Verifikasi Akuntan
+              </span>
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                <Clock className="h-5 w-5" />
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="text-2xl font-black text-amber-600">
+                {summary?.pendingVerificationCount || 0}
+              </div>
+              <p className="mt-1 text-xs text-slate-500">
+                Nota/bon kasir siap diverifikasi ke GL
+              </p>
             </div>
           </div>
-          <div className="mt-3">
-            <div className="text-2xl font-black text-amber-600">
-              {summary?.pendingVerificationCount || 0}
-            </div>
-            <p className="mt-1 text-xs text-slate-500">
-              Nota/bon kasir siap diverifikasi ke GL
-            </p>
-          </div>
-        </div>
 
-        {/* Card 4: Transaksi Hari Ini */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">
-              Aktivitas Hari Ini
-            </span>
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-              <Receipt className="h-5 w-5" />
+          {/* Card 4: Transaksi Hari Ini */}
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500">
+                Aktivitas Hari Ini
+              </span>
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                <Receipt className="h-5 w-5" />
+              </div>
             </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl font-black text-slate-900">
-              {summary?.todayTransactionsCount || 0}
+            <div className="mt-3">
+              <div className="text-2xl font-black text-slate-900">
+                {summary?.todayTransactionsCount || 0}
+              </div>
+              <p className="mt-1 text-xs text-slate-500">
+                Transaksi BKK/BKM dicatat hari ini
+              </p>
             </div>
-            <p className="mt-1 text-xs text-slate-500">
-              Transaksi BKK/BKM dicatat hari ini
-            </p>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Filter Toolbar */}
       <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm space-y-3">
@@ -377,11 +385,19 @@ export default function PettyCashPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
-                <tr>
-                  <td colSpan={8} className="py-8 text-center text-slate-400">
-                    Memuat data kas kecil pool...
-                  </td>
-                </tr>
+                <TableSkeletonRows
+                  rows={5}
+                  colWidths={[
+                    'w-28',
+                    'w-24',
+                    'w-40',
+                    'w-28',
+                    'w-20',
+                    'w-24 ml-auto',
+                    'w-20 mx-auto',
+                    'w-24 mx-auto',
+                  ]}
+                />
               ) : transactions.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-slate-400">

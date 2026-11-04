@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
 import Heading from '@/components/shared/heading';
-import { Button } from '@/components/ui/button';
+import {
+  MetricCardGridSkeleton,
+  TableSkeletonRows,
+} from '@/components/shared/skeleton-loaders';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -10,6 +12,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -19,38 +29,32 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Plus,
-  Utensils,
-  UserCheck,
-  Edit,
-  Trash2,
-  Receipt,
-  MapPin,
-  FileCheck2,
-} from 'lucide-react';
-import RestaurantModal from './components/restaurant-modal';
-import CoordinatorFeeModal from './components/coordinator-fee-modal';
+import { usePermission } from '@/hooks/use-permission';
 import { PartnerService } from '@/services/partner.service';
 import { UserService } from '@/services/user.service';
 import type {
-  Restaurant,
-  RestaurantFormData,
+  CalculatedCoordinatorFeeResult,
+  CalculatedMealResult,
   CoordinatorFeeRule,
   CoordinatorFeeRuleFormData,
+  Restaurant,
+  RestaurantFormData,
   User,
-  CalculatedMealResult,
-  CalculatedCoordinatorFeeResult,
 } from '@/types';
+import {
+  Edit,
+  FileCheck2,
+  MapPin,
+  Plus,
+  Receipt,
+  Trash2,
+  UserCheck,
+  Utensils,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { usePermission } from '@/hooks/use-permission';
+import CoordinatorFeeModal from './components/coordinator-fee-modal';
+import RestaurantModal from './components/restaurant-modal';
 
 export default function PartnersPage() {
   const { isCreate, isUpdate, isDelete } = usePermission();
@@ -253,67 +257,71 @@ export default function PartnersPage() {
       </div>
 
       {/* Metrics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="shadow-xs border-l-4 border-l-primary">
-          <CardHeader className="p-4 pb-2">
-            <CardDescription className="text-xs">Rumah Makan Mitra</CardDescription>
-            <CardTitle className="text-2xl font-bold text-primary flex items-center justify-between">
-              {restaurants.length} Rumah Makan
-              <Utensils className="h-5 w-5 opacity-40" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <p className="text-xs text-muted-foreground">
-              Subang (Cipali), Gringsing, Batang
-            </p>
-          </CardContent>
-        </Card>
+      {loading ? (
+        <MetricCardGridSkeleton count={4} />
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="shadow-xs border-l-4 border-l-primary">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Rumah Makan Mitra</CardDescription>
+              <CardTitle className="text-2xl font-bold text-primary flex items-center justify-between">
+                {restaurants.length} Rumah Makan
+                <Utensils className="h-5 w-5 opacity-40" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-xs text-muted-foreground">
+                Subang (Cipali), Gringsing, Batang
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-xs border-l-4 border-l-blue-600">
-          <CardHeader className="p-4 pb-2">
-            <CardDescription className="text-xs">Tarif Kupon Makan</CardDescription>
-            <CardTitle className="text-2xl font-bold text-blue-600 flex items-center justify-between">
-              Rp 25.000 / pax
-              <Receipt className="h-5 w-5 opacity-40" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <p className="text-xs text-muted-foreground">
-              Standar Kupon Makan Penumpang AKAP
-            </p>
-          </CardContent>
-        </Card>
+          <Card className="shadow-xs border-l-4 border-l-blue-600">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Tarif Kupon Makan</CardDescription>
+              <CardTitle className="text-2xl font-bold text-blue-600 flex items-center justify-between">
+                Rp 25.000 / pax
+                <Receipt className="h-5 w-5 opacity-40" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-xs text-muted-foreground">
+                Standar Kupon Makan Penumpang AKAP
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-xs border-l-4 border-l-purple-600">
-          <CardHeader className="p-4 pb-2">
-            <CardDescription className="text-xs">Fee Korlap Barat</CardDescription>
-            <CardTitle className="text-2xl font-bold text-purple-700 dark:text-purple-400 flex items-center justify-between">
-              Rp 10.000 / pax
-              <UserCheck className="h-5 w-5 opacity-40" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <p className="text-xs text-muted-foreground">
-              Jabodetabek (Leg Keberangkatan)
-            </p>
-          </CardContent>
-        </Card>
+          <Card className="shadow-xs border-l-4 border-l-purple-600">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Fee Korlap Barat</CardDescription>
+              <CardTitle className="text-2xl font-bold text-purple-700 dark:text-purple-400 flex items-center justify-between">
+                Rp 10.000 / pax
+                <UserCheck className="h-5 w-5 opacity-40" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-xs text-muted-foreground">
+                Jabodetabek (Leg Keberangkatan)
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-xs border-l-4 border-l-amber-500">
-          <CardHeader className="p-4 pb-2">
-            <CardDescription className="text-xs">Fee Korlap Timur</CardDescription>
-            <CardTitle className="text-2xl font-bold text-amber-700 dark:text-amber-400 flex items-center justify-between">
-              Rp 10.000 / pax
-              <UserCheck className="h-5 w-5 opacity-40" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <p className="text-xs text-muted-foreground">
-              Jateng &amp; DIY (Leg Kepulangan)
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+          <Card className="shadow-xs border-l-4 border-l-amber-500">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Fee Korlap Timur</CardDescription>
+              <CardTitle className="text-2xl font-bold text-amber-700 dark:text-amber-400 flex items-center justify-between">
+                Rp 10.000 / pax
+                <UserCheck className="h-5 w-5 opacity-40" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-xs text-muted-foreground">
+                Jateng &amp; DIY (Leg Kepulangan)
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Main Tabs */}
       <Tabs
@@ -349,7 +357,7 @@ export default function PartnersPage() {
         {/* TAB 1: RESTAURANTS */}
         <TabsContent value="restaurants" className="space-y-4 pt-2">
           <Card className="shadow-xs overflow-x-auto">
-            <Table className="min-w-[750px]">
+            <Table className="min-w-187.5">
               <TableHeader>
                 <TableRow>
                   <TableHead>Kode & Nama Rumah Makan</TableHead>
@@ -363,11 +371,18 @@ export default function PartnersPage() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      Memuat daftar rumah makan mitra...
-                    </TableCell>
-                  </TableRow>
+                  <TableSkeletonRows
+                    rows={5}
+                    colWidths={[
+                      'w-36',
+                      'w-24',
+                      'w-28',
+                      'w-24 ml-auto',
+                      'w-28',
+                      'w-16',
+                      'w-16 ml-auto',
+                    ]}
+                  />
                 ) : restaurants.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
@@ -458,24 +473,30 @@ export default function PartnersPage() {
         {/* TAB 2: COORDINATORS */}
         <TabsContent value="coordinators" className="space-y-4 pt-2">
           <Card className="shadow-xs overflow-x-auto">
-            <Table className="min-w-[700px]">
+            <Table className="min-w-175">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[160px]">Zona Wilayah</TableHead>
-                  <TableHead className="min-w-[280px]">Cakupan Operasional</TableHead>
-                  <TableHead className="min-w-[180px]">Personel Korlap Terdaftar</TableHead>
-                  <TableHead className="text-right w-[140px]">Besaran Fee / Pax</TableHead>
-                  <TableHead className="w-[100px]">Status</TableHead>
-                  <TableHead className="text-right w-[90px]">Aksi</TableHead>
+                  <TableHead className="w-40">Zona Wilayah</TableHead>
+                  <TableHead className="min-w-70">Cakupan Operasional</TableHead>
+                  <TableHead className="min-w-45">Personel Korlap Terdaftar</TableHead>
+                  <TableHead className="text-right w-35">Besaran Fee / Pax</TableHead>
+                  <TableHead className="w-25">Status</TableHead>
+                  <TableHead className="text-right w-22.5">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      Memuat aturan fee korlap...
-                    </TableCell>
-                  </TableRow>
+                  <TableSkeletonRows
+                    rows={5}
+                    colWidths={[
+                      'w-32',
+                      'w-36',
+                      'w-24',
+                      'w-24 ml-auto',
+                      'w-16',
+                      'w-16 ml-auto',
+                    ]}
+                  />
                 ) : coordinatorFees.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">

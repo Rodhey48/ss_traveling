@@ -1,22 +1,17 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
 import Heading from '@/components/shared/heading';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import {
+  MetricCardGridSkeleton,
+  TableSkeletonRows,
+} from '@/components/shared/skeleton-loaders';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -27,42 +22,50 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
   Tooltip,
-  TooltipTrigger,
   TooltipContent,
   TooltipProvider,
+  TooltipTrigger,
 } from '@/components/ui/tooltip';
-import {
-  Plus,
-  Search,
-  RotateCcw,
-  Eye,
-  FileText,
-  Calendar,
-  CheckCircle2,
-  Loader2,
-  FilterX,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-  Layers,
-  AlertTriangle,
-  ChevronDown,
-  ChevronUp,
-} from 'lucide-react';
+import { usePermission } from '@/hooks/use-permission';
 import { JournalService } from '@/services/journal.service';
 import { OrganizationService } from '@/services/organization.service';
-import JournalDetailModal from './components/journal-detail-modal';
-import CreateJournalModal from './components/create-journal-modal';
-import ReverseJournalModal from './components/reverse-journal-modal';
 import type {
-  JournalEntry,
-  JournalStatus,
-  JournalSourceType,
   BusinessUnit,
+  JournalEntry,
+  JournalSourceType,
+  JournalStatus,
 } from '@/types';
+import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Calendar,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  FileText,
+  FilterX,
+  Layers,
+  Plus,
+  RotateCcw,
+  Search,
+} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { usePermission } from '@/hooks/use-permission';
+import CreateJournalModal from './components/create-journal-modal';
+import JournalDetailModal from './components/journal-detail-modal';
+import ReverseJournalModal from './components/reverse-journal-modal';
 
 // Helper: Hitung rentang tanggal bulan & tahun berjalan
 const getCurrentMonthRange = () => {
@@ -146,7 +149,7 @@ export default function JournalsPage() {
       .then((res) => {
         if (res.data) setBusinessUnits(res.data);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Fetch Journals
@@ -314,13 +317,12 @@ export default function JournalsPage() {
                 <span className="font-semibold text-slate-700">Unit Usaha:</span>
                 <Badge
                   variant="outline"
-                  className={`text-[11px] font-bold ${
-                    activeBu.code === 'AKAP'
+                  className={`text-[11px] font-bold ${activeBu.code === 'AKAP'
                       ? 'bg-purple-50 text-purple-700 border-purple-200'
                       : activeBu.code === 'WISATA'
-                      ? 'bg-blue-50 text-blue-700 border-blue-200'
-                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  }`}
+                        ? 'bg-blue-50 text-blue-700 border-blue-200'
+                        : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    }`}
                 >
                   <Layers className="h-3 w-3 mr-1" />
                   {activeBu.code} ({activeBu.name})
@@ -349,65 +351,69 @@ export default function JournalsPage() {
       </div>
 
       {/* Summary Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-white border-slate-200 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">
-              Total Jurnal Terdata
-            </CardTitle>
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-              <FileText className="h-4 w-4" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-slate-900">{total} Jurnal</div>
-            <p className="text-xs text-slate-500 mt-1">
-              {postedCount} aktif diposting pada filter terpilih
-            </p>
-          </CardContent>
-        </Card>
+      {loading ? (
+        <MetricCardGridSkeleton count={3} />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="bg-white border-slate-200 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-slate-600">
+                Total Jurnal Terdata
+              </CardTitle>
+              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                <FileText className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-slate-900">{total} Jurnal</div>
+              <p className="text-xs text-slate-500 mt-1">
+                {postedCount} aktif diposting pada filter terpilih
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card className="bg-white border-slate-200 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">
-              Akumulasi Nominal Transaksi
-            </CardTitle>
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-              <CheckCircle2 className="h-4 w-4" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-mono text-emerald-600">
-              {formatRupiah(totalDebitSum)}
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Total Debit = Total Kredit (Seimbang)
-            </p>
-          </CardContent>
-        </Card>
+          <Card className="bg-white border-slate-200 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-slate-600">
+                Akumulasi Nominal Transaksi
+              </CardTitle>
+              <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                <CheckCircle2 className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold font-mono text-emerald-600">
+                {formatRupiah(totalDebitSum)}
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Total Debit = Total Kredit (Seimbang)
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card className="bg-white border-slate-200 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">
-              Jurnal Dibalik (Reversed)
-            </CardTitle>
-            <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
-              <RotateCcw className="h-4 w-4" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-rose-600">
-              {reversedCount} Dibatalkan
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Koreksi transaksi melalui jurnal pembalik sah
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+          <Card className="bg-white border-slate-200 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-slate-600">
+                Jurnal Dibalik (Reversed)
+              </CardTitle>
+              <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
+                <RotateCcw className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-rose-600">
+                {reversedCount} Dibatalkan
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Koreksi transaksi melalui jurnal pembalik sah
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* SOP & Guide Banner: Mencegah Salah Penggunaan Jurnal Manual */}
-      <div className="bg-gradient-to-r from-amber-50/90 via-amber-50/60 to-white border border-amber-200/90 rounded-xl p-3.5 text-xs text-amber-950 shadow-xs space-y-2">
+      <div className="bg-linear-to-r from-amber-50/90 via-amber-50/60 to-white border border-amber-200/90 rounded-xl p-3.5 text-xs text-amber-950 shadow-xs space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-amber-100 text-amber-800 rounded-lg">
@@ -448,7 +454,7 @@ export default function JournalsPage() {
                 1. 95% Jurnal Dibuat Otomatis oleh Sistem
               </div>
               <p className="text-[11px] text-slate-600">
-                Seluruh biaya operasional bus (<strong>BBM Solar, Tol Trans Jawa, Uang Jalan Kru, Servis Restoran, Setoran Tiket Loket</strong>, dan <strong>Pelunasan Sewa Wisata</strong>) 
+                Seluruh biaya operasional bus (<strong>BBM Solar, Tol Trans Jawa, Uang Jalan Kru, Servis Restoran, Setoran Tiket Loket</strong>, dan <strong>Pelunasan Sewa Wisata</strong>)
                 otomatis tercatat saat Kasir Garasi menyelesaikan SPJ atau saat Admin memproses invoice sewa.
               </p>
             </div>
@@ -459,8 +465,8 @@ export default function JournalsPage() {
                 2. Dilarang Input Biaya Bus via Jurnal Manual
               </div>
               <p className="text-[11px] text-slate-600">
-                Tombol <span className="font-semibold text-emerald-700">[+ Entri Jurnal Memorial]</span> <strong>HANYA</strong> untuk transaksi non-bus: 
-                <strong> Setoran Modal Pemilik, Biaya Administrasi Bank Bulanan (BCA), atau Penyesuaian Saldo Akhir Tahun</strong>. 
+                Tombol <span className="font-semibold text-emerald-700">[+ Entri Jurnal Memorial]</span> <strong>HANYA</strong> untuk transaksi non-bus:
+                <strong> Setoran Modal Pemilik, Biaya Administrasi Bank Bulanan (BCA), atau Penyesuaian Saldo Akhir Tahun</strong>.
                 Menginput biaya bus di sini akan menyebabkan <em className="text-rose-700 font-semibold">pencatatan ganda</em>.
               </p>
             </div>
@@ -724,12 +730,20 @@ export default function JournalsPage() {
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow>
-                  <TableCell colSpan={9} className="h-48 text-center text-slate-500">
-                    <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600 mb-2" />
-                    <span>Memuat data jurnal umum...</span>
-                  </TableCell>
-                </TableRow>
+                <TableSkeletonRows
+                  rows={8}
+                  colWidths={[
+                    'w-32',
+                    'w-24',
+                    'w-28',
+                    'w-24',
+                    'w-48',
+                    'w-28 ml-auto',
+                    'w-20 mx-auto',
+                    'w-24 mx-auto',
+                    'w-20 mx-auto',
+                  ]}
+                />
               ) : journals.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="h-48 text-center text-slate-500">
@@ -792,13 +806,12 @@ export default function JournalsPage() {
                             {lineBuCodes.map((code) => (
                               <Badge
                                 key={code}
-                                className={`text-[11px] font-bold px-2 py-0.5 shadow-none ${
-                                  code === 'AKAP'
+                                className={`text-[11px] font-bold px-2 py-0.5 shadow-none ${code === 'AKAP'
                                     ? 'bg-purple-100 text-purple-800 border border-purple-200'
                                     : code === 'WISATA'
-                                    ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                                    : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                                }`}
+                                      ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                      : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                  }`}
                               >
                                 <Layers className="h-3 w-3 mr-1 inline-block" />
                                 {code}

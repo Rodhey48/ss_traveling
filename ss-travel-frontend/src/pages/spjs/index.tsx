@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react';
+import ConfirmDialog from '@/components/shared/confirm-dialog';
 import Heading from '@/components/shared/heading';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import {
+  MetricCardGridSkeleton,
+  TableSkeletonRows,
+} from '@/components/shared/skeleton-loaders';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -10,14 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -26,33 +22,41 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Bus,
-  Search,
-  Clock,
-  Play,
-  CheckCircle2,
-  AlertTriangle,
-  Eye,
-  Wrench,
-  Info,
-  Calendar,
-  RotateCcw,
-  Wallet,
-} from 'lucide-react';
-import SpjDetailModal from './components/spj-detail-modal';
-import SpjFinanceModal from './components/spj-finance-modal';
-import ReplaceCrewModal from './components/replace-crew-modal';
-import EmergencyReplaceBusModal from './components/emergency-replace-bus-modal';
-import ConfirmDialog from '@/components/shared/confirm-dialog';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { usePermission } from '@/hooks/use-permission';
 import { SpjService } from '@/services/spj.service';
 import type {
   Spj,
-  TripServiceType,
-  SpjOperationalStatus,
   SpjFinancialStatus,
+  SpjOperationalStatus,
+  TripServiceType,
 } from '@/types';
+import {
+  AlertTriangle,
+  Bus,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  Eye,
+  Info,
+  Play,
+  RotateCcw,
+  Search,
+  Wallet,
+  Wrench,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { usePermission } from '@/hooks/use-permission';
+import EmergencyReplaceBusModal from './components/emergency-replace-bus-modal';
+import ReplaceCrewModal from './components/replace-crew-modal';
+import SpjDetailModal from './components/spj-detail-modal';
+import SpjFinanceModal from './components/spj-finance-modal';
 
 export default function SpjsPage() {
   const { isUpdate } = usePermission();
@@ -90,7 +94,7 @@ export default function SpjsPage() {
     title: '',
     description: '',
     variant: 'primary',
-    onConfirm: () => {},
+    onConfirm: () => { },
   });
 
   useEffect(() => {
@@ -276,75 +280,79 @@ export default function SpjsPage() {
       </div>
 
       {/* Kartu Metrik Ringkasan Operasional (Clean & Balanced Contrast) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-        <Card className="border shadow-2xs bg-card">
-          <CardHeader className="p-4 pb-1">
-            <CardDescription className="text-xs font-semibold flex items-center justify-between text-muted-foreground">
-              <span>Aktif di Rute</span>
-              <div className="p-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                <Bus className="w-4 h-4" />
-              </div>
-            </CardDescription>
-            <CardTitle className="text-2xl font-extrabold text-foreground mt-1">
-              {activeCount}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0 text-[11px] text-muted-foreground">
-            Armada sedang dinas di trayek/wisata
-          </CardContent>
-        </Card>
+      {loading ? (
+        <MetricCardGridSkeleton count={4} />
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <Card className="border shadow-2xs bg-card">
+            <CardHeader className="p-4 pb-1">
+              <CardDescription className="text-xs font-semibold flex items-center justify-between text-muted-foreground">
+                <span>Aktif di Rute</span>
+                <div className="p-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  <Bus className="w-4 h-4" />
+                </div>
+              </CardDescription>
+              <CardTitle className="text-2xl font-extrabold text-foreground mt-1">
+                {activeCount}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0 text-[11px] text-muted-foreground">
+              Armada sedang dinas di trayek/wisata
+            </CardContent>
+          </Card>
 
-        <Card className="border shadow-2xs bg-card">
-          <CardHeader className="p-4 pb-1">
-            <CardDescription className="text-xs font-semibold flex items-center justify-between text-muted-foreground">
-              <span>Siap Berangkat (ISSUED)</span>
-              <div className="p-1 rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400">
-                <Play className="w-4 h-4" />
-              </div>
-            </CardDescription>
-            <CardTitle className="text-2xl font-extrabold text-foreground mt-1">
-              {issuedCount}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0 text-[11px] text-muted-foreground">
-            SPJ terbit, menunggu jam keberangkatan
-          </CardContent>
-        </Card>
+          <Card className="border shadow-2xs bg-card">
+            <CardHeader className="p-4 pb-1">
+              <CardDescription className="text-xs font-semibold flex items-center justify-between text-muted-foreground">
+                <span>Siap Berangkat (ISSUED)</span>
+                <div className="p-1 rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400">
+                  <Play className="w-4 h-4" />
+                </div>
+              </CardDescription>
+              <CardTitle className="text-2xl font-extrabold text-foreground mt-1">
+                {issuedCount}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0 text-[11px] text-muted-foreground">
+              SPJ terbit, menunggu jam keberangkatan
+            </CardContent>
+          </Card>
 
-        <Card className="border shadow-2xs bg-card">
-          <CardHeader className="p-4 pb-1">
-            <CardDescription className="text-xs font-semibold flex items-center justify-between text-muted-foreground">
-              <span>Menunggu Kasir (UNDER_REVIEW)</span>
-              <div className="p-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                <Clock className="w-4 h-4" />
-              </div>
-            </CardDescription>
-            <CardTitle className="text-2xl font-extrabold text-foreground mt-1">
-              {reviewCount}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0 text-[11px] text-muted-foreground">
-            Bus tiba di pool, kru belum setor kas
-          </CardContent>
-        </Card>
+          <Card className="border shadow-2xs bg-card">
+            <CardHeader className="p-4 pb-1">
+              <CardDescription className="text-xs font-semibold flex items-center justify-between text-muted-foreground">
+                <span>Menunggu Kasir (UNDER_REVIEW)</span>
+                <div className="p-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                  <Clock className="w-4 h-4" />
+                </div>
+              </CardDescription>
+              <CardTitle className="text-2xl font-extrabold text-foreground mt-1">
+                {reviewCount}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0 text-[11px] text-muted-foreground">
+              Bus tiba di pool, kru belum setor kas
+            </CardContent>
+          </Card>
 
-        <Card className="border shadow-2xs bg-card">
-          <CardHeader className="p-4 pb-1">
-            <CardDescription className="text-xs font-semibold flex items-center justify-between text-muted-foreground">
-              <span>Finansial Selesai (SETTLED)</span>
-              <div className="p-1 rounded-md bg-primary/10 text-primary">
-                <CheckCircle2 className="w-4 h-4" />
-              </div>
-            </CardDescription>
-            <CardTitle className="text-2xl font-extrabold text-foreground mt-1">
-              {settledCount}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0 text-[11px] text-muted-foreground">
-            Rekonsiliasi kas & UJ tuntas 100%
-          </CardContent>
-        </Card>
-      </div>
+          <Card className="border shadow-2xs bg-card">
+            <CardHeader className="p-4 pb-1">
+              <CardDescription className="text-xs font-semibold flex items-center justify-between text-muted-foreground">
+                <span>Finansial Selesai (SETTLED)</span>
+                <div className="p-1 rounded-md bg-primary/10 text-primary">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+              </CardDescription>
+              <CardTitle className="text-2xl font-extrabold text-foreground mt-1">
+                {settledCount}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0 text-[11px] text-muted-foreground">
+              Rekonsiliasi kas & UJ tuntas 100%
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Banner Edukasi Status Ganda Independen (Blueprint Bab 8.2) */}
       <div className="p-3.5 rounded-xl border bg-muted/40 text-xs text-foreground flex items-start gap-3 shadow-2xs">
@@ -384,7 +392,7 @@ export default function SpjsPage() {
             {/* Filter Dropdown */}
             <div className="flex flex-wrap items-center gap-2">
               <Select value={serviceFilter} onValueChange={setServiceFilter}>
-                <SelectTrigger className="w-[130px] h-9 text-xs bg-background">
+                <SelectTrigger className="w-32.5 h-9 text-xs bg-background">
                   <SelectValue placeholder="Semua Layanan" />
                 </SelectTrigger>
                 <SelectContent>
@@ -396,7 +404,7 @@ export default function SpjsPage() {
               </Select>
 
               <Select value={opStatusFilter} onValueChange={setOpStatusFilter}>
-                <SelectTrigger className="w-[145px] h-9 text-xs bg-background">
+                <SelectTrigger className="w-36.25 h-9 text-xs bg-background">
                   <SelectValue placeholder="Status Ops" />
                 </SelectTrigger>
                 <SelectContent>
@@ -410,7 +418,7 @@ export default function SpjsPage() {
               </Select>
 
               <Select value={finStatusFilter} onValueChange={setFinStatusFilter}>
-                <SelectTrigger className="w-[150px] h-9 text-xs bg-background">
+                <SelectTrigger className="w-37.5 h-9 text-xs bg-background">
                   <SelectValue placeholder="Status Finansial" />
                 </SelectTrigger>
                 <SelectContent>
@@ -438,7 +446,7 @@ export default function SpjsPage() {
                     setStartDateFilter(e.target.value);
                     setPage(1);
                   }}
-                  className="h-8 text-xs w-[135px] px-2.5 bg-background [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  className="h-8 text-xs w-33.75 px-2.5 bg-background [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                   placeholder="Dari Tanggal"
                 />
                 <span className="text-xs text-muted-foreground">s/d</span>
@@ -450,7 +458,7 @@ export default function SpjsPage() {
                     setEndDateFilter(e.target.value);
                     setPage(1);
                   }}
-                  className="h-8 text-xs w-[135px] px-2.5 bg-background [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  className="h-8 text-xs w-33.75 px-2.5 bg-background [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                   placeholder="Sampai Tanggal"
                 />
               </div>
@@ -512,7 +520,7 @@ export default function SpjsPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/40">
-                <TableHead className="w-[160px]">No. SPJ</TableHead>
+                <TableHead className="w-40">No. SPJ</TableHead>
                 <TableHead>Layanan</TableHead>
                 <TableHead>Armada Bus</TableHead>
                 <TableHead>Rute & Penugasan</TableHead>
@@ -525,11 +533,19 @@ export default function SpjsPage() {
 
             <TableBody>
               {loading ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground text-xs">
-                    Memuat data dokumen SPJ...
-                  </TableCell>
-                </TableRow>
+                <TableSkeletonRows
+                  rows={5}
+                  colWidths={[
+                    'w-28',
+                    'w-20',
+                    'w-24',
+                    'w-36',
+                    'w-32',
+                    'w-24',
+                    'w-28',
+                    'w-20 ml-auto',
+                  ]}
+                />
               ) : spjs.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-muted-foreground text-xs">

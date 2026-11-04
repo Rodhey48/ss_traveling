@@ -25,6 +25,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Skeleton } from '@/components/ui/skeleton';
+import { TableSkeletonRows } from '@/components/shared/skeleton-loaders';
 import {
   Building,
   Briefcase,
@@ -237,26 +239,21 @@ export default function OrganizationPage() {
         description="Konfigurasi profil entitas hukum perusahaan, unit bisnis operasional, hierarki cost center, dan profit center."
       />
 
-      {loading ? (
-        <div className="p-12 text-center text-sm text-muted-foreground border rounded-xl bg-card">
-          Memuat data organisasi dan dimensi...
-        </div>
-      ) : (
-        <Tabs defaultValue="company" className="space-y-4">
-          <TabsList className="bg-muted p-1 rounded-xl">
-            <TabsTrigger value="company" className="gap-2 text-xs">
-              <Building className="h-4 w-4" /> Profil Perusahaan
-            </TabsTrigger>
-            <TabsTrigger value="business-units" className="gap-2 text-xs">
-              <Briefcase className="h-4 w-4" /> Unit Bisnis ({businessUnits.length})
-            </TabsTrigger>
-            <TabsTrigger value="cost-centers" className="gap-2 text-xs">
-              <Layers className="h-4 w-4" /> Cost Center ({costCenters.length})
-            </TabsTrigger>
-            <TabsTrigger value="profit-centers" className="gap-2 text-xs">
-              <TrendingUp className="h-4 w-4" /> Profit Center ({profitCenters.length})
-            </TabsTrigger>
-          </TabsList>
+      <Tabs defaultValue="company" className="space-y-4">
+        <TabsList className="bg-muted p-1 rounded-xl">
+          <TabsTrigger value="company" className="gap-2 text-xs">
+            <Building className="h-4 w-4" /> Profil Perusahaan
+          </TabsTrigger>
+          <TabsTrigger value="business-units" className="gap-2 text-xs">
+            <Briefcase className="h-4 w-4" /> Unit Bisnis ({businessUnits.length})
+          </TabsTrigger>
+          <TabsTrigger value="cost-centers" className="gap-2 text-xs">
+            <Layers className="h-4 w-4" /> Cost Center ({costCenters.length})
+          </TabsTrigger>
+          <TabsTrigger value="profit-centers" className="gap-2 text-xs">
+            <TrendingUp className="h-4 w-4" /> Profit Center ({profitCenters.length})
+          </TabsTrigger>
+        </TabsList>
 
         {/* TAB 1: PROFIL PERUSAHAAN */}
         <TabsContent value="company">
@@ -270,90 +267,104 @@ export default function OrganizationPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSaveCompany} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+              {loading ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-9 w-full" /></div>
+                    <div className="space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-9 w-full" /></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-9 w-full" /></div>
+                    <div className="space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-9 w-full" /></div>
+                  </div>
+                  <div className="space-y-2"><Skeleton className="h-4 w-48" /><Skeleton className="h-9 w-full" /></div>
+                </div>
+              ) : (
+                <form onSubmit={handleSaveCompany} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label htmlFor="cName" className="text-xs font-semibold">
+                        Nama Perusahaan Resmi
+                      </Label>
+                      <Input
+                        id="cName"
+                        value={companyForm.name}
+                        onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="cCode" className="text-xs font-semibold">
+                        Kode Perusahaan (Company Scope)
+                      </Label>
+                      <Input id="cCode" value={companyForm.code} disabled className="bg-muted font-mono" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label htmlFor="cPhone" className="text-xs font-semibold">
+                        Telepon / WhatsApp Kantor
+                      </Label>
+                      <Input
+                        id="cPhone"
+                        value={companyForm.phone}
+                        onChange={(e) => setCompanyForm({ ...companyForm, phone: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="cEmail" className="text-xs font-semibold">
+                        Email Resmi
+                      </Label>
+                      <Input
+                        id="cEmail"
+                        value={companyForm.email}
+                        onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
                   <div className="space-y-1">
-                    <Label htmlFor="cName" className="text-xs font-semibold">
-                      Nama Perusahaan Resmi
+                    <Label htmlFor="cAddress" className="text-xs font-semibold">
+                      Alamat Kantor Pusat / Pool Utama
                     </Label>
                     <Input
-                      id="cName"
-                      value={companyForm.name}
-                      onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
-                      required
+                      id="cAddress"
+                      value={companyForm.address}
+                      onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
                     />
                   </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="cCode" className="text-xs font-semibold">
-                      Kode Perusahaan (Company Scope)
-                    </Label>
-                    <Input id="cCode" value={companyForm.code} disabled className="bg-muted font-mono" />
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <Label htmlFor="cPhone" className="text-xs font-semibold">
-                      Telepon / WhatsApp Kantor
-                    </Label>
-                    <Input
-                      id="cPhone"
-                      value={companyForm.phone}
-                      onChange={(e) => setCompanyForm({ ...companyForm, phone: e.target.value })}
-                    />
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold">Mata Uang Basis</Label>
+                      <Input value={companyForm.currency} disabled className="bg-muted font-bold" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold">Zona Waktu Sistem</Label>
+                      <Input value={companyForm.timezone} disabled className="bg-muted font-mono" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="cWeb" className="text-xs font-semibold">
+                        Website
+                      </Label>
+                      <Input
+                        id="cWeb"
+                        value={companyForm.website}
+                        onChange={(e) => setCompanyForm({ ...companyForm, website: e.target.value })}
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="cEmail" className="text-xs font-semibold">
-                      Email Resmi
-                    </Label>
-                    <Input
-                      id="cEmail"
-                      value={companyForm.email}
-                      onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })}
-                    />
-                  </div>
-                </div>
 
-                <div className="space-y-1">
-                  <Label htmlFor="cAddress" className="text-xs font-semibold">
-                    Alamat Kantor Pusat / Pool Utama
-                  </Label>
-                  <Input
-                    id="cAddress"
-                    value={companyForm.address}
-                    onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Mata Uang Basis</Label>
-                    <Input value={companyForm.currency} disabled className="bg-muted font-bold" />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Zona Waktu Sistem</Label>
-                    <Input value={companyForm.timezone} disabled className="bg-muted font-mono" />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="cWeb" className="text-xs font-semibold">
-                      Website
-                    </Label>
-                    <Input
-                      id="cWeb"
-                      value={companyForm.website}
-                      onChange={(e) => setCompanyForm({ ...companyForm, website: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                {isUpdate && (
-                  <div className="pt-3 flex justify-end">
-                    <Button type="submit" disabled={submitting} className="gap-2">
-                      <Save className="h-4 w-4" /> {submitting ? 'Menyimpan...' : 'Simpan Profil'}
-                    </Button>
-                  </div>
-                )}
-              </form>
+                  {isUpdate && (
+                    <div className="pt-3 flex justify-end">
+                      <Button type="submit" disabled={submitting} className="gap-2">
+                        <Save className="h-4 w-4" /> {submitting ? 'Menyimpan...' : 'Simpan Profil'}
+                      </Button>
+                    </div>
+                  )}
+                </form>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -393,45 +404,58 @@ export default function OrganizationPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {businessUnits.map((bu) => (
-                    <TableRow key={bu.id}>
-                      <TableCell className="font-mono font-bold text-primary">{bu.code}</TableCell>
-                      <TableCell className="font-semibold">{bu.name}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{bu.description || '-'}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-emerald-600 bg-emerald-50">
-                          Aktif
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          {isUpdate && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => {
-                                setSelectedBu(bu);
-                                setBuModalOpen(true);
-                              }}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {isDelete && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive"
-                              onClick={() => handleDeleteBu(bu)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
+                  {loading ? (
+                    <TableSkeletonRows
+                      rows={3}
+                      colWidths={['w-24', 'w-36', 'w-48', 'w-20', 'w-16 ml-auto']}
+                    />
+                  ) : businessUnits.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                        Belum ada unit bisnis terdaftar.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    businessUnits.map((bu) => (
+                      <TableRow key={bu.id}>
+                        <TableCell className="font-mono font-bold text-primary">{bu.code}</TableCell>
+                        <TableCell className="font-semibold">{bu.name}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{bu.description || '-'}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-emerald-600 bg-emerald-50">
+                            Aktif
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            {isUpdate && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => {
+                                  setSelectedBu(bu);
+                                  setBuModalOpen(true);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {isDelete && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive"
+                                onClick={() => handleDeleteBu(bu)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -473,47 +497,60 @@ export default function OrganizationPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {costCenters.map((cc) => (
-                    <TableRow key={cc.id}>
-                      <TableCell className="font-mono font-bold text-primary">{cc.code}</TableCell>
-                      <TableCell className="font-semibold">{cc.name}</TableCell>
-                      <TableCell className="text-xs">
-                        {cc.parent ? (
-                          <Badge variant="outline">{cc.parent.name}</Badge>
-                        ) : (
-                          <span className="text-muted-foreground">- Pusat -</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{cc.description || '-'}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          {isUpdate && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => {
-                                setSelectedCc(cc);
-                                setCcModalOpen(true);
-                              }}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {isDelete && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive"
-                              onClick={() => handleDeleteCc(cc)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
+                  {loading ? (
+                    <TableSkeletonRows
+                      rows={4}
+                      colWidths={['w-24', 'w-36', 'w-28', 'w-48', 'w-16 ml-auto']}
+                    />
+                  ) : costCenters.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                        Belum ada cost center terdaftar.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    costCenters.map((cc) => (
+                      <TableRow key={cc.id}>
+                        <TableCell className="font-mono font-bold text-primary">{cc.code}</TableCell>
+                        <TableCell className="font-semibold">{cc.name}</TableCell>
+                        <TableCell className="text-xs">
+                          {cc.parent ? (
+                            <Badge variant="outline">{cc.parent.name}</Badge>
+                          ) : (
+                            <span className="text-muted-foreground">- Pusat -</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{cc.description || '-'}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            {isUpdate && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => {
+                                  setSelectedCc(cc);
+                                  setCcModalOpen(true);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {isDelete && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive"
+                                onClick={() => handleDeleteCc(cc)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -555,56 +592,68 @@ export default function OrganizationPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {profitCenters.map((pc) => (
-                    <TableRow key={pc.id}>
-                      <TableCell className="font-mono font-bold text-primary">{pc.code}</TableCell>
-                      <TableCell className="font-semibold">{pc.name}</TableCell>
-                      <TableCell>
-                        {pc.businessUnit ? (
-                          <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
-                            {pc.businessUnit.name}
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground text-xs">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{pc.description || '-'}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          {isUpdate && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => {
-                                setSelectedPc(pc);
-                                setPcModalOpen(true);
-                              }}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {isDelete && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive"
-                              onClick={() => handleDeletePc(pc)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
+                  {loading ? (
+                    <TableSkeletonRows
+                      rows={3}
+                      colWidths={['w-24', 'w-36', 'w-28', 'w-48', 'w-16 ml-auto']}
+                    />
+                  ) : profitCenters.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                        Belum ada profit center terdaftar.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    profitCenters.map((pc) => (
+                      <TableRow key={pc.id}>
+                        <TableCell className="font-mono font-bold text-primary">{pc.code}</TableCell>
+                        <TableCell className="font-semibold">{pc.name}</TableCell>
+                        <TableCell>
+                          {pc.businessUnit ? (
+                            <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
+                              {pc.businessUnit.name}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{pc.description || '-'}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            {isUpdate && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => {
+                                  setSelectedPc(pc);
+                                  setPcModalOpen(true);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {isDelete && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive"
+                                onClick={() => handleDeletePc(pc)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
-      )}
 
       {/* Modals */}
       <BusinessUnitModal

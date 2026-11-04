@@ -19,6 +19,7 @@ export default function UsersPage() {
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Specific Action Permissions
   const canReset = !!actions['PermissionUser.reset'];
@@ -26,6 +27,7 @@ export default function UsersPage() {
   const canToggleStatus = !!actions['PermissionUser.status'];
 
   const fetchUsers = async () => {
+    setLoading(true);
     try {
       const response = await UserService.findAll({ search });
       if (response.status) {
@@ -33,6 +35,8 @@ export default function UsersPage() {
       }
     } catch (error) {
       toast.error('Gagal mengambil data user');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -126,6 +130,7 @@ export default function UsersPage() {
 
       <UserTable
         users={users}
+        isLoading={loading}
         onEdit={handleEdit}
         onDelete={handleDelete}
         onResetPassword={handleResetPassword}

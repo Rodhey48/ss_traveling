@@ -2,6 +2,65 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-11-04: Ekspansi Skeleton UI ke Seluruh Modul Finansial, Akuntansi, Tarif & Master Administratif Completed
+- **Modul Keuangan & Utang/Piutang (AP & AR Invoices)**:
+  - **Tagihan Vendor / Utang Usaha (`src/pages/ap-invoices/index.tsx`)**: Mengintegrasikan `MetricCardGridSkeleton` pada 4 kartu ringkasan utang vendor dan `TableSkeletonRows` pada Tab Faktur Tagihan serta Tab Riwayat Pembayaran Bank/Kas.
+  - **Piutang Usaha & DP Sewa Wisata (`src/pages/ar-invoices/index.tsx`)**: Mengintegrasikan `MetricCardGridSkeleton` pada 4 kartu ringkasan piutang dan `TableSkeletonRows` pada Tab Faktur Piutang serta Tab Riwayat Penerimaan Pembayaran/DP.
+- **Modul Kas Kecil Garasi Pool (`src/pages/petty-cash/index.tsx`)**:
+  - Mengintegrasikan `MetricCardGridSkeleton` pada 4 kartu metrik (Sisa Saldo Kas Kecil, Pengeluaran Bulan Ini, Menunggu Verifikasi, Transaksi Hari Ini) dan `TableSkeletonRows` 8 kolom pada tabel transaksi BKK/BKM kas kecil garasi.
+- **Modul Buku Jurnal Umum & Penutupan Periode (`journals` & `period-closing`)**:
+  - **Buku Jurnal Umum (`src/pages/journals/index.tsx`)**: Mengintegrasikan `MetricCardGridSkeleton` pada 3 kartu ringkasan jurnal dan `TableSkeletonRows` 9 kolom dengan sorting indikator.
+  - **Tutup Buku Bulanan (`src/pages/period-closing/index.tsx`)**: Menggantikan spinner loading teks dengan skeleton banner kesiapan dan grid 6 kartu audit checklist penutupan fiskal.
+  - **Kalender Periode Fiskal (`src/pages/fiscal-periods/index.tsx`)**: Mengintegrasikan `TableSkeletonRows` 6 kolom pada tabel 12 periode bulanan.
+- **Laporan Profitabilitas Trip SPJ (`src/pages/reports/trip-profitability/index.tsx`)**:
+  - 4 Kartu Ringkasan (Omzet Bruto, Beban Langsung, Margin Kontribusi, Rata-Rata Rasio Margin) menggunakan `MetricCardGridSkeleton`.
+  - Tabel Analisis Margin Kontribusi (11 kolom) menggunakan `TableSkeletonRows`.
+- **Master Keuangan, Kas & Rekening Bank, dan Bagan Akun (COA)**:
+  - **Kas & Rekening Bank (`src/pages/cash-bank/index.tsx`)**: Mengintegrasikan `MetricCardGridSkeleton` pada stats cards, `TableSkeletonRows` pada tab Kas Fisik, dan `BankAccountCardSkeleton` pada tab Rekening Bank Korporat.
+  - **Bagan Akun COA (`src/pages/accounts/index.tsx`)**: Mengintegrasikan skeleton 6 kartu kategori akun (Aset, Liabilitas, Ekuitas, Pendapatan, Beban) dan row skeleton berjenjang pada area hierarki pohon / tabel akun.
+- **Master Tarif, Komisi Kru, Mitra Servis, & Administrasi Sistem**:
+  - **Matriks Tarif & Kalender Musim (`src/pages/fares/index.tsx`)**: Mengintegrasikan `MetricCardGridSkeleton`, `TableSkeletonRows` pada tabel matriks tarif, dan skeleton cards pada tab musim tarif.
+  - **Standar Kompensasi & Tarif Kru (`src/pages/crew-rates/index.tsx`)**: Mengintegrasikan `MetricCardGridSkeleton` dan `TableSkeletonRows` pada master tarif dasar kru.
+  - **Mitra Agen & Aturan Komisi (`src/pages/agents/index.tsx`)**: Mengintegrasikan `MetricCardGridSkeleton` dan `TableSkeletonRows` pada tabel mitra agen tiket.
+  - **Mitra Rumah Makan & Fee Korlap (`src/pages/partners/index.tsx`)**: Mengintegrasikan `MetricCardGridSkeleton` dan `TableSkeletonRows` pada tab Rumah Makan dan tab Fee Korlap.
+  - **Manajemen User (`src/pages/users/`)**: Menambahkan prop `isLoading` dan `TableSkeletonRows` pada `UserTable`.
+  - **Role & Permissions (`src/pages/roles/index.tsx`)**: Menggantikan spinner teks dengan `TableSkeletonRows` 4 kolom.
+  - **Manajemen Menu (`src/pages/menus/index.tsx`)**: Menampilkan skeleton row berjenjang hierarki saat struktur menu dimuat.
+  - **Struktur Organisasi & Dimensi (`src/pages/organization/index.tsx`)**: Menghilangkan full-screen loading blocker, menyediakan form skeleton pada profil perusahaan serta `TableSkeletonRows` pada Unit Bisnis, Cost Center, dan Profit Center.
+- **Verifikasi Kualitas Penuh**:
+  - Kompilasi TypeScript frontend `yarn build` sukses 100% tanpa error (`✓ built in 2.10s`).
+
+### 2026-11-04: Ekspansi Skeleton UI ke Modul Utama (Dashboard, Kasir Pool, SPJ, Jadwal, Armada & CRM) Completed
+- **Penambahan Preset Skeleton Khusus (`src/components/shared/skeleton-loaders.tsx`)**:
+  - `DashboardKpiCardSkeleton` & `DashboardKpiGridSkeleton`: Skeleton 4 kartu metrik utama dashboard dengan kontras glassmorphism transparan.
+  - `SpjTableSkeletonRows`: Skeleton baris tabel pemantauan operasional SPJ lengkap dengan nomor dokumen, bus, rute, kru, dan badge status.
+  - `CashierPendingTableSkeletonRows`: Skeleton baris tabel meja kasir rekonsiliasi SPJ kepulangan.
+  - `VehicleCardSkeleton` & `VehicleCardGridSkeleton`: Skeleton responsif kartu katalog armada bus (grid 3 kolom) lengkap dengan box foto sampul bus.
+- **Implementasi Menyeluruh di Halaman Dashboard (`src/pages/dashboard/index.tsx`)**:
+  - 4 Kartu KPI Utama (Status Armada, Supir, SPJ Aktif, Likuiditas Kas/Bank) menampilkan `DashboardKpiGridSkeleton` saat data dimuat (menghilangkan flash nilai 0).
+  - Widget Saldo Kas & Bank GL menampilkan skeleton baris akun kas/bank.
+  - Widget Alert Keuangan & Pengendalian Internal menampilkan skeleton kartu peringatan.
+  - Tabel Monitoring Perjalanan SPJ Terbaru menampilkan skeleton baris dinas bus.
+- **Implementasi di Meja Kasir Pool (`src/pages/cashier/index.tsx`)**:
+  - 4 Kartu Metrik Kasir Pool (SPJ Siap Rekonsiliasi, Temuan Selisih, Settlement Terverifikasi, Kas Masuk BKM) menggunakan `MetricCardGridSkeleton`.
+  - Tab 1 (SPJ Siap Rekonsiliasi): Menampilkan `CashierPendingTableSkeletonRows`.
+  - Tab 2 (Riwayat Settlement): Menampilkan `TableSkeletonRows` 8 kolom.
+  - Tab 3 (Pusat Investigasi Selisih FM): Menampilkan `TableSkeletonRows` 7 kolom.
+- **Implementasi di Modul SPJ (`src/pages/spjs/index.tsx`)**:
+  - 4 Kartu Metrik Ringkasan Operasional (Aktif di Rute, Siap Berangkat, Menunggu Kasir, Finansial Selesai) menggunakan `MetricCardGridSkeleton`.
+  - Tabel Dokumen SPJ Lapangan (8 kolom) menggunakan `TableSkeletonRows` saat inisialisasi maupun pergantian filter.
+- **Implementasi di Modul Plotting Jadwal Bus (`src/pages/schedules/index.tsx`)**:
+  - Tabel Daftar Jadwal Bus (8 kolom) menampilkan `TableSkeletonRows` saat query filter tanggal dan pencarian aktif.
+- **Implementasi di Modul Armada Bus (`src/pages/vehicles/index.tsx`)**:
+  - 4 Kartu Statistik Armada (Total Unit, Big Bus, Milik Sendiri, Leasing) menggunakan `MetricCardGridSkeleton`.
+  - Tampilan Kartu Grid menggunakan `VehicleCardGridSkeleton` (6 card skeletons dengan frame foto bus).
+  - Tampilan Tabel menggunakan `TableSkeletonRows` 8 kolom.
+- **Implementasi di Database Pelanggan & CRM (`src/pages/customers/index.tsx`)**:
+  - 4 Kartu Metrik CRM menggunakan `MetricCardGridSkeleton`.
+  - Tabel Data Pelanggan menggunakan `TableSkeletonRows` 7 kolom.
+- **Verifikasi Kualitas Penuh**:
+  - Kompilasi TypeScript frontend `yarn build` sukses 100% bebas error tanpa satupun regression.
+
 ### 2026-11-03: Implementasi Skeleton UI & Global API Call Loading Indicator Completed
 - **Komponen Atomik Skeleton (`src/components/ui/skeleton.tsx`)**:
   - Membangun komponen dasar `Skeleton` berbasis Tailwind CSS v4 (`animate-pulse`) dengan styling netral transparan elegan (`bg-slate-200/70 dark:bg-zinc-800/70`).

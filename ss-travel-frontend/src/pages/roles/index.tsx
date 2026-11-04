@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/table';
 import RoleModal from './components/role-modal';
 import { RoleService } from '@/services/role.service';
+import { TableSkeletonRows } from '@/components/shared/skeleton-loaders';
 import type { Role, RoleFormData } from '@/types';
 import { toast } from 'sonner';
 import { usePermission } from '@/hooks/use-permission';
@@ -97,11 +98,10 @@ export default function RolesPage() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center">
-                  Loading...
-                </TableCell>
-              </TableRow>
+              <TableSkeletonRows
+                rows={4}
+                colWidths={['w-36', 'w-48', 'w-24', 'w-16 ml-auto']}
+              />
             ) : roles.length > 0 ? (
               roles.map((role) => (
                 <TableRow key={role.id}>

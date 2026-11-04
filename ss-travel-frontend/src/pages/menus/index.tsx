@@ -1,15 +1,16 @@
-import { useState, useEffect } from 'react';
 import Heading from '@/components/shared/heading';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit, Trash2, ChevronRight, ChevronDown, LayoutGrid, PlusCircle } from 'lucide-react';
-import { MenuService } from '@/services/menu.service';
-import type { BackendMenu, MenuFormData } from '@/types';
-import { toast } from 'sonner';
-import MenuModal from './components/menu-modal';
 import { getIcon } from '@/components/ui/icons';
+import { Skeleton } from '@/components/ui/skeleton';
 import { usePermission } from '@/hooks/use-permission';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
+import { MenuService } from '@/services/menu.service';
+import type { BackendMenu, MenuFormData } from '@/types';
+import { ChevronDown, ChevronRight, Edit, LayoutGrid, Plus, PlusCircle, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import MenuModal from './components/menu-modal';
 
 export default function MenusPage() {
   const { isCreate, isUpdate, isDelete } = usePermission();
@@ -76,12 +77,12 @@ export default function MenusPage() {
   const handleSubmit = async (data: MenuFormData) => {
     try {
       setSubmitting(true);
-      
-      const payload = { 
-        ...data, 
+
+      const payload = {
+        ...data,
         parentId: (!data.parentId || data.parentId === 'none' || data.parentId === '') ? undefined : data.parentId,
       };
-      
+
       if (selectedMenu) {
         await MenuService.update(selectedMenu.id, payload);
         toast.success('Menu berhasil diperbarui');
@@ -111,15 +112,15 @@ export default function MenusPage() {
 
     return (
       <>
-        <div 
+        <div
           className={cn(
             "group flex items-center py-2.5 px-4 border-b hover:bg-accent/40 transition-all",
-            menu.title && "bg-primary/[0.02]"
+            menu.title && "bg-primary/2"
           )}
           style={{ paddingLeft: `${level * 24 + 16}px` }}
         >
           <div className="flex items-center flex-1 min-w-0">
-            <button 
+            <button
               onClick={() => toggleExpand(menu.id)}
               className={cn(
                 "p-1 mr-1 rounded hover:bg-accent transition-colors",
@@ -128,7 +129,7 @@ export default function MenusPage() {
             >
               {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
             </button>
-            
+
             <div className="flex items-center min-w-0 gap-2">
               {renderIcon(menu.icon)}
               <span className={cn(
@@ -137,7 +138,7 @@ export default function MenusPage() {
               )}>
                 {menu.name}
               </span>
-              
+
               <div className="flex items-center gap-1.5 shrink-0">
                 {menu.title && (
                   <Badge variant="outline" className="text-[10px] h-4 px-1 bg-primary/5 text-primary border-primary/20">GROUP</Badge>
@@ -154,10 +155,10 @@ export default function MenusPage() {
 
           <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
             {isCreate && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8 text-primary hover:bg-primary/10" 
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-primary hover:bg-primary/10"
                 title="Tambah Sub-Menu"
                 onClick={() => handleCreateChild(menu.id)}
               >
@@ -165,10 +166,10 @@ export default function MenusPage() {
               </Button>
             )}
             {isUpdate && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8 hover:bg-accent" 
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 hover:bg-accent"
                 title="Edit Menu"
                 onClick={() => handleEdit(menu)}
               >
@@ -176,10 +177,10 @@ export default function MenusPage() {
               </Button>
             )}
             {isDelete && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8 text-destructive hover:bg-destructive/10" 
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-destructive hover:bg-destructive/10"
                 title="Hapus Menu"
                 onClick={() => handleDelete(menu.id)}
               >
@@ -220,7 +221,26 @@ export default function MenusPage() {
         </div>
         <div className="flex flex-col">
           {loading ? (
-            <div className="p-12 text-center text-muted-foreground animate-pulse">Memuat struktur menu...</div>
+            <div className="p-4 space-y-2">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between py-2.5 px-3 border-b border-border/40"
+                  style={{ paddingLeft: `${(i % 3) * 20 + 12}px` }}
+                >
+                  <div className="flex items-center gap-2 flex-1">
+                    <Skeleton className="h-4 w-4 rounded" />
+                    <Skeleton className="h-4 w-4 rounded" />
+                    <Skeleton className="h-4 w-32 rounded-md" />
+                    <Skeleton className="h-4 w-20 rounded-full" />
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Skeleton className="h-7 w-7 rounded-md" />
+                    <Skeleton className="h-7 w-7 rounded-md" />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : menus.length > 0 ? (
             menus.map((menu) => <MenuRow key={menu.id} menu={menu} />)
           ) : (

@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
 import Heading from '@/components/shared/heading';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import {
+  MetricCardGridSkeleton,
+  TableSkeletonRows,
+} from '@/components/shared/skeleton-loaders';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -10,6 +12,15 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -19,37 +30,31 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Plus,
-  Calendar,
-  Ticket,
-  ArrowRight,
-  Calculator,
-  Edit,
-  Trash2,
-  Sparkles,
-} from 'lucide-react';
-import FareSeasonModal from './components/fare-season-modal';
-import FareMatrixModal from './components/fare-matrix-modal';
+import { usePermission } from '@/hooks/use-permission';
 import { FareService } from '@/services/fare.service';
 import { VehicleService } from '@/services/vehicle.service';
 import type {
-  FareSeason,
-  FareSeasonFormData,
+  CalculatedFareResult,
   FareMatrix,
   FareMatrixFormData,
+  FareSeason,
+  FareSeasonFormData,
   SeatClass,
-  CalculatedFareResult,
 } from '@/types';
+import {
+  ArrowRight,
+  Calculator,
+  Calendar,
+  Edit,
+  Plus,
+  Sparkles,
+  Ticket,
+  Trash2,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { usePermission } from '@/hooks/use-permission';
+import FareMatrixModal from './components/fare-matrix-modal';
+import FareSeasonModal from './components/fare-season-modal';
 
 export default function FaresPage() {
   const { isCreate, isUpdate, isDelete } = usePermission();
@@ -253,67 +258,71 @@ export default function FaresPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="shadow-xs border-l-4 border-l-primary">
-          <CardHeader className="p-4 pb-2">
-            <CardDescription className="text-xs">Kalender Musim Tarif</CardDescription>
-            <CardTitle className="text-2xl font-bold text-primary flex items-center justify-between">
-              {seasons.length} Musim
-              <Calendar className="h-5 w-5 opacity-40" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <p className="text-xs text-muted-foreground">
-              {seasons.filter((s) => s.isActive).length} Musim Aktif
-            </p>
-          </CardContent>
-        </Card>
+      {loading ? (
+        <MetricCardGridSkeleton count={4} />
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="shadow-xs border-l-4 border-l-primary">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Kalender Musim Tarif</CardDescription>
+              <CardTitle className="text-2xl font-bold text-primary flex items-center justify-between">
+                {seasons.length} Musim
+                <Calendar className="h-5 w-5 opacity-40" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-xs text-muted-foreground">
+                {seasons.filter((s) => s.isActive).length} Musim Aktif
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-xs border-l-4 border-l-blue-600">
-          <CardHeader className="p-4 pb-2">
-            <CardDescription className="text-xs">Matriks Tarif Terkonfigurasi</CardDescription>
-            <CardTitle className="text-2xl font-bold text-blue-600 flex items-center justify-between">
-              {matrices.length} Kombinasi
-              <Ticket className="h-5 w-5 opacity-40" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <p className="text-xs text-muted-foreground">
-              Rute Jakarta/Tangerang &lt;-&gt; Yogya
-            </p>
-          </CardContent>
-        </Card>
+          <Card className="shadow-xs border-l-4 border-l-blue-600">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Matriks Tarif Terkonfigurasi</CardDescription>
+              <CardTitle className="text-2xl font-bold text-blue-600 flex items-center justify-between">
+                {matrices.length} Kombinasi
+                <Ticket className="h-5 w-5 opacity-40" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-xs text-muted-foreground">
+                Rute Jakarta/Tangerang &lt;-&gt; Yogya
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-xs border-l-4 border-l-purple-600">
-          <CardHeader className="p-4 pb-2">
-            <CardDescription className="text-xs">Tarif Dasar Sleeper</CardDescription>
-            <CardTitle className="text-2xl font-bold text-purple-700 dark:text-purple-400 flex items-center justify-between">
-              Rp 420.000
-              <Sparkles className="h-5 w-5 opacity-40" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <p className="text-xs text-muted-foreground">
-              Tuslah Lebaran: Rp 650.000
-            </p>
-          </CardContent>
-        </Card>
+          <Card className="shadow-xs border-l-4 border-l-purple-600">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Tarif Dasar Sleeper</CardDescription>
+              <CardTitle className="text-2xl font-bold text-purple-700 dark:text-purple-400 flex items-center justify-between">
+                Rp 420.000
+                <Sparkles className="h-5 w-5 opacity-40" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-xs text-muted-foreground">
+                Tuslah Lebaran: Rp 650.000
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-xs border-l-4 border-l-amber-500">
-          <CardHeader className="p-4 pb-2">
-            <CardDescription className="text-xs">Tarif Dasar Executive</CardDescription>
-            <CardTitle className="text-2xl font-bold text-amber-700 dark:text-amber-400 flex items-center justify-between">
-              Rp 250.000
-              <Ticket className="h-5 w-5 opacity-40" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <p className="text-xs text-muted-foreground">
-              Tuslah Lebaran: Rp 400.000
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+          <Card className="shadow-xs border-l-4 border-l-amber-500">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Tarif Dasar Executive</CardDescription>
+              <CardTitle className="text-2xl font-bold text-amber-700 dark:text-amber-400 flex items-center justify-between">
+                Rp 250.000
+                <Ticket className="h-5 w-5 opacity-40" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-xs text-muted-foreground">
+                Tuslah Lebaran: Rp 400.000
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Main Tabs */}
       <Tabs
@@ -448,7 +457,7 @@ export default function FaresPage() {
                 value={selectedSeasonFilter}
                 onValueChange={setSelectedSeasonFilter}
               >
-                <SelectTrigger className="w-[200px] h-9">
+                <SelectTrigger className="w-50 h-9">
                   <SelectValue placeholder="Semua Musim" />
                 </SelectTrigger>
                 <SelectContent>
@@ -465,7 +474,7 @@ export default function FaresPage() {
                 value={selectedClassFilter}
                 onValueChange={setSelectedClassFilter}
               >
-                <SelectTrigger className="w-[180px] h-9">
+                <SelectTrigger className="w-45 h-9">
                   <SelectValue placeholder="Semua Kelas" />
                 </SelectTrigger>
                 <SelectContent>
@@ -499,11 +508,18 @@ export default function FaresPage() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      Memuat matriks tarif tiket...
-                    </TableCell>
-                  </TableRow>
+                  <TableSkeletonRows
+                    rows={5}
+                    colWidths={[
+                      'w-36',
+                      'w-24',
+                      'w-20',
+                      'w-24 ml-auto',
+                      'w-24',
+                      'w-16',
+                      'w-16 ml-auto',
+                    ]}
+                  />
                 ) : filteredMatrices.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
@@ -592,79 +608,100 @@ export default function FaresPage() {
 
         {/* TAB 2: KALENDER MUSIM TARIF */}
         <TabsContent value="seasons" className="space-y-4 pt-2">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {seasons.map((s) => (
-              <Card
-                key={s.id}
-                className="shadow-xs flex flex-col justify-between"
-              >
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <Badge variant="outline" className="font-mono text-xs">
-                      {s.code}
-                    </Badge>
-                    <Badge
-                      className={
-                        s.isActive
-                          ? 'bg-emerald-600/15 text-emerald-700 dark:text-emerald-400 border-emerald-200'
-                          : 'bg-muted text-muted-foreground'
-                      }
-                    >
-                      {s.isActive ? 'Aktif' : 'Non-Aktif'}
-                    </Badge>
-                  </div>
-                  <CardTitle className="text-lg font-bold mt-2">{s.name}</CardTitle>
-                  <CardDescription className="text-xs">
-                    {s.description || 'Tidak ada deskripsi tambahan.'}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="p-2.5 rounded-lg bg-muted/40 text-xs space-y-1">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Mulai:</span>
-                      <span className="font-semibold">
-                        {s.startDate ? s.startDate.split('T')[0] : '-'}
-                      </span>
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i} className="shadow-xs">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-5 w-20 rounded" />
+                      <Skeleton className="h-5 w-16 rounded-full" />
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Selesai:</span>
-                      <span className="font-semibold">
-                        {s.endDate ? s.endDate.split('T')[0] : '-'}
-                      </span>
+                    <Skeleton className="h-6 w-36 rounded mt-2" />
+                    <Skeleton className="h-4 w-48 rounded" />
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <Skeleton className="h-16 w-full rounded-lg" />
+                    <Skeleton className="h-4 w-28 rounded" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {seasons.map((s) => (
+                <Card
+                  key={s.id}
+                  className="shadow-xs flex flex-col justify-between"
+                >
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline" className="font-mono text-xs">
+                        {s.code}
+                      </Badge>
+                      <Badge
+                        className={
+                          s.isActive
+                            ? 'bg-emerald-600/15 text-emerald-700 dark:text-emerald-400 border-emerald-200'
+                            : 'bg-muted text-muted-foreground'
+                        }
+                      >
+                        {s.isActive ? 'Aktif' : 'Non-Aktif'}
+                      </Badge>
                     </div>
-                  </div>
+                    <CardTitle className="text-lg font-bold mt-2">{s.name}</CardTitle>
+                    <CardDescription className="text-xs">
+                      {s.description || 'Tidak ada deskripsi tambahan.'}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="p-2.5 rounded-lg bg-muted/40 text-xs space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Mulai:</span>
+                        <span className="font-semibold">
+                          {s.startDate ? s.startDate.split('T')[0] : '-'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Selesai:</span>
+                        <span className="font-semibold">
+                          {s.endDate ? s.endDate.split('T')[0] : '-'}
+                        </span>
+                      </div>
+                    </div>
 
-                  <div className="text-xs text-muted-foreground">
-                    Jumlah Matriks Terkait: <strong>{s.matrices?.length || 0}</strong>
-                  </div>
+                    <div className="text-xs text-muted-foreground">
+                      Jumlah Matriks Terkait: <strong>{s.matrices?.length || 0}</strong>
+                    </div>
 
-                  <div className="flex items-center justify-end gap-2 pt-2 border-t">
-                    {isUpdate && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedSeason(s);
-                          setIsSeasonModalOpen(true);
-                        }}
-                      >
-                        <Edit className="h-3.5 w-3.5 mr-1 text-primary" /> Edit
-                      </Button>
-                    )}
-                    {isDelete && s.code !== 'REGULER' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleSeasonDelete(s)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5 mr-1 text-destructive" /> Hapus
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t">
+                      {isUpdate && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedSeason(s);
+                            setIsSeasonModalOpen(true);
+                          }}
+                        >
+                          <Edit className="h-3.5 w-3.5 mr-1 text-primary" /> Edit
+                        </Button>
+                      )}
+                      {isDelete && s.code !== 'REGULER' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleSeasonDelete(s)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5 mr-1 text-destructive" /> Hapus
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 

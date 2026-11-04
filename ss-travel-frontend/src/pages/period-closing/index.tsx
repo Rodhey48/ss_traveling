@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -234,9 +235,36 @@ export default function PeriodClosingPage() {
 
       {/* OVERALL READINESS CARD */}
       {isChecklistLoading ? (
-        <div className="bg-white p-12 text-center text-gray-500 rounded-xl border border-gray-200 text-xs">
-          <RefreshCw className="h-6 w-6 animate-spin mx-auto text-blue-600 mb-2" />
-          <span>Menjalankan 6-Point Audit Checklist Penutupan Buku...</span>
+        <div className="space-y-4">
+          <Card className="border border-slate-200/80 bg-white/80 p-5 shadow-xs">
+            <div className="flex items-start gap-4">
+              <Skeleton className="h-10 w-10 rounded-lg shrink-0" />
+              <div className="space-y-2 flex-1">
+                <Skeleton className="h-5 w-64 rounded-md" />
+                <Skeleton className="h-4 w-full max-w-xl rounded-md" />
+              </div>
+            </div>
+          </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Card key={i} className="border border-slate-200/80 bg-white/80 shadow-xs">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <Skeleton className="h-9 w-9 rounded-lg shrink-0" />
+                      <div className="space-y-1.5">
+                        <Skeleton className="h-4 w-40 rounded-md" />
+                        <Skeleton className="h-3 w-24 rounded-md" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-5 w-24 rounded-full" />
+                  </div>
+                  <Skeleton className="h-3.5 w-full rounded-md" />
+                  <Skeleton className="h-3 w-48 rounded-md" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       ) : checklist ? (
         <div className="space-y-4">

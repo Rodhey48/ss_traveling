@@ -9,12 +9,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { TableSkeletonRows } from '@/components/shared/skeleton-loaders';
 import { cn } from '@/lib/utils';
 import type { User } from '@/types';
 import { Edit, KeyRound, Trash2, UserCheck, UserX } from 'lucide-react';
 
 interface UserTableProps {
   users: User[];
+  isLoading?: boolean;
   onEdit: (user: User) => void;
   onDelete: (id: string) => void;
   onResetPassword: (user: User) => void;
@@ -27,6 +29,7 @@ interface UserTableProps {
 
 export default function UserTable({
   users,
+  isLoading = false,
   onEdit,
   onDelete,
   onResetPassword,
@@ -51,7 +54,12 @@ export default function UserTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users && users.length > 0 ? (
+          {isLoading ? (
+            <TableSkeletonRows
+              rows={5}
+              colWidths={['w-48', 'w-24', 'w-20', 'w-16', 'w-24 ml-auto']}
+            />
+          ) : users && users.length > 0 ? (
             users.map((user) => (
               <TableRow key={user.id} className={cn(!user.isActive && "opacity-60 bg-muted/20")}>
                 <TableCell>

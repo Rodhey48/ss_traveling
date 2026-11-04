@@ -25,6 +25,11 @@ import {
 } from '@/components/ui/table';
 import { usePermission } from '@/hooks/use-permission';
 import { VehicleService } from '@/services/vehicle.service';
+import {
+  MetricCardGridSkeleton,
+  VehicleCardGridSkeleton,
+  TableSkeletonRows,
+} from '@/components/shared/skeleton-loaders';
 import type { Vehicle, VehicleFormData } from '@/types';
 import {
   Armchair,
@@ -172,44 +177,48 @@ export default function VehiclesPage() {
       </div>
 
       {/* Kartu Statistik */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs">
-          <CardHeader className="p-4 pb-2">
-            <CardDescription className="text-xs">Total Unit Armada</CardDescription>
-            <CardTitle className="text-2xl font-black text-primary flex items-center justify-between">
-              {totalBus} Bus
-              <Bus className="h-6 w-6 opacity-40" />
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs">
-          <CardHeader className="p-4 pb-2">
-            <CardDescription className="text-xs">Big Bus Executive/Combi</CardDescription>
-            <CardTitle className="text-2xl font-bold flex items-center justify-between">
-              {totalBigBus} Unit
-              <Sparkles className="h-6 w-6 text-amber-500 opacity-60" />
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs">
-          <CardHeader className="p-4 pb-2">
-            <CardDescription className="text-xs">Aset Milik Sendiri (Lunas)</CardDescription>
-            <CardTitle className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
-              {totalOwned} Unit
-              <CheckCircle2 className="h-6 w-6 opacity-60" />
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs">
-          <CardHeader className="p-4 pb-2">
-            <CardDescription className="text-xs">Cicilan Bank / Leasing</CardDescription>
-            <CardTitle className="text-2xl font-bold text-blue-600 dark:text-blue-400 flex items-center justify-between">
-              {totalLeasing} Unit
-              <Clock className="h-6 w-6 opacity-60" />
-            </CardTitle>
-          </CardHeader>
-        </Card>
-      </div>
+      {loading ? (
+        <MetricCardGridSkeleton count={4} />
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Total Unit Armada</CardDescription>
+              <CardTitle className="text-2xl font-black text-primary flex items-center justify-between">
+                {totalBus} Bus
+                <Bus className="h-6 w-6 opacity-40" />
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Big Bus Executive/Combi</CardDescription>
+              <CardTitle className="text-2xl font-bold flex items-center justify-between">
+                {totalBigBus} Unit
+                <Sparkles className="h-6 w-6 text-amber-500 opacity-60" />
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Aset Milik Sendiri (Lunas)</CardDescription>
+              <CardTitle className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
+                {totalOwned} Unit
+                <CheckCircle2 className="h-6 w-6 opacity-60" />
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Cicilan Bank / Leasing</CardDescription>
+              <CardTitle className="text-2xl font-bold text-blue-600 dark:text-blue-400 flex items-center justify-between">
+                {totalLeasing} Unit
+                <Clock className="h-6 w-6 opacity-60" />
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        </div>
+      )}
 
       {/* Filter & Toolbar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-3 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-xs">
@@ -258,9 +267,41 @@ export default function VehiclesPage() {
 
       {/* Tampilan Konten: Card vs Table */}
       {loading ? (
-        <div className="p-12 text-center text-sm text-muted-foreground border border-slate-200/80 dark:border-white/10 rounded-xl bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
-          Memuat data armada bus...
-        </div>
+        viewMode === 'card' ? (
+          <VehicleCardGridSkeleton count={6} />
+        ) : (
+          <div className="rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md overflow-hidden shadow-xs">
+            <Table>
+              <TableHeader className="bg-slate-50/80 dark:bg-white/5">
+                <TableRow className="border-b border-slate-200 dark:border-white/10">
+                  <TableHead>Nomor Lambung</TableHead>
+                  <TableHead>Plat Nomor</TableHead>
+                  <TableHead>Julukan</TableHead>
+                  <TableHead>Tipe</TableHead>
+                  <TableHead>Chasis & Karoseri</TableHead>
+                  <TableHead>Kapasitas & Kelas Kursi</TableHead>
+                  <TableHead>Kepemilikan</TableHead>
+                  <TableHead className="text-right">Aksi</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-slate-100 dark:divide-white/5">
+                <TableSkeletonRows
+                  rows={6}
+                  colWidths={[
+                    'w-20',
+                    'w-24',
+                    'w-20',
+                    'w-24',
+                    'w-32',
+                    'w-28',
+                    'w-20',
+                    'w-20 ml-auto',
+                  ]}
+                />
+              </TableBody>
+            </Table>
+          </div>
+        )
       ) : viewMode === 'card' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {vehicles.map((v) => {

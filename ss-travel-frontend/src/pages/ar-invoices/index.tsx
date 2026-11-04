@@ -28,6 +28,10 @@ import { CreateCharterPelunasanModal } from './components/CreateCharterPelunasan
 import { CreateGeneralArInvoiceModal } from './components/CreateGeneralArInvoiceModal';
 import { CreateArReceiptModal } from './components/CreateArReceiptModal';
 import { ArInvoiceDetailModal } from './components/ArInvoiceDetailModal';
+import {
+  MetricCardGridSkeleton,
+  TableSkeletonRows,
+} from '@/components/shared/skeleton-loaders';
 import type { ArInvoice, ArReceipt, ArInvoiceStatus } from '@/types';
 import { toast } from 'sonner';
 
@@ -156,84 +160,88 @@ export default function ArInvoicesPage() {
       </div>
 
       {/* METRIC CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="p-3 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 rounded-xl border border-red-100 dark:border-red-900/40">
-              <Receipt className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 tracking-wider">
-                Total Piutang Belum Tertagih
-              </p>
-              <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">
-                {formatRupiah(totalOutstanding)}
-              </h3>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-                Piutang sewa wisata & kontrak aktif
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+      {loading ? (
+        <MetricCardGridSkeleton count={4} />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="p-3 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 rounded-xl border border-red-100 dark:border-red-900/40">
+                <Receipt className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 tracking-wider">
+                  Total Piutang Belum Tertagih
+                </p>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">
+                  {formatRupiah(totalOutstanding)}
+                </h3>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                  Piutang sewa wisata & kontrak aktif
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="p-3 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl border border-indigo-100 dark:border-indigo-900/40">
-              <DollarSign className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase text-indigo-700 dark:text-indigo-400 tracking-wider">
-                Titipan DP Sewa Wisata (24101)
-              </p>
-              <h3 className="text-2xl font-black text-indigo-900 dark:text-indigo-300 mt-1">
-                {formatRupiah(totalDpReceived)}
-              </h3>
-              <p className="text-[11px] text-indigo-600/80 dark:text-indigo-400/80 mt-0.5">
-                Liabilitas uang muka kontrak berjalan
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+          <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="p-3 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl border border-indigo-100 dark:border-indigo-900/40">
+                <DollarSign className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase text-indigo-700 dark:text-indigo-400 tracking-wider">
+                  Titipan DP Sewa Wisata (24101)
+                </p>
+                <h3 className="text-2xl font-black text-indigo-900 dark:text-indigo-300 mt-1">
+                  {formatRupiah(totalDpReceived)}
+                </h3>
+                <p className="text-[11px] text-indigo-600/80 dark:text-indigo-400/80 mt-0.5">
+                  Liabilitas uang muka kontrak berjalan
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-100 dark:border-emerald-900/40">
-              <CreditCard className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase text-emerald-700 dark:text-emerald-400 tracking-wider">
-                Piutang Tertagih (Pelunasan)
-              </p>
-              <h3 className="text-2xl font-black text-emerald-900 dark:text-emerald-300 mt-1">
-                {formatRupiah(totalCollectedMonth)}
-              </h3>
-              <p className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80 mt-0.5">
-                Penerimaan mutasi bank & kas
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+          <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-100 dark:border-emerald-900/40">
+                <CreditCard className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase text-emerald-700 dark:text-emerald-400 tracking-wider">
+                  Piutang Tertagih (Pelunasan)
+                </p>
+                <h3 className="text-2xl font-black text-emerald-900 dark:text-emerald-300 mt-1">
+                  {formatRupiah(totalCollectedMonth)}
+                </h3>
+                <p className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80 mt-0.5">
+                  Penerimaan mutasi bank & kas
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="p-3 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-xl border border-blue-100 dark:border-blue-900/40">
-              <FileCheck2 className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase text-blue-700 dark:text-blue-400 tracking-wider">
-                Total Faktur Terbit
-              </p>
-              <h3 className="text-2xl font-black text-blue-900 dark:text-blue-300 mt-1">
-                {invoices.length} Faktur
-              </h3>
-              <p className="text-[11px] text-blue-600/80 dark:text-blue-400/80 mt-0.5">
-                {invoices.filter((i) => i.status === 'PAID').length} Lunas •{' '}
-                {invoices.filter((i) => i.status === 'APPROVED').length} Menunggu Pelunasan
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="p-3 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-xl border border-blue-100 dark:border-blue-900/40">
+                <FileCheck2 className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase text-blue-700 dark:text-blue-400 tracking-wider">
+                  Total Faktur Terbit
+                </p>
+                <h3 className="text-2xl font-black text-blue-900 dark:text-blue-300 mt-1">
+                  {invoices.length} Faktur
+                </h3>
+                <p className="text-[11px] text-blue-600/80 dark:text-blue-400/80 mt-0.5">
+                  {invoices.filter((i) => i.status === 'PAID').length} Lunas •{' '}
+                  {invoices.filter((i) => i.status === 'APPROVED').length} Menunggu Pelunasan
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* TABS & FILTERS */}
       <div className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-4 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-xs space-y-4">
@@ -316,11 +324,19 @@ export default function ArInvoicesPage() {
               </TableHeader>
               <TableBody className="divide-y divide-slate-100 dark:divide-white/5">
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-slate-400 dark:text-slate-500 text-sm">
-                      Memuat data invoice AR...
-                    </TableCell>
-                  </TableRow>
+                  <TableSkeletonRows
+                    rows={5}
+                    colWidths={[
+                      'w-28',
+                      'w-32',
+                      'w-24',
+                      'w-24',
+                      'w-24 ml-auto',
+                      'w-24 ml-auto',
+                      'w-20 mx-auto',
+                      'w-28 mx-auto',
+                    ]}
+                  />
                 ) : invoices.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-8 text-slate-400 dark:text-slate-500 text-sm">
@@ -421,11 +437,19 @@ export default function ArInvoicesPage() {
               </TableHeader>
               <TableBody className="divide-y divide-slate-100 dark:divide-white/5">
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-slate-400 dark:text-slate-500 text-sm">
-                      Memuat riwayat penerimaan...
-                    </TableCell>
-                  </TableRow>
+                  <TableSkeletonRows
+                    rows={5}
+                    colWidths={[
+                      'w-32',
+                      'w-32',
+                      'w-24',
+                      'w-24',
+                      'w-20',
+                      'w-28',
+                      'w-24',
+                      'w-28 ml-auto',
+                    ]}
+                  />
                 ) : receipts.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-8 text-slate-400 dark:text-slate-500 text-sm">

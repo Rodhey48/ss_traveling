@@ -27,6 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePermission } from '@/hooks/use-permission';
 import { TripScheduleService } from '@/services/trip-schedule.service';
 import { VehicleService } from '@/services/vehicle.service';
+import { TableSkeletonRows } from '@/components/shared/skeleton-loaders';
 import type {
   TripSchedule,
   TripScheduleStatus,
@@ -475,11 +476,19 @@ export default function SchedulesPage() {
 
                 <TableBody>
                   {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground text-xs">
-                        Memuat data jadwal bus...
-                      </TableCell>
-                    </TableRow>
+                    <TableSkeletonRows
+                      rows={5}
+                      colWidths={[
+                        'w-28',
+                        'w-20',
+                        'w-24',
+                        'w-36',
+                        'w-32',
+                        'w-24',
+                        'w-20',
+                        'w-24 ml-auto',
+                      ]}
+                    />
                   ) : schedules.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={8} className="text-center py-8 text-muted-foreground text-xs">

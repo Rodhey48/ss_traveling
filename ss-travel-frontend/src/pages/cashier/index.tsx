@@ -32,6 +32,11 @@ import { CashierSettlementModal } from './components/CashierSettlementModal';
 import { DiscrepancyResolutionModal } from './components/DiscrepancyResolutionModal';
 import { CashReceiptVoucherModal } from './components/CashReceiptVoucherModal';
 import { CreateDiscrepancyModal } from './components/CreateDiscrepancyModal';
+import {
+  MetricCardGridSkeleton,
+  TableSkeletonRows,
+  CashierPendingTableSkeletonRows,
+} from '@/components/shared/skeleton-loaders';
 import type {
   CrewCashSettlement,
   CrewCashDiscrepancy,
@@ -126,59 +131,63 @@ export default function CashierPage() {
       </div>
 
       {/* METRIC CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border border-slate-200/80 shadow-sm bg-white/80 backdrop-blur">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs text-slate-500 font-medium">SPJ Siap Rekonsiliasi</p>
-              <h3 className="text-2xl font-bold text-slate-800 mt-1">{totalPending}</h3>
-              <p className="text-[11px] text-slate-400 mt-0.5">Menunggu bus tiba & hitung kas</p>
-            </div>
-            <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-              <Bus className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
+      {loading ? (
+        <MetricCardGridSkeleton count={4} />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="border border-slate-200/80 shadow-sm bg-white/80 backdrop-blur">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-slate-500 font-medium">SPJ Siap Rekonsiliasi</p>
+                <h3 className="text-2xl font-bold text-slate-800 mt-1">{totalPending}</h3>
+                <p className="text-[11px] text-slate-400 mt-0.5">Menunggu bus tiba & hitung kas</p>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                <Bus className="h-5 w-5" />
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="border border-slate-200/80 shadow-sm bg-white/80 backdrop-blur">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs text-slate-500 font-medium">Temuan Selisih (Investigasi FM)</p>
-              <h3 className="text-2xl font-bold text-rose-600 mt-1">{totalDiscrepancies}</h3>
-              <p className="text-[11px] text-rose-400 mt-0.5">Skenario 4: Butuh putusan FM</p>
-            </div>
-            <div className="h-10 w-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
-              <AlertTriangle className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
+          <Card className="border border-slate-200/80 shadow-sm bg-white/80 backdrop-blur">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-slate-500 font-medium">Temuan Selisih (Investigasi FM)</p>
+                <h3 className="text-2xl font-bold text-rose-600 mt-1">{totalDiscrepancies}</h3>
+                <p className="text-[11px] text-rose-400 mt-0.5">Skenario 4: Butuh putusan FM</p>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="border border-slate-200/80 shadow-sm bg-white/80 backdrop-blur">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs text-slate-500 font-medium">Settlement Terverifikasi</p>
-              <h3 className="text-2xl font-bold text-emerald-600 mt-1">{totalSettled}</h3>
-              <p className="text-[11px] text-emerald-500 mt-0.5">Kas seimbang & jurnal diposting</p>
-            </div>
-            <div className="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <CheckCircle2 className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
+          <Card className="border border-slate-200/80 shadow-sm bg-white/80 backdrop-blur">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-slate-500 font-medium">Settlement Terverifikasi</p>
+                <h3 className="text-2xl font-bold text-emerald-600 mt-1">{totalSettled}</h3>
+                <p className="text-[11px] text-emerald-500 mt-0.5">Kas seimbang & jurnal diposting</p>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="border border-slate-200/80 shadow-sm bg-white/80 backdrop-blur">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs text-slate-500 font-medium">Kas Fisik Masuk (BKM)</p>
-              <h3 className="text-xl font-bold text-slate-900 mt-1 font-mono">{formatRupiah(totalBkmToday)}</h3>
-              <p className="text-[11px] text-slate-400 mt-0.5">Sisa UJ + Penerimaan Tiket/Kargo</p>
-            </div>
-            <div className="h-10 w-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
-              <Coins className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          <Card className="border border-slate-200/80 shadow-sm bg-white/80 backdrop-blur">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-slate-500 font-medium">Kas Fisik Masuk (BKM)</p>
+                <h3 className="text-xl font-bold text-slate-900 mt-1 font-mono">{formatRupiah(totalBkmToday)}</h3>
+                <p className="text-[11px] text-slate-400 mt-0.5">Sisa UJ + Penerimaan Tiket/Kargo</p>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+                <Coins className="h-5 w-5" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* TABS NAVIGATION */}
       <div className="flex border-b border-slate-200 gap-4 text-sm font-semibold">
@@ -257,7 +266,9 @@ export default function CashierPage() {
               </TableRow>
             </TableHeader>
             <TableBody className="text-xs">
-              {pendingSpjs.length === 0 ? (
+              {loading ? (
+                <CashierPendingTableSkeletonRows rows={5} />
+              ) : pendingSpjs.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-slate-400">
                     Tidak ada SPJ kepulangan yang menunggu rekonsiliasi kasir saat ini.
@@ -346,7 +357,21 @@ export default function CashierPage() {
               </TableRow>
             </TableHeader>
             <TableBody className="text-xs">
-              {settlements.length === 0 ? (
+              {loading ? (
+                <TableSkeletonRows
+                  rows={5}
+                  colWidths={[
+                    'w-28',
+                    'w-24',
+                    'w-16',
+                    'w-16',
+                    'w-24 ml-auto',
+                    'w-24 ml-auto',
+                    'w-20',
+                    'w-24 ml-auto',
+                  ]}
+                />
+              ) : settlements.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-slate-400">
                     Belum ada rekonsiliasi kasir yang tercatat.
@@ -457,7 +482,20 @@ export default function CashierPage() {
               </TableRow>
             </TableHeader>
             <TableBody className="text-xs">
-              {discrepancies.length === 0 ? (
+              {loading ? (
+                <TableSkeletonRows
+                  rows={5}
+                  colWidths={[
+                    'w-28',
+                    'w-24',
+                    'w-24',
+                    'w-20 ml-auto',
+                    'w-36',
+                    'w-20',
+                    'w-24 ml-auto',
+                  ]}
+                />
+              ) : discrepancies.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-slate-400">
                     Tidak ada temuan selisih kas yang menunggu investigasi.

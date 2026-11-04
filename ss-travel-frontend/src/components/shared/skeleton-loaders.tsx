@@ -165,3 +165,139 @@ export function StatementTableSkeletonRows({ rows = 5 }: { rows?: number }) {
     </>
   );
 }
+
+/**
+ * Specialized Skeleton placeholder for Dashboard 4 Main KPI Cards
+ */
+export function DashboardKpiCardSkeleton() {
+  return (
+    <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-5 shadow-sm">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-4 w-32 rounded-md" />
+        <Skeleton className="h-10 w-10 rounded-xl" />
+      </div>
+      <div className="mt-3">
+        <div className="flex items-baseline gap-2">
+          <Skeleton className="h-8 w-20 rounded-md" />
+          <Skeleton className="h-4 w-16 rounded-md" />
+        </div>
+        <div className="mt-3 flex items-center justify-between">
+          <Skeleton className="h-3.5 w-24 rounded-md" />
+          <Skeleton className="h-3.5 w-28 rounded-md" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function DashboardKpiGridSkeleton({ count = 4 }: { count?: number }) {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {Array.from({ length: count }).map((_, i) => (
+        <DashboardKpiCardSkeleton key={i} />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Specialized Skeleton rows for SPJ monitoring tables
+ */
+export function SpjTableSkeletonRows({ rows = 5 }: { rows?: number }) {
+  return (
+    <>
+      {Array.from({ length: rows }).map((_, i) => (
+        <TableRow key={i} className="hover:bg-transparent">
+          <TableCell className="py-3.5">
+            <Skeleton className="h-4 w-28 rounded-md font-mono" />
+            <Skeleton className="h-3 w-16 mt-1 rounded-md" />
+          </TableCell>
+          <TableCell className="py-3.5">
+            <Skeleton className="h-4 w-24 rounded-md font-semibold" />
+            <Skeleton className="h-3 w-32 mt-1 rounded-md" />
+          </TableCell>
+          <TableCell className="py-3.5">
+            <Skeleton className="h-4 w-40 rounded-md" />
+            <Skeleton className="h-3 w-28 mt-1 rounded-md" />
+          </TableCell>
+          <TableCell className="py-3.5">
+            <Skeleton className="h-4 w-32 rounded-md" />
+            <Skeleton className="h-3 w-20 mt-1 rounded-md" />
+          </TableCell>
+          <TableCell className="py-3.5">
+            <Skeleton className="h-5 w-20 rounded-full" />
+          </TableCell>
+          <TableCell className="py-3.5 text-center">
+            <Skeleton className="h-7 w-20 mx-auto rounded-md" />
+          </TableCell>
+        </TableRow>
+      ))}
+    </>
+  );
+}
+
+/**
+ * Specialized Skeleton rows for Cashier Pending Table
+ */
+export function CashierPendingTableSkeletonRows({ rows = 5 }: { rows?: number }) {
+  return (
+    <>
+      {Array.from({ length: rows }).map((_, i) => (
+        <TableRow key={i} className="hover:bg-transparent">
+          <TableCell className="py-3.5">
+            <Skeleton className="h-4 w-28 rounded-md font-mono" />
+          </TableCell>
+          <TableCell className="py-3.5">
+            <Skeleton className="h-4 w-24 rounded-md" />
+            <Skeleton className="h-3 w-28 mt-1 rounded-md" />
+          </TableCell>
+          <TableCell className="py-3.5">
+            <Skeleton className="h-4 w-36 rounded-md" />
+          </TableCell>
+          <TableCell className="py-3.5">
+            <Skeleton className="h-4 w-32 rounded-md" />
+          </TableCell>
+          <TableCell className="py-3.5">
+            <Skeleton className="h-5 w-24 rounded-full" />
+          </TableCell>
+          <TableCell className="py-3.5 text-right">
+            <Skeleton className="h-8 w-28 ml-auto rounded-lg" />
+          </TableCell>
+        </TableRow>
+      ))}
+    </>
+  );
+}
+
+/**
+ * Specialized Skeleton placeholder for Fleet / Vehicle Cards
+ */
+export function VehicleCardSkeleton() {
+  return (
+    <Card className="overflow-hidden border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
+      <Skeleton className="h-44 w-full rounded-none" />
+      <div className="p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-5 w-24 rounded-md" />
+          <Skeleton className="h-5 w-16 rounded-full" />
+        </div>
+        <Skeleton className="h-4 w-36 rounded-md" />
+        <div className="pt-2 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
+          <Skeleton className="h-3 w-28 rounded-md" />
+          <Skeleton className="h-7 w-20 rounded-md" />
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+export function VehicleCardGridSkeleton({ count = 6 }: { count?: number }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {Array.from({ length: count }).map((_, i) => (
+        <VehicleCardSkeleton key={i} />
+      ))}
+    </div>
+  );
+}
+

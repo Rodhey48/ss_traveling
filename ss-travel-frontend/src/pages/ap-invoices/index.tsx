@@ -26,6 +26,10 @@ import { CreateRestaurantBillModal } from './components/CreateRestaurantBillModa
 import { CreateGeneralApBillModal } from './components/CreateGeneralApBillModal';
 import { PayApInvoiceModal } from './components/PayApInvoiceModal';
 import { ApInvoiceDetailModal } from './components/ApInvoiceDetailModal';
+import {
+  MetricCardGridSkeleton,
+  TableSkeletonRows,
+} from '@/components/shared/skeleton-loaders';
 import type { ApInvoice, ApPayment, ApVendorType, ApInvoiceStatus } from '@/types';
 import { toast } from 'sonner';
 
@@ -169,83 +173,87 @@ export default function ApInvoicesPage() {
       </div>
 
       {/* METRIC CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="p-3 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 rounded-xl border border-red-100 dark:border-red-900/40">
-              <Receipt className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 tracking-wider">
-                Total Tagihan Belum Dibayar
-              </p>
-              <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">
-                {formatRupiah(totalUnpaid)}
-              </h3>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-                Utang vendor berstatus disetujui
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+      {loading ? (
+        <MetricCardGridSkeleton count={4} />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="p-3 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 rounded-xl border border-red-100 dark:border-red-900/40">
+                <Receipt className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 tracking-wider">
+                  Total Tagihan Belum Dibayar
+                </p>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">
+                  {formatRupiah(totalUnpaid)}
+                </h3>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                  Utang vendor berstatus disetujui
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="p-3 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-xl border border-amber-100 dark:border-amber-900/40">
-              <Utensils className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase text-amber-700 dark:text-amber-400 tracking-wider">
-                Utang Servis Makan RM (21101)
-              </p>
-              <h3 className="text-2xl font-black text-amber-900 dark:text-amber-300 mt-1">
-                {formatRupiah(totalMealUnpaid)}
-              </h3>
-              <p className="text-[11px] text-amber-600/80 dark:text-amber-400/80 mt-0.5">
-                Tagihan berkala RM Taman Selera, dll
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+          <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-xl border border-amber-100 dark:border-amber-900/40">
+                <Utensils className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase text-amber-700 dark:text-amber-400 tracking-wider">
+                  Utang Servis Makan RM (21101)
+                </p>
+                <h3 className="text-2xl font-black text-amber-900 dark:text-amber-300 mt-1">
+                  {formatRupiah(totalMealUnpaid)}
+                </h3>
+                <p className="text-[11px] text-amber-600/80 dark:text-amber-400/80 mt-0.5">
+                  Tagihan berkala RM Taman Selera, dll
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="p-3 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl border border-indigo-100 dark:border-indigo-900/40">
-              <Wrench className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase text-indigo-700 dark:text-indigo-400 tracking-wider">
-                Utang Bengkel & Suku Cadang (21102)
-              </p>
-              <h3 className="text-2xl font-black text-indigo-900 dark:text-indigo-300 mt-1">
-                {formatRupiah(totalWorkshopUnpaid)}
-              </h3>
-              <p className="text-[11px] text-indigo-600/80 dark:text-indigo-400/80 mt-0.5">
-                Perbaikan radiator, derek tol, sparepart
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+          <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="p-3 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl border border-indigo-100 dark:border-indigo-900/40">
+                <Wrench className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase text-indigo-700 dark:text-indigo-400 tracking-wider">
+                  Utang Bengkel & Suku Cadang (21102)
+                </p>
+                <h3 className="text-2xl font-black text-indigo-900 dark:text-indigo-300 mt-1">
+                  {formatRupiah(totalWorkshopUnpaid)}
+                </h3>
+                <p className="text-[11px] text-indigo-600/80 dark:text-indigo-400/80 mt-0.5">
+                  Perbaikan radiator, derek tol, sparepart
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-100 dark:border-emerald-900/40">
-              <CreditCard className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase text-emerald-700 dark:text-emerald-400 tracking-wider">
-                Total Terbayar Bulan Ini
-              </p>
-              <h3 className="text-2xl font-black text-emerald-900 dark:text-emerald-300 mt-1">
-                {formatRupiah(totalPaidMonth)}
-              </h3>
-              <p className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80 mt-0.5">
-                Realisasi transfer bank & kas pool
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-100 dark:border-emerald-900/40">
+                <CreditCard className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase text-emerald-700 dark:text-emerald-400 tracking-wider">
+                  Total Terbayar Bulan Ini
+                </p>
+                <h3 className="text-2xl font-black text-emerald-900 dark:text-emerald-300 mt-1">
+                  {formatRupiah(totalPaidMonth)}
+                </h3>
+                <p className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80 mt-0.5">
+                  Realisasi transfer bank & kas pool
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* TABS & FILTERS */}
       <div className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-4 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-xs space-y-4">
@@ -345,11 +353,19 @@ export default function ApInvoicesPage() {
               </TableHeader>
               <TableBody className="divide-y divide-slate-100 dark:divide-white/5">
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-slate-400 dark:text-slate-500 text-sm">
-                      Memuat data tagihan AP...
-                    </TableCell>
-                  </TableRow>
+                  <TableSkeletonRows
+                    rows={5}
+                    colWidths={[
+                      'w-28',
+                      'w-32',
+                      'w-24',
+                      'w-24',
+                      'w-24 ml-auto',
+                      'w-24 ml-auto',
+                      'w-20 mx-auto',
+                      'w-28 mx-auto',
+                    ]}
+                  />
                 ) : invoices.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-8 text-slate-400 dark:text-slate-500 text-sm">
@@ -449,11 +465,18 @@ export default function ApInvoicesPage() {
               </TableHeader>
               <TableBody className="divide-y divide-slate-100 dark:divide-white/5">
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-slate-400 dark:text-slate-500 text-sm">
-                      Memuat riwayat pembayaran...
-                    </TableCell>
-                  </TableRow>
+                  <TableSkeletonRows
+                    rows={5}
+                    colWidths={[
+                      'w-28',
+                      'w-32',
+                      'w-24',
+                      'w-20',
+                      'w-28',
+                      'w-24',
+                      'w-28 ml-auto',
+                    ]}
+                  />
                 ) : payments.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-slate-400 dark:text-slate-500 text-sm">

@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react';
+import ConfirmDialog from '@/components/shared/confirm-dialog';
 import Heading from '@/components/shared/heading';
-import { Button } from '@/components/ui/button';
+import {
+  MetricCardGridSkeleton,
+  TableSkeletonRows,
+} from '@/components/shared/skeleton-loaders';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -10,6 +13,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -19,39 +30,32 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Plus,
-  Users,
-  Compass,
-  Award,
-  Calculator,
-  Edit,
-  Trash2,
-  CalendarDays,
-  ShieldCheck,
-  Info,
-  Coins,
-  Sparkles,
-} from 'lucide-react';
-import CrewRateModal from './components/crew-rate-modal';
-import ConfirmDialog from '@/components/shared/confirm-dialog';
+import { usePermission } from '@/hooks/use-permission';
 import { CrewRateService } from '@/services/crew-rate.service';
 import type {
   CrewRateRule,
   CrewRateRuleFormData,
+  CrewRateSnapshotResult,
   CrewRole,
   CrewServiceType,
-  CrewRateSnapshotResult,
 } from '@/types';
+import {
+  Award,
+  Calculator,
+  CalendarDays,
+  Coins,
+  Compass,
+  Edit,
+  Info,
+  Plus,
+  ShieldCheck,
+  Sparkles,
+  Trash2,
+  Users,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { usePermission } from '@/hooks/use-permission';
+import CrewRateModal from './components/crew-rate-modal';
 
 export default function CrewRatesPage() {
   const { isCreate, isUpdate, isDelete } = usePermission();
@@ -205,67 +209,71 @@ export default function CrewRatesPage() {
       </div>
 
       {/* Metrics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="shadow-xs border-l-4 border-l-indigo-600">
-          <CardHeader className="p-4 pb-2">
-            <CardDescription className="text-xs">AKAP Driver (Per Rit PP)</CardDescription>
-            <CardTitle className="text-2xl font-bold text-indigo-700 dark:text-indigo-400 flex items-center justify-between">
-              Rp 400.000
-              <Compass className="h-5 w-5 opacity-40" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <p className="text-xs text-muted-foreground">
-              Makan: 150k + Premi: 250k (+ Bonus 50k)
-            </p>
-          </CardContent>
-        </Card>
+      {loading ? (
+        <MetricCardGridSkeleton count={4} />
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="shadow-xs border-l-4 border-l-indigo-600">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">AKAP Driver (Per Rit PP)</CardDescription>
+              <CardTitle className="text-2xl font-bold text-indigo-700 dark:text-indigo-400 flex items-center justify-between">
+                Rp 400.000
+                <Compass className="h-5 w-5 opacity-40" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-xs text-muted-foreground">
+                Makan: 150k + Premi: 250k (+ Bonus 50k)
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-xs border-l-4 border-l-sky-600">
-          <CardHeader className="p-4 pb-2">
-            <CardDescription className="text-xs">AKAP Kondektur (Per Rit PP)</CardDescription>
-            <CardTitle className="text-2xl font-bold text-sky-700 dark:text-sky-400 flex items-center justify-between">
-              Rp 250.000
-              <Users className="h-5 w-5 opacity-40" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <p className="text-xs text-muted-foreground">
-              Makan: 100k + Premi: 150k (+ Bonus 50k)
-            </p>
-          </CardContent>
-        </Card>
+          <Card className="shadow-xs border-l-4 border-l-sky-600">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">AKAP Kondektur (Per Rit PP)</CardDescription>
+              <CardTitle className="text-2xl font-bold text-sky-700 dark:text-sky-400 flex items-center justify-between">
+                Rp 250.000
+                <Users className="h-5 w-5 opacity-40" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-xs text-muted-foreground">
+                Makan: 100k + Premi: 150k (+ Bonus 50k)
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-xs border-l-4 border-l-purple-600">
-          <CardHeader className="p-4 pb-2">
-            <CardDescription className="text-xs">Wisata Driver (Per Hari)</CardDescription>
-            <CardTitle className="text-2xl font-bold text-purple-700 dark:text-purple-400 flex items-center justify-between">
-              Rp 250.000 / hr
-              <CalendarDays className="h-5 w-5 opacity-40" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <p className="text-xs text-muted-foreground">
-              Makan: 100k + Premi: 150k
-            </p>
-          </CardContent>
-        </Card>
+          <Card className="shadow-xs border-l-4 border-l-purple-600">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Wisata Driver (Per Hari)</CardDescription>
+              <CardTitle className="text-2xl font-bold text-purple-700 dark:text-purple-400 flex items-center justify-between">
+                Rp 250.000 / hr
+                <CalendarDays className="h-5 w-5 opacity-40" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-xs text-muted-foreground">
+                Makan: 100k + Premi: 150k
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-xs border-l-4 border-l-amber-500">
-          <CardHeader className="p-4 pb-2">
-            <CardDescription className="text-xs">Bonus Full Seat 100%</CardDescription>
-            <CardTitle className="text-2xl font-bold text-amber-700 dark:text-amber-400 flex items-center justify-between">
-              Rp 50.000
-              <Award className="h-5 w-5 opacity-40" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <p className="text-xs text-muted-foreground">
-              Insentif okupansi penuh trayek AKAP
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+          <Card className="shadow-xs border-l-4 border-l-amber-500">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Bonus Full Seat 100%</CardDescription>
+              <CardTitle className="text-2xl font-bold text-amber-700 dark:text-amber-400 flex items-center justify-between">
+                Rp 50.000
+                <Award className="h-5 w-5 opacity-40" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-xs text-muted-foreground">
+                Insentif okupansi penuh trayek AKAP
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Main Tabs */}
       <Tabs
@@ -296,7 +304,7 @@ export default function CrewRatesPage() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-card p-3 rounded-xl border shadow-2xs">
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <Select value={filterService} onValueChange={setFilterService}>
-                <SelectTrigger className="w-[180px] h-9 text-xs">
+                <SelectTrigger className="w-45 h-9 text-xs">
                   <SelectValue placeholder="Semua Layanan" />
                 </SelectTrigger>
                 <SelectContent>
@@ -307,7 +315,7 @@ export default function CrewRatesPage() {
               </Select>
 
               <Select value={filterRole} onValueChange={setFilterRole}>
-                <SelectTrigger className="w-[200px] h-9 text-xs">
+                <SelectTrigger className="w-50 h-9 text-xs">
                   <SelectValue placeholder="Semua Jabatan" />
                 </SelectTrigger>
                 <SelectContent>
@@ -340,11 +348,19 @@ export default function CrewRatesPage() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground text-xs">
-                      Memuat tarif acuan kompensasi kru...
-                    </TableCell>
-                  </TableRow>
+                  <TableSkeletonRows
+                    rows={5}
+                    colWidths={[
+                      'w-28',
+                      'w-28',
+                      'w-24 ml-auto',
+                      'w-24 ml-auto',
+                      'w-20 ml-auto',
+                      'w-24 ml-auto',
+                      'w-16',
+                      'w-16 ml-auto',
+                    ]}
+                  />
                 ) : rules.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-8 text-muted-foreground text-xs">

@@ -1,6 +1,8 @@
 import { useAuth } from '@/hooks/use-auth';
 import { DashboardService } from '@/services/dashboard.service';
 import type { BackendMenu, DashboardSummary } from '@/types';
+import { Skeleton } from '@/components/ui/skeleton';
+import { DashboardKpiGridSkeleton } from '@/components/shared/skeleton-loaders';
 import {
   AlertTriangle,
   ArrowRight,
@@ -236,143 +238,147 @@ export default function DashboardPage() {
       </div>
 
       {/* 4 Main KPI Cards (Role-Based Dynamic) */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* KPI 1 (All Roles): Status Armada Bus */}
-        <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-5 shadow-sm transition-all hover:shadow-md">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-              Status Armada Bus
-            </span>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400">
-              <Bus className="h-5 w-5" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-slate-900 dark:text-white">
-                {summary?.fleet.activeOnRoute ?? 0}
-              </span>
-              <span className="text-sm font-semibold text-slate-400 dark:text-slate-500">
-                / {summary?.fleet.total ?? 10} Bus
-              </span>
-            </div>
-            <div className="mt-2 flex items-center justify-between text-xs">
-              <span className="text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                Aktif di Rute
-              </span>
-              <span className="text-slate-500 dark:text-slate-400">
-                {summary?.fleet.standbyPool ?? 0} Standby Garasi
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* KPI 2 (All Roles): Pengemudi (Driver) */}
-        <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-5 shadow-sm transition-all hover:shadow-md">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-              Pengemudi (Driver)
-            </span>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400">
-              <Users className="h-5 w-5" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-teal-700 dark:text-teal-400">
-                {summary?.crew.activeDrivers ?? 0}
-              </span>
-              <span className="text-sm font-semibold text-slate-400 dark:text-slate-500">
-                / {summary?.crew.totalDrivers ?? 6} Driver
-              </span>
-            </div>
-            <div className="mt-2 flex items-center justify-between text-xs">
-              <span className="text-teal-700 dark:text-teal-400 font-semibold">Berdinas Jalan</span>
-              <span className="text-slate-500 dark:text-slate-400">
-                {summary?.crew.standbyDrivers ?? 0} Standby Pool
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* KPI 3 (All Roles): Perjalanan SPJ Aktif */}
-        <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-5 shadow-sm transition-all hover:shadow-md">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-              Perjalanan SPJ Aktif
-            </span>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400">
-              <FileText className="h-5 w-5" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-amber-600 dark:text-amber-400">
-                {summary?.trips.inProgress ?? 0}
-              </span>
-              <span className="text-xs text-slate-400 dark:text-slate-500">Sedang di Jalan</span>
-            </div>
-            <div className="mt-2 flex items-center justify-between text-xs">
-              <span className="text-slate-600 dark:text-slate-300">
-                Menunggu Kasir: <strong>{summary?.trips.pendingCashierSettlement ?? 0}</strong>
-              </span>
-              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                {summary?.trips.completedThisMonth ?? 0} Selesai
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* KPI 4: Role-Based Differentiated */}
-        {canViewFinance ? (
-          /* Role Keuangan/Direksi: Likuiditas Kas & Bank */
+      {isLoading ? (
+        <DashboardKpiGridSkeleton count={4} />
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* KPI 1 (All Roles): Status Armada Bus */}
           <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-5 shadow-sm transition-all hover:shadow-md">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                Total Kas & Bank GL
+                Status Armada Bus
               </span>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
-                <Wallet className="h-5 w-5" />
-              </div>
-            </div>
-            <div className="mt-3">
-              <div className="text-2xl font-black text-emerald-700 dark:text-emerald-400 truncate">
-                Rp {Number(summary?.cashAndBank?.totalLiquidity || 0).toLocaleString('id-ID')}
-              </div>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Kas pool + kas kecil + rekening bank
-              </p>
-            </div>
-          </div>
-        ) : (
-          /* Role Operasional/Kru: Pelayanan Kabin (Kondektur & Pramugari) */
-          <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-5 shadow-sm transition-all hover:shadow-md">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                Pelayanan Kabin (Kru)
-              </span>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400">
-                <ShieldCheck className="h-5 w-5" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400">
+                <Bus className="h-5 w-5" />
               </div>
             </div>
             <div className="mt-3">
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-black text-purple-700 dark:text-purple-400">
-                  {summary?.crew.activeConductors ?? 0}
+                <span className="text-3xl font-black text-slate-900 dark:text-white">
+                  {summary?.fleet.activeOnRoute ?? 0}
                 </span>
                 <span className="text-sm font-semibold text-slate-400 dark:text-slate-500">
-                  / {summary?.crew.totalConductors ?? 4} Kru
+                  / {summary?.fleet.total ?? 10} Bus
                 </span>
               </div>
               <div className="mt-2 flex items-center justify-between text-xs">
-                <span className="text-purple-700 dark:text-purple-400 font-semibold">Aktif di Rute</span>
-                <span className="text-slate-500 dark:text-slate-400">Kondektur & Pramugari</span>
+                <span className="text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Aktif di Rute
+                </span>
+                <span className="text-slate-500 dark:text-slate-400">
+                  {summary?.fleet.standbyPool ?? 0} Standby Garasi
+                </span>
               </div>
             </div>
           </div>
-        )}
-      </div>
+
+          {/* KPI 2 (All Roles): Pengemudi (Driver) */}
+          <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-5 shadow-sm transition-all hover:shadow-md">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                Pengemudi (Driver)
+              </span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400">
+                <Users className="h-5 w-5" />
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-black text-teal-700 dark:text-teal-400">
+                  {summary?.crew.activeDrivers ?? 0}
+                </span>
+                <span className="text-sm font-semibold text-slate-400 dark:text-slate-500">
+                  / {summary?.crew.totalDrivers ?? 6} Driver
+                </span>
+              </div>
+              <div className="mt-2 flex items-center justify-between text-xs">
+                <span className="text-teal-700 dark:text-teal-400 font-semibold">Berdinas Jalan</span>
+                <span className="text-slate-500 dark:text-slate-400">
+                  {summary?.crew.standbyDrivers ?? 0} Standby Pool
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* KPI 3 (All Roles): Perjalanan SPJ Aktif */}
+          <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-5 shadow-sm transition-all hover:shadow-md">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                Perjalanan SPJ Aktif
+              </span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400">
+                <FileText className="h-5 w-5" />
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-black text-amber-600 dark:text-amber-400">
+                  {summary?.trips.inProgress ?? 0}
+                </span>
+                <span className="text-xs text-slate-400 dark:text-slate-500">Sedang di Jalan</span>
+              </div>
+              <div className="mt-2 flex items-center justify-between text-xs">
+                <span className="text-slate-600 dark:text-slate-300">
+                  Menunggu Kasir: <strong>{summary?.trips.pendingCashierSettlement ?? 0}</strong>
+                </span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                  {summary?.trips.completedThisMonth ?? 0} Selesai
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* KPI 4: Role-Based Differentiated */}
+          {canViewFinance ? (
+            /* Role Keuangan/Direksi: Likuiditas Kas & Bank */
+            <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-5 shadow-sm transition-all hover:shadow-md">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                  Total Kas & Bank GL
+                </span>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
+                  <Wallet className="h-5 w-5" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <div className="text-2xl font-black text-emerald-700 dark:text-emerald-400 truncate">
+                  Rp {Number(summary?.cashAndBank?.totalLiquidity || 0).toLocaleString('id-ID')}
+                </div>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Kas pool + kas kecil + rekening bank
+                </p>
+              </div>
+            </div>
+          ) : (
+            /* Role Operasional/Kru: Pelayanan Kabin (Kondektur & Pramugari) */
+            <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-5 shadow-sm transition-all hover:shadow-md">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                  Pelayanan Kabin (Kru)
+                </span>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400">
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-black text-purple-700 dark:text-purple-400">
+                    {summary?.crew.activeConductors ?? 0}
+                  </span>
+                  <span className="text-sm font-semibold text-slate-400 dark:text-slate-500">
+                    / {summary?.crew.totalConductors ?? 4} Kru
+                  </span>
+                </div>
+                <div className="mt-2 flex items-center justify-between text-xs">
+                  <span className="text-purple-700 dark:text-purple-400 font-semibold">Aktif di Rute</span>
+                  <span className="text-slate-500 dark:text-slate-400">Kondektur & Pramugari</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Quick Action Shortcuts Bar (Hanya menampilkan menu yang diizinkan) */}
       {permittedActions.length > 0 && (
@@ -427,7 +433,20 @@ export default function DashboardPage() {
             </div>
 
             <div className="mt-4 divide-y divide-slate-100 dark:divide-white/10">
-              {summary?.cashAndBank?.accounts && summary.cashAndBank.accounts.length > 0 ? (
+              {isLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between py-2.5">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-8 w-11 rounded-lg shrink-0" />
+                      <div className="space-y-1">
+                        <Skeleton className="h-3.5 w-32 rounded-md" />
+                        <Skeleton className="h-2.5 w-20 rounded-md" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-4 w-24 rounded-md" />
+                  </div>
+                ))
+              ) : summary?.cashAndBank?.accounts && summary.cashAndBank.accounts.length > 0 ? (
                 summary.cashAndBank.accounts.map((acc) => (
                   <div key={acc.id} className="flex items-center justify-between py-2.5">
                     <div className="flex items-center gap-3">
@@ -476,109 +495,129 @@ export default function DashboardPage() {
             </div>
 
             <div className="mt-4 space-y-3">
-              {/* Alert 1: AP Invoices */}
-              <div
-                onClick={() => hasMenuAccess('/ap-invoices') && navigate('/ap-invoices')}
-                className="flex items-center justify-between rounded-xl border border-slate-100 dark:border-white/10 bg-slate-50/60 dark:bg-white/5 p-3 hover:bg-slate-100/60 dark:hover:bg-white/10 cursor-pointer transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400">
-                    <FileDown className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-slate-800 dark:text-slate-100">
-                      Tagihan Vendor Terbuka (AP)
+              {isLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between rounded-xl border border-slate-100 dark:border-white/10 bg-slate-50/60 dark:bg-white/5 p-3">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-8 w-8 rounded-lg shrink-0" />
+                      <div className="space-y-1.5">
+                        <Skeleton className="h-3.5 w-36 rounded-md" />
+                        <Skeleton className="h-3 w-48 rounded-md" />
+                      </div>
                     </div>
-                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                      {summary?.financeAlerts?.openApCount ?? 0} faktur rumah makan & bengkel
+                    <div className="flex flex-col items-end space-y-1">
+                      <Skeleton className="h-4 w-20 rounded-md" />
+                      <Skeleton className="h-2.5 w-16 rounded-md" />
                     </div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs font-bold text-slate-900 dark:text-white">
-                    Rp {Number(summary?.financeAlerts?.openApInvoicesAmount || 0).toLocaleString('id-ID')}
+                ))
+              ) : (
+                <>
+                  {/* Alert 1: AP Invoices */}
+                  <div
+                    onClick={() => hasMenuAccess('/ap-invoices') && navigate('/ap-invoices')}
+                    className="flex items-center justify-between rounded-xl border border-slate-100 dark:border-white/10 bg-slate-50/60 dark:bg-white/5 p-3 hover:bg-slate-100/60 dark:hover:bg-white/10 cursor-pointer transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400">
+                        <FileDown className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                          Tagihan Vendor Terbuka (AP)
+                        </div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                          {summary?.financeAlerts?.openApCount ?? 0} faktur rumah makan & bengkel
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs font-bold text-slate-900 dark:text-white">
+                        Rp {Number(summary?.financeAlerts?.openApInvoicesAmount || 0).toLocaleString('id-ID')}
+                      </div>
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500">Belum dibayar</span>
+                    </div>
                   </div>
-                  <span className="text-[10px] text-slate-400 dark:text-slate-500">Belum dibayar</span>
-                </div>
-              </div>
 
-              {/* Alert 2: AR Invoices */}
-              <div
-                onClick={() => hasMenuAccess('/ar-invoices') && navigate('/ar-invoices')}
-                className="flex items-center justify-between rounded-xl border border-slate-100 dark:border-white/10 bg-slate-50/60 dark:bg-white/5 p-3 hover:bg-slate-100/60 dark:hover:bg-white/10 cursor-pointer transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400">
-                    <FileUp className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-slate-800 dark:text-slate-100">
-                      Piutang Pelanggan Wisata (AR)
+                  {/* Alert 2: AR Invoices */}
+                  <div
+                    onClick={() => hasMenuAccess('/ar-invoices') && navigate('/ar-invoices')}
+                    className="flex items-center justify-between rounded-xl border border-slate-100 dark:border-white/10 bg-slate-50/60 dark:bg-white/5 p-3 hover:bg-slate-100/60 dark:hover:bg-white/10 cursor-pointer transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400">
+                        <FileUp className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                          Piutang Pelanggan Wisata (AR)
+                        </div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                          {summary?.financeAlerts?.openArCount ?? 0} invoice sewa wisata menunggu pelunasan
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                      {summary?.financeAlerts?.openArCount ?? 0} invoice sewa wisata menunggu pelunasan
+                    <div className="text-right">
+                      <div className="text-xs font-bold text-slate-900 dark:text-white">
+                        Rp {Number(summary?.financeAlerts?.openArInvoicesAmount || 0).toLocaleString('id-ID')}
+                      </div>
+                      <span className="text-[10px] text-purple-600 dark:text-purple-400 font-semibold">Outstanding</span>
                     </div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs font-bold text-slate-900 dark:text-white">
-                    Rp {Number(summary?.financeAlerts?.openArInvoicesAmount || 0).toLocaleString('id-ID')}
-                  </div>
-                  <span className="text-[10px] text-purple-600 dark:text-purple-400 font-semibold">Outstanding</span>
-                </div>
-              </div>
 
-              {/* Alert 3: Selisih Kasir Akun 11999 */}
-              <div
-                onClick={() => hasMenuAccess('/cashier') && navigate('/cashier')}
-                className="flex items-center justify-between rounded-xl border border-amber-100 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-950/20 p-3 hover:bg-amber-50 dark:hover:bg-amber-950/30 cursor-pointer transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400">
-                    <AlertTriangle className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-slate-800 dark:text-slate-100">
-                      Selisih Kasir dalam Investigasi FM
+                  {/* Alert 3: Selisih Kasir Akun 11999 */}
+                  <div
+                    onClick={() => hasMenuAccess('/cashier') && navigate('/cashier')}
+                    className="flex items-center justify-between rounded-xl border border-amber-100 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-950/20 p-3 hover:bg-amber-50 dark:hover:bg-amber-950/30 cursor-pointer transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400">
+                        <AlertTriangle className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                          Selisih Kasir dalam Investigasi FM
+                        </div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                          {summary?.financeAlerts?.pendingDiscrepancyCount ?? 0} kasus sengketa nota/tiket (Skenario 4)
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                      {summary?.financeAlerts?.pendingDiscrepancyCount ?? 0} kasus sengketa nota/tiket (Skenario 4)
+                    <div className="text-right">
+                      <div className="text-xs font-bold text-amber-700 dark:text-amber-400">
+                        Rp {Number(summary?.financeAlerts?.unresolvedDiscrepancyAmount || 0).toLocaleString('id-ID')}
+                      </div>
+                      <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Akun 11999</span>
                     </div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs font-bold text-amber-700 dark:text-amber-400">
-                    Rp {Number(summary?.financeAlerts?.unresolvedDiscrepancyAmount || 0).toLocaleString('id-ID')}
-                  </div>
-                  <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Akun 11999</span>
-                </div>
-              </div>
 
-              {/* Alert 4: Bon Kas Kecil Menunggu Approval */}
-              <div
-                onClick={() => hasMenuAccess('/petty-cash') && navigate('/petty-cash')}
-                className="flex items-center justify-between rounded-xl border border-slate-100 dark:border-white/10 bg-slate-50/60 dark:bg-white/5 p-3 hover:bg-slate-100/60 dark:hover:bg-white/10 cursor-pointer transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
-                    <Clock className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-slate-800 dark:text-slate-100">
-                      Kas Kecil Garasi Menunggu Verifikasi
+                  {/* Alert 4: Bon Kas Kecil Menunggu Approval */}
+                  <div
+                    onClick={() => hasMenuAccess('/petty-cash') && navigate('/petty-cash')}
+                    className="flex items-center justify-between rounded-xl border border-slate-100 dark:border-white/10 bg-slate-50/60 dark:bg-white/5 p-3 hover:bg-slate-100/60 dark:hover:bg-white/10 cursor-pointer transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
+                        <Clock className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                          Kas Kecil Garasi Menunggu Verifikasi
+                        </div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Nota pengeluaran garasi non-SPJ siap diposting ke GL
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Nota pengeluaran garasi non-SPJ siap diposting ke GL
+                    <div className="text-right">
+                      <div className="text-xs font-bold text-blue-700 dark:text-blue-400">
+                        {summary?.financeAlerts?.pendingPettyCashCount ?? 0} BKK
+                      </div>
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500">Status Submitted</span>
                     </div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs font-bold text-blue-700 dark:text-blue-400">
-                    {summary?.financeAlerts?.pendingPettyCashCount ?? 0} BKK
-                  </div>
-                  <span className="text-[10px] text-slate-400 dark:text-slate-500">Status Submitted</span>
-                </div>
-              </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -723,7 +762,36 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-white/10">
-              {summary?.recentSpjs && summary.recentSpjs.length > 0 ? (
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i}>
+                    <td className="py-3 px-3">
+                      <Skeleton className="h-4 w-24 rounded-md" />
+                    </td>
+                    <td className="py-3 px-3">
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                    </td>
+                    <td className="py-3 px-3">
+                      <Skeleton className="h-4 w-28 rounded-md" />
+                    </td>
+                    <td className="py-3 px-3">
+                      <Skeleton className="h-4 w-24 rounded-md" />
+                    </td>
+                    <td className="py-3 px-3">
+                      <Skeleton className="h-4 w-32 rounded-md" />
+                    </td>
+                    <td className="py-3 px-3">
+                      <Skeleton className="h-4 w-20 rounded-md" />
+                    </td>
+                    <td className="py-3 px-3 text-center">
+                      <Skeleton className="h-5 w-20 mx-auto rounded-full" />
+                    </td>
+                    <td className="py-3 px-3 text-center">
+                      <Skeleton className="h-5 w-20 mx-auto rounded-full" />
+                    </td>
+                  </tr>
+                ))
+              ) : summary?.recentSpjs && summary.recentSpjs.length > 0 ? (
                 summary.recentSpjs.map((spj) => (
                   <tr
                     key={spj.id}

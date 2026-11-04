@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -386,82 +387,98 @@ export default function AccountsPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid gap-3 grid-cols-2 md:grid-cols-6">
-        <Card className="shadow-xs">
-          <CardHeader className="pb-1 pt-3 px-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground flex items-center justify-between">
-              Total Akun
-              <Layers className="h-3.5 w-3.5 text-muted-foreground" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <div className="text-xl font-bold">{stats.total}</div>
-            <p className="text-[11px] text-muted-foreground">
-              {stats.postable} Postable
-            </p>
-          </CardContent>
-        </Card>
+      {loading ? (
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="shadow-xs">
+              <CardHeader className="pb-1 pt-3 px-4">
+                <Skeleton className="h-3.5 w-20 rounded" />
+              </CardHeader>
+              <CardContent className="px-4 pb-3">
+                <Skeleton className="h-6 w-12 rounded mt-1" />
+                <Skeleton className="h-3 w-16 rounded mt-1.5" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-6">
+          <Card className="shadow-xs">
+            <CardHeader className="pb-1 pt-3 px-4">
+              <CardTitle className="text-xs font-medium text-muted-foreground flex items-center justify-between">
+                Total Akun
+                <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <div className="text-xl font-bold">{stats.total}</div>
+              <p className="text-[11px] text-muted-foreground">
+                {stats.postable} Postable
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-xs border-l-4 border-l-blue-500">
-          <CardHeader className="pb-1 pt-3 px-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              1 - ASET
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <div className="text-xl font-bold text-blue-600">{stats.assets}</div>
-            <p className="text-[11px] text-muted-foreground">Kas, Bank, Piutang, Bus</p>
-          </CardContent>
-        </Card>
+          <Card className="shadow-xs border-l-4 border-l-blue-500">
+            <CardHeader className="pb-1 pt-3 px-4">
+              <CardTitle className="text-xs font-medium text-muted-foreground">
+                1 - ASET
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <div className="text-xl font-bold text-blue-600">{stats.assets}</div>
+              <p className="text-[11px] text-muted-foreground">Kas, Bank, Piutang, Bus</p>
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-xs border-l-4 border-l-amber-500">
-          <CardHeader className="pb-1 pt-3 px-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              2 - LIABILITAS
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <div className="text-xl font-bold text-amber-600">{stats.liabilities}</div>
-            <p className="text-[11px] text-muted-foreground">Utang AP, Komisi, DP</p>
-          </CardContent>
-        </Card>
+          <Card className="shadow-xs border-l-4 border-l-amber-500">
+            <CardHeader className="pb-1 pt-3 px-4">
+              <CardTitle className="text-xs font-medium text-muted-foreground">
+                2 - LIABILITAS
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <div className="text-xl font-bold text-amber-600">{stats.liabilities}</div>
+              <p className="text-[11px] text-muted-foreground">Utang AP, Komisi, DP</p>
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-xs border-l-4 border-l-purple-500">
-          <CardHeader className="pb-1 pt-3 px-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              3 - EKUITAS
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <div className="text-xl font-bold text-purple-600">{stats.equity}</div>
-            <p className="text-[11px] text-muted-foreground">Modal & Saldo Laba</p>
-          </CardContent>
-        </Card>
+          <Card className="shadow-xs border-l-4 border-l-purple-500">
+            <CardHeader className="pb-1 pt-3 px-4">
+              <CardTitle className="text-xs font-medium text-muted-foreground">
+                3 - EKUITAS
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <div className="text-xl font-bold text-purple-600">{stats.equity}</div>
+              <p className="text-[11px] text-muted-foreground">Modal & Saldo Laba</p>
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-xs border-l-4 border-l-emerald-500">
-          <CardHeader className="pb-1 pt-3 px-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              4 - PENDAPATAN
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <div className="text-xl font-bold text-emerald-600">{stats.revenue}</div>
-            <p className="text-[11px] text-muted-foreground">Tiket, Sewa, Kargo</p>
-          </CardContent>
-        </Card>
+          <Card className="shadow-xs border-l-4 border-l-emerald-500">
+            <CardHeader className="pb-1 pt-3 px-4">
+              <CardTitle className="text-xs font-medium text-muted-foreground">
+                4 - PENDAPATAN
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <div className="text-xl font-bold text-emerald-600">{stats.revenue}</div>
+              <p className="text-[11px] text-muted-foreground">Tiket, Sewa, Kargo</p>
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-xs border-l-4 border-l-rose-500">
-          <CardHeader className="pb-1 pt-3 px-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              5 - BEBAN
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <div className="text-xl font-bold text-rose-600">{stats.expense}</div>
-            <p className="text-[11px] text-muted-foreground">BBM, Tol, Kru, Bengkel</p>
-          </CardContent>
-        </Card>
-      </div>
+          <Card className="shadow-xs border-l-4 border-l-rose-500">
+            <CardHeader className="pb-1 pt-3 px-4">
+              <CardTitle className="text-xs font-medium text-muted-foreground">
+                5 - BEBAN
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <div className="text-xl font-bold text-rose-600">{stats.expense}</div>
+              <p className="text-[11px] text-muted-foreground">BBM, Tol, Kru, Bengkel</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Filter and View Toggle Controls */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
@@ -555,8 +572,23 @@ export default function AccountsPage() {
       {/* Main Content Area */}
       <Card className="overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-muted-foreground">
-            Memuat struktur bagan akun...
+          <div className="p-4 space-y-2">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between py-2.5 px-3 border-b border-border/40"
+              >
+                <div className="flex items-center space-x-3 flex-1">
+                  <Skeleton className="h-4 w-4 rounded" />
+                  <Skeleton className="h-4 w-20 rounded-md" />
+                  <Skeleton className="h-4 w-48 rounded-md" />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : viewMode === 'tree' ? (
           <div className="p-2 space-y-1">

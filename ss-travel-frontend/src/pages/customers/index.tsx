@@ -25,6 +25,10 @@ import {
 } from '@/components/ui/table';
 import { usePermission } from '@/hooks/use-permission';
 import { CustomerService } from '@/services/customer.service';
+import {
+  MetricCardGridSkeleton,
+  TableSkeletonRows,
+} from '@/components/shared/skeleton-loaders';
 import type { Customer, CustomerFormData } from '@/types';
 import {
   Building2,
@@ -171,52 +175,56 @@ export default function CustomersPage() {
       </div>
 
       {/* Kartu Ringkasan Metrik */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card >
-          <CardHeader className="p-4 pb-2">
-            <CardDescription className="text-xs">
-              Total Database Pelanggan
-            </CardDescription>
-            <CardTitle className="text-2xl font-black text-primary flex items-center justify-between">
-              {totalCustomers} Klien
-              <Users2 className="h-6 w-6 opacity-40 text-green-600" />
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="p-4 pb-2">
-            <CardDescription className="text-xs">
-              Segmen Korporat / Pabrik
-            </CardDescription>
-            <CardTitle className="text-2xl font-bold flex items-center justify-between">
-              {totalCorporate} Klien
-              <Building2 className="h-6 w-6 text-blue-500 opacity-60" />
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="p-4 pb-2">
-            <CardDescription className="text-xs">
-              Sekolah & Kampus (Study Tour)
-            </CardDescription>
-            <CardTitle className="text-2xl font-bold flex items-center justify-between">
-              {totalSchool} Lembaga
-              <GraduationCap className="h-6 w-6 text-emerald-500 opacity-60" />
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="p-4 pb-2">
-            <CardDescription className="text-xs">
-              Pelanggan VIP Platinum
-            </CardDescription>
-            <CardTitle className="text-2xl font-bold flex items-center justify-between">
-              {totalPlatinum} Klien
-              <Sparkles className="h-6 w-6 opacity-60 text-fuchsia-600" />
-            </CardTitle>
-          </CardHeader>
-        </Card>
-      </div>
+      {loading ? (
+        <MetricCardGridSkeleton count={4} />
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">
+                Total Database Pelanggan
+              </CardDescription>
+              <CardTitle className="text-2xl font-black text-primary flex items-center justify-between">
+                {totalCustomers} Klien
+                <Users2 className="h-6 w-6 opacity-40 text-green-600" />
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">
+                Segmen Korporat / Pabrik
+              </CardDescription>
+              <CardTitle className="text-2xl font-bold flex items-center justify-between">
+                {totalCorporate} Klien
+                <Building2 className="h-6 w-6 text-blue-500 opacity-60" />
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">
+                Sekolah & Kampus (Study Tour)
+              </CardDescription>
+              <CardTitle className="text-2xl font-bold flex items-center justify-between">
+                {totalSchool} Lembaga
+                <GraduationCap className="h-6 w-6 text-emerald-500 opacity-60" />
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">
+                Pelanggan VIP Platinum
+              </CardDescription>
+              <CardTitle className="text-2xl font-bold flex items-center justify-between">
+                {totalPlatinum} Klien
+                <Sparkles className="h-6 w-6 opacity-60 text-fuchsia-600" />
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        </div>
+      )}
 
       {/* Toolbar Filter & Pencarian */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-card p-3 rounded-xl border">
@@ -261,26 +269,44 @@ export default function CustomersPage() {
       </div>
 
       {/* Tabel Data Pelanggan */}
-      {loading ? (
-        <div className="p-12 text-center text-sm text-muted-foreground border rounded-xl bg-card">
-          Memuat data pelanggan & prospek...
-        </div>
-      ) : (
-        <div className="rounded-xl border bg-card overflow-hidden">
-          <Table>
-            <TableHeader>
+      <div className="rounded-xl border bg-card overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Kode & Klien</TableHead>
+              <TableHead>PIC / Kontak</TableHead>
+              <TableHead>Wilayah / Kota</TableHead>
+              <TableHead>Segmen & Sumber</TableHead>
+              <TableHead>Tier & Total Trip</TableHead>
+              <TableHead>Catatan Khusus</TableHead>
+              <TableHead className="text-right">Aksi</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableSkeletonRows
+                rows={6}
+                colWidths={[
+                  'w-36',
+                  'w-28',
+                  'w-24',
+                  'w-28',
+                  'w-24',
+                  'w-32',
+                  'w-20 ml-auto',
+                ]}
+              />
+            ) : customers.length === 0 ? (
               <TableRow>
-                <TableHead>Kode & Klien</TableHead>
-                <TableHead>PIC / Kontak</TableHead>
-                <TableHead>Wilayah / Kota</TableHead>
-                <TableHead>Segmen & Sumber</TableHead>
-                <TableHead>Tier & Total Trip</TableHead>
-                <TableHead>Catatan Khusus</TableHead>
-                <TableHead className="text-right">Aksi</TableHead>
+                <TableCell
+                  colSpan={7}
+                  className="text-center py-8 text-muted-foreground text-xs"
+                >
+                  Tidak ada data pelanggan yang sesuai filter.
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {customers.map((c) => (
+            ) : (
+              customers.map((c) => (
                 <TableRow
                   key={c.id}
                   onClick={() => handleViewDetail(c)}
@@ -411,11 +437,11 @@ export default function CustomersPage() {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
       {/* Modal Dialog Form Tambah / Edit */}
       <CustomerModal

@@ -10,6 +10,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ReportService } from '@/services/report.service';
+import {
+  MetricCardGridSkeleton,
+  TableSkeletonRows,
+} from '@/components/shared/skeleton-loaders';
 import type { TripProfitabilityViewMode, TripServiceType } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -102,80 +106,84 @@ export default function TripProfitabilityPage() {
       </div>
 
       {/* METRIC CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
-          <CardContent className="p-5 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                Total Omzet Bruto
-              </p>
-              <h3 className="text-2xl font-extrabold text-blue-900 dark:text-blue-300 mt-1">
-                Rp {summary ? Number(summary.totalRevenue).toLocaleString('id-ID') : '0'}
-              </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Tiket + Kargo + Charter</p>
-            </div>
-            <div className="p-3 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-xl border border-blue-100 dark:border-blue-900/40">
-              <DollarSign className="h-6 w-6" />
-            </div>
-          </CardContent>
-        </Card>
+      {isLoading ? (
+        <MetricCardGridSkeleton count={4} />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
+            <CardContent className="p-5 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  Total Omzet Bruto
+                </p>
+                <h3 className="text-2xl font-extrabold text-blue-900 dark:text-blue-300 mt-1">
+                  Rp {summary ? Number(summary.totalRevenue).toLocaleString('id-ID') : '0'}
+                </h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Tiket + Kargo + Charter</p>
+              </div>
+              <div className="p-3 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-xl border border-blue-100 dark:border-blue-900/40">
+                <DollarSign className="h-6 w-6" />
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
-          <CardContent className="p-5 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                Total Biaya Langsung SPJ
-              </p>
-              <h3 className="text-2xl font-extrabold text-rose-900 dark:text-rose-300 mt-1">
-                Rp {summary ? Number(summary.totalDirectCost).toLocaleString('id-ID') : '0'}
-              </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">BBM, Tol, RM, Hak Kru</p>
-            </div>
-            <div className="p-3 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl border border-rose-100 dark:border-rose-900/40">
-              <Receipt className="h-6 w-6" />
-            </div>
-          </CardContent>
-        </Card>
+          <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
+            <CardContent className="p-5 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  Total Biaya Langsung SPJ
+                </p>
+                <h3 className="text-2xl font-extrabold text-rose-900 dark:text-rose-300 mt-1">
+                  Rp {summary ? Number(summary.totalDirectCost).toLocaleString('id-ID') : '0'}
+                </h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">BBM, Tol, RM, Hak Kru</p>
+              </div>
+              <div className="p-3 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl border border-rose-100 dark:border-rose-900/40">
+                <Receipt className="h-6 w-6" />
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
-          <CardContent className="p-5 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                Margin Kontribusi Bersih
-              </p>
-              <h3
-                className={`text-2xl font-extrabold mt-1 ${summary && Number(summary.totalContributionMargin) >= 0
-                    ? 'text-emerald-700 dark:text-emerald-400'
-                    : 'text-red-700 dark:text-red-400'
-                  }`}
-              >
-                Rp {summary ? Number(summary.totalContributionMargin).toLocaleString('id-ID') : '0'}
-              </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Laba Bruto SPJ Armada</p>
-            </div>
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-100 dark:border-emerald-900/40">
-              <TrendingUp className="h-6 w-6" />
-            </div>
-          </CardContent>
-        </Card>
+          <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
+            <CardContent className="p-5 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  Margin Kontribusi Bersih
+                </p>
+                <h3
+                  className={`text-2xl font-extrabold mt-1 ${summary && Number(summary.totalContributionMargin) >= 0
+                      ? 'text-emerald-700 dark:text-emerald-400'
+                      : 'text-red-700 dark:text-red-400'
+                    }`}
+                >
+                  Rp {summary ? Number(summary.totalContributionMargin).toLocaleString('id-ID') : '0'}
+                </h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Laba Bruto SPJ Armada</p>
+              </div>
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-100 dark:border-emerald-900/40">
+                <TrendingUp className="h-6 w-6" />
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
-          <CardContent className="p-5 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                Rata-Rata Rasio Margin
-              </p>
-              <h3 className="text-2xl font-extrabold text-emerald-900 dark:text-emerald-300 mt-1">
-                {summary?.averageMarginRatio ?? 0}%
-              </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Dari {summary?.totalTrips ?? 0} Perjalanan</p>
-            </div>
-            <div className="p-3 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-xl border border-amber-100 dark:border-amber-900/40">
-              <Sparkles className="h-6 w-6" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
+            <CardContent className="p-5 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  Rata-Rata Rasio Margin
+                </p>
+                <h3 className="text-2xl font-extrabold text-emerald-900 dark:text-emerald-300 mt-1">
+                  {summary?.averageMarginRatio ?? 0}%
+                </h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Dari {summary?.totalTrips ?? 0} Perjalanan</p>
+              </div>
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-xl border border-amber-100 dark:border-amber-900/40">
+                <Sparkles className="h-6 w-6" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* BANNER EDUKASI SKENARIO 3 */}
       <div className="bg-linear-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/20 border border-emerald-200 dark:border-emerald-800/40 p-4 rounded-xl flex items-start gap-3">
@@ -268,12 +276,22 @@ export default function TripProfitabilityPage() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {isLoading ? (
-                <tr>
-                  <td colSpan={11} className="text-center py-12 text-gray-500">
-                    <RefreshCw className="h-6 w-6 animate-spin mx-auto text-emerald-600 mb-2" />
-                    <span>Mengkalkulasi margin kontribusi perjalanan...</span>
-                  </td>
-                </tr>
+                <TableSkeletonRows
+                  rows={6}
+                  colWidths={[
+                    'w-28',
+                    'w-16',
+                    'w-20',
+                    'w-36',
+                    'w-24',
+                    'w-24 ml-auto',
+                    'w-24 ml-auto',
+                    'w-24 ml-auto',
+                    'w-16 mx-auto',
+                    'w-20 mx-auto',
+                    'w-12 mx-auto',
+                  ]}
+                />
               ) : items.length === 0 ? (
                 <tr>
                   <td colSpan={11} className="text-center py-12 text-gray-400">

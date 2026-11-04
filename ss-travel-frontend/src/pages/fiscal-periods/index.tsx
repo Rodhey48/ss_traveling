@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/table';
 import { usePermission } from '@/hooks/use-permission';
 import { FiscalPeriodService } from '@/services/fiscal-period.service';
+import { TableSkeletonRows } from '@/components/shared/skeleton-loaders';
 import type {
   CreateFiscalYearFormData,
   FiscalPeriod,
@@ -256,11 +257,17 @@ export default function FiscalPeriodsPage() {
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    Memuat kalender periode fiskal...
-                  </TableCell>
-                </TableRow>
+                <TableSkeletonRows
+                  rows={6}
+                  colWidths={[
+                    'w-16',
+                    'w-32',
+                    'w-36',
+                    'w-20',
+                    'w-48',
+                    'w-20 ml-auto',
+                  ]}
+                />
               ) : !selectedYear?.periods || selectedYear.periods.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
