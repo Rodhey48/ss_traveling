@@ -27,27 +27,38 @@ import {
   Search,
   Sparkles,
   TrendingUp,
+  X,
+  RotateCcw,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { TripProfitabilityDetailModal } from './TripProfitabilityDetailModal';
 
 export default function TripProfitabilityPage() {
   const [viewMode, setViewMode] = useState<TripProfitabilityViewMode>('BY_JOURNEY_GROUP');
   const [serviceType, setServiceType] = useState<string>('ALL');
-  const [search, setSearch] = useState<string>('');
+  const [searchInput, setSearchInput] = useState<string>('');
+  const [debouncedSearch, setDebouncedSearch] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
 
   const [selectedSpjId, setSelectedSpjId] = useState<string | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
 
+  // Debounced search (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput.trim());
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['trip-profitability', viewMode, serviceType, search, startDate, endDate],
+    queryKey: ['trip-profitability', viewMode, serviceType, debouncedSearch, startDate, endDate],
     queryFn: () =>
       ReportService.getTripProfitability({
         viewMode,
         serviceType: serviceType === 'ALL' ? undefined : (serviceType as TripServiceType),
-        search: search || undefined,
+        search: debouncedSearch || undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
       }),
@@ -62,6 +73,23 @@ export default function TripProfitabilityPage() {
     setDetailModalOpen(true);
   };
 
+  const handleResetFilters = () => {
+    setSearchInput('');
+    setDebouncedSearch('');
+    setServiceType('ALL');
+    setStartDate('');
+    setEndDate('');
+  };
+
+  const hasActiveFilters = useMemo(() => {
+    return (
+      debouncedSearch !== '' ||
+      serviceType !== 'ALL' ||
+      startDate !== '' ||
+      endDate !== ''
+    );
+  }, [debouncedSearch, serviceType, startDate, endDate]);
+
   return (
     <div className="space-y-6 p-6">
       {/* HEADER SECTION */}
@@ -72,11 +100,11 @@ export default function TripProfitabilityPage() {
               <TrendingUp className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-                Laporan Profitabilitas & Margin Trip SPJ
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">
+                Laporan Profitabilitas &amp; Margin Trip SPJ
               </h1>
-              <p className="text-sm text-gray-500">
-                Analisis margin kontribusi perjalanan armada bus (AKAP & Pariwisata) PT SS Travelink Official
+              <p className="text-sm text-muted-foreground">
+                Analisis margin kontribusi perjalanan armada bus (AKAP &amp; Pariwisata) PT SS Travelink Official
               </p>
             </div>
           </div>
@@ -110,16 +138,16 @@ export default function TripProfitabilityPage() {
         <MetricCardGridSkeleton count={4} />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
+          <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs border-l-4 border-l-blue-600">
             <CardContent className="p-5 flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Total Omzet Bruto
                 </p>
-                <h3 className="text-2xl font-extrabold text-blue-900 dark:text-blue-300 mt-1">
+                <h3 className="text-2xl font-extrabold font-mono text-blue-900 dark:text-blue-300 mt-1">
                   Rp {summary ? Number(summary.totalRevenue).toLocaleString('id-ID') : '0'}
                 </h3>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Tiket + Kargo + Charter</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Tiket + Kargo + Charter</p>
               </div>
               <div className="p-3 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-xl border border-blue-100 dark:border-blue-900/40">
                 <DollarSign className="h-6 w-6" />
@@ -127,16 +155,16 @@ export default function TripProfitabilityPage() {
             </CardContent>
           </Card>
 
-          <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
+          <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs border-l-4 border-l-rose-600">
             <CardContent className="p-5 flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Total Biaya Langsung SPJ
                 </p>
-                <h3 className="text-2xl font-extrabold text-rose-900 dark:text-rose-300 mt-1">
+                <h3 className="text-2xl font-extrabold font-mono text-rose-900 dark:text-rose-300 mt-1">
                   Rp {summary ? Number(summary.totalDirectCost).toLocaleString('id-ID') : '0'}
                 </h3>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">BBM, Tol, RM, Hak Kru</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">BBM, Tol, RM, Hak Kru</p>
               </div>
               <div className="p-3 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl border border-rose-100 dark:border-rose-900/40">
                 <Receipt className="h-6 w-6" />
@@ -144,21 +172,22 @@ export default function TripProfitabilityPage() {
             </CardContent>
           </Card>
 
-          <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
+          <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs border-l-4 border-l-emerald-600">
             <CardContent className="p-5 flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Margin Kontribusi Bersih
                 </p>
                 <h3
-                  className={`text-2xl font-extrabold mt-1 ${summary && Number(summary.totalContributionMargin) >= 0
+                  className={`text-2xl font-extrabold font-mono mt-1 ${
+                    summary && Number(summary.totalContributionMargin) >= 0
                       ? 'text-emerald-700 dark:text-emerald-400'
                       : 'text-red-700 dark:text-red-400'
-                    }`}
+                  }`}
                 >
                   Rp {summary ? Number(summary.totalContributionMargin).toLocaleString('id-ID') : '0'}
                 </h3>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Laba Bruto SPJ Armada</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Laba Bruto SPJ Armada</p>
               </div>
               <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-100 dark:border-emerald-900/40">
                 <TrendingUp className="h-6 w-6" />
@@ -166,16 +195,16 @@ export default function TripProfitabilityPage() {
             </CardContent>
           </Card>
 
-          <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs">
+          <Card className="border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md shadow-xs border-l-4 border-l-amber-600">
             <CardContent className="p-5 flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Rata-Rata Rasio Margin
                 </p>
-                <h3 className="text-2xl font-extrabold text-emerald-900 dark:text-emerald-300 mt-1">
+                <h3 className="text-2xl font-extrabold font-mono text-emerald-900 dark:text-emerald-300 mt-1">
                   {summary?.averageMarginRatio ?? 0}%
                 </h3>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Dari {summary?.totalTrips ?? 0} Perjalanan</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Dari {summary?.totalTrips ?? 0} Perjalanan</p>
               </div>
               <div className="p-3 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-xl border border-amber-100 dark:border-amber-900/40">
                 <Sparkles className="h-6 w-6" />
@@ -186,12 +215,12 @@ export default function TripProfitabilityPage() {
       )}
 
       {/* BANNER EDUKASI SKENARIO 3 */}
-      <div className="bg-linear-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/20 border border-emerald-200 dark:border-emerald-800/40 p-4 rounded-xl flex items-start gap-3">
-        <div className="p-1.5 bg-emerald-600 text-white rounded-lg mt-0.5">
+      <div className="bg-linear-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/20 border border-emerald-200 dark:border-emerald-800/40 p-4 rounded-xl flex items-start gap-3 shadow-2xs">
+        <div className="p-1.5 bg-emerald-600 text-white rounded-lg mt-0.5 shrink-0">
           <Layers className="h-4 w-4" />
         </div>
         <div className="text-xs text-emerald-900 dark:text-emerald-200 space-y-1">
-          <p className="font-bold">
+          <p className="font-bold text-sm">
             Pedoman Standar Blueprint Keuangan Bus (Skenario 3 — Konsolidasi Perjalanan Ekonomi):
           </p>
           <p className="text-emerald-800 dark:text-emerald-300/90 leading-relaxed">
@@ -206,23 +235,33 @@ export default function TripProfitabilityPage() {
       <div className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-4 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-xs flex flex-col md:flex-row gap-3 items-center justify-between">
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               placeholder="Cari No SPJ / Armada / Rute..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-9 text-xs"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="pl-9 pr-8 h-8.5 text-xs uppercase"
             />
+            {searchInput && (
+              <button
+                type="button"
+                onClick={() => setSearchInput('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                title="Hapus pencarian"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
 
           <Select value={serviceType} onValueChange={setServiceType}>
-            <SelectTrigger className="w-36 h-9 text-xs">
+            <SelectTrigger className="w-36 h-8.5 text-xs">
               <SelectValue placeholder="Layanan" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">Semua Layanan</SelectItem>
-              <SelectItem value="AKAP">AKAP Reguler</SelectItem>
-              <SelectItem value="WISATA">Pariwisata / Charter</SelectItem>
+              <SelectItem value="ALL" className="text-xs">Semua Layanan</SelectItem>
+              <SelectItem value="AKAP" className="text-xs">AKAP Reguler</SelectItem>
+              <SelectItem value="WISATA" className="text-xs">Pariwisata / Charter</SelectItem>
             </SelectContent>
           </Select>
 
@@ -231,16 +270,28 @@ export default function TripProfitabilityPage() {
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="h-9 text-xs w-36"
+              className="h-8.5 text-xs w-36"
             />
-            <span className="text-gray-400 text-xs">s/d</span>
+            <span className="text-muted-foreground text-xs">s/d</span>
             <Input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="h-9 text-xs w-36"
+              className="h-8.5 text-xs w-36"
             />
           </div>
+
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleResetFilters}
+              className="h-8.5 text-xs px-2.5 text-muted-foreground hover:text-foreground gap-1"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Reset Filter
+            </Button>
+          )}
         </div>
 
         <Button
@@ -248,7 +299,7 @@ export default function TripProfitabilityPage() {
           variant="outline"
           onClick={() => refetch()}
           disabled={isLoading}
-          className="text-xs h-9 shrink-0 gap-1.5"
+          className="text-xs h-8.5 shrink-0 gap-1.5 self-end md:self-auto"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           Segarkan Data
@@ -256,10 +307,10 @@ export default function TripProfitabilityPage() {
       </div>
 
       {/* TABEL PROFITABILITAS PERJALANAN */}
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 rounded-xl shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-semibold uppercase tracking-wider">
+            <thead className="bg-slate-50/80 dark:bg-white/5 border-b border-slate-200/80 dark:border-white/10 text-muted-foreground font-semibold uppercase tracking-wider">
               <tr>
                 <th className="py-3 px-4">No SPJ / Perjalanan</th>
                 <th className="py-3 px-4">Layanan</th>
@@ -274,7 +325,7 @@ export default function TripProfitabilityPage() {
                 <th className="py-3 px-4 text-center">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-white/5">
               {isLoading ? (
                 <TableSkeletonRows
                   rows={6}
@@ -294,25 +345,47 @@ export default function TripProfitabilityPage() {
                 />
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="text-center py-12 text-gray-400">
-                    Tidak ada data perjalanan ditemukan untuk filter yang dipilih.
+                  <td colSpan={11} className="text-center py-12 text-muted-foreground">
+                    <div className="flex flex-col items-center justify-center space-y-2">
+                      <div className="p-3 rounded-full bg-primary/10 text-primary">
+                        <TrendingUp className="h-8 w-8 opacity-60" />
+                      </div>
+                      <p className="font-semibold text-foreground">
+                        Tidak ada data perjalanan ditemukan
+                      </p>
+                      <p className="text-xs text-muted-foreground max-w-sm">
+                        {hasActiveFilters
+                          ? 'Tidak ada data margin perjalanan yang cocok dengan kriteria filter Anda.'
+                          : 'Perjalanan SPJ yang telah selesai direkonsiliasi akan otomatis teranalisis di sini.'}
+                      </p>
+                      {hasActiveFilters && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleResetFilters}
+                          className="text-xs gap-1.5 h-8 mt-1"
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" /> Reset Filter
+                        </Button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
                 items.map((item) => {
                   const isMarginPositive = Number(item.contributionMargin) >= 0;
                   return (
-                    <tr key={item.id} className="hover:bg-gray-50/70 transition-colors">
+                    <tr key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-white/5 transition-colors">
                       <td className="py-3.5 px-4">
-                        <div className="font-bold text-gray-900 font-mono flex items-center gap-1.5">
+                        <div className="font-bold text-foreground font-mono flex items-center gap-1.5">
                           <span>{item.spjNo}</span>
                           {item.hasReplacement && (
-                            <Badge variant="outline" className="border-amber-400 bg-amber-50 text-amber-700 text-[10px]">
+                            <Badge variant="outline" className="border-amber-400 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-[10px]">
                               Penggantian
                             </Badge>
                           )}
                         </div>
-                        <div className="text-[11px] text-gray-500">{item.driverName}</div>
+                        <div className="text-[11px] text-muted-foreground">{item.driverName}</div>
                       </td>
 
                       <td className="py-3.5 px-4">
@@ -320,8 +393,8 @@ export default function TripProfitabilityPage() {
                           variant="secondary"
                           className={
                             item.serviceType === 'AKAP'
-                              ? 'bg-blue-50 text-blue-700 border-blue-200'
-                              : 'bg-purple-50 text-purple-700 border-purple-200'
+                              ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border-blue-200 dark:border-blue-800/60'
+                              : 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200 dark:border-purple-800/60'
                           }
                         >
                           {item.serviceType}
@@ -329,31 +402,32 @@ export default function TripProfitabilityPage() {
                       </td>
 
                       <td className="py-3.5 px-4">
-                        <div className="font-semibold text-gray-900">{item.vehicleCode}</div>
-                        <div className="text-[11px] text-gray-500">{item.vehiclePlate}</div>
+                        <div className="font-semibold text-foreground">{item.vehicleCode}</div>
+                        <div className="text-[11px] text-muted-foreground font-mono">{item.vehiclePlate}</div>
                       </td>
 
                       <td className="py-3.5 px-4">
-                        <div className="font-medium text-gray-800">
-                          {item.origin} <ArrowRight className="inline h-3 w-3 text-gray-400 mx-0.5" /> {item.destination}
+                        <div className="font-medium text-foreground">
+                          {item.origin} <ArrowRight className="inline h-3 w-3 text-muted-foreground mx-0.5" /> {item.destination}
                         </div>
-                        <div className="text-[11px] text-gray-500">{item.paxCount} Penumpang</div>
+                        <div className="text-[11px] text-muted-foreground">{item.paxCount} Penumpang</div>
                       </td>
 
-                      <td className="py-3.5 px-4 text-gray-600">{item.departureDate}</td>
+                      <td className="py-3.5 px-4 text-muted-foreground whitespace-nowrap">{item.departureDate}</td>
 
-                      <td className="py-3.5 px-4 text-right font-bold text-blue-900">
+                      <td className="py-3.5 px-4 text-right font-bold font-mono text-blue-900 dark:text-blue-300">
                         Rp {Number(item.grossRevenue).toLocaleString('id-ID')}
                       </td>
 
-                      <td className="py-3.5 px-4 text-right font-bold text-rose-800">
+                      <td className="py-3.5 px-4 text-right font-bold font-mono text-rose-800 dark:text-rose-400">
                         Rp {Number(item.totalDirectCost).toLocaleString('id-ID')}
                       </td>
 
-                      <td className="py-3.5 px-4 text-right">
+                      <td className="py-3.5 px-4 text-right font-mono">
                         <span
-                          className={`font-extrabold ${isMarginPositive ? 'text-emerald-700' : 'text-red-700'
-                            }`}
+                          className={`font-extrabold ${
+                            isMarginPositive ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'
+                          }`}
                         >
                           Rp {Number(item.contributionMargin).toLocaleString('id-ID')}
                         </span>
@@ -364,10 +438,10 @@ export default function TripProfitabilityPage() {
                           variant="outline"
                           className={
                             item.contributionMarginRatio >= 30
-                              ? 'border-emerald-500 bg-emerald-50 text-emerald-700 font-bold'
+                              ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold'
                               : item.contributionMarginRatio >= 10
-                                ? 'border-amber-500 bg-amber-50 text-amber-700 font-bold'
-                                : 'border-rose-500 bg-rose-50 text-rose-700 font-bold'
+                              ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-bold'
+                              : 'border-rose-500 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-bold'
                           }
                         >
                           {item.contributionMarginRatio}%
@@ -385,7 +459,7 @@ export default function TripProfitabilityPage() {
                           size="sm"
                           variant="ghost"
                           onClick={() => handleOpenDetail(item.id)}
-                          className="h-8 px-2.5 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 gap-1 text-xs"
+                          className="h-7.5 px-2.5 text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 gap-1 text-xs"
                         >
                           <Eye className="h-3.5 w-3.5" />
                           <span>Audit</span>
@@ -397,6 +471,16 @@ export default function TripProfitabilityPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* FOOTER BAR */}
+        <div className="p-3.5 border-t border-slate-200/80 dark:border-white/10 bg-slate-50/80 dark:bg-zinc-900/60 flex items-center justify-between text-xs text-muted-foreground">
+          <span>
+            Menampilkan <strong className="text-foreground">{items.length}</strong> perjalanan dinas armada
+          </span>
+          <span className="font-mono text-[11px]">
+            Mode: {viewMode === 'BY_JOURNEY_GROUP' ? 'Konsolidasi Kelompok Perjalanan' : 'Armada Fisik Individual'}
+          </span>
         </div>
       </div>
 

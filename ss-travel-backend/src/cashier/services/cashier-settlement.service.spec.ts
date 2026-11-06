@@ -440,4 +440,48 @@ describe('CashierSettlementService', () => {
       expect(callArg.lines.some((l: any) => l.accountId === 'acc-11999-id' && l.debit === 300000)).toBe(true);
     });
   });
+
+  describe('getPendingSpjs', () => {
+    it('harus mengembalikan daftar SPJ kepulangan dengan paginasi', async () => {
+      const qbMock: any = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([
+          [{ id: 'spj-1', spjNo: 'SPJ/AKP/2610/0001' }],
+          1,
+        ]),
+      };
+      spjRepo.createQueryBuilder.mockReturnValue(qbMock);
+
+      const result = await service.getPendingSpjs({ page: 1, limit: 10 });
+      expect(result.items.length).toBe(1);
+      expect(result.total).toBe(1);
+    });
+  });
+
+  describe('getSettlements', () => {
+    it('harus mengembalikan riwayat settlement kasir dengan paginasi', async () => {
+      const qbMock: any = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([
+          [{ id: 'settle-1', settlementNo: 'SETTLE/2610/0001' }],
+          1,
+        ]),
+      };
+      settlementRepo.createQueryBuilder.mockReturnValue(qbMock);
+
+      const result = await service.getSettlements({ page: 1, limit: 10 });
+      expect(result.items.length).toBe(1);
+      expect(result.total).toBe(1);
+    });
+  });
 });

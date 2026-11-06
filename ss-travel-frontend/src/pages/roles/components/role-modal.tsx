@@ -6,6 +6,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -29,6 +30,7 @@ import type { BackendMenu, Role, RoleFormData } from '@/types';
 import { useEffect } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import { Shield, Loader2, Info } from 'lucide-react';
 
 interface RoleModalProps {
   isOpen: boolean;
@@ -43,7 +45,7 @@ export default function RoleModal({
   onClose,
   onSubmit,
   role,
-  loading,
+  loading = false,
 }: RoleModalProps) {
   const form = useForm<RoleFormData>({
     defaultValues: {
@@ -66,8 +68,10 @@ export default function RoleModal({
           // Flatten tree for useFieldArray mapping
           const flatPermissions: any[] = [];
           const flatten = (nodes: BackendMenu[], level = 0) => {
-            nodes.forEach(node => {
-              const existing = role?.menus?.find((m: any) => (m.menu?.id || m.menuId) === node.id);
+            nodes.forEach((node) => {
+              const existing = role?.menus?.find(
+                (m: any) => (m.menu?.id || m.menuId) === node.id
+              );
               flatPermissions.push({
                 menuId: node.id,
                 menuName: node.name,
@@ -87,7 +91,7 @@ export default function RoleModal({
           replace(flatPermissions);
         }
       } catch (error) {
-        toast.error('Failed to fetch menus');
+        toast.error('Gagal mengambil struktur menu sistem');
       }
     };
 
@@ -95,7 +99,7 @@ export default function RoleModal({
       if (role) {
         form.reset({
           name: role.name,
-          description: role.description,
+          description: role.description || '',
         });
       } else {
         form.reset({
@@ -107,7 +111,12 @@ export default function RoleModal({
     }
   }, [role, form, isOpen, replace]);
 
-  const handleCheckboxChange = (index: number, field: string, value: boolean, actionName?: string) => {
+  const handleCheckboxChange = (
+    index: number,
+    field: string,
+    value: boolean,
+    actionName?: string
+  ) => {
     const current = form.getValues(`permissions.${index}`);
     let updated = { ...current };
 
@@ -120,7 +129,10 @@ export default function RoleModal({
       (updated as any)[field] = value;
 
       // Smart logic: If Create/Update/Delete is checked, Read MUST be checked
-      if ((field === 'isCreate' || field === 'isUpdate' || field === 'isDelete') && value === true) {
+      if (
+        (field === 'isCreate' || field === 'isUpdate' || field === 'isDelete') &&
+        value === true
+      ) {
         updated.isRead = true;
       }
 
@@ -132,7 +144,7 @@ export default function RoleModal({
         // Also uncheck all custom actions
         if (updated.actions) {
           const resetActions = { ...updated.actions };
-          Object.keys(resetActions).forEach(k => resetActions[k] = false);
+          Object.keys(resetActions).forEach((k) => (resetActions[k] = false));
           updated.actions = resetActions;
         }
       }
@@ -143,35 +155,62 @@ export default function RoleModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-200 max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{role ? 'Edit Role' : 'Add New Role'}</DialogTitle>
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">
+              <Shield className="h-5 w-5" />
+            </div>
+            <div>
+              <DialogTitle className="text-lg font-bold text-foreground">
+                {role ? 'Ubah Peran & Hak Akses' : 'Tambah Peran (Role) Baru'}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                {role
+                  ? `Atur matriks izin akses menu dan tindakan khusus untuk peran ${role.name}`
+                  : 'Definisikan nama peran baru dan konfigurasikan matriks hak akses menu (RBAC).'}
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
+
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* NAMA PERAN */}
               <FormField
                 control={form.control}
                 name="name"
-                rules={{ required: 'Role name is required' }}
+                rules={{ required: 'Nama peran wajib diisi' }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Role Name</FormLabel>
+                    <FormLabel className="text-xs font-semibold">Nama Peran (Kode Role) *</FormLabel>
                     <FormControl>
-                      <Input placeholder="ADMIN" {...field} />
+                      <Input
+                        placeholder="cth. FINANCE_AUDITOR"
+                        className="h-9 text-xs font-mono uppercase"
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              {/* DESKRIPSI PERAN */}
               <FormField
                 control={form.control}
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel className="text-xs font-semibold">Deskripsi / Tugas Pokok</FormLabel>
                     <FormControl>
-                      <Input placeholder="Administrator access" {...field} />
+                      <Input
+                        placeholder="cth. Auditor keuangan dan verifikasi laporan tutup buku"
+                        className="h-9 text-xs"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -179,95 +218,162 @@ export default function RoleModal({
               />
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <FormLabel>Permissions Matrix</FormLabel>
-                <div className="text-[10px] text-muted-foreground italic">
-                  * Checking Create/Update/Delete automatically enables Read
+            {/* PERMISSIONS MATRIX */}
+            <div className="space-y-2.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <Shield className="h-3.5 w-3.5 text-emerald-600" />
+                  Matriks Hak Akses Menu &amp; Aksi (RBAC Matrix)
+                </FormLabel>
+                <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                  <Info className="h-3 w-3 text-emerald-600" />
+                  <span>Centang Buat/Ubah/Hapus otomatis mengaktifkan hak Baca.</span>
                 </div>
               </div>
-              <div className="rounded-md border overflow-hidden">
-                <Table>
-                  <TableHeader className="bg-muted/50">
-                    <TableRow>
-                      <TableHead className="w-62.5">Menu Hierarchy</TableHead>
-                      <TableHead className="text-center w-20">Read</TableHead>
-                      <TableHead className="text-center w-20">Create</TableHead>
-                      <TableHead className="text-center w-20">Update</TableHead>
-                      <TableHead className="text-center w-20">Delete</TableHead>
-                      <TableHead className="">Custom Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {fields.map((field, index) => (
-                      <TableRow key={field.id} className="hover:bg-accent/30">
-                        <TableCell
-                          className="font-medium text-xs"
-                          style={{ paddingLeft: `${(field as any).level * 24 + 16}px` }}
-                        >
-                          {(field as any).menuName}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Checkbox
-                            checked={form.watch(`permissions.${index}.isRead`)}
-                            onCheckedChange={(v) => handleCheckboxChange(index, 'isRead', v as boolean)}
-                          />
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Checkbox
-                            checked={form.watch(`permissions.${index}.isCreate`)}
-                            onCheckedChange={(v) => handleCheckboxChange(index, 'isCreate', v as boolean)}
-                          />
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Checkbox
-                            checked={form.watch(`permissions.${index}.isUpdate`)}
-                            onCheckedChange={(v) => handleCheckboxChange(index, 'isUpdate', v as boolean)}
-                          />
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Checkbox
-                            checked={form.watch(`permissions.${index}.isDelete`)}
-                            onCheckedChange={(v) => handleCheckboxChange(index, 'isDelete', v as boolean)}
-                          />
-                        </TableCell>
-                        <TableCell className="min-w-50">
-                          <div className="max-h-25 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-muted-foreground/20">
-                            <div className="flex flex-wrap gap-1.5">
-                              {(field as any).availableActions?.map((action: string) => (
-                                <div
-                                  key={action}
-                                  className="flex items-center space-x-1 bg-muted/50 border border-border/50 px-2 py-0.5 rounded transition-colors hover:bg-muted"
-                                >
-                                  <span className="text-[9px] font-bold uppercase tracking-tight text-muted-foreground leading-none">
-                                    {action}
-                                  </span>
-                                  <Checkbox
-                                    className="h-3 w-3 rounded-[2px]"
-                                    checked={(form.watch(`permissions.${index}.actions`) || {})[action] ?? false}
-                                    onCheckedChange={(v) => handleCheckboxChange(index, 'actions', v as boolean, action)}
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                            {(!field as any).availableActions?.length && (
-                              <span className="text-[10px] text-muted-foreground italic">-</span>
-                            )}
-                          </div>
-                        </TableCell>
+
+              <div className="rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-white/2 overflow-hidden shadow-2xs">
+                <div className="max-h-[380px] overflow-y-auto">
+                  <Table className="text-xs">
+                    <TableHeader className="bg-slate-100/90 dark:bg-zinc-900 sticky top-0 z-10 border-b border-slate-200/80 dark:border-white/10">
+                      <TableRow>
+                        <TableHead className="w-56 font-bold uppercase text-[10px] text-muted-foreground">
+                          Hierarki Menu
+                        </TableHead>
+                        <TableHead className="text-center w-18 font-bold uppercase text-[10px] text-muted-foreground">
+                          Baca (Read)
+                        </TableHead>
+                        <TableHead className="text-center w-18 font-bold uppercase text-[10px] text-muted-foreground">
+                          Buat (Create)
+                        </TableHead>
+                        <TableHead className="text-center w-18 font-bold uppercase text-[10px] text-muted-foreground">
+                          Ubah (Update)
+                        </TableHead>
+                        <TableHead className="text-center w-18 font-bold uppercase text-[10px] text-muted-foreground">
+                          Hapus (Delete)
+                        </TableHead>
+                        <TableHead className="font-bold uppercase text-[10px] text-muted-foreground">
+                          Aksi Fungsional Khusus
+                        </TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody className="divide-y divide-slate-100 dark:divide-white/5">
+                      {fields.map((field, index) => {
+                        const level = (field as any).level || 0;
+                        const availableActions = (field as any).availableActions || [];
+                        return (
+                          <TableRow
+                            key={field.id}
+                            className="hover:bg-slate-100/60 dark:hover:bg-white/5 transition-colors"
+                          >
+                            <TableCell
+                              className="font-medium text-xs text-foreground"
+                              style={{ paddingLeft: `${level * 20 + 12}px` }}
+                            >
+                              <div className="flex items-center gap-1.5">
+                                {level > 0 && (
+                                  <span className="text-muted-foreground/40 font-mono">└</span>
+                                )}
+                                <span className={level === 0 ? 'font-bold text-foreground' : 'text-foreground/90'}>
+                                  {(field as any).menuName}
+                                </span>
+                              </div>
+                            </TableCell>
+
+                            <TableCell className="text-center py-2.5">
+                              <Checkbox
+                                checked={form.watch(`permissions.${index}.isRead`)}
+                                onCheckedChange={(v) =>
+                                  handleCheckboxChange(index, 'isRead', v as boolean)
+                                }
+                              />
+                            </TableCell>
+
+                            <TableCell className="text-center py-2.5">
+                              <Checkbox
+                                checked={form.watch(`permissions.${index}.isCreate`)}
+                                onCheckedChange={(v) =>
+                                  handleCheckboxChange(index, 'isCreate', v as boolean)
+                                }
+                              />
+                            </TableCell>
+
+                            <TableCell className="text-center py-2.5">
+                              <Checkbox
+                                checked={form.watch(`permissions.${index}.isUpdate`)}
+                                onCheckedChange={(v) =>
+                                  handleCheckboxChange(index, 'isUpdate', v as boolean)
+                                }
+                              />
+                            </TableCell>
+
+                            <TableCell className="text-center py-2.5">
+                              <Checkbox
+                                checked={form.watch(`permissions.${index}.isDelete`)}
+                                onCheckedChange={(v) =>
+                                  handleCheckboxChange(index, 'isDelete', v as boolean)
+                                }
+                              />
+                            </TableCell>
+
+                            <TableCell className="py-2.5">
+                              {availableActions.length > 0 ? (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {availableActions.map((action: string) => {
+                                    const isChecked =
+                                      (form.watch(`permissions.${index}.actions`) || {})[action] ?? false;
+                                    return (
+                                      <label
+                                        key={action}
+                                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border cursor-pointer transition-colors ${
+                                          isChecked
+                                            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800/60'
+                                            : 'bg-white dark:bg-white/5 text-muted-foreground border-slate-200 dark:border-white/10 hover:border-slate-300'
+                                        }`}
+                                      >
+                                        <Checkbox
+                                          className="h-3 w-3 rounded-xs"
+                                          checked={isChecked}
+                                          onCheckedChange={(v) =>
+                                            handleCheckboxChange(index, 'actions', v as boolean, action)
+                                          }
+                                        />
+                                        <span className="uppercase font-mono">{action}</span>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+                              ) : (
+                                <span className="text-[11px] text-muted-foreground/50 italic">-</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             </div>
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
+            <DialogFooter className="pt-3 border-t border-slate-200/80 dark:border-white/10 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onClose}
+                className="h-9 text-xs"
+                disabled={loading}
+              >
+                Batal
               </Button>
-              <Button type="submit" disabled={loading}>
-                {role ? 'Update Role' : 'Create Role'}
+              <Button
+                type="submit"
+                size="sm"
+                disabled={loading}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white h-9 text-xs gap-1.5"
+              >
+                {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {role ? 'Simpan Perubahan Peran' : 'Buat Peran Baru'}
               </Button>
             </DialogFooter>
           </form>

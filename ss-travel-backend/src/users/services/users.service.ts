@@ -35,24 +35,45 @@ export class UsersService {
     page: any = 1,
     limit: any = 10,
     search: string = '',
+    type?: string,
+    isActive?: string,
+    roleId?: string,
   ): Promise<ResponseInterface> {
     try {
       const p = Number(page) || 1;
       const l = Number(limit) || 10;
       const skip = (p - 1) * l;
-      const [users, total] = await this.usersRepository.findAndCount({
-        where: search
-          ? [
-              { name: Like(`%${search}%`) },
-              { email: Like(`%${search}%`) },
-              { nip: Like(`%${search}%`) },
-            ]
-          : {},
-        relations: ['roles', 'roles.role'],
-        skip,
-        take: l,
-        order: { createdAt: 'DESC' },
-      });
+
+      const qb = this.usersRepository
+        .createQueryBuilder('user')
+        .leftJoinAndSelect('user.roles', 'userRole')
+        .leftJoinAndSelect('userRole.role', 'role')
+        .orderBy('user.createdAt', 'DESC')
+        .skip(skip)
+        .take(l);
+
+      if (search && search.trim()) {
+        const s = `%${search.trim()}%`;
+        qb.andWhere(
+          '(user.name ILIKE :s OR user.email ILIKE :s OR user.nip ILIKE :s OR user.phone ILIKE :s)',
+          { s },
+        );
+      }
+
+      if (type && type !== 'ALL') {
+        qb.andWhere('user.type = :type', { type });
+      }
+
+      if (isActive !== undefined && isActive !== 'ALL' && isActive !== '') {
+        const activeBool = isActive === 'true' || isActive === 'ACTIVE';
+        qb.andWhere('user.isActive = :isActive', { isActive: activeBool });
+      }
+
+      if (roleId && roleId !== 'ALL' && roleId !== '') {
+        qb.andWhere('role.id = :roleId', { roleId });
+      }
+
+      const [users, total] = await qb.getManyAndCount();
 
       return {
         status: true,
@@ -66,6 +87,37 @@ export class UsersService {
       };
     } catch (error) {
       this.logger.error(`Error fetching users: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  async getStats(): Promise<ResponseInterface> {
+    try {
+      const total = await this.usersRepository.count();
+      const active = await this.usersRepository.count({ where: { isActive: true } });
+      const inactive = await this.usersRepository.count({ where: { isActive: false } });
+
+      const crew = await this.usersRepository
+        .createQueryBuilder('user')
+        .innerJoin('user.roles', 'userRole')
+        .innerJoin('userRole.role', 'role')
+        .where(
+          "role.name ILIKE '%DRIVER%' OR role.name ILIKE '%CONDUCTOR%' OR role.name ILIKE '%STEWARDESS%'",
+        )
+        .getCount();
+
+      return {
+        status: true,
+        message: 'User stats fetched successfully',
+        data: {
+          total,
+          active,
+          inactive,
+          crew,
+        },
+      };
+    } catch (error) {
+      this.logger.error(`Error fetching user stats: ${error.message}`, error.stack);
       throw error;
     }
   }

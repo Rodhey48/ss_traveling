@@ -1,11 +1,17 @@
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import Heading from '@/components/shared/heading';
+import {
+  MetricCardGridSkeleton,
+  TableSkeletonRows,
+} from '@/components/shared/skeleton-loaders';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
+  CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
@@ -27,7 +33,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePermission } from '@/hooks/use-permission';
 import { TripScheduleService } from '@/services/trip-schedule.service';
 import { VehicleService } from '@/services/vehicle.service';
-import { TableSkeletonRows } from '@/components/shared/skeleton-loaders';
 import type {
   TripSchedule,
   TripScheduleStatus,
@@ -39,6 +44,8 @@ import {
   Bus,
   Calendar,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Edit,
   FileCheck,
@@ -46,9 +53,11 @@ import {
   Plus,
   RotateCcw,
   Search,
+  Sparkles,
   Trash2,
+  X,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import ReviewPublishSpjModal from './components/review-publish-spj-modal';
 import ScheduleModal from './components/schedule-modal';
@@ -66,9 +75,10 @@ export default function SchedulesPage() {
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [startDateFilter, setStartDateFilter] = useState<string>('');
   const [endDateFilter, setEndDateFilter] = useState<string>('');
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [limit] = useState(20);
+  const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
 
   // Gantt Timeline Range & View Mode
@@ -89,6 +99,7 @@ export default function SchedulesPage() {
   const [scheduleForSpj, setScheduleForSpj] = useState<TripSchedule | null>(null);
 
   // Custom Confirm Dialog State
+  const [isConfirmLoading, setIsConfirmLoading] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     title: string;
@@ -109,21 +120,14 @@ export default function SchedulesPage() {
     onConfirm: () => { },
   });
 
+  // Debounce search (300ms)
   useEffect(() => {
-    loadVehicles();
-  }, []);
-
-  useEffect(() => {
-    loadSchedules();
-  }, [serviceFilter, statusFilter, startDateFilter, endDateFilter, page, limit, timelineStart, ganttViewMode, activeTab]);
-
-  const handleViewModeChange = (mode: GanttViewMode) => {
-    setGanttViewMode(mode);
-    if (mode === 'month') {
-      const firstOfMonth = new Date(timelineStart.getFullYear(), timelineStart.getMonth(), 1);
-      setTimelineStart(firstOfMonth);
-    }
-  };
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const loadVehicles = async () => {
     try {
@@ -134,7 +138,11 @@ export default function SchedulesPage() {
     }
   };
 
-  const loadSchedules = async () => {
+  useEffect(() => {
+    loadVehicles();
+  }, []);
+
+  const loadSchedules = useCallback(async () => {
     setLoading(true);
     try {
       const params: any = {
@@ -146,7 +154,7 @@ export default function SchedulesPage() {
       if (statusFilter !== 'ALL') params.status = statusFilter as TripScheduleStatus;
       if (startDateFilter) params.startDate = startDateFilter;
       if (endDateFilter) params.endDate = endDateFilter;
-      if (search) params.search = search;
+      if (debouncedSearch) params.search = debouncedSearch;
 
       const res = await TripScheduleService.getSchedules(params);
       setSchedules(res.data || []);
@@ -156,13 +164,65 @@ export default function SchedulesPage() {
     } finally {
       setLoading(false);
     }
+  }, [serviceFilter, statusFilter, startDateFilter, endDateFilter, page, limit, activeTab, debouncedSearch]);
+
+  useEffect(() => {
+    loadSchedules();
+  }, [loadSchedules]);
+
+  const handleViewModeChange = (mode: GanttViewMode) => {
+    setGanttViewMode(mode);
+    if (mode === 'month') {
+      const firstOfMonth = new Date(timelineStart.getFullYear(), timelineStart.getMonth(), 1);
+      setTimelineStart(firstOfMonth);
+    }
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setDebouncedSearch(searchInput.trim());
     setPage(1);
-    loadSchedules();
   };
+
+  const isFilterActive =
+    serviceFilter !== 'ALL' ||
+    statusFilter !== 'ALL' ||
+    startDateFilter !== '' ||
+    endDateFilter !== '' ||
+    searchInput.trim() !== '';
+
+  const handleResetFilters = () => {
+    setServiceFilter('ALL');
+    setStatusFilter('ALL');
+    setStartDateFilter('');
+    setEndDateFilter('');
+    setSearchInput('');
+    setDebouncedSearch('');
+    setPage(1);
+  };
+
+  // Pagination metrics
+  const totalPages = Math.ceil(total / limit) || 1;
+  const startItem = total === 0 ? 0 : (page - 1) * limit + 1;
+  const endItem = Math.min(page * limit, total);
+
+  // Dynamic KPI Calculations from loaded set
+  const totalActiveSchedules = useMemo(
+    () => schedules.filter((s) => s.status === 'CONFIRMED' || s.status === 'IN_PROGRESS').length,
+    [schedules],
+  );
+  const totalAkap = useMemo(
+    () => schedules.filter((s) => s.serviceType === 'AKAP').length,
+    [schedules],
+  );
+  const totalWisata = useMemo(
+    () => schedules.filter((s) => s.serviceType === 'WISATA').length,
+    [schedules],
+  );
+  const totalReadyForSpj = useMemo(
+    () => schedules.filter((s) => s.status === 'CONFIRMED' && !s.spjId).length,
+    [schedules],
+  );
 
   const handleConfirmSchedule = (id: string, no: string) => {
     setConfirmDialog({
@@ -172,6 +232,7 @@ export default function SchedulesPage() {
       variant: 'primary',
       confirmText: 'Kunci Jadwal',
       onConfirm: async () => {
+        setIsConfirmLoading(true);
         try {
           await TripScheduleService.confirmSchedule(id);
           toast.success(`Jadwal '${no}' berhasil dikonfirmasi.`);
@@ -179,6 +240,8 @@ export default function SchedulesPage() {
           loadSchedules();
         } catch (err: any) {
           toast.error(err.response?.data?.message || 'Gagal mengonfirmasi jadwal.');
+        } finally {
+          setIsConfirmLoading(false);
         }
       },
     });
@@ -197,6 +260,7 @@ export default function SchedulesPage() {
         required: true,
       },
       onConfirm: async (reason?: string) => {
+        setIsConfirmLoading(true);
         try {
           await TripScheduleService.cancelSchedule(id, reason);
           toast.success(`Jadwal '${no}' telah dibatalkan.`);
@@ -204,6 +268,8 @@ export default function SchedulesPage() {
           loadSchedules();
         } catch (err: any) {
           toast.error(err.response?.data?.message || 'Gagal membatalkan jadwal.');
+        } finally {
+          setIsConfirmLoading(false);
         }
       },
     });
@@ -223,6 +289,7 @@ export default function SchedulesPage() {
       variant: 'danger',
       confirmText: 'Hapus Permanen',
       onConfirm: async () => {
+        setIsConfirmLoading(true);
         try {
           await TripScheduleService.deleteSchedule(id);
           toast.success(`Jadwal '${no}' berhasil dihapus.`);
@@ -230,6 +297,8 @@ export default function SchedulesPage() {
           loadSchedules();
         } catch (err: any) {
           toast.error(err.response?.data?.message || 'Gagal menghapus jadwal.');
+        } finally {
+          setIsConfirmLoading(false);
         }
       },
     });
@@ -238,26 +307,38 @@ export default function SchedulesPage() {
   const getServiceBadge = (type: string) => {
     switch (type) {
       case 'AKAP':
-        return <Badge className="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-50 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800 font-semibold text-[10px]">AKAP Reguler</Badge>;
+        return (
+          <Badge className="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-50 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800 font-semibold text-[10px]">
+            AKAP Reguler
+          </Badge>
+        );
       case 'WISATA':
-        return <Badge className="bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-50 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800 font-semibold text-[10px]">Sewa Wisata</Badge>;
+        return (
+          <Badge className="bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-50 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800 font-semibold text-[10px]">
+            Sewa Wisata
+          </Badge>
+        );
       default:
-        return <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-50 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 font-semibold text-[10px]">Shuttle</Badge>;
+        return (
+          <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-50 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 font-semibold text-[10px]">
+            Shuttle
+          </Badge>
+        );
     }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'CONFIRMED':
-        return <Badge className="bg-blue-600 text-white shadow-2xs">CONFIRMED (Terkunci)</Badge>;
+        return <Badge className="bg-blue-600 text-white shadow-2xs text-[10px]">CONFIRMED (Terkunci)</Badge>;
       case 'IN_PROGRESS':
-        return <Badge className="bg-emerald-600 text-white animate-pulse shadow-2xs">IN_PROGRESS (SPJ Jalan)</Badge>;
+        return <Badge className="bg-emerald-600 text-white animate-pulse shadow-2xs text-[10px]">IN_PROGRESS (SPJ Jalan)</Badge>;
       case 'COMPLETED':
-        return <Badge variant="secondary">COMPLETED (Selesai)</Badge>;
+        return <Badge variant="secondary" className="text-[10px]">COMPLETED (Selesai)</Badge>;
       case 'CANCELLED':
-        return <Badge variant="destructive">CANCELLED (Batal)</Badge>;
+        return <Badge variant="destructive" className="text-[10px]">CANCELLED (Batal)</Badge>;
       default:
-        return <Badge variant="outline">DRAFT (Rencana)</Badge>;
+        return <Badge variant="outline" className="text-[10px]">DRAFT (Rencana)</Badge>;
     }
   };
 
@@ -267,7 +348,7 @@ export default function SchedulesPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <Heading
           title="Perencanaan Jadwal & Plotting Armada"
-          description="Kelola jadwal dinas armada bus SS-01 s.d. SS-10, validasi anti-bentrok, dan terbitkan SPJ resmi 1-klik."
+          description="Kelola jadwal dinas armada bus SS-01 s.d. SS-10, validasi anti-bentrok & jeda istirahat 3 jam, serta terbitkan SPJ resmi 1-klik."
         />
 
         {isCreate && (
@@ -276,18 +357,85 @@ export default function SchedulesPage() {
               setSelectedSchedule(null);
               setModalOpen(true);
             }}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
+            className="h-9 text-xs gap-1.5"
           >
-            <Plus className="w-4 h-4 mr-2" /> Booking Jadwal Baru
+            <Plus className="w-4 h-4" /> Booking Jadwal Baru
           </Button>
         )}
       </div>
 
+      {/* Kartu Ringkasan Metrik KPI */}
+      {loading && schedules.length === 0 ? (
+        <MetricCardGridSkeleton count={4} />
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs border-l-4 border-l-primary">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Jadwal Aktif &amp; Terencana</CardDescription>
+              <CardTitle className="text-2xl font-black text-primary flex items-center justify-between">
+                <span>{totalActiveSchedules} <span className="text-sm font-semibold text-muted-foreground">Jadwal</span></span>
+                <Calendar className="h-5 w-5 opacity-40 text-primary" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-[11px] text-muted-foreground">
+                Perencanaan dinas armada aktif operasional
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs border-l-4 border-l-indigo-600">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Dinas AKAP Reguler</CardDescription>
+              <CardTitle className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 flex items-center justify-between">
+                <span>{totalAkap} <span className="text-sm font-semibold text-muted-foreground">Jadwal</span></span>
+                <Bus className="h-5 w-5 opacity-40 text-indigo-600" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-[11px] text-muted-foreground">
+                Trayek reguler Tangerang - Yogya PP
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs border-l-4 border-l-amber-600">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Sewa Wisata / Charter</CardDescription>
+              <CardTitle className="text-2xl font-bold text-amber-600 dark:text-amber-400 flex items-center justify-between">
+                <span>{totalWisata} <span className="text-sm font-semibold text-muted-foreground">Jadwal</span></span>
+                <Sparkles className="h-5 w-5 opacity-40 text-amber-600" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-[11px] text-muted-foreground">
+                Kontrak sewa pariwisata &amp; tour rombongan
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs border-l-4 border-l-purple-600">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Siap Terbit SPJ</CardDescription>
+              <CardTitle className="text-2xl font-bold text-purple-700 dark:text-purple-400 flex items-center justify-between">
+                <span>{totalReadyForSpj} <span className="text-sm font-semibold text-muted-foreground">Siap Rilis</span></span>
+                <FileCheck className="h-5 w-5 opacity-40 text-purple-600" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-[11px] text-muted-foreground">
+                Jadwal terkunci menunggu SPJ 1-klik di Hari H
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Banner Edukasi Blueprint Addendum v1.16 */}
       <div className="p-4 rounded-xl border border-indigo-200/70 bg-indigo-50/50 dark:border-indigo-900/40 dark:bg-indigo-950/20 text-xs text-indigo-950 dark:text-indigo-200 flex items-start gap-3 shadow-2xs">
-        <Info className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
+        <Info className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
         <div className="space-y-1">
-          <p className="font-bold text-sm">Prinsip Pemisahan Perencanaan</p>
+          <p className="font-bold text-sm">Prinsip Pemisahan Perencanaan &amp; Eksekusi SPJ</p>
           <p>
             Surat Perintah Jalan (SPJ) tidak diterbitkan mendadak dari nol, melainkan bersumber dari dokumen <strong>Jadwal Dinas Terkonfirmasi (CONFIRMED)</strong>. Sistem otomatis menolak jadwal dinas yang saling bertabrakan (<em>overlap conflict</em>) dan memberikan peringatan jika sisa jeda istirahat supir/bus kurang dari 3 jam.
           </p>
@@ -308,31 +456,43 @@ export default function SchedulesPage() {
 
           {/* Filter Bar Global */}
           <div className="flex flex-wrap items-center gap-2">
-            <Select value={serviceFilter} onValueChange={setServiceFilter}>
-              <SelectTrigger className="w-35 h-9 text-xs">
+            <Select value={serviceFilter} onValueChange={(val) => { setServiceFilter(val); setPage(1); }}>
+              <SelectTrigger className="w-36 h-8.5 text-xs">
                 <SelectValue placeholder="Semua Layanan" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">Semua Layanan</SelectItem>
-                <SelectItem value="AKAP">AKAP Reguler</SelectItem>
-                <SelectItem value="WISATA">Sewa Wisata</SelectItem>
-                <SelectItem value="SHUTTLE">Shuttle</SelectItem>
+                <SelectItem value="ALL" className="text-xs">Semua Layanan</SelectItem>
+                <SelectItem value="AKAP" className="text-xs">AKAP Reguler</SelectItem>
+                <SelectItem value="WISATA" className="text-xs">Sewa Wisata</SelectItem>
+                <SelectItem value="SHUTTLE" className="text-xs">Shuttle</SelectItem>
               </SelectContent>
             </Select>
 
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-35 h-9 text-xs">
+            <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val); setPage(1); }}>
+              <SelectTrigger className="w-36 h-8.5 text-xs">
                 <SelectValue placeholder="Semua Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">Semua Status</SelectItem>
-                <SelectItem value="DRAFT">DRAFT</SelectItem>
-                <SelectItem value="CONFIRMED">CONFIRMED</SelectItem>
-                <SelectItem value="IN_PROGRESS">IN_PROGRESS</SelectItem>
-                <SelectItem value="COMPLETED">COMPLETED</SelectItem>
-                <SelectItem value="CANCELLED">CANCELLED</SelectItem>
+                <SelectItem value="ALL" className="text-xs">Semua Status</SelectItem>
+                <SelectItem value="DRAFT" className="text-xs">DRAFT</SelectItem>
+                <SelectItem value="CONFIRMED" className="text-xs">CONFIRMED</SelectItem>
+                <SelectItem value="IN_PROGRESS" className="text-xs">IN_PROGRESS</SelectItem>
+                <SelectItem value="COMPLETED" className="text-xs">COMPLETED</SelectItem>
+                <SelectItem value="CANCELLED" className="text-xs">CANCELLED</SelectItem>
               </SelectContent>
             </Select>
+
+            {isFilterActive && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleResetFilters}
+                className="h-8.5 px-2.5 text-xs text-muted-foreground hover:text-foreground gap-1.5"
+                title="Reset seluruh filter"
+              >
+                <RotateCcw className="h-3.5 w-3.5" /> Reset
+              </Button>
+            )}
           </div>
         </div>
 
@@ -358,28 +518,38 @@ export default function SchedulesPage() {
 
         {/* Tab 2: Daftar Jadwal (Tabel View) */}
         <TabsContent value="table" className="space-y-4">
-          <Card className="border shadow-xs">
-            <CardHeader className="p-4 border-b space-y-3 bg-muted/20">
+          <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs overflow-hidden">
+            <CardHeader className="p-3.5 border-b border-slate-200/80 dark:border-white/10 space-y-3 bg-muted/20">
               <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                 <div className="relative flex-1">
-                  <Search className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <Input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
                     placeholder="Cari nomor jadwal, rute, nama pemesan wisata, atau nomor lambung bus..."
-                    className="pl-9 h-10 text-xs"
+                    className="pl-9 pr-8 h-8.5 text-xs uppercase"
                   />
+                  {searchInput && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchInput('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      title="Hapus pencarian"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </div>
-                <Button type="submit" variant="secondary" size="sm" className="h-10 text-xs font-semibold px-4">
-                  Cari Jadwal
-                </Button>
+                <div className="text-xs text-muted-foreground font-medium shrink-0 self-end sm:self-auto">
+                  Menampilkan <strong className="text-foreground">{startItem} - {endItem}</strong> dari {total} jadwal
+                </div>
               </form>
 
               {/* Filter Rentang Tanggal Keberangkatan */}
               <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-border/40">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5 text-indigo-600" /> Rentang Tanggal:
+                    <Calendar className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> Rentang Tanggal:
                   </span>
                   <div className="flex items-center gap-1.5">
                     <Input
@@ -450,7 +620,7 @@ export default function SchedulesPage() {
                         setEndDateFilter('');
                         setPage(1);
                       }}
-                      className="h-7 text-[11px] px-2 text-red-600 border-red-200 hover:bg-red-50 flex items-center gap-1"
+                      className="h-7 text-[11px] px-2 text-rose-600 border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-1"
                     >
                       <RotateCcw className="w-3 h-3" /> Reset Tanggal
                     </Button>
@@ -462,22 +632,22 @@ export default function SchedulesPage() {
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/40">
-                    <TableHead className="w-35">No. Jadwal</TableHead>
-                    <TableHead>Layanan</TableHead>
-                    <TableHead>Armada Bus</TableHead>
-                    <TableHead>Rute & Waktu Dinas</TableHead>
-                    <TableHead>Kru Bertugas</TableHead>
-                    <TableHead>Pemesan / Sewa</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Aksi</TableHead>
+                  <TableRow className="bg-slate-50/80 dark:bg-white/5 border-b border-slate-200/80 dark:border-white/10">
+                    <TableHead className="w-36">No. Jadwal</TableHead>
+                    <TableHead className="w-28">Layanan</TableHead>
+                    <TableHead className="w-32">Armada Bus</TableHead>
+                    <TableHead className="w-56">Rute &amp; Waktu Dinas</TableHead>
+                    <TableHead className="w-44">Kru Bertugas</TableHead>
+                    <TableHead className="w-36">Pemesan / Sewa</TableHead>
+                    <TableHead className="w-32">Status</TableHead>
+                    <TableHead className="text-right w-28">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
 
-                <TableBody>
+                <TableBody className="divide-y divide-slate-100 dark:divide-white/5">
                   {loading ? (
                     <TableSkeletonRows
-                      rows={5}
+                      rows={limit}
                       colWidths={[
                         'w-28',
                         'w-20',
@@ -491,13 +661,48 @@ export default function SchedulesPage() {
                     />
                   ) : schedules.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground text-xs">
-                        Tidak ada jadwal dinas bus yang sesuai dengan filter.
+                      <TableCell colSpan={8} className="py-12 text-center">
+                        <div className="flex flex-col items-center justify-center space-y-2">
+                          <div className="p-3 rounded-full bg-primary/10 text-primary">
+                            <Calendar className="h-8 w-8 opacity-60" />
+                          </div>
+                          <h4 className="text-sm font-semibold text-foreground">
+                            Tidak ada jadwal dinas bus yang sesuai
+                          </h4>
+                          <p className="text-xs text-muted-foreground max-w-sm">
+                            {isFilterActive
+                              ? 'Tidak ada jadwal yang cocok dengan kriteria filter atau pencarian Anda.'
+                              : 'Belum ada jadwal dinas armada bus yang terdaftar di sistem.'}
+                          </p>
+                          {isFilterActive ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleResetFilters}
+                              className="text-xs gap-1.5 h-8 mt-1"
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" /> Reset Filter
+                            </Button>
+                          ) : (
+                            isCreate && (
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedSchedule(null);
+                                  setModalOpen(true);
+                                }}
+                                className="text-xs gap-1.5 h-8 mt-1"
+                              >
+                                <Plus className="h-3.5 w-3.5" /> Booking Jadwal Baru
+                              </Button>
+                            )
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ) : (
                     schedules.map((s) => (
-                      <TableRow key={s.id} className="hover:bg-muted/30">
+                      <TableRow key={s.id} className="hover:bg-slate-50/80 dark:hover:bg-white/5 transition-colors">
                         <TableCell className="font-bold text-xs">
                           {s.scheduleNo}
                           {s.spj && (
@@ -523,7 +728,7 @@ export default function SchedulesPage() {
                         <TableCell>
                           <div className="text-xs font-semibold">{s.origin} ➔ {s.destination}</div>
                           <div className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                            <Clock className="w-3 h-3" />
+                            <Clock className="w-3 h-3 shrink-0" />
                             {new Date(s.plannedDepartureAt).toLocaleString('id-ID', {
                               day: 'numeric',
                               month: 'short',
@@ -545,7 +750,7 @@ export default function SchedulesPage() {
                             {s.plannedDriver1 && <div>👤 {s.plannedDriver1.name}</div>}
                             {s.plannedDriver2 && <div className="text-muted-foreground">👤 {s.plannedDriver2.name}</div>}
                             {s.plannedConductor && (
-                              <div className="text-[11px] text-indigo-600">🎫 {s.plannedConductor.name}</div>
+                              <div className="text-[11px] text-indigo-600 dark:text-indigo-400">🎫 {s.plannedConductor.name}</div>
                             )}
                           </div>
                         </TableCell>
@@ -573,7 +778,7 @@ export default function SchedulesPage() {
                               size="sm"
                               variant="outline"
                               onClick={() => handleConfirmSchedule(s.id, s.scheduleNo)}
-                              className="h-8 text-xs text-blue-700 border-blue-200 hover:bg-blue-50"
+                              className="h-7 text-xs text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900/40 hover:bg-blue-50 dark:hover:bg-blue-950/30 px-2"
                               title="Konfirmasi Jadwal"
                             >
                               <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Kunci
@@ -584,10 +789,10 @@ export default function SchedulesPage() {
                             <Button
                               size="sm"
                               onClick={() => handleGenerateSpj(s)}
-                              className="h-8 text-xs bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs font-semibold"
+                              className="h-7 text-xs font-semibold px-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
                               title="Review & Terbitkan SPJ Resmi"
                             >
-                              <FileCheck className="w-3.5 h-3.5 mr-1" /> Review SPJ
+                              <FileCheck className="w-3.5 h-3.5 mr-1" /> Rilis SPJ
                             </Button>
                           )}
 
@@ -599,9 +804,10 @@ export default function SchedulesPage() {
                                 setSelectedSchedule(s);
                                 setModalOpen(true);
                               }}
-                              className="h-8 w-8 p-0"
+                              className="h-7 w-7 p-0"
+                              title="Edit Jadwal"
                             >
-                              <Edit className="w-4 h-4 text-slate-600" />
+                              <Edit className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
                             </Button>
                           )}
 
@@ -610,9 +816,10 @@ export default function SchedulesPage() {
                               size="sm"
                               variant="ghost"
                               onClick={() => handleDeleteSchedule(s.id, s.scheduleNo)}
-                              className="h-8 w-8 p-0 text-red-600 hover:bg-red-50"
+                              className="h-7 w-7 p-0 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                              title="Hapus Draf"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </Button>
                           )}
 
@@ -621,10 +828,10 @@ export default function SchedulesPage() {
                               size="sm"
                               variant="ghost"
                               onClick={() => handleCancelSchedule(s.id, s.scheduleNo)}
-                              className="h-8 w-8 p-0 text-amber-600 hover:bg-amber-50"
+                              className="h-7 w-7 p-0 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30"
                               title="Batalkan Jadwal"
                             >
-                              <Ban className="w-4 h-4" />
+                              <Ban className="w-3.5 h-3.5" />
                             </Button>
                           )}
                         </TableCell>
@@ -633,6 +840,58 @@ export default function SchedulesPage() {
                   )}
                 </TableBody>
               </Table>
+
+              {/* Paginasi Server-Side */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 border-t border-slate-200/80 dark:border-white/10 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">Baris per halaman:</span>
+                  <Select
+                    value={String(limit)}
+                    onValueChange={(val) => {
+                      setLimit(Number(val));
+                      setPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-18 h-7.5 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10" className="text-xs">10</SelectItem>
+                      <SelectItem value="20" className="text-xs">20</SelectItem>
+                      <SelectItem value="50" className="text-xs">50</SelectItem>
+                      <SelectItem value="100" className="text-xs">100</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">
+                    Halaman {page} dari {totalPages}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      disabled={page <= 1 || loading}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      className="h-7.5 w-7.5"
+                      title="Halaman Sebelumnya"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      disabled={page >= totalPages || loading}
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      className="h-7.5 w-7.5"
+                      title="Halaman Berikutnya"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -667,6 +926,7 @@ export default function SchedulesPage() {
         confirmText={confirmDialog.confirmText}
         promptInput={confirmDialog.promptInput}
         onConfirm={confirmDialog.onConfirm}
+        isLoading={isConfirmLoading}
       />
     </div>
   );

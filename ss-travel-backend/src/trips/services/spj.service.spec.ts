@@ -305,4 +305,52 @@ describe('SpjService', () => {
       expect(crewRepo.save).toHaveBeenCalled();
     });
   });
+
+  describe('findAll', () => {
+    it('harus mengembalikan daftar SPJ dengan paginasi dan filter', async () => {
+      const qbMock: any = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([
+          [{ id: 'spj-1', spjNo: 'SPJ/AKP/2610/0001', serviceType: TripServiceType.AKAP }],
+          1,
+        ]),
+      };
+      spjRepo.createQueryBuilder.mockReturnValue(qbMock);
+
+      const result = await service.findAll({
+        serviceType: TripServiceType.AKAP,
+        operationalStatus: SpjOperationalStatus.IN_PROGRESS,
+        page: 1,
+        limit: 10,
+      });
+
+      expect(result.data.length).toBe(1);
+      expect(result.total).toBe(1);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(10);
+    });
+  });
+
+  describe('updateLeg', () => {
+    it('harus memperbarui data leg perjalanan dan catatan kupon makan', async () => {
+      legRepo.findOne.mockResolvedValue({
+        id: 'leg-1',
+        origin: 'Tangerang',
+        destination: 'Yogyakarta',
+        passengerCount: 20,
+        mealPaxCount: 20,
+      });
+
+      const updated = await service.updateLeg('leg-1', {
+        mealPaxCount: 22,
+        mealDiscrepancyNotes: '2 supir cadangan ikut makan',
+      });
+
+      expect(legRepo.save).toHaveBeenCalled();
+    });
+  });
 });

@@ -36,14 +36,24 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  @Roles('SUPERADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'SUPERADMIN', 'ADMIN')
   @ApiOperation({ summary: 'Get all users with pagination and search' })
   async findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-    @Query('search') search: string,
+    @Query('search') search?: string,
+    @Query('type') type?: string,
+    @Query('isActive') isActive?: string,
+    @Query('roleId') roleId?: string,
   ): Promise<ResponseInterface> {
-    return this.usersService.findAll(page, limit, search);
+    return this.usersService.findAll(page, limit, search || '', type, isActive, roleId);
+  }
+
+  @Get('stats')
+  @Roles('SUPER_ADMIN', 'SUPERADMIN', 'ADMIN')
+  @ApiOperation({ summary: 'Get summary statistics of users' })
+  async getStats(): Promise<ResponseInterface> {
+    return this.usersService.getStats();
   }
 
   // Self Profile Update
@@ -68,7 +78,7 @@ export class UsersController {
 
   // Admin Reset User Password
   @Put(':id/reset-password')
-  @Roles('SUPERADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'SUPERADMIN', 'ADMIN')
   @RequirePermissions('User:PermissionUser.reset') // Contoh permission spesifik untuk reset password
   @ApiOperation({
     summary:
@@ -84,7 +94,7 @@ export class UsersController {
 
   // Admin Toggle User Status (Active/Inactive)
   @Put(':id/toggle-status')
-  @Roles('SUPERADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'SUPERADMIN', 'ADMIN')
   @RequirePermissions('User:PermissionUser.status') // Contoh permission spesifik untuk toggle status
   @ApiOperation({
     summary:
@@ -95,14 +105,14 @@ export class UsersController {
   }
 
   @Get(':id')
-  @Roles('SUPERADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'SUPERADMIN', 'ADMIN')
   @ApiOperation({ summary: 'Get a user by ID' })
   async findOne(@Param('id') id: string): Promise<ResponseInterface> {
     return this.usersService.findOne(id);
   }
 
   @Post()
-  @Roles('SUPERADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'SUPERADMIN', 'ADMIN')
   @RequirePermissions('User:create') // Contoh permission spesifik untuk membuat user
   @ApiOperation({
     summary: 'Create a new user, needs permission "User:create"',
@@ -114,7 +124,7 @@ export class UsersController {
   }
 
   @Put(':id')
-  @Roles('SUPERADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'SUPERADMIN', 'ADMIN')
   @RequirePermissions('User:update') // Contoh permission spesifik untuk mengupdate user
   @ApiOperation({
     summary: 'Update an existing user, needs permission "User:update"',
@@ -127,7 +137,7 @@ export class UsersController {
   }
 
   @Delete(':id')
-  @Roles('SUPERADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'SUPERADMIN', 'ADMIN')
   @RequirePermissions('User:delete') // Contoh permission spesifik untuk menghapus user
   @ApiOperation({
     summary: 'Soft delete a user, needs permission "User:delete"',

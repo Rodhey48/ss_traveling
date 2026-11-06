@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RolesEntity, RoleMenusEntity, MenusEntity } from '@models';
@@ -19,6 +19,7 @@ export class RolesService {
   async findAll(): Promise<ResponseInterface> {
     const roles = await this.rolesRepository.find({
       relations: ['menus', 'menus.menu'],
+      order: { createdAt: 'ASC' },
     });
 
     return {
@@ -112,6 +113,30 @@ export class RolesService {
       status: true,
       message: 'Role updated successfully',
       data: updatedRole,
+    };
+  }
+
+  async remove(id: string): Promise<ResponseInterface> {
+    const role = await this.rolesRepository.findOne({ where: { id } });
+
+    if (!role) {
+      throw new NotFoundException('Role not found');
+    }
+
+    // Proteksi peran inti sistem
+    const protectedRoles = ['SUPER_ADMIN', 'SUPERADMIN', 'DIRECTOR', 'FINANCE_MANAGER'];
+    if (protectedRoles.includes(role.name)) {
+      throw new BadRequestException(
+        `Peran ${role.name} merupakan peran inti sistem dan tidak boleh dihapus.`,
+      );
+    }
+
+    await this.roleMenusRepository.delete({ role: { id } });
+    await this.rolesRepository.delete(id);
+
+    return {
+      status: true,
+      message: `Peran ${role.name} berhasil dihapus`,
     };
   }
 

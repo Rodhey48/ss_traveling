@@ -26,14 +26,14 @@ export class MenusController {
   constructor(private readonly menusService: MenusService) {}
 
   @Get('tree')
-  @Roles('SUPERADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'SUPERADMIN', 'ADMIN')
   @ApiOperation({ summary: 'Get full menu tree' })
   async getMenuTree(): Promise<ResponseInterface> {
     return this.menusService.getMenuTree();
   }
 
   @Post()
-  @Roles('SUPERADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'SUPERADMIN', 'ADMIN')
   @RequirePermissions('Menu:create') // Contoh permission spesifik untuk membuat menu
   @ApiOperation({
     summary: 'Create a new menu, needs permission "Menu:create"',
@@ -43,7 +43,7 @@ export class MenusController {
   }
 
   @Put(':id')
-  @Roles('SUPERADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'SUPERADMIN', 'ADMIN')
   @RequirePermissions('Menu:update') // Contoh permission spesifik untuk mengupdate menu
   @ApiOperation({
     summary: 'Update a menu, needs permission "Menu:update"',
@@ -56,7 +56,7 @@ export class MenusController {
   }
 
   @Delete(':id')
-  @Roles('SUPERADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'SUPERADMIN', 'ADMIN')
   @RequirePermissions('Menu:delete') // Contoh permission spesifik untuk menghapus menu
   @ApiOperation({
     summary: 'Delete a menu, needs permission "Menu:delete"',

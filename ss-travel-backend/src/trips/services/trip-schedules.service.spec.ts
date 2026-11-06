@@ -243,4 +243,56 @@ describe('TripSchedulesService', () => {
       expect(scheduleRepo.save).toHaveBeenCalled();
     });
   });
+
+  describe('findAll', () => {
+    it('harus mengembalikan daftar jadwal dengan paginasi dan filter', async () => {
+      const qbMock: any = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([
+          [{ id: 'sched-1', scheduleNo: 'SCH/AKP/2610/0001', serviceType: TripServiceType.AKAP }],
+          1,
+        ]),
+      };
+      scheduleRepo.createQueryBuilder.mockReturnValue(qbMock);
+
+      const result = await service.findAll({
+        serviceType: TripServiceType.AKAP,
+        status: TripScheduleStatus.CONFIRMED,
+        page: 1,
+        limit: 10,
+      });
+
+      expect(result.data.length).toBe(1);
+      expect(result.total).toBe(1);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(10);
+    });
+  });
+
+  describe('delete', () => {
+    it('harus menghapus jadwal berstatus DRAFT', async () => {
+      scheduleRepo.findOne.mockResolvedValue({
+        id: 'sched-draft',
+        status: TripScheduleStatus.DRAFT,
+        spjId: null,
+      });
+
+      await service.delete('sched-draft');
+      expect(scheduleRepo.remove).toHaveBeenCalled();
+    });
+
+    it('harus menolak hapus jadwal jika sudah memiliki SPJ', async () => {
+      scheduleRepo.findOne.mockResolvedValue({
+        id: 'sched-with-spj',
+        status: TripScheduleStatus.CONFIRMED,
+        spjId: 'spj-123',
+      });
+
+      await expect(service.delete('sched-with-spj')).rejects.toThrow(BadRequestException);
+    });
+  });
 });

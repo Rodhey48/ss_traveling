@@ -244,4 +244,71 @@ describe('ApService', () => {
       expect(callArgs.lines[2].credit).toBe(1050000);
     });
   });
+
+  describe('cancelApInvoice', () => {
+    it('should cancel a DRAFT or APPROVED invoice with reason', async () => {
+      invoiceRepo.findOne.mockResolvedValue({
+        id: 'inv-1',
+        billNo: 'BILL/2610/0001',
+        status: ApInvoiceStatus.DRAFT,
+        paidAmount: '0',
+      });
+
+      const cancelled = await service.cancelApInvoice('inv-1', 'Salah input nomor fisik faktur');
+      expect(cancelled.status).toBe(ApInvoiceStatus.CANCELLED);
+    });
+
+    it('should throw BadRequestException if invoice already has payments', async () => {
+      invoiceRepo.findOne.mockResolvedValue({
+        id: 'inv-1',
+        status: ApInvoiceStatus.APPROVED,
+        paidAmount: '500000.00',
+      });
+
+      await expect(service.cancelApInvoice('inv-1', 'Batal')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('findAllInvoices', () => {
+    it('should return paginated list of AP invoices', async () => {
+      const qbMock: any = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([
+          [{ id: 'inv-1', billNo: 'BILL/2610/0001' }],
+          1,
+        ]),
+      };
+      invoiceRepo.createQueryBuilder.mockReturnValue(qbMock);
+
+      const res = await service.findAllInvoices({ page: 1, limit: 10, search: 'BILL' });
+      expect(res.data.length).toBe(1);
+      expect(res.total).toBe(1);
+      expect(res.page).toBe(1);
+    });
+  });
+
+  describe('findAllPayments', () => {
+    it('should return paginated list of AP payments', async () => {
+      const qbMock: any = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([
+          [{ id: 'pay-1', paymentNo: 'PAY/2610/0001' }],
+          1,
+        ]),
+      };
+      paymentRepo.createQueryBuilder.mockReturnValue(qbMock);
+
+      const res = await service.findAllPayments({ page: 1, limit: 10 });
+      expect(res.data.length).toBe(1);
+      expect(res.total).toBe(1);
+    });
+  });
 });

@@ -2,6 +2,371 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-11-06: Penyempurnaan Standar Produksi Halaman /menu-management (Hirarki Menu Navigasi, Routing & ACL RBAC) Completed
+- **Integrasi Statistik KPI Header Dinamis Real-Time**:
+  - 4 Kartu Metrik Header dengan desain Glassmorphism dan border aksen warna tematik:
+    1. **Total Item Menu (`border-l-4 border-l-emerald-500`)**: Akumulasi seluruh entri navigasi aplikasi.
+    2. **Menu Grup / Induk (`border-l-4 border-l-blue-500`)**: Jumlah folder kategori navigasi aplikasi (grup container tanpa direct page).
+    3. **Rute Navigasi Aktif (`border-l-4 border-l-indigo-500`)**: Endpoint halaman URL aktif untuk akses fitur ERP.
+    4. **Status Operasional (`border-l-4 border-l-amber-500`)**: Rasio menu aktif vs non-aktif serta jumlah menu yang siap platform mobile.
+- **Pencarian Live Real-Time (Debounced 300ms) & Multi-Filter Terpadu**:
+  - Implementasi *Debounced Search* (300ms) untuk nama menu, URL path, ACL identifier key, atau aksi khusus dengan tombol pembersih cepat (ikon X).
+  - Multi-filter Kategori Menu via chip pills: `Semua`, `Grup`, `Rute`, dan `Non-Aktif`.
+  - Kontrol ekspansi hierarki massal: **Buka Semua** (`ChevronsUpDown`) dan **Tutup Semua** (`ChevronsDownUp`).
+  - Fitur auto-expand pohon navigasi saat pengguna melakukan pencarian teks.
+- **Struktur Hirarki Menu Interaktif & Visualisasi Tree**:
+  - Komponen pohon rekursif (`MenuRow`) dengan indentasi level visual dan garis konektor vertikal hierarkis (`border-l border-primary/20`).
+  - Tombol ekspansi interaktif (`ChevronDown` / `ChevronRight`) untuk folder yang memiliki sub-menu.
+  - Tampilan live ikon Lucide dengan visual badge aksen tema.
+  - Metadata badge: Urutan sequence (`#N`), badge `GROUP`, badge jumlah sub-menu, URL path monospace, identifier izin ACL key (`KeyRound`), platform icon (`Monitor`/`Smartphone`), dan badge status keaktifan.
+  - Aksi baris cepat saat hover: Tambah Sub-Menu (`PlusCircle`), Edit (`Edit`), dan Hapus (`Trash2`).
+- **Zero Native Alerts (`ConfirmDialog` Integrasi Penuh)**:
+  - Eliminasi seluruh `window.confirm` dengan modal `ConfirmDialog` (`variant="danger"`).
+  - Peringatan pintar mendeteksi keberadaan sub-menu di dalamnya (misal: "Menu ini memiliki 4 sub-menu di dalamnya...").
+  - Status pemrosesan terkelola dengan `isLoading` spinner untuk mencegah duplikasi request.
+- **Overhaul Modal Form Menu (`MenuModal`)**:
+  - Layout dialog diperluas menjadi `sm:max-w-2xl` dengan backdrop blur Glassmorphism.
+  - Integrasi `IconPicker` visual Lucide yang responsif.
+  - Selector Parent Menu hierarkis dengan indentasi visual, perlindungan anti-circular reference (tidak dapat memilih diri sendiri sebagai parent), dan penguncian otomatis saat menambah sub-menu dari baris induk.
+  - Pengaturan urutan sequence dan ACL Key identifier untuk pemetaan izin RBAC backend.
+  - Pengelola aksi khusus tambahan (*Custom Actions Tag Input*) dengan saran cepat satu klik: `approve`, `reject`, `export`, `print`, `reverse`, `reassign`, `verify`, `download`.
+  - Toggles interaktif untuk: Jadikan Grup/Folder (`title`), Status Aktif (`isActive`), Tampil di Web (`isWeb`), dan Tampil di Mobile (`isMobile`).
+- **Backend Optimization & Unit Testing Baru (`MenusService`)**:
+  - Transform decorator pada `CreateMenuDto` & `UpdateMenuDto` untuk stabilitas tipe (`sequence`, `title`, `isActive`, `isWeb`, `isMobile`, `aclName`).
+  - Penambahan proteksi circular reference di `MenusService.update`: mendeteksi dan menolak `parentId === id` dengan `BadRequestException`.
+  - Standarisasi decorator `@Roles('SUPER_ADMIN', 'SUPERADMIN', 'ADMIN')` pada seluruh endpoint `MenusController`.
+  - Penulisan test suite unit test baru `menus.service.spec.ts` (**14 unit tests passed 100%**) mencakup: getMenuTree hierarkis, findMenusByRole dengan agregasi izin, create dengan metadata lengkap dan relasi modul/parent, update dengan validasi circular reference, remove, dan getPermissionsByRoles dengan identifier ACL.
+- **Verifikasi Kualitas Penuh**:
+  - Seluruh 33 unit test suites backend (253 unit tests total) lulus 100%.
+  - Backend NestJS build `yarn build` sukses 100%.
+  - Frontend Vite React build `yarn build` sukses 100% (`✓ built in 1.04s`).
+
+### 2026-11-06: Penyempurnaan Standar Produksi Halaman /roles (Manajemen Peran, Hak Akses & Matriks RBAC) Completed
+- **Integrasi Statistik KPI Header Dinamis Real-Time**:
+  - 4 Kartu Metrik Header dengan desain Glassmorphism dan border aksen warna tematik:
+    1. **Total Peran (`border-l-4 border-l-blue-600`)**: Akumulasi seluruh peran (Roles) yang terdaftar dalam arsitektur RBAC sistem.
+    2. **Manajemen & Finansial (`border-l-4 border-l-emerald-600`)**: Peran kepemimpinan dan pembukuan (`SUPER_ADMIN`, `DIRECTOR`, `FINANCE_MANAGER`, `ACCOUNTANT`, `FINANCE_AR_AP`).
+    3. **Operasional & Kasir (`border-l-4 border-l-amber-600`)**: Peran operasional lapangan dan rekonsiliasi kasir pool (`OPS_ADMIN`, `POOL_CASHIER`, `FIELD_COORDINATOR`).
+    4. **Kru Lapangan Bus (`border-l-4 border-l-purple-600`)**: Peran awak dinas bus (`CREW_DRIVER`, `CREW_CONDUCTOR`, `CREW_STEWARDESS`).
+- **Pencarian Live Real-Time (Debounced 300ms) & Reset Filter**:
+  - Implementasi *Debounced Search* (300ms) untuk nama peran (misal: "FINANCE", "DRIVER") atau uraian deskripsi tugas dengan tombol pembersih cepat (ikon X).
+  - Tombol **Reset Pencarian** dinamis (`RotateCcw`) yang muncul otomatis saat pencarian aktif.
+  - Tombol **Segarkan Data** (`RefreshCw`) dengan animasi putar saat memuat data dari server.
+- **Tabel Peran & Matriks Akses Berstandar Produksi**:
+  - Desain baris rapi dengan badge nama peran berikon perisai (`Shield`), badge *Core Role* untuk peran inti sistem, deskripsi tugas pokok, badge jumlah menu terhubung, dan tombol aksi matriks akses.
+  - **Paginasi Terpadu**: Selector limit baris (`10`, `20`, `50`), navigasi halaman Sebelumnya/Berikutnya, serta informasi baris terstandarisasi: *"Menampilkan X - Y dari Z total peran sistem"*.
+  - **Empty State Komprehensif**: Tampilan ramah pengguna dengan ikon `Shield`, pesan solutif, dan tombol reset pencarian.
+- **Zero Native Alerts (`ConfirmDialog` Integrasi Penuh)**:
+  - Dialog konfirmasi hapus peran menggunakan modal `ConfirmDialog` (`variant="danger"`), menampilkan nama peran dan rincian dampak terhadap izin pengguna, lengkap dengan indikator `isLoading`.
+  - Proteksi peran inti sistem (`SUPER_ADMIN`, `DIRECTOR`, `FINANCE_MANAGER`): Tombol hapus otomatis terkunci (`Lock` icon) dengan tooltip pencegahan demi integritas sistem.
+- **Overhaul Modal Matriks Hak Akses (`RoleModal`)**:
+  - Pelebaran modal dialog menjadi `sm:max-w-3xl` (`max-h-[90vh] overflow-y-auto`) dengan layout lega dan header bertema perisai.
+  - Input nama peran berformat monospace dan otomatis kapital (`auto-uppercase`).
+  - Matriks Izin Menu (Permissions Matrix) berjenjang dengan indentasi hierarki bertingkat (`level`), kotak centang interaktif (Baca, Buat, Ubah, Hapus), logika cerdas otomatisasi centang (centang Buat/Ubah/Hapus otomatis mencentang Baca; hapus centang Baca otomatis menghapus seluruh izin), dan badge penanda aksi kustom (misal: `approve`).
+  - Indikator spinner `Loader2` saat proses penyimpanan berlangsung.
+- **Backend Optimization & Unit Testing Baru (`RolesService`)**:
+  - Penyesuaian decorator `@Roles('SUPER_ADMIN', 'SUPERADMIN', 'ADMIN')` pada seluruh endpoint `RolesController`.
+  - Penambahan endpoint penghapusan peran `DELETE /api/v1/roles/:id` dengan proteksi mutlak terhadap penghapusan peran inti sistem (`SUPER_ADMIN`, `DIRECTOR`, `FINANCE_MANAGER`).
+  - Penulisan test suite unit test baru `roles.service.spec.ts` (**11 unit tests passed 100%**) mencakup: findAll dengan relasi menus, findOne, create dengan penyimpanan izin `RoleMenusEntity`, update dan sinkronisasi izin, penghapusan peran kustom, penolakan penghapusan peran inti (`BadRequestException`), dan getMenus.
+- **Verifikasi Kualitas Penuh**:
+  - Seluruh 32 unit test suites backend (239 unit tests total) lulus 100%.
+  - Backend NestJS build `yarn build` sukses 100%.
+  - Frontend Vite React build `yarn build` sukses 100% (`✓ built in 1.12s`).
+
+### 2026-11-06: Penyempurnaan Standar Produksi Halaman /users (Manajemen Pengguna, Karyawan & RBAC) Completed
+- **Integrasi Statistik KPI Header Dinamis Real-Time**:
+  - 4 Kartu Metrik Header dengan desain Glassmorphism dan border aksen warna tematik:
+    1. **Total Pengguna (`border-l-4 border-l-blue-600`)**: Akumulasi seluruh akun pengguna terdaftar di dalam sistem.
+    2. **Pengguna Aktif Operasional (`border-l-4 border-l-emerald-600`)**: Jumlah akun yang memiliki akses login aktif ke sistem ERP.
+    3. **Non-Aktif / Ditangguhkan (`border-l-4 border-l-rose-600`)**: Jumlah akun yang dinonaktifkan dari akses sistem.
+    4. **Personel Kru Lapangan (`border-l-4 border-l-amber-600`)**: Staf dinas transportasi (Driver, Conductor, Stewardess).
+- **Pencarian Live Real-Time (Debounced 300ms) & Multi-Filter Terpadu**:
+  - Implementasi *Debounced Search* (300ms) untuk nama pengguna, email, nomor NIP, atau nomor telepon/WA dengan tombol pembersih cepat (ikon X).
+  - Multi-filter Kategori Tipe Pengguna (`Semua Kategori`, `Karyawan`, `Administrator`, `Pengguna`).
+  - Multi-filter Status Keaktifan Akun (`Semua Status`, `Hanya Aktif`, `Non-Aktif`).
+  - Multi-filter Peran (Role RBAC) yang dimuat secara dinamis dari database peran sistem.
+  - Tombol **Reset Semua Filter** dinamis (`RotateCcw`) yang muncul otomatis saat salah satu filter atau pencarian aktif.
+  - Tombol **Segarkan Data** (`RefreshCw`) dengan animasi putar saat pemuatan data.
+- **Tabel Pengguna (`UserTable`) Berstandar Produksi**:
+  - Rincian profil visual lengkap: Avatar dengan fallback inisial nama, nama lengkap, email, nomor telepon/WhatsApp, NIP berformat monospace, badge tipe akun, badge peran (Role) berikon perisai (`Shield`), serta badge status aktif/non-aktif.
+  - **Paginasi Server-Side Lengkap**: Selector limit baris (`10`, `20`, `50`, `100`), tombol navigasi halaman Sebelumnya/Berikutnya, dan informasi baris terstandarisasi: *"Menampilkan X - Y dari Z pengguna"*.
+  - **Empty State Komprehensif**: State kosong ramah pengguna dengan ikon `Users`, deskripsi solutif, dan tombol reset filter.
+- **Zero Native Alerts (`ConfirmDialog` Integrasi Penuh)**:
+  - Mengeliminasi total `window.confirm()` bawaan browser pada aksi penonaktifan/penghapusan pengguna dengan dialog `ConfirmDialog` (`variant="danger"`), menampilkan nama, email, NIP, serta indikator spinner `isLoading`.
+  - Penambahan dialog konfirmasi pengaktifan/penonaktifan status akun pengguna (`variant="warning"` / `variant="primary"`).
+- **Overhaul Modal Pengguna & Reset Password**:
+  - `UserModal`: Pelebaran modal menjadi `sm:max-w-xl` (`max-w-2xl`) dengan tata letak 2-kolom yang lega, toggle visibilitas password (Eye / EyeOff), selector peran utama, selector status keaktifan, dan indikator spinner `Loader2`.
+  - `ResetPasswordModal`: Styling Glassmorphism kontras tinggi, input password admin verifikator, input password baru dan konfirmasi dengan toggle visibilitas, serta indikator spinner `Loader2`.
+- **Backend Optimization & Unit Testing Baru (`UsersService`)**:
+  - Penyesuaian decorator `@Roles('SUPER_ADMIN', 'SUPERADMIN', 'ADMIN')` pada seluruh endpoint `UsersController` agar hak akses super administrator konsisten di seluruh aplikasi.
+  - Peningkatan kueri `findAll` dengan QueryBuilder TypeORM yang mendukung pencarian case-insensitive `ILIKE` (nama, email, NIP, telepon) serta filter `type`, `isActive`, dan `roleId`.
+  - Penambahan endpoint ringkasan statistik `GET /api/v1/users/stats`.
+  - Penulisan test suite unit test baru `users.service.spec.ts` (12 unit tests passed 100%) mencakup: paginasi default, multi-filter, kalkulasi stats, findOne, create dengan penugasan peran, update dan sinkronisasi peran, pembatalan/penonaktifan, dan toggle status.
+- **Verifikasi Kualitas Penuh**:
+  - Seluruh 31 unit test suites backend (228 unit tests total) lulus 100%.
+  - Backend NestJS build `yarn build` sukses 100%.
+  - Frontend Vite React build `yarn build` sukses 100% (`✓ built in 1.15s`).
+
+### 2026-11-06: Penyempurnaan Standar Produksi Modul /reports & /period-closing Completed
+- **Laporan Profitabilitas & Margin Trip SPJ (`/reports/trip-profitability`) [Blueprint Bab 7 & Skenario 3]**:
+  - Penyajian analisis margin kontribusi perjalanan armada bus (AKAP & Pariwisata) dengan dukungan 2 sudut pandang analitis:
+    1. **Per Kelompok Perjalanan (`BY_JOURNEY_GROUP`)**: Mengkonsolidasikan SPJ Induk (armada breakdown di jalan) dan SPJ Pengganti menjadi 1 unit ekonomi perjalanan yang utuh, menggabungkan omzet tiket dengan total beban solar, tol, makan kru, serta beban derek darurat tanpa distorsi margin.
+    2. **Per Bus Fisik (`BY_BUS`)**: Menganalisis efisiensi biaya dan performa tiap armada bus secara individual.
+  - 4 Kartu Metrik Header Glassmorphism dengan border aksen tematik: Total Omzet Bruto (Border blue), Total Biaya Langsung SPJ (Border rose), Margin Kontribusi Bersih (Border emerald), dan Rata-Rata Rasio Margin (Border amber).
+  - Banner panduan Skenario 3 Konsolidasi Perjalanan Ekonomi.
+  - Pencarian debounced (300ms) untuk nomor SPJ, nomor polisi armada, atau nama kru/rute, dengan tombol pembersih cepat (X).
+  - Filter tipe layanan (Semua, AKAP, WISATA), filter rentang tanggal, tombol **Reset Filter** dinamis, dan tombol segarkan data.
+  - Tabel rincian margin dengan skeleton loading, indikator badge persentase margin (Hijau >= 30%, Kuning >= 10%, Merah < 10%), footer ringkasan total perjalanan, serta dialog modal audit mendalam (`TripProfitabilityDetailModal`).
+- **Laporan Finansial & Akuntansi 4 Tab (`/reports/general-ledger`) [Blueprint Bab 8.1 - 8.4]**:
+  - **Tab 1: Buku Besar (General Ledger)**: Menampilkan mutasi pergerakan akun COA lengkap dengan saldo awal, mutasi debit/kredit, saldo berjalan, nomor jurnal, sumber dokumen, serta uraian transaksi. Filter akun COA dan rentang tanggal dengan tombol Reset Filter dinamis.
+  - **Tab 2: Neraca Saldo (Trial Balance)**: Ikhtisar saldo awal, mutasi periode, dan saldo akhir setiap akun COA dengan verifikasi otomatis keseimbangan debit = kredit dan badge status seimbang (Balanced / Unbalanced).
+  - **Tab 3: Laba Rugi Komprehensif (Income Statement)**: Format formal PT SS Travelink Official yang menyajikan Pendapatan Operasional, 6 sub-kelompok Beban Operasional (BBM & Fasilitas Armada, Kompensasi Kru, Komisi Rekanan/Agen, Perawatan Bengkel/Derek, Beban Pool, Beban Lain/Selisih Kasir), Laba Kotor, Laba Operasional, dan Laba Bersih Periode Berjalan.
+  - **Tab 4: Neraca Keuangan (Balance Sheet)**: Struktur formal Aset (Aktiva Lancar & Tetap), Liabilitas (Utang Usaha & DP Sewa Wisata), dan Ekuitas (Modal & Laba/Rugi Berjalan) dengan verifikasi otomatis formula Akuntansi: Aset = Liabilitas + Ekuitas.
+  - Penyelarasan styling Glassmorphism, dark mode tokens (`dark:bg-zinc-900/60`, `dark:border-white/10`, `text-foreground`), dan state kosong terpadu di seluruh tab.
+- **Meja Tutup Buku Bulanan (`/period-closing`) [Blueprint Bab 8.4 & Skenario 4]**:
+  - Wizard otomatis audit 6-point checklist kepatuhan sebelum periode fiskal dikunci:
+    1. `JOURNAL_BALANCE`: Keseimbangan debit-kredit jurnal GL.
+    2. `CASHIER_SPJ_STATUS`: Status tuntas rekonsiliasi SPJ di meja kasir pool.
+    3. `UNRESOLVED_DISCREPANCY_11999`: Pemeriksaan saldo akun penampung `11999` (Selisih Kas Operasional Sementara).
+    4. `CASH_BANK_RECON`: Rekonsiliasi saldo kas pool & rekening bank.
+    5. `OPEN_AR_AP`: Status faktur piutang dan utang usaha terbuka.
+    6. `TRIAL_BALANCE_EQUAL`: Keseimbangan neraca saldo akhir.
+  - Banner edukasi **Skenario 4 (Kemerdekaan Tutup Buku)**: Menegaskan prinsip bahwa perselisihan kasir kas bon kru tidak memblokir penutupan buku bulanan karena saldo sengketa dialihkan sementara ke akun penampung `11999`.
+  - Banner kesiapan periode (READY TO CLOSE vs BLOCKED) dengan daftar blocker dan peringatan non-pemblokir.
+  - Tombol aksi berotorisasi via `usePermission` (`isUpdate`):
+    - `ClosePeriodModal`: Form penguncian periode fiskal dengan penyimpanan catatan penutupan dan snapshot audit permanen.
+    - `ReopenPeriodModal`: Form pembukaan kembali periode berstatus `CLOSED` dengan alasan audit wajib dan jejak audit kepatuhan.
+- **Verifikasi Kualitas Penuh**:
+  - Seluruh 30 unit test suites backend (216 unit tests total) lulus 100%.
+  - Backend NestJS build `yarn build` sukses 100%.
+  - Frontend Vite React build `yarn build` sukses 100% (`✓ built in 2.21s`).
+
+### 2026-11-06: Penyempurnaan Standar Produksi Halaman /journals (Buku Jurnal Umum GL, Memorial Entry & Reversal) Completed
+- **Buku Jurnal Umum Inti GL & Audit Multi-Dimensi (Blueprint Bab 6 & Bab 8.1)**:
+  - Layar utama pengawasan transaksi akuntansi atomik perusahaan: mencakup 95% jurnal otomatis yang diterbitkan oleh sistem (SPJ operasional bus, penyelesaian kasir pool, tagihan AP/AR, mutasi transfer bank/kas, kas kecil) serta jurnal memorial manual berimbang.
+  - Pemisahan isolasi dimensi unit bisnis mandiri (`AKAP`, `WISATA`, `SHUTTLE`, `Kantor Pusat`) per baris transaksi jurnal GL.
+  - Proteksi *Reversal Non-Manual Disabled*: Tombol pembalik jurnal dinonaktifkan secara aman untuk jurnal operasional otomatis dengan tooltip pemandu menuju menu dokumen asalnya guna mencegah desinkronisasi data lapangan.
+- **Integrasi Statistik KPI Header Dinamis Real-Time**:
+  - 3 Kartu Metrik Header dengan desain Glassmorphism dan border aksen warna tematik: Total Jurnal Terdata (Border blue), Akumulasi Nominal Transaksi Seimbang Debit = Kredit (Border emerald), dan Jurnal Dibalik / Reversed (Border rose).
+- **Pencarian Live Real-Time (Debounced 300ms) & Multi-Filter Terpadu**:
+  - Implementasi *Debounced Search* (300ms) untuk nomor jurnal (`JV/...`) atau uraian transaksi dengan tombol pembersih instan (ikon X).
+  - Multi-filter Status Jurnal (`Semua Status`, `POSTED Aktif`, `REVERSED Dibalik`).
+  - Multi-filter Sumber Jurnal (`Semua Sumber`, `MANUAL`, `SPJ`, `AR_INVOICE`, `AP_INVOICE`, `CASH_TRANSACTION`, `BANK_TRANSACTION`, `SETTLEMENT`, `PERIOD_CLOSING`).
+  - Multi-filter Unit Bisnis (`Semua Unit`, `AKAP`, `WISATA`, `SHUTTLE`).
+  - Filter Rentang Tanggal Jurnal (default: Bulan Berjalan) dengan tombol aksi cepat `Reset (Bulan Ini)` dan `Semua`.
+  - Selector urutan data fleksibel: berdasarkan Tanggal Jurnal (`journalDate` DESC/ASC) maupun Waktu Input Sistem (`createdAt` DESC/ASC).
+  - Tombol **Reset Semua Filter** dinamis (`FilterX`) yang muncul otomatis saat filter atau pencarian aktif.
+- **Paginasi Server-Side Lengkap & Standardisasi Teks Indikator**:
+  - Selector baris per halaman: `10`, `15`, `25`, `50`, `100`.
+  - Tombol navigasi halaman Sebelumnya/Berikutnya.
+  - Informasi baris terstandarisasi: *"Menampilkan X - Y dari Z total transaksi jurnal"*.
+- **Penyempurnaan Seluruh Modal Jurnal**:
+  - `CreateJournalModal`: Form entri jurnal memorial multi-baris dengan 11 preset transaksi pintar, kalkulator selisih auto-balance, dan live balance checker widget.
+  - `JournalDetailModal`: Rincian baris jurnal debet-kredit, informasi akun COA, dimensi unit bisnis/bus/cost center/SPJ, serta banner status reversal.
+  - `ReverseJournalModal`: Dialog pembalikan jurnal dengan input tanggal reversal dan alasan wajib (menghasilkan jurnal pembalik atomik dengan posisi debit-kredit tertukar).
+- **Empty State Komprehensif**:
+  - State kosong ramah pengguna dengan ikon `FileText`, deskripsi solutif, serta tombol reset filter/tampilkan semua periode saat kriteria filter menghasilkan 0 baris.
+- **Verifikasi Kualitas Penuh**:
+  - Seluruh 30 unit test suites backend (216 unit tests total) lulus 100%.
+  - Backend NestJS build `yarn build` sukses 100%.
+  - Frontend Vite React build `yarn build` sukses 100% (`✓ built in 1.95s`).
+
+### 2026-11-06: Penyempurnaan Standar Produksi Halaman /ar-invoices (Piutang Usaha AR & Uang Muka Sewa Wisata) Completed
+- **Tata Kelola Piutang Usaha & DP Sewa Wisata (Blueprint Bab 8.3 & Skenario 2)**:
+  - **Uang Muka (DP 30%) Sewa Bus Wisata**: Pencatatan penerimaan DP sewa wisata melalui Bank BCA Operasional atau Kas Pool yang otomatis membukukan liabilitas ke akun neraca `24101 Pendapatan Diterima di Muka (DP Sewa Wisata)` via `AccountingPostingService`.
+  - **Invoice Pelunasan Sewa Wisata (70%)**: Penerbitan faktur tagihan pelunasan sisa kontrak 70% terkait nomor SPJ wisata dan pelanggan CRM ke akun `12101 Piutang Usaha Sewa Charter Bus Wisata` setelah armada tiba (status `COMPLETED`).
+  - **Invoice Piutang Umum & Pelunasan (Receipts)**: Penerbitan invoice umum dan pencatatan kwitansi pelunasan piutang dengan alokasi otomatis ke saldo faktur invoice.
+- **Integrasi Statistik KPI Header Dinamis Real-Time**:
+  - 4 Kartu Metrik Header dengan desain Glassmorphism dan border aksen warna tematik: Total Piutang Belum Tertagih (Border rose), Titipan DP Sewa Wisata 24101 (Border indigo), Piutang Tertagih Pelunasan (Border emerald), dan Total Faktur Terbit (Border blue).
+- **Pencarian Live Real-Time (Debounced 300ms) & Multi-Filter Terpadu**:
+  - Implementasi *Debounced Search* (300ms) untuk nomor invoice (`INV/...`), nama pelanggan CRM, atau nomor bukti penerimaan (`RCT/...`) dengan tombol pembersih cepat (ikon X).
+  - Multi-filter Status Invoice (`Semua Status`, `DRAFT`, `APPROVED`, `PARTIALLY_PAID`, `PAID`, `CANCELLED`).
+  - Tombol **Reset Semua Filter** dinamis (`RotateCcw`) yang muncul otomatis saat filter atau pencarian aktif.
+- **Paginasi Server-Side Lengkap di Kedua Tab**:
+  - Tab 1 (Daftar Faktur Piutang Invoices): Selector baris per halaman (`10`, `20`, `50`, `100`), tombol navigasi halaman Sebelumnya/Berikutnya, dan informasi baris: *"Menampilkan X - Y dari Z faktur"*.
+  - Tab 2 (Riwayat Penerimaan Pembayaran Receipts): Selector baris per halaman (`10`, `20`, `50`, `100`), tombol navigasi halaman Sebelumnya/Berikutnya, dan informasi baris: *"Menampilkan X - Y dari Z bukti penerimaan"*.
+- **Zero Native Alerts (`ConfirmDialog` Integrasi Penuh)**:
+  - Penambahan dialog konfirmasi persetujuan invoice AR (`variant="primary"`) sebelum mengubah status invoice menjadi `APPROVED`, lengkap dengan rincian nomor invoice, nama pelanggan, nominal rupiah, dan spinner `isLoading`.
+- **Empty State Komprehensif per Tab**:
+  - Tampilan kosong ramah pengguna pada Tab 1 (ikon `Receipt`) dan Tab 2 (ikon `CreditCard`) saat data belum tersedia atau kriteria pencarian menghasilkan 0 baris, lengkap dengan tombol reset filter.
+- **Integrasi Penuh Seluruh Modal AR**:
+  - `CreateDownPaymentModal`: Form penerimaan DP 30% charter sewa wisata terkait SPJ dan rekening bank tujuan.
+  - `CreateCharterPelunasanModal`: Form penerbitan invoice pelunasan sisa 70% dengan kalkulasi sisa otomatis.
+  - `CreateGeneralArInvoiceModal`: Form pembuatan invoice piutang umum multi-baris.
+  - `CreateArReceiptModal`: Form kwitansi pelunasan piutang via transfer bank atau kas tunai dengan validasi sisa tagihan.
+  - `ArInvoiceDetailModal`: Rincian invoice, relasi SPJ/pelanggan, baris pendapatan, dan riwayat penerimaan.
+- **Backend Unit Testing Expansion & Verifikasi Kualitas Penuh**:
+  - Penambahan 4 unit test baru pada `ArService` (`ar.service.spec.ts`, total 7 unit tests passed 100%) mencakup: persetujuan invoice DRAFT ke APPROVED, paginasi kueri `findAllInvoices`, paginasi kueri `findAllReceipts`, dan kalkulasi status kontrak `getCharterContractStatus`.
+  - Seluruh 30 unit test suites backend (216 unit tests total) lulus 100%.
+  - Backend NestJS build `yarn build` sukses 100%.
+  - Frontend Vite React build `yarn build` sukses 100% (`✓ built in 1.09s`).
+
+### 2026-11-06: Penyempurnaan Standar Produksi Halaman /ap-invoices (Utang Usaha AP & Tagihan Vendor) Completed
+- **Tata Kelola Faktur Tagihan Vendor AP (Blueprint Bab 8.3, Skenario 1 & Skenario 3)**:
+  - **Servis Makan Restoran Mitra**: Penagihan periodik konsumsi penumpang bus AKAP (RM Taman Selera, RM Kendil Mas, RM Raos Eco) berdasarkan kupon fisik makan vs manifes riil dengan proteksi mutlak **Anti-Double Billing** (SPJ yang sudah ditagihkan otomatis dicegah ditagihkan ulang).
+  - **Faktur Bengkel & Derek Tol**: Penagihan perbaikan darurat armada di jalan (radiator bocor, penggantian ban/aki, derek tol) yang dialokasikan langsung ke aset bus (`vehicleId`) untuk analisis margin ritase bus.
+  - **Kompensasi Agen & Beban Akrual Lainnya**: Tagihan komisi agen tiket, gaji staf kantor & garasi (`21201`), serta utilitas listrik/air/internet pool (`21202`).
+  - **Pelunasan Utang Usaha (AP Payments)**: Pencatatan bukti bayar via Bank BCA korporat atau Kas Tunai Pool dengan alokasi otomatis ke saldo faktur dan pembaruan status `PARTIALLY_PAID` / `PAID`.
+- **Integrasi Statistik KPI Header Dinamis Real-Time**:
+  - 4 Kartu Metrik Header dengan desain Glassmorphism dan border aksen warna tematik: Total Tagihan Belum Dibayar (Border rose), Utang Servis Makan RM 21101 (Border amber), Utang Bengkel & Sparepart 21102 (Border indigo), dan Total Terbayar Bulan Ini (Border emerald).
+- **Pencarian Live Real-Time (Debounced 300ms) & Multi-Filter Terpadu**:
+  - Implementasi *Debounced Search* (300ms) untuk nomor tagihan internal (`BILL/...`), nomor fisik faktur vendor, atau nama rekanan dengan tombol pembersih cepat (ikon X).
+  - Multi-filter Tipe Vendor (`Semua Tipe`, `Restoran Mitra`, `Bengkel & Suku Cadang`, `Agen Penjualan Tiket`, `Lainnya/Umum`).
+  - Multi-filter Status Tagihan (`Semua Status`, `DRAFT`, `APPROVED`, `PARTIALLY_PAID`, `PAID`, `CANCELLED`).
+  - Tombol **Reset Semua Filter** dinamis (`RotateCcw`) yang muncul otomatis saat filter atau pencarian aktif.
+- **Paginasi Server-Side Lengkap di Kedua Tab**:
+  - Tab 1 (Daftar Tagihan Invoices): Selector baris per halaman (`10`, `20`, `50`, `100`), tombol navigasi halaman Sebelumnya/Berikutnya, dan informasi baris: *"Menampilkan X - Y dari Z faktur"*.
+  - Tab 2 (Riwayat Pembayaran Payments): Selector baris per halaman (`10`, `20`, `50`, `100`), tombol navigasi halaman Sebelumnya/Berikutnya, dan informasi baris: *"Menampilkan X - Y dari Z pembayaran"*.
+- **Zero Native Alerts (`ConfirmDialog` Integrasi Penuh)**:
+  - Eliminasi total `window.prompt()` pada pembatalan tagihan AP dengan modal `ConfirmDialog` terstandar (`variant="danger"`) yang dilengkapi input prompt alasan pembatalan wajib dan status spinner `isLoading` (memicu jurnal pembalik/reversal otomatis di GL).
+  - Penambahan dialog konfirmasi persetujuan tagihan AP (`variant="primary"`) sebelum memposting jurnal utang usaha ke Buku Besar GL (`AccountingPostingService`).
+- **Empty State Komprehensif per Tab**:
+  - Tampilan kosong ramah pengguna pada Tab 1 (ikon `Receipt`) dan Tab 2 (ikon `CreditCard`) saat data belum tersedia atau kriteria pencarian menghasilkan 0 baris, lengkap dengan tombol reset filter.
+- **Integrasi Penuh Seluruh Modal AP**:
+  - `CreateRestaurantBillModal`: Penarikan SPJ unbilled, audit kupon makan vs manifes, catatan selisih, dan kalkulasi tagihan otomatis.
+  - `CreateGeneralApBillModal`: Smart preset templates (Gaji, Utilitas, Bengkel, Pajak/KIR/Asuransi, Sewa) dengan akun utang & beban terkonfigurasi.
+  - `PayApInvoiceModal`: Pembayaran parsial/lunas via Bank Transfer atau Kas Tunai dengan validasi sisa tagihan.
+  - `ApInvoiceDetailModal`: Rincian line items, aset armada tertaut, riwayat pembayaran, serta aksi setujui/batalkan tagihan.
+- **Backend Unit Testing Expansion & Verifikasi Kualitas Penuh**:
+  - Penambahan 4 unit test baru pada `ApService` (`ap.service.spec.ts`, total 8 unit tests passed 100%) mencakup: pembatalan tagihan DRAFT/APPROVED dengan alasan, penolakan pembatalan faktur terbayar, paginasi kueri `findAllInvoices`, dan paginasi kueri `findAllPayments`.
+  - Seluruh 30 unit test suites backend (212 unit tests total) lulus 100%.
+  - Backend NestJS build `yarn build` sukses 100%.
+  - Frontend Vite React build `yarn build` sukses 100% (`✓ built in 2.18s`).
+
+### 2026-11-06: Penyempurnaan Standar Produksi Halaman /treasury (Mutasi Kas, Rekening Bank, & Approval Desk) Completed
+- **Tiga Fungsi Perbankan & Likuiditas Terpadu**:
+  - **Tab 1: Rekening Koran Digital (*Bank Statement*)**: Visualisasi kartu rekening induk penerimaan (inflow), rekening operasional armada (outflow UJ & AP), dan kas fisik pool dengan buku kas/bank real-time, filter tanggal preset (*Bulan Ini*, *Bulan Lalu*, *30 Hari*, *Tahun Ini*), filter arah aliran dana (Inflow vs Outflow), filter tipe dokumen, pencarian nomor jurnal `JV/...`, dan cetak rekening koran A4 resmi.
+  - **Tab 2: Riwayat Pemindahan Dana (*Fund Transfers*)**: Pencatatan mutasi saldo dropping dana antar rekening korporat dengan format dokumen `TRF/YYMM/XXXX`.
+  - **Tab 3: Meja Persetujuan (*Approval Desk*)**: Antrean review permohonan dropping dana berdokumen resmi dengan pemisahan wewenang Maker-Checker yang ketat (`actions?.approve`).
+- **Integrasi Statistik KPI Header Dinamis Real-Time**:
+  - 4 Kartu Metrik Header dengan desain Glassmorphism dan border aksen warna tematik: Total Likuiditas Kas & Bank (Border hijau emerald), Rekening Induk Penerimaan (Border biru), Rekening Operasional Armada (Border ungu), dan Antrean Persetujuan Dropping (Border kuning amber).
+- **Pencarian Live Real-Time (Debounced 300ms) & Multi-Filter Terpadu di Tab Riwayat Mutasi**:
+  - Penambahan input live search debounced (300ms) untuk nomor transfer `TRF/...` dan keperluan dropping dana lengkap dengan tombol pembersih cepat (ikon X).
+  - Multi-filter Status Dokumen (`Semua Status`, `Menunggu Approval`, `Disetujui`, `Ditolak`).
+  - Multi-filter Tipe Mutasi (`Semua Tipe`, `Induk → Ops`, `Antar Ops`, `Setor Kas Pool → Induk`, `Tarik Tunai Bank → Pool`).
+  - Tombol **Reset Semua Filter** dinamis (`RotateCcw`) yang muncul otomatis saat filter atau pencarian aktif.
+- **Paginasi Tabel Lengkap pada Tab Riwayat Mutasi**:
+  - Penambahan kontrol paginasi tabel lengkap: pemilih limit `10`, `20`, `50`, `100` baris per halaman, tombol navigasi Sebelumnya/Berikutnya, dan informasi baris: *"Menampilkan X - Y dari Z mutasi transfer"*.
+- **Zero Native Alerts (`ConfirmDialog` Integrasi Penuh)**:
+  - Dialog persetujuan transfer dana terposting otomatis ke GL via `AccountingPostingService` menggunakan `ConfirmDialog` (`variant="primary"`) dengan status spinner `isLoading`.
+  - Dialog penolakan transfer dana dengan input prompt alasan penolakan wajib menggunakan `ConfirmDialog` (`variant="danger"`) dengan status spinner `isLoading`.
+- **Empty State Komprehensif**:
+  - Tampilan kosong ramah pengguna pada Tab 2 (ikon `ArrowRightLeft`) dan Tab 3 (ikon `CheckCircle2`) saat tidak ada antrean atau data yang cocok dengan kriteria filter.
+- **Backend Unit Testing Baru untuk FundTransfersService**:
+  - Menulis test suite komprehensif baru `fund-transfers.service.spec.ts` (11 unit tests passed 100%) mencakup: validasi pembuatan transfer antar-bank/kas, penolakan nominal <= 0, penomoran dokumen `TRF/...`, kueri filter & pencarian, pengambilan detail, eksekusi persetujuan atasan dengan transaksi atomik dan posting jurnal GL, serta penolakan transfer dengan alasan wajib.
+  - Seluruh 30 unit test suites backend (208 unit tests total) lulus 100%.
+  - Backend NestJS build `yarn build` sukses 100%.
+  - Frontend Vite React build `yarn build` sukses 100% (`✓ built in 2.03s`).
+
+### 2026-11-06: Penyempurnaan Standar Produksi Halaman /petty-cash (Kas Kecil Pool & Garasi) Completed
+- **Tata Kelola Beban Non-SPJ Garasi Pool (Blueprint Addendum v1.14 & v1.15)**:
+  - Isolasi tegas beban operasional taktis pool/garasi non-SPJ: Uang makan standby driver di garasi (`53105`), insentif langsir armada ke bengkel/karoseri (`53106`), pengadaan snack & ameniti kabin onboard (`52104`), cuci bus & ATK pool (`57102`), upah lembur mekanik servis malam (`57107`), dan sparepart darurat (`55102`).
+  - Mencegah distorsi rasio ritase bus dengan melarang pembebanan pos non-SPJ ini ke lembar SPJ perjalanan kru.
+- **Integrasi Statistik KPI Header Dinamis Real-Time**:
+  - 4 Kartu Metrik Header dengan desain Glassmorphism dan border aksen warna tematik: Sisa Saldo Kas Kecil (Border hijau emerald), Pengeluaran Bulan Ini (Border merah mawar), Menunggu Verifikasi Akuntan (Border kuning amber), dan Aktivitas Transaksi Hari Ini (Border biru).
+- **Pencarian Live Real-Time (Debounced 300ms) & Multi-Filter Terpadu**:
+  - Implementasi *Debounced Search* (300ms) untuk nomor transaksi (`BKK-KAS/...`, `BKM-KAS/...`), nama penerima/supir, toko, uraian, dan nomor nota dengan tombol pembersih cepat (ikon X).
+  - Filter Rekening Kas, Kategori Pengeluaran (8 kategori akun COA), dan Status Verifikasi (`SUBMITTED`, `VERIFIED`, `REJECTED`).
+  - Tombol **Reset Semua Filter** dinamis (`RotateCcw`) yang muncul otomatis saat filter atau pencarian aktif.
+- **Paginasi Tabel Lengkap**:
+  - Paginasi tabel lengkap dengan pemilih limit `10`, `20`, `50`, `100` baris per halaman, navigasi halaman Sebelumnya/Berikutnya, dan informasi baris: *"Menampilkan X - Y dari Z transaksi"*.
+- **Zero Native Alerts (`ConfirmDialog` Integrasi Penuh)**:
+  - Menggantikan `window.confirm()` pada aksi hapus transaksi kas kecil dan aksi verifikasi kilat baris tabel dengan modal dialog `ConfirmDialog` terstandar (`variant="danger"` & `variant="primary"`) lengkap dengan indikator spinner `isLoading`.
+- **Empty State Komprehensif**:
+  - Tampilan kosong ramah pengguna pada tabel transaksi saat filter menghasilkan 0 baris, lengkap dengan ikon `Receipt`, deskripsi solutif, dan tombol aksi reset filter.
+- **Integrasi Penuh Modal Kas Kecil**:
+  - `CreatePettyCashModal`: 8 tombol preset cepat SOP akuntansi bus, selector armada bus, format rupiah live, dan opsi langsung posting GL oleh Akuntan.
+  - `ReplenishPettyCashModal`: Form pencairan pengisian kembali kas kecil (BKM) dari Bank BCA Operasional atau Kas Induk.
+  - `PettyCashDetailModal`: Pratinjau jurnal GL terposting, tanda tangan otorisasi (Penerima, Kasir Pool, Akuntan), tombol verifikasi & tolak bon, serta cetak voucher fisik siap print.
+- **Backend Unit Testing Expansion & Verifikasi Kualitas Penuh**:
+  - Penambahan unit test untuk `getTransactions` dan `deleteTransaction` (soft-delete & proteksi penolakan penghapusan status VERIFIED) pada `PettyCashService` (`petty-cash.service.spec.ts`, total 11 unit tests passed 100%).
+  - Seluruh 29 unit test suites backend (197 tests total) lulus 100%.
+  - Backend NestJS build `yarn build` sukses 100%.
+  - Frontend Vite React build `yarn build` sukses 100% (`✓ built in 2.08s`).
+
+### 2026-11-06: Penyempurnaan Standar Produksi Halaman /cashier (Meja Kasir Pool & Rekonsiliasi Kas Kru) Completed
+- **Kepatuhan Penuh Prinsip Dua Kantong Kas Kru (Anti-Netting — Blueprint Bab 7 & Skenario 4)**:
+  - Meja Kasir Pool secara ketat mengisolasi **Kantong 1 (Uang Jalan)** dari **Kantong 2 (Setoran Kas Penumpang/Kargo)** untuk mencegah pencampuran dan pemotongan sepihak (*netting*).
+  - Kasir menerima kas fisik bruto 100% dan menerbitkan voucher fisik resmi Bukti Kas Masuk (BKM) dan Bukti Kas Keluar (BKK) bernomor urut terpusat.
+- **Integrasi Statistik KPI Header Dinamis Real-Time**:
+  - 4 Kartu Metrik Header dengan desain Glassmorphism dan border aksen warna tematik: SPJ Siap Rekonsiliasi (Border biru), Temuan Selisih FM Hub (Border merah mawar), Settlement Terverifikasi (Border hijau emerald), dan Kas Fisik Masuk BKM (Border kuning amber).
+- **Pencarian Live Real-Time (Debounced 300ms) & Multi-Filter Terpadu**:
+  - Implementasi *Debounced Search* (300ms) untuk nomor SPJ, nomor settlement, atau plat armada bus dengan tombol pembersih cepat (ikon X) untuk mengeliminasi *excessive parallel API calls*.
+  - Tombol **Reset Pencarian** dinamis (`RotateCcw`) yang muncul otomatis saat filter atau pencarian aktif.
+- **Paginasi Server-Side Lengkap di Seluruh Tab**:
+  - Tab 1 (SPJ Siap Rekonsiliasi Pool), Tab 2 (Riwayat Dokumen Settlement), dan Tab 3 (Pusat Investigasi Selisih FM Hub) masing-masing dilengkapi kontrol paginasi server-side lengkap (`page`, pemilih limit `10`, `20`, `50`, `100` baris per halaman, `total`, `totalPages`).
+  - Navigasi tombol Halaman Sebelumnya/Berikutnya dan informasi baris: *"Menampilkan X - Y dari Z item"*.
+- **Zero Native Alerts (`ConfirmDialog` Integrasi Penuh)**:
+  - Aksi *Unblock Tutup Buku Bulanan* (posting selisih kasir ke akun penampung neraca `11999 Selisih Kas Operasional Sementara`) menggunakan modal dialog `ConfirmDialog` terstandar (`variant="warning"`) dengan status `isLoading` spinner.
+- **Empty State Komprehensif per Tab**:
+  - Tampilan kosong ramah pengguna pada Tab 1 (ikon `Bus`), Tab 2 (ikon `CheckCircle2`), dan Tab 3 (ikon `Scale`), lengkap dengan pesan edukatif dan tombol reset pencarian.
+- **Integrasi Penuh Seluruh Modal Meja Kasir**:
+  - `CashierSettlementModal`: Rekonsiliasi fisik Dua Kantong Kas Kru (Anti-Netting), selector akun kas tujuan (Kas Pool Ciputat), simulasi kompensasi kru, mode musyawarah kru (Lapis 1), dan eskalasi ke Manajer Keuangan (Lapis 2).
+  - `DiscrepancyResolutionModal`: Putusan mutlak Finance Manager atas temuan selisih kas (Skenario 4: Beban Dispensasi Operasional `58101` vs Piutang Klaim Gaji Kru `12901`) disertai catatan telematika GPS.
+  - `CashReceiptVoucherModal`: Format cetak cetakan voucher fisik BKM / BKK resmi lengkap dengan identitas perusahaan (*SS Travelink Official*), rincian dua kantong kas, dan tanda tangan kasir/kru.
+  - `CreateDiscrepancyModal`: Form pencatatan temuan selisih kas fisik jalur sistemik Lapis 2.
+- **Backend Unit Testing Expansion & Verifikasi Kualitas Penuh**:
+  - Penambahan unit test untuk paginasi `getPendingSpjs` dan `getSettlements` pada `CashierSettlementService` (`cashier-settlement.service.spec.ts`).
+  - Penambahan unit test untuk paginasi dan filter `getDiscrepancies` pada `CashierDiscrepancyService` (`cashier-discrepancy.service.spec.ts`).
+  - Seluruh 29 unit test suites backend (194 tests total) lulus 100%.
+  - Backend NestJS build `yarn build` sukses 100%.
+  - Frontend Vite React build `yarn build` sukses 100% (`✓ built in 1.98s`).
+
+### 2026-11-06: Penyempurnaan Standar Produksi Halaman /spjs (Surat Perintah Jalan Operasional & Finansial) Completed
+- **Kepatuhan Penuh Status Ganda Independen SPJ (Blueprint Bab 8.2 & Addendum v1.10)**:
+  - Pemisahan independen antara *Status Operasional* (`DRAFT`, `ISSUED`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`) dan *Status Finansial* (`PENDING_SETTLEMENT`, `UNDER_REVIEW`, `DISCREPANCY`, `SETTLED`).
+  - Armada yang telah tiba di pool (`COMPLETED`) otomatis bertransisi ke status finansial `UNDER_REVIEW` untuk memulai rekonsiliasi kasir pool di Meja Kasir (`/cashier`).
+- **Integrasi Statistik KPI Header Dinamis Real-Time**:
+  - 4 Kartu Metrik Header dengan styling Glassmorphism dan border aksen warna tematik: Aktif di Rute (Armada `IN_PROGRESS` di jalan), Siap Berangkat (SPJ `ISSUED`), Menunggu Kasir (Armada tiba `UNDER_REVIEW`), dan Finansial Selesai (Rekonsiliasi `SETTLED`).
+- **Pencarian Live Real-Time (Debounced 300ms) & Multi-Filter Terpadu**:
+  - Implementasi *Debounced Search* (300ms) untuk nomor SPJ (`SPJ/AKP/...` / `SPJ/WIS/...`), nomor lambung bus, atau nopol dengan tombol pembersih cepat (ikon X).
+  - Filter Jenis Layanan (`Semua Layanan`, `AKAP Reguler`, `Sewa Wisata`, `Shuttle`).
+  - Filter Status Operasional (`Semua Status Ops`, `DRAFT`, `ISSUED`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`).
+  - Filter Status Finansial (`Semua Status Fin`, `PENDING_SETTLEMENT`, `UNDER_REVIEW`, `DISCREPANCY`, `SETTLED`).
+  - Filter Rentang Tanggal Terbit dengan preset cepat (*Hari Ini*, *Bulan Ini*, *Reset Tanggal*).
+  - Tombol **Reset Semua Filter** dinamis (`RotateCcw`) yang muncul otomatis saat filter atau pencarian aktif.
+- **Paginasi Server-Side Lengkap**:
+  - Penambahan kontrol paginasi server-side lengkap (`page`, pemilih limit `10`, `20`, `50`, `100` baris per halaman, `total`, `totalPages`).
+  - Navigasi tombol Halaman Sebelumnya/Berikutnya dan informasi baris: *"Menampilkan X - Y dari Z dokumen SPJ"*.
+- **Zero Native Alerts & Proteksi Konfirmasi Aksi**:
+  - Aksi *Berangkatkan Bus* (`handleStart`) dan *Konfirmasi Tiba Pool* (`handleComplete`) menggunakan modal `ConfirmDialog` dengan status `isLoading` spinner untuk mencegah eksekusi ganda.
+- **Empty State Komprehensif**:
+  - Tampilan kosong ramah pengguna pada tabel SPJ saat filter pencarian menghasilkan 0 baris, lengkap dengan ikon `FileText`, deskripsi informatif, dan tombol aksi reset filter.
+- **Integrasi Penuh Modal Operasional Lapangan**:
+  - `SpjDetailModal`: Rincian segmen leg perjalanan, manifes penumpang, servis makan RM mitra, dan kartu snapshot tarif hak kru (Makan, Premi, Bonus Full Seat).
+  - `SpjFinanceModal`: Amplop Uang Jalan (UJ), nota BBM solar & tol, deklarasi penerimaan kas kru (Anti-Netting), dan komisi kargo 20%.
+  - `ReplaceCrewModal`: Pergantian supir sakit mid-trip di kota transit (Skenario 1 Poin 7).
+  - `EmergencyReplaceBusModal`: Penanganan insiden breakdown armada di tol dengan estafet UJ rollover dan penautan `parent_spj_id` (Skenario 3).
+- **Backend Unit Testing Expansion & Verifikasi Kualitas Penuh**:
+  - Penambahan test case untuk `findAll` dan `updateLeg` pada `SpjService` (`spj.service.spec.ts`, total 11 unit tests passed 100%).
+  - Seluruh 29 unit test suites backend (191 tests total) lulus 100%.
+  - Backend NestJS build `yarn build` sukses 100%.
+  - Frontend Vite React build `yarn build` sukses 100% (`✓ built in 2.14s`).
+
+### 2026-11-06: Penyempurnaan Standar Produksi Halaman /schedules (Perencanaan Jadwal & Plotting Armada) Completed
+- **Integrasi Statistik KPI Header Dinamis Real-Time**:
+  - 4 Kartu Metrik Header dengan indikator warna tematik dan skeleton loader (`MetricCardGridSkeleton`): Total Jadwal Aktif & Terencana (`CONFIRMED` / `IN_PROGRESS`), Dinas AKAP Reguler (Trayek Tangerang - Yogya PP), Sewa Wisata / Charter (Kontrak rombongan), dan Siap Rilis SPJ (Jadwal `CONFIRMED` belum rilis SPJ).
+- **Pencarian Live Real-Time (Debounced 300ms) & Multi-Filter Terpadu**:
+  - Implementasi *Debounced Search* (300ms) untuk nomor jadwal (`SCH/AKP/...`), rute, nama pemesan wisata, dan kode lambung armada bus dengan tombol pembersih cepat (ikon X).
+  - Filter Jenis Layanan (`Semua Layanan`, `AKAP Reguler`, `Sewa Wisata`, `Shuttle`).
+  - Filter Status Jadwal (`Semua Status`, `DRAFT`, `CONFIRMED`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`).
+  - Filter Rentang Tanggal Keberangkatan dengan tombol preset cepat (*Hari Ini*, *Bulan Ini*, *Reset Tanggal*).
+  - Tombol **Reset Semua Filter** dinamis (`RotateCcw`) yang muncul otomatis saat filter atau pencarian aktif.
+- **Paginasi Server-Side Lengkap pada Tab Daftar Jadwal (Tabel)**:
+  - Kontrol paginasi server-side lengkap (`page`, pemilih limit `10`, `20`, `50`, `100` baris/halaman, `total`, `totalPages`).
+  - Navigasi tombol Halaman Sebelumnya/Berikutnya dan informasi status: *"Menampilkan X - Y dari Z jadwal dinas"*.
+- **Zero Native Alerts (`ConfirmDialog` Integrasi Penuh)**:
+  - Seluruh konfirmasi aksi (Kunci Jadwal, Batalkan Jadwal dengan input alasan wajib, dan Hapus Draf) menggunakan `ConfirmDialog` dengan status `isLoading` spinner untuk mencegah double execution.
+- **Empty State Komprehensif**:
+  - Tampilan kosong ramah pengguna pada Tab Tabel saat filter pencarian menghasilkan 0 baris, lengkap dengan ikon `Calendar`, deskripsi solutif, dan tombol aksi (Reset Filter / Booking Jadwal Baru).
+- **Validasi Anti-Bentrok & Jeda Istirahat (Buffer Rest Time 3 Jam) Terverifikasi**:
+  - Validasi ketat overlap jadwal armada dan personel kru serta alert buffer time 180 menit sesuai Blueprint Addendum v1.16.
+- **Backend Unit Testing Expansion & Verifikasi Kualitas Penuh**:
+  - Penambahan unit test suite untuk `findAll` dan `delete` pada `TripSchedulesService` (`trip-schedules.service.spec.ts`, total 11 unit tests passed 100%).
+  - Seluruh 29 unit test suites backend (189 tests total) lulus 100%.
+  - Backend NestJS build `yarn build` sukses 100%.
+  - Frontend Vite React build `yarn build` sukses 100% (`✓ built in 2.03s`).
+
 ### 2026-11-04: Penyempurnaan Standar Produksi Halaman /customers (Database Pelanggan & CRM Prospek Sewa Wisata) Completed
 - **Zero Native Alerts (`ConfirmDialog` Integrasi Penuh)**:
   - Menggantikan dialog native `window.confirm()` dengan komponen modal dialog terstandar `ConfirmDialog` (`variant="danger"`).

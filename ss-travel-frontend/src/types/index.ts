@@ -52,6 +52,7 @@ export interface BackendMenu {
   availableActions?: string[];
   actions?: Record<string, boolean>;
   title: boolean;
+  aclName?: string;
 }
 
 export interface MenuFormData {
@@ -65,6 +66,7 @@ export interface MenuFormData {
   isMobile?: boolean;
   availableActions?: string[];
   title?: boolean;
+  aclName?: string;
 }
 
 export interface LoginResponseData {

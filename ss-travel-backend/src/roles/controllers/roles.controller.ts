@@ -4,6 +4,7 @@ import { ResponseInterface } from '@interfaces';
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -25,28 +26,28 @@ export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
   @Get()
-  @Roles('SUPERADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'SUPERADMIN', 'ADMIN')
   @ApiOperation({ summary: 'Get all roles' })
   async findAll(): Promise<ResponseInterface> {
     return this.rolesService.findAll();
   }
 
   @Get('menus')
-  @Roles('SUPERADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'SUPERADMIN', 'ADMIN')
   @ApiOperation({ summary: 'Get all available menus for permission setting' })
   async getMenus(): Promise<ResponseInterface> {
     return this.rolesService.getMenus();
   }
 
   @Get(':id')
-  @Roles('SUPERADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'SUPERADMIN', 'ADMIN')
   @ApiOperation({ summary: 'Get a role by ID' })
   async findOne(@Param('id') id: string): Promise<ResponseInterface> {
     return this.rolesService.findOne(id);
   }
 
   @Post()
-  @Roles('SUPERADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'SUPERADMIN', 'ADMIN')
   @RequirePermissions('Roles:create') // Contoh permission spesifik untuk membuat role
   @ApiOperation({
     summary:
@@ -57,7 +58,7 @@ export class RolesController {
   }
 
   @Put(':id')
-  @Roles('SUPERADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'SUPERADMIN', 'ADMIN')
   @RequirePermissions('Roles:update') // Contoh permission spesifik untuk mengupdate role
   @ApiOperation({
     summary:
@@ -68,5 +69,13 @@ export class RolesController {
     @Body() dto: UpdateRoleDto,
   ): Promise<ResponseInterface> {
     return this.rolesService.update(id, dto);
+  }
+
+  @Delete(':id')
+  @Roles('SUPER_ADMIN', 'SUPERADMIN', 'ADMIN')
+  @RequirePermissions('Roles:delete')
+  @ApiOperation({ summary: 'Delete a role, needs permission "Roles:delete"' })
+  async remove(@Param('id') id: string): Promise<ResponseInterface> {
+    return this.rolesService.remove(id);
   }
 }

@@ -2,6 +2,7 @@ import ConfirmDialog from '@/components/shared/confirm-dialog';
 import Heading from '@/components/shared/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Card,
   CardContent,
@@ -43,12 +44,16 @@ import {
   Landmark,
   Plus,
   RotateCw,
+  RotateCcw,
   ShieldAlert,
   Wallet,
   X,
   XCircle,
+  Search,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -64,7 +69,6 @@ export default function TreasuryPage() {
   const { isCreate, actions } = usePermission();
 
   // Otorisasi Maker-Checker murni berbasis custom permission menu (actions.approve)
-  // Hak akses approval dikelola secara dinamis melalui Menu & Role Management (/roles)
   const canApprove = Boolean(actions?.approve);
 
   const [activeTab, setActiveTab] = useState<'statement' | 'transfers' | 'approval'>('statement');
@@ -74,13 +78,23 @@ export default function TreasuryPage() {
 
   const [accountsLoading, setAccountsLoading] = useState(true);
   const [transfersLoading, setTransfersLoading] = useState(false);
+
+  // Filter & Search states for Tab 2 (Riwayat Mutasi)
   const [transferFilterStatus, setTransferFilterStatus] = useState<string>('ALL');
+  const [transferTypeFilter, setTransferTypeFilter] = useState<string>('ALL');
+  const [transferSearchInput, setTransferSearchInput] = useState<string>('');
+  const [debouncedTransferSearch, setDebouncedTransferSearch] = useState<string>('');
+
+  // Pagination states for Tab 2
+  const [transferPage, setTransferPage] = useState<number>(1);
+  const [transferLimit, setTransferLimit] = useState<number>(10);
 
   // Modals
   const [isCreateTransferOpen, setIsCreateTransferOpen] = useState(false);
   const [selectedDetailTransfer, setSelectedDetailTransfer] = useState<FundTransfer | null>(null);
 
   // Unified Confirmation Dialog (for Approve & Reject)
+  const [isConfirmLoading, setIsConfirmLoading] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     title: string;
@@ -105,6 +119,15 @@ export default function TreasuryPage() {
   // Statement Selection
   const [selectedStatementId, setSelectedStatementId] = useState<string>('');
   const [selectedStatementType, setSelectedStatementType] = useState<'BANK' | 'CASH'>('BANK');
+
+  // Debounced search for Tab 2 (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedTransferSearch(transferSearchInput.trim());
+      setTransferPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [transferSearchInput]);
 
   const fetchData = async () => {
     setAccountsLoading(true);
@@ -131,11 +154,12 @@ export default function TreasuryPage() {
     }
   };
 
-  const fetchTransfers = async () => {
+  const fetchTransfers = useCallback(async () => {
     setTransfersLoading(true);
     try {
       const params: any = {};
       if (transferFilterStatus !== 'ALL') params.status = transferFilterStatus;
+      if (debouncedTransferSearch) params.search = debouncedTransferSearch;
       const res = await CashBankService.findAllFundTransfers(params);
       if (res?.data) setTransfers(res.data);
     } catch (err: any) {
@@ -143,16 +167,15 @@ export default function TreasuryPage() {
     } finally {
       setTransfersLoading(false);
     }
-  };
+  }, [transferFilterStatus, debouncedTransferSearch]);
 
   useEffect(() => {
     fetchData();
-    fetchTransfers();
   }, []);
 
   useEffect(() => {
     fetchTransfers();
-  }, [transferFilterStatus]);
+  }, [fetchTransfers]);
 
   // Approval Handlers (Replaced window.confirm with ConfirmDialog)
   const handleApproveTransfer = (transfer: FundTransfer) => {
@@ -165,6 +188,7 @@ export default function TreasuryPage() {
       confirmText: 'Setujui & Posting ke GL',
       cancelText: 'Batal',
       onConfirm: async () => {
+        setIsConfirmLoading(true);
         try {
           await CashBankService.approveFundTransfer(transfer.id);
           toast.success('Pemindahan dana berhasil disetujui & diposting ke GL!');
@@ -175,6 +199,8 @@ export default function TreasuryPage() {
           toast.error('Gagal menyetujui pemindahan dana', {
             description: err?.response?.data?.message || err.message,
           });
+        } finally {
+          setIsConfirmLoading(false);
         }
       },
     });
@@ -199,6 +225,7 @@ export default function TreasuryPage() {
           toast.error('Alasan penolakan wajib diisi');
           return;
         }
+        setIsConfirmLoading(true);
         try {
           await CashBankService.rejectFundTransfer(transfer.id, {
             rejectionReason: reason.trim(),
@@ -210,6 +237,8 @@ export default function TreasuryPage() {
           toast.error('Gagal menolak pengajuan', {
             description: err?.response?.data?.message || err.message,
           });
+        } finally {
+          setIsConfirmLoading(false);
         }
       },
     });
@@ -225,7 +254,47 @@ export default function TreasuryPage() {
     }).format(num);
   };
 
-  const pendingTransfers = transfers.filter((t) => t.status === 'PENDING_APPROVAL');
+  const pendingTransfers = useMemo(
+    () => transfers.filter((t) => t.status === 'PENDING_APPROVAL'),
+    [transfers],
+  );
+
+  // Filtered transfers for Tab 2
+  const filteredTransfers = useMemo(() => {
+    return transfers.filter((t) => {
+      if (transferTypeFilter !== 'ALL' && t.transferType !== transferTypeFilter) {
+        return false;
+      }
+      return true;
+    });
+  }, [transfers, transferTypeFilter]);
+
+  // Tab 2 Pagination
+  const totalTransfers = filteredTransfers.length;
+  const totalTransferPages = Math.ceil(totalTransfers / transferLimit) || 1;
+  const paginatedTransfers = useMemo(() => {
+    const start = (transferPage - 1) * transferLimit;
+    return filteredTransfers.slice(start, start + transferLimit);
+  }, [filteredTransfers, transferPage, transferLimit]);
+
+  const startTransferItem = totalTransfers === 0 ? 0 : (transferPage - 1) * transferLimit + 1;
+  const endTransferItem = Math.min(transferPage * transferLimit, totalTransfers);
+
+  const handleResetTransferFilters = () => {
+    setTransferSearchInput('');
+    setDebouncedTransferSearch('');
+    setTransferFilterStatus('ALL');
+    setTransferTypeFilter('ALL');
+    setTransferPage(1);
+  };
+
+  const hasActiveTransferFilters = useMemo(() => {
+    return (
+      debouncedTransferSearch !== '' ||
+      transferFilterStatus !== 'ALL' ||
+      transferTypeFilter !== 'ALL'
+    );
+  }, [debouncedTransferSearch, transferFilterStatus, transferTypeFilter]);
 
   // Separated accounts
   const mainBanks = bankAccounts.filter((b) => b.code.includes('MAIN'));
@@ -284,12 +353,27 @@ export default function TreasuryPage() {
         <div className="flex items-center gap-2">
           {isCreate && (
             <Button
+              size="sm"
               onClick={() => setIsCreateTransferOpen(true)}
-              className="gap-2 shadow-xs"
+              className="gap-2 shadow-xs text-xs h-8.5"
             >
               <ArrowRightLeft className="h-4 w-4" /> Ajukan Pemindahan Dana
             </Button>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              fetchData();
+              fetchTransfers();
+            }}
+            disabled={accountsLoading || transfersLoading}
+            className="text-xs h-8.5 gap-1.5"
+            title="Muat ulang seluruh data"
+          >
+            <RotateCw className={`h-3.5 w-3.5 ${accountsLoading || transfersLoading ? 'animate-spin' : ''}`} />
+            Refresh Data
+          </Button>
         </div>
       </div>
 
@@ -297,82 +381,66 @@ export default function TreasuryPage() {
       {accountsLoading ? (
         <MetricCardGridSkeleton count={4} />
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Card 1: Total Saldo Likuiditas */}
-          <Card className="shadow-xs">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-muted-foreground">
-                  Total Likuiditas Kas & Bank
-                </span>
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-                  <Wallet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                </div>
-              </div>
-              <div className="mt-2 text-xl font-bold font-mono text-foreground">
-                {formatRupiah(totalLiquidity)}
-              </div>
-              <p className="mt-1 text-[11px] text-muted-foreground">
+          <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs border-l-4 border-l-emerald-600">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Total Likuiditas Kas &amp; Bank</CardDescription>
+              <CardTitle className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
+                <span>{formatRupiah(totalLiquidity)}</span>
+                <Wallet className="h-5 w-5 opacity-40 text-emerald-600" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-[11px] text-muted-foreground">
                 {bankAccounts.length} Rekening Bank &bull; {cashAccounts.length} Kas Fisik
               </p>
             </CardContent>
           </Card>
 
           {/* Card 2: Rekening Induk */}
-          <Card className="shadow-xs">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-muted-foreground">
-                  Rekening Induk (Penerimaan)
-                </span>
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-                  <Landmark className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                </div>
-              </div>
-              <div className="mt-2 text-xl font-bold font-mono text-foreground">
-                {formatRupiah(totalMainBalance)}
-              </div>
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                Penampung omzet tiket & sewa
+          <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs border-l-4 border-l-blue-600">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Rekening Induk (Penerimaan)</CardDescription>
+              <CardTitle className="text-xl font-bold font-mono text-blue-600 dark:text-blue-400 flex items-center justify-between">
+                <span>{formatRupiah(totalMainBalance)}</span>
+                <Landmark className="h-5 w-5 opacity-40 text-blue-600" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-[11px] text-muted-foreground">
+                Penampung omzet tiket &amp; sewa
               </p>
             </CardContent>
           </Card>
 
           {/* Card 3: Rekening Operasional Armada */}
-          <Card className="shadow-xs">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-muted-foreground">
-                  Rekening Operasional Armada
-                </span>
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-                  <CreditCard className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                </div>
-              </div>
-              <div className="mt-2 text-xl font-bold font-mono text-foreground">
-                {formatRupiah(totalOpsBalance)}
-              </div>
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                Plafon UJ & pengeluaran armada
+          <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs border-l-4 border-l-purple-600">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Rekening Operasional Armada</CardDescription>
+              <CardTitle className="text-xl font-bold font-mono text-purple-600 dark:text-purple-400 flex items-center justify-between">
+                <span>{formatRupiah(totalOpsBalance)}</span>
+                <CreditCard className="h-5 w-5 opacity-40 text-purple-600" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-[11px] text-muted-foreground">
+                Plafon UJ &amp; pengeluaran armada
               </p>
             </CardContent>
           </Card>
 
           {/* Card 4: Antrean Persetujuan */}
-          <Card className="shadow-xs">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-muted-foreground">
-                  Antrean Persetujuan Dropping
-                </span>
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-                  <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                </div>
-              </div>
-              <div className="mt-2 text-xl font-bold font-mono text-foreground">
-                {pendingTransfers.length} Pengajuan
-              </div>
-              <p className="mt-1 text-[11px] text-muted-foreground">
+          <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs border-l-4 border-l-amber-600">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Antrean Persetujuan Dropping</CardDescription>
+              <CardTitle className="text-2xl font-bold text-amber-600 dark:text-amber-400 flex items-center justify-between">
+                <span>{pendingTransfers.length} <span className="text-sm font-semibold text-muted-foreground">Pengajuan</span></span>
+                <Clock className="h-5 w-5 opacity-40 text-amber-600" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-[11px] text-muted-foreground">
                 Menunggu otorisasi Maker-Checker
               </p>
             </CardContent>
@@ -382,7 +450,7 @@ export default function TreasuryPage() {
 
       {/* Main Tabs Navigation */}
       <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as any)} className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-200/80 dark:border-white/10 pb-3">
           <TabsList className="grid w-full sm:w-120 grid-cols-3">
             <TabsTrigger value="statement" className="text-xs flex items-center gap-1.5">
               <FileText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
@@ -402,19 +470,6 @@ export default function TreasuryPage() {
               )}
             </TabsTrigger>
           </TabsList>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              fetchData();
-              fetchTransfers();
-            }}
-            className="text-xs gap-1.5"
-          >
-            <RotateCw className="w-3.5 h-3.5" />
-            Refresh Data
-          </Button>
         </div>
 
         {/* ============================================================== */}
@@ -497,7 +552,7 @@ export default function TreasuryPage() {
                 <CreditCard className="h-3 w-3 text-purple-600 dark:text-purple-400" />
               </div>
               <span className="text-xs font-semibold text-foreground">
-                Rekening Operasional Armada (Pengeluaran UJ & AP)
+                Rekening Operasional Armada (Pengeluaran UJ &amp; AP)
               </span>
               <Badge variant="outline" className="text-[10px] font-normal text-muted-foreground">
                 Outflow
@@ -569,7 +624,7 @@ export default function TreasuryPage() {
                 <Wallet className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
               </div>
               <span className="text-xs font-semibold text-foreground">
-                Kas Fisik Operasional Pool & Kas Kecil Garasi
+                Kas Fisik Operasional Pool &amp; Kas Kecil Garasi
               </span>
             </div>
             {accountsLoading ? (
@@ -639,8 +694,8 @@ export default function TreasuryPage() {
         {/* TAB 2: RIWAYAT PEMINDAHAN DANA (FUND TRANSFERS)                */}
         {/* ============================================================== */}
         <TabsContent value="transfers" className="space-y-4">
-          <Card className="shadow-xs">
-            <CardHeader className="p-4 border-b flex flex-row items-center justify-between">
+          <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs overflow-hidden">
+            <CardHeader className="p-4 border-b border-slate-200/80 dark:border-white/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
                   <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted">
@@ -653,57 +708,153 @@ export default function TreasuryPage() {
                 </CardDescription>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Select value={transferFilterStatus} onValueChange={setTransferFilterStatus}>
-                  <SelectTrigger className="w-36 text-xs h-8">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ALL" className="text-xs">Semua Status</SelectItem>
-                    <SelectItem value="PENDING_APPROVAL" className="text-xs">Menunggu Approval</SelectItem>
-                    <SelectItem value="APPROVED" className="text-xs">Disetujui</SelectItem>
-                    <SelectItem value="REJECTED" className="text-xs">Ditolak</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                {isCreate && (
-                  <Button
-                    size="sm"
-                    onClick={() => setIsCreateTransferOpen(true)}
-                    className="h-8 text-xs gap-1"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Transfer Baru
-                  </Button>
-                )}
-              </div>
+              {isCreate && (
+                <Button
+                  size="sm"
+                  onClick={() => setIsCreateTransferOpen(true)}
+                  className="h-8 text-xs gap-1.5 shadow-2xs self-start sm:self-auto"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Transfer Baru
+                </Button>
+              )}
             </CardHeader>
+
+            {/* Filter Toolbar Tab 2 */}
+            <div className="p-3.5 bg-slate-50/50 dark:bg-white/5 border-b border-slate-200/80 dark:border-white/10 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* Search Input */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Cari nomor TRF atau keperluan..."
+                    value={transferSearchInput}
+                    onChange={(e) => setTransferSearchInput(e.target.value)}
+                    className="pl-9 pr-8 h-8 text-xs uppercase"
+                  />
+                  {transferSearchInput && (
+                    <button
+                      type="button"
+                      onClick={() => setTransferSearchInput('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      title="Hapus pencarian"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Filter Status */}
+                <div>
+                  <Select
+                    value={transferFilterStatus}
+                    onValueChange={(val) => {
+                      setTransferFilterStatus(val);
+                      setTransferPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-full text-xs h-8">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL" className="text-xs">Semua Status</SelectItem>
+                      <SelectItem value="PENDING_APPROVAL" className="text-xs">Menunggu Approval</SelectItem>
+                      <SelectItem value="APPROVED" className="text-xs">Disetujui</SelectItem>
+                      <SelectItem value="REJECTED" className="text-xs">Ditolak</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Filter Tipe Mutasi */}
+                <div>
+                  <Select
+                    value={transferTypeFilter}
+                    onValueChange={(val) => {
+                      setTransferTypeFilter(val);
+                      setTransferPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-full text-xs h-8">
+                      <SelectValue placeholder="Tipe Mutasi" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL" className="text-xs">Semua Tipe Mutasi</SelectItem>
+                      <SelectItem value="MAIN_TO_OPS" className="text-xs">Induk → Ops (Dropping Plafon)</SelectItem>
+                      <SelectItem value="OPS_TO_OPS" className="text-xs">Antar Ops (AKAP ↔ Wisata)</SelectItem>
+                      <SelectItem value="POOL_TO_MAIN" className="text-xs">Setor Kas Pool → Induk</SelectItem>
+                      <SelectItem value="OPS_TO_POOL" className="text-xs">Tarik Tunai Bank → Pool</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Status Bar Filter */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-1 text-xs">
+                <div>
+                  {hasActiveTransferFilters && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleResetTransferFilters}
+                      className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1.5"
+                    >
+                      <RotateCcw className="h-3 w-3" /> Reset Filter
+                    </Button>
+                  )}
+                </div>
+                <span className="text-muted-foreground font-medium self-end sm:self-auto">
+                  Menampilkan <strong className="text-foreground">{startTransferItem} - {endTransferItem}</strong> dari {totalTransfers} mutasi transfer
+                </span>
+              </div>
+            </div>
 
             <CardContent className="p-0">
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-35">No. Transfer</TableHead>
-                    <TableHead className="w-27.5">Tanggal</TableHead>
-                    <TableHead className="w-35">Tipe Mutasi</TableHead>
-                    <TableHead>Alur Pemindahan Dana</TableHead>
-                    <TableHead className="text-right w-35">Nominal (Rp)</TableHead>
-                    <TableHead>Keperluan</TableHead>
-                    <TableHead className="w-32.5">Pemohon</TableHead>
-                    <TableHead className="w-30">Status</TableHead>
-                    <TableHead className="w-17.5 text-center">Aksi</TableHead>
+                <TableHeader className="bg-slate-50/80 dark:bg-white/5 border-b border-slate-200/80 dark:border-white/10">
+                  <TableRow className="text-xs">
+                    <TableHead className="w-35 font-bold">No. Transfer</TableHead>
+                    <TableHead className="w-27.5 font-bold">Tanggal</TableHead>
+                    <TableHead className="w-35 font-bold">Tipe Mutasi</TableHead>
+                    <TableHead className="font-bold">Alur Pemindahan Dana</TableHead>
+                    <TableHead className="text-right w-35 font-bold">Nominal (Rp)</TableHead>
+                    <TableHead className="font-bold">Keperluan</TableHead>
+                    <TableHead className="w-32.5 font-bold">Pemohon</TableHead>
+                    <TableHead className="w-30 font-bold">Status</TableHead>
+                    <TableHead className="w-17.5 text-center font-bold">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody className="text-xs">
+                <TableBody className="text-xs divide-y divide-slate-100 dark:divide-white/5">
                   {transfersLoading ? (
-                    <TransferTableSkeletonRows rows={5} />
-                  ) : transfers.length === 0 ? (
+                    <TransferTableSkeletonRows rows={transferLimit} />
+                  ) : paginatedTransfers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                        Belum ada riwayat pemindahan dana.
+                      <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
+                        <div className="flex flex-col items-center justify-center space-y-2">
+                          <div className="p-3 rounded-full bg-primary/10 text-primary">
+                            <ArrowRightLeft className="h-8 w-8 opacity-60" />
+                          </div>
+                          <h4 className="text-sm font-semibold text-foreground">
+                            Belum ada riwayat pemindahan dana
+                          </h4>
+                          <p className="text-xs text-muted-foreground max-w-sm">
+                            {hasActiveTransferFilters
+                              ? 'Tidak ada mutasi transfer yang cocok dengan filter pencarian.'
+                              : 'Seluruh transaksi dropping dana antar rekening bank korporat dan kas pool akan tercatat di sini.'}
+                          </p>
+                          {hasActiveTransferFilters && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleResetTransferFilters}
+                              className="text-xs gap-1.5 h-8 mt-1"
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" /> Reset Filter
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ) : (
-                    transfers.map((t) => {
+                    paginatedTransfers.map((t) => {
                       const sourceName = t.sourceBankAccount?.bankName
                         ? `${t.sourceBankAccount.bankName} (${t.sourceBankAccount.accountName})`
                         : t.sourceCashAccount?.name || 'Kas Sumber';
@@ -712,8 +863,8 @@ export default function TreasuryPage() {
                         : t.targetCashAccount?.name || 'Kas Tujuan';
 
                       return (
-                        <TableRow key={t.id} className="hover:bg-muted/50">
-                          <TableCell className="font-mono font-medium">
+                        <TableRow key={t.id} className="hover:bg-slate-50/80 dark:hover:bg-white/5 transition-colors">
+                          <TableCell className="font-mono font-bold text-foreground">
                             {t.transferNo}
                           </TableCell>
                           <TableCell className="text-muted-foreground">
@@ -731,11 +882,11 @@ export default function TreasuryPage() {
                               <span className="font-medium text-foreground">{targetName}</span>
                             </div>
                           </TableCell>
-                          <TableCell className="text-right font-mono font-semibold">
+                          <TableCell className="text-right font-mono font-bold text-foreground">
                             {formatRupiah(t.amount)}
                           </TableCell>
                           <TableCell className="max-w-xs truncate" title={t.purpose}>
-                            <div>{t.purpose}</div>
+                            <div className="font-medium text-foreground">{t.purpose}</div>
                             {t.referenceDoc && (
                               <div className="text-[11px] text-muted-foreground">Ref: {t.referenceDoc}</div>
                             )}
@@ -745,12 +896,12 @@ export default function TreasuryPage() {
                           </TableCell>
                           <TableCell>
                             {t.status === 'PENDING_APPROVAL' && (
-                              <Badge variant="outline" className="text-muted-foreground text-[10px] gap-1 font-normal">
+                              <Badge variant="outline" className="text-amber-700 dark:text-amber-400 border-amber-500/30 bg-amber-500/10 text-[10px] gap-1 font-normal">
                                 <Clock className="w-3 h-3 text-amber-500" /> Menunggu
                               </Badge>
                             )}
                             {t.status === 'APPROVED' && (
-                              <Badge variant="outline" className="text-muted-foreground text-[10px] gap-1 font-normal">
+                              <Badge variant="outline" className="text-emerald-700 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/10 text-[10px] gap-1 font-normal">
                                 <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Disetujui
                               </Badge>
                             )}
@@ -777,6 +928,58 @@ export default function TreasuryPage() {
                   )}
                 </TableBody>
               </Table>
+
+              {/* Paginasi Table Tab 2 */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 border-t border-slate-200/80 dark:border-white/10 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">Baris per halaman:</span>
+                  <Select
+                    value={String(transferLimit)}
+                    onValueChange={(val) => {
+                      setTransferLimit(Number(val));
+                      setTransferPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-18 h-7.5 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10" className="text-xs">10</SelectItem>
+                      <SelectItem value="20" className="text-xs">20</SelectItem>
+                      <SelectItem value="50" className="text-xs">50</SelectItem>
+                      <SelectItem value="100" className="text-xs">100</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">
+                    Halaman {transferPage} dari {totalTransferPages}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      disabled={transferPage <= 1 || transfersLoading}
+                      onClick={() => setTransferPage((p) => Math.max(1, p - 1))}
+                      className="h-7.5 w-7.5"
+                      title="Halaman Sebelumnya"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      disabled={transferPage >= totalTransferPages || transfersLoading}
+                      onClick={() => setTransferPage((p) => Math.min(totalTransferPages, p + 1))}
+                      className="h-7.5 w-7.5"
+                      title="Halaman Berikutnya"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -785,8 +988,8 @@ export default function TreasuryPage() {
         {/* TAB 3: MEJA PERSETUJUAN (APPROVAL DESK)                        */}
         {/* ============================================================== */}
         <TabsContent value="approval" className="space-y-4">
-          <Card className="shadow-xs">
-            <CardHeader className="p-4 border-b flex flex-row items-center justify-between">
+          <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs overflow-hidden">
+            <CardHeader className="p-4 border-b border-slate-200/80 dark:border-white/10 flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
                   <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted">
@@ -831,9 +1034,9 @@ export default function TreasuryPage() {
                 </div>
               ) : pendingTransfers.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
-                  <CheckCircle2 className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <CheckCircle2 className="w-8 h-8 mx-auto mb-2 opacity-50 text-emerald-600" />
                   <p className="font-medium text-sm text-foreground">Tidak ada pengajuan tertunda</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Semua permohonan pemindahan dana telah diproses.</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Semua permohonan pemindahan dana telah diproses oleh atasan.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -848,7 +1051,7 @@ export default function TreasuryPage() {
                     return (
                       <div
                         key={t.id}
-                        className="rounded-lg border bg-card p-4 hover:bg-muted/20 transition"
+                        className="rounded-lg border border-slate-200/80 dark:border-white/10 bg-card p-4 hover:bg-muted/20 transition"
                       >
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                           <div className="space-y-1.5">
@@ -911,7 +1114,7 @@ export default function TreasuryPage() {
                                     onClick={() => handleApproveTransfer(t)}
                                     className="text-xs h-8 px-2.5 shadow-xs"
                                   >
-                                    <Check className="w-3.5 h-3.5 mr-1" /> Setujui & Posting
+                                    <Check className="w-3.5 h-3.5 mr-1" /> Setujui &amp; Posting
                                   </Button>
                                 </>
                               )}
@@ -960,6 +1163,7 @@ export default function TreasuryPage() {
         cancelText={confirmDialog.cancelText}
         promptInput={confirmDialog.promptInput}
         onConfirm={confirmDialog.onConfirm}
+        isLoading={isConfirmLoading}
       />
     </div>
   );

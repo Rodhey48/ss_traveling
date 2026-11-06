@@ -6,11 +6,33 @@ export const UserService = {
     page?: number;
     limit?: number;
     search?: string;
+    type?: string;
+    isActive?: string;
+    roleId?: string;
   }): Promise<BaseResponse<PaginatedData<User>>> => {
     const response = await api.get<BaseResponse<PaginatedData<User>>>(
       'api/v1/users',
       { params }
     );
+    return response.data;
+  },
+
+  getStats: async (): Promise<
+    BaseResponse<{
+      total: number;
+      active: number;
+      inactive: number;
+      crew: number;
+    }>
+  > => {
+    const response = await api.get<
+      BaseResponse<{
+        total: number;
+        active: number;
+        inactive: number;
+        crew: number;
+      }>
+    >('api/v1/users/stats');
     return response.data;
   },
 

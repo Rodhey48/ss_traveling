@@ -279,4 +279,57 @@ describe('PettyCashService', () => {
       expect(transactionRepo.save).toHaveBeenCalled();
     });
   });
+
+  describe('getTransactions', () => {
+    it('should return transactions list with filters', async () => {
+      const qbMock: any = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        addOrderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([
+          { id: 'trans-1', transactionNo: 'BKK-KAS/2610/0001', amount: '150000.00' },
+        ]),
+      };
+      transactionRepo.createQueryBuilder.mockReturnValue(qbMock);
+
+      const result = await service.getTransactions({
+        status: CashTransactionStatus.SUBMITTED,
+        search: 'standby',
+      });
+
+      expect(result).toBeDefined();
+      expect(result.length).toBe(1);
+      expect(result[0].transactionNo).toBe('BKK-KAS/2610/0001');
+    });
+  });
+
+  describe('deleteTransaction', () => {
+    it('should soft delete submitted or draft transaction', async () => {
+      const mockTrans = {
+        id: 'trans-1',
+        transactionNo: 'BKK-KAS/2610/0001',
+        status: CashTransactionStatus.SUBMITTED,
+        isActive: true,
+      };
+      transactionRepo.findOne.mockResolvedValueOnce(mockTrans);
+
+      const res = await service.deleteTransaction('trans-1');
+      expect(res.success).toBe(true);
+      expect(mockTrans.isActive).toBe(false);
+      expect(transactionRepo.save).toHaveBeenCalledWith(mockTrans);
+    });
+
+    it('should reject deleting VERIFIED transaction', async () => {
+      const mockTrans = {
+        id: 'trans-1',
+        transactionNo: 'BKK-KAS/2610/0001',
+        status: CashTransactionStatus.VERIFIED,
+      };
+      transactionRepo.findOne.mockResolvedValueOnce(mockTrans);
+
+      await expect(service.deleteTransaction('trans-1')).rejects.toThrow(BadRequestException);
+    });
+  });
 });

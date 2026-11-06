@@ -1,6 +1,6 @@
 import { ResponseInterface } from '@interfaces';
 import { MenusEntity, ModulesEntity, RoleMenusEntity } from '@models';
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateMenuDto, UpdateMenuDto } from '../../@dto/menu/menu.dto';
@@ -147,10 +147,13 @@ export class MenusService {
       name: dto.name,
       url: dto.url,
       icon: dto.icon,
-      sequence: dto.sequence || 0,
+      sequence: dto.sequence ?? 0,
       isActive: dto.isActive ?? true,
       isWeb: dto.isWeb ?? true,
       isMobile: dto.isMobile ?? false,
+      title: dto.title ?? false,
+      availableActions: dto.availableActions || [],
+      aclName: dto.aclName || null,
     });
 
     if (dto.parentId) {
@@ -179,15 +182,21 @@ export class MenusService {
     const menu = await this.menuRepo.findOne({ where: { id } });
     if (!menu) throw new NotFoundException('Menu not found');
 
+    if (dto.parentId && dto.parentId === id) {
+      throw new BadRequestException('Sebuah menu tidak dapat menjadi induk bagi dirinya sendiri.');
+    }
+
     Object.assign(menu, {
       name: dto.name,
       url: dto.url,
       icon: dto.icon,
-      sequence: dto.sequence,
-      isActive: dto.isActive,
-      isWeb: dto.isWeb,
-      isMobile: dto.isMobile,
-      availableActions: dto.availableActions,
+      sequence: dto.sequence ?? menu.sequence,
+      isActive: dto.isActive !== undefined ? dto.isActive : menu.isActive,
+      isWeb: dto.isWeb !== undefined ? dto.isWeb : menu.isWeb,
+      isMobile: dto.isMobile !== undefined ? dto.isMobile : menu.isMobile,
+      title: dto.title !== undefined ? dto.title : menu.title,
+      availableActions: dto.availableActions !== undefined ? dto.availableActions : menu.availableActions,
+      aclName: dto.aclName !== undefined ? dto.aclName : menu.aclName,
     });
 
     if (dto.parentId) {

@@ -169,4 +169,83 @@ describe('ArService', () => {
       expect(invoice.lines?.[0].amount).toBe(12250000);
     });
   });
+
+  describe('approveArInvoice', () => {
+    it('should change status of DRAFT invoice to APPROVED', async () => {
+      invoiceRepo.findOne.mockResolvedValue({
+        id: 'inv-1',
+        invoiceNo: 'INV/2610/0001',
+        status: ArInvoiceStatus.DRAFT,
+      });
+
+      const result = await service.approveArInvoice('inv-1', 'user-1');
+      expect(result.status).toBe(ArInvoiceStatus.APPROVED);
+      expect(invoiceRepo.save).toHaveBeenCalled();
+    });
+  });
+
+  describe('findAllInvoices', () => {
+    it('should return paginated list of AR invoices', async () => {
+      const qbMock: any = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([
+          [{ id: 'inv-1', invoiceNo: 'INV/2610/0001' }],
+          1,
+        ]),
+      };
+      invoiceRepo.createQueryBuilder.mockReturnValue(qbMock);
+
+      const res = await service.findAllInvoices({ page: 1, limit: 10, search: 'INV' });
+      expect(res.data.length).toBe(1);
+      expect(res.total).toBe(1);
+      expect(res.page).toBe(1);
+      expect(res.totalPages).toBe(1);
+    });
+  });
+
+  describe('findAllReceipts', () => {
+    it('should return paginated list of AR receipts', async () => {
+      const qbMock: any = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([
+          [{ id: 'rct-1', receiptNo: 'RCT/2610/0001' }],
+          1,
+        ]),
+      };
+      receiptRepo.createQueryBuilder.mockReturnValue(qbMock);
+
+      const res = await service.findAllReceipts({ page: 1, limit: 10 });
+      expect(res.data.length).toBe(1);
+      expect(res.total).toBe(1);
+      expect(res.page).toBe(1);
+      expect(res.totalPages).toBe(1);
+    });
+  });
+
+  describe('getCharterContractStatus', () => {
+    it('should calculate DP received, total invoiced, and remaining balance', async () => {
+      receiptRepo.find = jest.fn().mockResolvedValue([
+        { amount: '5250000.00' },
+      ]);
+      invoiceRepo.find = jest.fn().mockResolvedValue([
+        { totalAmount: '12250000.00', paidAmount: '12250000.00' },
+      ]);
+
+      const status = await service.getCharterContractStatus('trip-1');
+      expect(status.downPaymentReceived).toBe(5250000);
+      expect(status.totalInvoiced).toBe(12250000);
+      expect(status.totalPaid).toBe(12250000);
+      expect(status.remainingBalance).toBe(0);
+      expect(status.isFullyPaid).toBe(true);
+    });
+  });
 });
+

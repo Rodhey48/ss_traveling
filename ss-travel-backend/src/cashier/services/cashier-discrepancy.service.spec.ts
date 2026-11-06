@@ -309,4 +309,32 @@ describe('CashierDiscrepancyService', () => {
       expect(journalCall.lines.some((l: any) => l.accountId === 'acc-12901-id' && l.debit === 300000)).toBe(true);
     });
   });
+
+  describe('getDiscrepancies', () => {
+    it('harus mengembalikan daftar temuan selisih kasir dengan paginasi dan filter', async () => {
+      const qbMock: any = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([
+          [{ id: 'disc-1', discrepancyNo: 'DISC/2610/0001', differenceAmount: 300000 }],
+          1,
+        ]),
+      };
+      discrepancyRepo.createQueryBuilder.mockReturnValue(qbMock);
+
+      const result = await service.getDiscrepancies({
+        resolutionStatus: DiscrepancyResolutionStatus.PENDING_INVESTIGATION,
+        page: 1,
+        limit: 10,
+      });
+
+      expect(result.items.length).toBe(1);
+      expect(result.total).toBe(1);
+    });
+  });
 });
+

@@ -1,3 +1,4 @@
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import Heading from '@/components/shared/heading';
 import {
@@ -44,14 +45,17 @@ import {
   CheckCircle2,
   Clock,
   Eye,
+  FileText,
   Info,
   Play,
   RotateCcw,
   Search,
   Wallet,
   Wrench,
+  X,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import EmergencyReplaceBusModal from './components/emergency-replace-bus-modal';
 import ReplaceCrewModal from './components/replace-crew-modal';
@@ -70,9 +74,10 @@ export default function SpjsPage() {
   const [finStatusFilter, setFinStatusFilter] = useState<string>('ALL');
   const [startDateFilter, setStartDateFilter] = useState<string>('');
   const [endDateFilter, setEndDateFilter] = useState<string>('');
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [limit] = useState(20);
+  const [limit, setLimit] = useState(20);
 
   // Modals state
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -82,6 +87,7 @@ export default function SpjsPage() {
   const [selectedSpj, setSelectedSpj] = useState<Spj | null>(null);
 
   // Custom Confirm Dialog State
+  const [isConfirmLoading, setIsConfirmLoading] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     title: string;
@@ -94,14 +100,19 @@ export default function SpjsPage() {
     title: '',
     description: '',
     variant: 'primary',
-    onConfirm: () => { },
+    onConfirm: () => {},
   });
 
+  // Debounced search (300ms)
   useEffect(() => {
-    loadSpjs();
-  }, [serviceFilter, opStatusFilter, finStatusFilter, startDateFilter, endDateFilter, page, limit]);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
-  const loadSpjs = async () => {
+  const loadSpjs = useCallback(async () => {
     setLoading(true);
     try {
       const params: any = {
@@ -114,7 +125,7 @@ export default function SpjsPage() {
       if (finStatusFilter !== 'ALL') params.financialStatus = finStatusFilter as SpjFinancialStatus;
       if (startDateFilter) params.startDate = startDateFilter;
       if (endDateFilter) params.endDate = endDateFilter;
-      if (search) params.search = search;
+      if (debouncedSearch) params.search = debouncedSearch;
 
       const res = await SpjService.getSpjs(params);
       setSpjs(res.data || []);
@@ -124,13 +135,59 @@ export default function SpjsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [serviceFilter, opStatusFilter, finStatusFilter, startDateFilter, endDateFilter, page, limit, debouncedSearch]);
+
+  useEffect(() => {
+    loadSpjs();
+  }, [loadSpjs]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setDebouncedSearch(searchInput.trim());
     setPage(1);
-    loadSpjs();
   };
+
+  const isFilterActive =
+    serviceFilter !== 'ALL' ||
+    opStatusFilter !== 'ALL' ||
+    finStatusFilter !== 'ALL' ||
+    startDateFilter !== '' ||
+    endDateFilter !== '' ||
+    searchInput.trim() !== '';
+
+  const handleResetFilters = () => {
+    setServiceFilter('ALL');
+    setOpStatusFilter('ALL');
+    setFinStatusFilter('ALL');
+    setStartDateFilter('');
+    setEndDateFilter('');
+    setSearchInput('');
+    setDebouncedSearch('');
+    setPage(1);
+  };
+
+  // Pagination metrics
+  const totalPages = Math.ceil(total / limit) || 1;
+  const startItem = total === 0 ? 0 : (page - 1) * limit + 1;
+  const endItem = Math.min(page * limit, total);
+
+  // Dynamic KPI Calculations from loaded set
+  const activeCount = useMemo(
+    () => spjs.filter((s) => s.operationalStatus === 'IN_PROGRESS').length,
+    [spjs],
+  );
+  const issuedCount = useMemo(
+    () => spjs.filter((s) => s.operationalStatus === 'ISSUED').length,
+    [spjs],
+  );
+  const reviewCount = useMemo(
+    () => spjs.filter((s) => s.financialStatus === 'UNDER_REVIEW').length,
+    [spjs],
+  );
+  const settledCount = useMemo(
+    () => spjs.filter((s) => s.financialStatus === 'SETTLED').length,
+    [spjs],
+  );
 
   const handleStart = (spj: Spj) => {
     setConfirmDialog({
@@ -140,6 +197,7 @@ export default function SpjsPage() {
       variant: 'primary',
       confirmText: 'Berangkatkan Bus',
       onConfirm: async () => {
+        setIsConfirmLoading(true);
         try {
           await SpjService.startSpj(spj.id);
           toast.success(`Armada '${spj.vehicle?.code}' resmi aktif di perjalanan.`);
@@ -147,6 +205,8 @@ export default function SpjsPage() {
           loadSpjs();
         } catch (err: any) {
           toast.error(err.response?.data?.message || 'Gagal memberangkatkan bus.');
+        } finally {
+          setIsConfirmLoading(false);
         }
       },
     });
@@ -160,6 +220,7 @@ export default function SpjsPage() {
       variant: 'info',
       confirmText: 'Konfirmasi Tiba Pool',
       onConfirm: async () => {
+        setIsConfirmLoading(true);
         try {
           await SpjService.completeSpj(spj.id);
           toast.success(`Operasional SPJ '${spj.spjNo}' tuntas.`);
@@ -167,6 +228,8 @@ export default function SpjsPage() {
           loadSpjs();
         } catch (err: any) {
           toast.error(err.response?.data?.message || 'Gagal menyelesaikan SPJ.');
+        } finally {
+          setIsConfirmLoading(false);
         }
       },
     });
@@ -263,12 +326,6 @@ export default function SpjsPage() {
     }
   };
 
-  // Metrik Ringkasan Operasional
-  const activeCount = spjs.filter((s) => s.operationalStatus === 'IN_PROGRESS').length;
-  const issuedCount = spjs.filter((s) => s.operationalStatus === 'ISSUED').length;
-  const reviewCount = spjs.filter((s) => s.financialStatus === 'UNDER_REVIEW').length;
-  const settledCount = spjs.filter((s) => s.financialStatus === 'SETTLED').length;
-
   return (
     <div className="space-y-6 p-6">
       {/* Header Halaman */}
@@ -279,156 +336,167 @@ export default function SpjsPage() {
         />
       </div>
 
-      {/* Kartu Metrik Ringkasan Operasional (Clean & Balanced Contrast) */}
-      {loading ? (
+      {/* Kartu Metrik Ringkasan Operasional (Clean Glassmorphism) */}
+      {loading && spjs.length === 0 ? (
         <MetricCardGridSkeleton count={4} />
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-          <Card className="border shadow-2xs bg-card">
-            <CardHeader className="p-4 pb-1">
-              <CardDescription className="text-xs font-semibold flex items-center justify-between text-muted-foreground">
-                <span>Aktif di Rute</span>
-                <div className="p-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                  <Bus className="w-4 h-4" />
-                </div>
-              </CardDescription>
-              <CardTitle className="text-2xl font-extrabold text-foreground mt-1">
-                {activeCount}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs border-l-4 border-l-emerald-600">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Aktif di Rute (Jalan)</CardDescription>
+              <CardTitle className="text-2xl font-black text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
+                <span>{activeCount} <span className="text-sm font-semibold text-muted-foreground">Armada</span></span>
+                <Bus className="w-5 h-5 opacity-40 text-emerald-600" />
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 pt-0 text-[11px] text-muted-foreground">
-              Armada sedang dinas di trayek/wisata
+            <CardContent className="px-4 pb-3">
+              <p className="text-[11px] text-muted-foreground">
+                Armada sedang dinas di trayek / wisata
+              </p>
             </CardContent>
           </Card>
 
-          <Card className="border shadow-2xs bg-card">
-            <CardHeader className="p-4 pb-1">
-              <CardDescription className="text-xs font-semibold flex items-center justify-between text-muted-foreground">
-                <span>Siap Berangkat (ISSUED)</span>
-                <div className="p-1 rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400">
-                  <Play className="w-4 h-4" />
-                </div>
-              </CardDescription>
-              <CardTitle className="text-2xl font-extrabold text-foreground mt-1">
-                {issuedCount}
+          <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs border-l-4 border-l-sky-600">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Siap Berangkat (ISSUED)</CardDescription>
+              <CardTitle className="text-2xl font-bold text-sky-600 dark:text-sky-400 flex items-center justify-between">
+                <span>{issuedCount} <span className="text-sm font-semibold text-muted-foreground">Rilis</span></span>
+                <Play className="w-5 h-5 opacity-40 text-sky-600" />
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 pt-0 text-[11px] text-muted-foreground">
-              SPJ terbit, menunggu jam keberangkatan
+            <CardContent className="px-4 pb-3">
+              <p className="text-[11px] text-muted-foreground">
+                SPJ terbit, menunggu jam keberangkatan
+              </p>
             </CardContent>
           </Card>
 
-          <Card className="border shadow-2xs bg-card">
-            <CardHeader className="p-4 pb-1">
-              <CardDescription className="text-xs font-semibold flex items-center justify-between text-muted-foreground">
-                <span>Menunggu Kasir (UNDER_REVIEW)</span>
-                <div className="p-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                  <Clock className="w-4 h-4" />
-                </div>
-              </CardDescription>
-              <CardTitle className="text-2xl font-extrabold text-foreground mt-1">
-                {reviewCount}
+          <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs border-l-4 border-l-amber-600">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Menunggu Kasir (UNDER_REVIEW)</CardDescription>
+              <CardTitle className="text-2xl font-bold text-amber-600 dark:text-amber-400 flex items-center justify-between">
+                <span>{reviewCount} <span className="text-sm font-semibold text-muted-foreground">SPJ</span></span>
+                <Clock className="w-5 h-5 opacity-40 text-amber-600" />
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 pt-0 text-[11px] text-muted-foreground">
-              Bus tiba di pool, kru belum setor kas
+            <CardContent className="px-4 pb-3">
+              <p className="text-[11px] text-muted-foreground">
+                Bus tiba di pool, kru siap rekonsiliasi
+              </p>
             </CardContent>
           </Card>
 
-          <Card className="border shadow-2xs bg-card">
-            <CardHeader className="p-4 pb-1">
-              <CardDescription className="text-xs font-semibold flex items-center justify-between text-muted-foreground">
-                <span>Finansial Selesai (SETTLED)</span>
-                <div className="p-1 rounded-md bg-primary/10 text-primary">
-                  <CheckCircle2 className="w-4 h-4" />
-                </div>
-              </CardDescription>
-              <CardTitle className="text-2xl font-extrabold text-foreground mt-1">
-                {settledCount}
+          <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs border-l-4 border-l-purple-600">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-xs">Finansial Selesai (SETTLED)</CardDescription>
+              <CardTitle className="text-2xl font-bold text-purple-700 dark:text-purple-400 flex items-center justify-between">
+                <span>{settledCount} <span className="text-sm font-semibold text-muted-foreground">Tuntas</span></span>
+                <CheckCircle2 className="w-5 h-5 opacity-40 text-purple-600" />
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 pt-0 text-[11px] text-muted-foreground">
-              Rekonsiliasi kas & UJ tuntas 100%
+            <CardContent className="px-4 pb-3">
+              <p className="text-[11px] text-muted-foreground">
+                Rekonsiliasi kas &amp; UJ tuntas 100%
+              </p>
             </CardContent>
           </Card>
         </div>
       )}
 
       {/* Banner Edukasi Status Ganda Independen (Blueprint Bab 8.2) */}
-      <div className="p-3.5 rounded-xl border bg-muted/40 text-xs text-foreground flex items-start gap-3 shadow-2xs">
-        <div className="p-1 rounded-md bg-primary/10 text-primary shrink-0 mt-0.5">
+      <div className="p-4 rounded-xl border border-indigo-200/70 bg-indigo-50/50 dark:border-indigo-900/40 dark:bg-indigo-950/20 text-xs text-indigo-950 dark:text-indigo-200 flex items-start gap-3 shadow-2xs">
+        <div className="p-1 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5">
           <Info className="w-4 h-4" />
         </div>
-        <div className="space-y-0.5">
-          <p className="font-bold text-xs text-foreground">
+        <div className="space-y-1">
+          <p className="font-bold text-sm">
             Prinsip Status Ganda Independen SPJ (Blueprint Bab 8.2)
           </p>
-          <p className="text-muted-foreground leading-relaxed">
+          <p className="leading-relaxed">
             Sistem memisahkan secara independen antara <strong>Status Operasional</strong> (<code>DRAFT</code> ➔ <code>ISSUED</code> ➔ <code>IN_PROGRESS</code> ➔ <code>COMPLETED</code>) dan <strong>Status Finansial</strong> (<code>PENDING_SETTLEMENT</code> ➔ <code>UNDER_REVIEW</code> ➔ <code>SETTLED</code>). Armada yang telah tiba di pool tidak otomatis lunas sebelum kasir memverifikasi nota pengeluaran dan setoran kas bruto tiket/kargo.
           </p>
         </div>
       </div>
 
       {/* Filter & Toolbar */}
-      <Card className="border shadow-xs">
-        <CardHeader className="p-4 border-b space-y-3 bg-muted/20">
+      <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs overflow-hidden">
+        <CardHeader className="p-3.5 border-b border-slate-200/80 dark:border-white/10 space-y-3 bg-muted/20">
           <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
             {/* Form Cari */}
             <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 flex-1">
               <div className="relative flex-1">
-                <Search className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
                   placeholder="Cari nomor SPJ (SPJ/...), nomor lambung bus, atau nopol..."
-                  className="pl-9 h-10 text-xs"
+                  className="pl-9 pr-8 h-8.5 text-xs uppercase"
                 />
+                {searchInput && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchInput('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    title="Hapus pencarian"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
-              <Button type="submit" variant="secondary" size="sm" className="h-10 text-xs font-semibold px-4">
-                Cari SPJ
-              </Button>
             </form>
 
             {/* Filter Dropdown */}
             <div className="flex flex-wrap items-center gap-2">
-              <Select value={serviceFilter} onValueChange={setServiceFilter}>
-                <SelectTrigger className="w-32.5 h-9 text-xs bg-background">
+              <Select value={serviceFilter} onValueChange={(val) => { setServiceFilter(val); setPage(1); }}>
+                <SelectTrigger className="w-34 h-8.5 text-xs">
                   <SelectValue placeholder="Semua Layanan" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">Semua Layanan</SelectItem>
-                  <SelectItem value="AKAP">AKAP Reguler</SelectItem>
-                  <SelectItem value="WISATA">Sewa Wisata</SelectItem>
-                  <SelectItem value="SHUTTLE">Shuttle</SelectItem>
+                  <SelectItem value="ALL" className="text-xs">Semua Layanan</SelectItem>
+                  <SelectItem value="AKAP" className="text-xs">AKAP Reguler</SelectItem>
+                  <SelectItem value="WISATA" className="text-xs">Sewa Wisata</SelectItem>
+                  <SelectItem value="SHUTTLE" className="text-xs">Shuttle</SelectItem>
                 </SelectContent>
               </Select>
 
-              <Select value={opStatusFilter} onValueChange={setOpStatusFilter}>
-                <SelectTrigger className="w-36.25 h-9 text-xs bg-background">
+              <Select value={opStatusFilter} onValueChange={(val) => { setOpStatusFilter(val); setPage(1); }}>
+                <SelectTrigger className="w-36 h-8.5 text-xs">
                   <SelectValue placeholder="Status Ops" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">Semua Status Ops</SelectItem>
-                  <SelectItem value="DRAFT">DRAFT</SelectItem>
-                  <SelectItem value="ISSUED">ISSUED</SelectItem>
-                  <SelectItem value="IN_PROGRESS">IN_PROGRESS</SelectItem>
-                  <SelectItem value="COMPLETED">COMPLETED</SelectItem>
-                  <SelectItem value="CANCELLED">CANCELLED</SelectItem>
+                  <SelectItem value="ALL" className="text-xs">Semua Status Ops</SelectItem>
+                  <SelectItem value="DRAFT" className="text-xs">DRAFT</SelectItem>
+                  <SelectItem value="ISSUED" className="text-xs">ISSUED</SelectItem>
+                  <SelectItem value="IN_PROGRESS" className="text-xs">IN_PROGRESS</SelectItem>
+                  <SelectItem value="COMPLETED" className="text-xs">COMPLETED</SelectItem>
+                  <SelectItem value="CANCELLED" className="text-xs">CANCELLED</SelectItem>
                 </SelectContent>
               </Select>
 
-              <Select value={finStatusFilter} onValueChange={setFinStatusFilter}>
-                <SelectTrigger className="w-37.5 h-9 text-xs bg-background">
+              <Select value={finStatusFilter} onValueChange={(val) => { setFinStatusFilter(val); setPage(1); }}>
+                <SelectTrigger className="w-36 h-8.5 text-xs">
                   <SelectValue placeholder="Status Finansial" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">Semua Status Fin</SelectItem>
-                  <SelectItem value="PENDING_SETTLEMENT">PENDING</SelectItem>
-                  <SelectItem value="UNDER_REVIEW">UNDER_REVIEW</SelectItem>
-                  <SelectItem value="DISCREPANCY">DISCREPANCY</SelectItem>
-                  <SelectItem value="SETTLED">SETTLED</SelectItem>
+                  <SelectItem value="ALL" className="text-xs">Semua Status Fin</SelectItem>
+                  <SelectItem value="PENDING_SETTLEMENT" className="text-xs">PENDING</SelectItem>
+                  <SelectItem value="UNDER_REVIEW" className="text-xs">UNDER_REVIEW</SelectItem>
+                  <SelectItem value="DISCREPANCY" className="text-xs">DISCREPANCY</SelectItem>
+                  <SelectItem value="SETTLED" className="text-xs">SETTLED</SelectItem>
                 </SelectContent>
               </Select>
+
+              {isFilterActive && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleResetFilters}
+                  className="h-8.5 px-2.5 text-xs text-muted-foreground hover:text-foreground gap-1.5"
+                  title="Reset seluruh filter"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" /> Reset
+                </Button>
+              )}
             </div>
           </div>
 
@@ -436,7 +504,7 @@ export default function SpjsPage() {
           <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-border/40">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-indigo-600" /> Rentang Tanggal Terbit:
+                <Calendar className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> Rentang Tanggal Terbit:
               </span>
               <div className="flex items-center gap-1.5">
                 <Input
@@ -446,7 +514,7 @@ export default function SpjsPage() {
                     setStartDateFilter(e.target.value);
                     setPage(1);
                   }}
-                  className="h-8 text-xs w-33.75 px-2.5 bg-background [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  className="h-8 text-xs w-33.75 px-2.5 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                   placeholder="Dari Tanggal"
                 />
                 <span className="text-xs text-muted-foreground">s/d</span>
@@ -458,7 +526,7 @@ export default function SpjsPage() {
                     setEndDateFilter(e.target.value);
                     setPage(1);
                   }}
-                  className="h-8 text-xs w-33.75 px-2.5 bg-background [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  className="h-8 text-xs w-33.75 px-2.5 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                   placeholder="Sampai Tanggal"
                 />
               </div>
@@ -507,11 +575,15 @@ export default function SpjsPage() {
                     setEndDateFilter('');
                     setPage(1);
                   }}
-                  className="h-7 text-[11px] px-2 text-red-600 border-red-200 hover:bg-red-50 flex items-center gap-1"
+                  className="h-7 text-[11px] px-2 text-rose-600 border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-1"
                 >
                   <RotateCcw className="w-3 h-3" /> Reset Tanggal
                 </Button>
               )}
+            </div>
+
+            <div className="text-xs text-muted-foreground font-medium shrink-0 self-end sm:self-auto">
+              Menampilkan <strong className="text-foreground">{startItem} - {endItem}</strong> dari {total} dokumen SPJ
             </div>
           </div>
         </CardHeader>
@@ -519,22 +591,22 @@ export default function SpjsPage() {
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/40">
+              <TableRow className="bg-slate-50/80 dark:bg-white/5 border-b border-slate-200/80 dark:border-white/10">
                 <TableHead className="w-40">No. SPJ</TableHead>
-                <TableHead>Layanan</TableHead>
-                <TableHead>Armada Bus</TableHead>
-                <TableHead>Rute & Penugasan</TableHead>
-                <TableHead>Kru Bertugas</TableHead>
-                <TableHead>Status Operasional</TableHead>
-                <TableHead>Status Finansial</TableHead>
-                <TableHead className="text-right">Aksi</TableHead>
+                <TableHead className="w-28">Layanan</TableHead>
+                <TableHead className="w-32">Armada Bus</TableHead>
+                <TableHead className="w-56">Rute &amp; Penugasan</TableHead>
+                <TableHead className="w-44">Kru Bertugas</TableHead>
+                <TableHead className="w-36">Status Operasional</TableHead>
+                <TableHead className="w-36">Status Finansial</TableHead>
+                <TableHead className="text-right w-48">Aksi</TableHead>
               </TableRow>
             </TableHeader>
 
-            <TableBody>
+            <TableBody className="divide-y divide-slate-100 dark:divide-white/5">
               {loading ? (
                 <TableSkeletonRows
-                  rows={5}
+                  rows={limit}
                   colWidths={[
                     'w-28',
                     'w-20',
@@ -548,8 +620,30 @@ export default function SpjsPage() {
                 />
               ) : spjs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground text-xs">
-                    Tidak ada dokumen SPJ yang sesuai dengan filter ({total} total).
+                  <TableCell colSpan={8} className="py-12 text-center">
+                    <div className="flex flex-col items-center justify-center space-y-2">
+                      <div className="p-3 rounded-full bg-primary/10 text-primary">
+                        <FileText className="h-8 w-8 opacity-60" />
+                      </div>
+                      <h4 className="text-sm font-semibold text-foreground">
+                        Tidak ada dokumen SPJ yang sesuai
+                      </h4>
+                      <p className="text-xs text-muted-foreground max-w-sm">
+                        {isFilterActive
+                          ? 'Tidak ada dokumen SPJ yang cocok dengan kriteria filter atau pencarian Anda.'
+                          : 'Belum ada dokumen SPJ yang diterbitkan dari jadwal dinas bus.'}
+                      </p>
+                      {isFilterActive && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleResetFilters}
+                          className="text-xs gap-1.5 h-8 mt-1"
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" /> Reset Filter
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : (
@@ -559,7 +653,7 @@ export default function SpjsPage() {
                   const conductor = s.crewAssignments?.find((c) => c.role === 'CONDUCTOR');
 
                   return (
-                    <TableRow key={s.id} className="hover:bg-muted/30">
+                    <TableRow key={s.id} className="hover:bg-slate-50/80 dark:hover:bg-white/5 transition-colors">
                       <TableCell className="font-bold text-xs">
                         {s.spjNo}
                         {s.parentSpj && (
@@ -613,7 +707,7 @@ export default function SpjsPage() {
                             setSelectedSpj(s);
                             setDetailModalOpen(true);
                           }}
-                          className="h-8 text-xs font-medium"
+                          className="h-7 text-xs font-medium px-2"
                           title="Lihat Detail SPJ & Legs"
                         >
                           <Eye className="w-3.5 h-3.5 mr-1" /> Rincian
@@ -626,17 +720,17 @@ export default function SpjsPage() {
                             setSelectedSpj(s);
                             setFinanceModalOpen(true);
                           }}
-                          className="h-8 text-xs font-semibold bg-emerald-50/70 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 border-emerald-300 dark:border-emerald-800 shadow-2xs"
+                          className="h-7 text-xs font-semibold px-2 bg-emerald-50/70 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 border-emerald-300 dark:border-emerald-800 shadow-2xs"
                           title="Kelola Keuangan SPJ (Uang Jalan, Biaya BBM/Tol, Kas Kru)"
                         >
-                          <Wallet className="w-3.5 h-3.5 mr-1 text-emerald-600 dark:text-emerald-400" /> Keuangan & UJ
+                          <Wallet className="w-3.5 h-3.5 mr-1 text-emerald-600 dark:text-emerald-400" /> Keuangan &amp; UJ
                         </Button>
 
                         {s.operationalStatus === 'ISSUED' && isUpdate && (
                           <Button
                             size="sm"
                             onClick={() => handleStart(s)}
-                            className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-2xs"
+                            className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-2xs px-2"
                             title="Berangkatkan Bus"
                           >
                             <Play className="w-3.5 h-3.5 mr-1" /> Jalan
@@ -647,7 +741,7 @@ export default function SpjsPage() {
                           <Button
                             size="sm"
                             onClick={() => handleComplete(s)}
-                            className="h-8 text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-2xs"
+                            className="h-7 text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-2xs px-2"
                             title="Tiba di Pool / Selesai Operasional"
                           >
                             <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Selesai
@@ -662,10 +756,10 @@ export default function SpjsPage() {
                               setSelectedSpj(s);
                               setEmergencyModalOpen(true);
                             }}
-                            className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50"
+                            className="h-7 w-7 p-0 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50"
                             title="Emergency Breakdown di Tol (Skenario 3)"
                           >
-                            <AlertTriangle className="w-4 h-4" />
+                            <AlertTriangle className="w-3.5 h-3.5" />
                           </Button>
                         )}
                       </TableCell>
@@ -675,6 +769,58 @@ export default function SpjsPage() {
               )}
             </TableBody>
           </Table>
+
+          {/* Paginasi Server-Side */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 border-t border-slate-200/80 dark:border-white/10 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">Baris per halaman:</span>
+              <Select
+                value={String(limit)}
+                onValueChange={(val) => {
+                  setLimit(Number(val));
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="w-18 h-7.5 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10" className="text-xs">10</SelectItem>
+                  <SelectItem value="20" className="text-xs">20</SelectItem>
+                  <SelectItem value="50" className="text-xs">50</SelectItem>
+                  <SelectItem value="100" className="text-xs">100</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">
+                Halaman {page} dari {totalPages}
+              </span>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  disabled={page <= 1 || loading}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  className="h-7.5 w-7.5"
+                  title="Halaman Sebelumnya"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  disabled={page >= totalPages || loading}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  className="h-7.5 w-7.5"
+                  title="Halaman Berikutnya"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -746,6 +892,7 @@ export default function SpjsPage() {
         variant={confirmDialog.variant}
         confirmText={confirmDialog.confirmText}
         onConfirm={confirmDialog.onConfirm}
+        isLoading={isConfirmLoading}
       />
     </div>
   );

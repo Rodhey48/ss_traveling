@@ -34,4 +34,9 @@ export const RoleService = {
     );
     return response.data;
   },
+
+  remove: async (id: string): Promise<BaseResponse<void>> => {
+    const response = await api.delete<BaseResponse<void>>(`api/v1/roles/${id}`);
+    return response.data;
+  },
 };
