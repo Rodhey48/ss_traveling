@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import Heading from '@/components/shared/heading';
 import {
@@ -63,6 +64,7 @@ import SpjDetailModal from './components/spj-detail-modal';
 import SpjFinanceModal from './components/spj-finance-modal';
 
 export default function SpjsPage() {
+  const navigate = useNavigate();
   const { isUpdate } = usePermission();
   const [spjs, setSpjs] = useState<Spj[]>([]);
   const [loading, setLoading] = useState(false);
@@ -716,12 +718,9 @@ export default function SpjsPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => {
-                            setSelectedSpj(s);
-                            setFinanceModalOpen(true);
-                          }}
+                          onClick={() => navigate(`/spjs/${s.id}/finance`)}
                           className="h-7 text-xs font-semibold px-2 bg-emerald-50/70 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 border-emerald-300 dark:border-emerald-800 shadow-2xs"
-                          title="Kelola Keuangan SPJ (Uang Jalan, Biaya BBM/Tol, Kas Kru)"
+                          title="Kelola Keuangan SPJ (Uang Jalan, Biaya BBM/Tol, Kas Kru, Tiket Agen)"
                         >
                           <Wallet className="w-3.5 h-3.5 mr-1 text-emerald-600 dark:text-emerald-400" /> Keuangan &amp; UJ
                         </Button>
@@ -842,7 +841,9 @@ export default function SpjsPage() {
           setEmergencyModalOpen(true);
         }}
         onOpenFinance={() => {
-          setFinanceModalOpen(true);
+          if (selectedSpj) {
+            navigate(`/spjs/${selectedSpj.id}/finance`);
+          }
         }}
       />
 

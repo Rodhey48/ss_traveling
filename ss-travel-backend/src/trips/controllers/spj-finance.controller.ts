@@ -37,6 +37,8 @@ import {
 import {
   CreateCrewMealPaymentDto,
   DisburseEarlyMealPaymentDto,
+  AddPerpalPaymentDto,
+  ClaimFullSeatBonusDto,
 } from '../../@dto/trips/crew-meal-payment.dto';
 
 @ApiTags('SPJ Finance (UJ, Expenses, Revenues, Crew Payments)')
@@ -214,6 +216,43 @@ export class SpjFinanceController {
   }
 
   // -------------------------------------------------------------
+  // SERVIS MAKAN PENUMPANG RESTORAN MITRA (AP INVOICE VENDOR)
+  // -------------------------------------------------------------
+
+  @Get(':id/meal-service')
+  @RequirePermissions('SPJ:read')
+  @ApiOperation({ summary: 'Ambil status servis makan penumpang dan tagihan AP restoran mitra' })
+  async getMealServiceStatus(@Param('id') id: string): Promise<ResponseInterface> {
+    const data = await this.expensesService.getMealServiceStatus(id);
+    return {
+      status: true,
+      message: 'Status servis makan restoran mitra berhasil diambil',
+      data,
+    };
+  }
+
+  @Put(':id/legs/:legId/meal-service')
+  @RequirePermissions('SPJ:update')
+  @ApiOperation({ summary: 'Update jumlah kupon makan ditukarkan dan catatan selisih kupon per leg' })
+  async updateLegMealService(
+    @Param('id') id: string,
+    @Param('legId') legId: string,
+    @Body() body: { mealPaxCount: number; mealDiscrepancyNotes?: string },
+  ): Promise<ResponseInterface> {
+    const data = await this.expensesService.updateLegMealService(
+      id,
+      legId,
+      body.mealPaxCount,
+      body.mealDiscrepancyNotes,
+    );
+    return {
+      status: true,
+      message: 'Kupon servis makan penumpang berhasil diperbarui',
+      data,
+    };
+  }
+
+  // -------------------------------------------------------------
   // 3. DEKLARASI PENERIMAAN OPERASIONAL (REVENUE DECLARATIONS)
   // -------------------------------------------------------------
 
@@ -319,6 +358,46 @@ export class SpjFinanceController {
     return {
       status: true,
       message: 'Hak kompensasi kru berhasil disinkronkan dari data penugasan',
+      data,
+    };
+  }
+
+  @Post(':id/crew-payments/perpal')
+  @RequirePermissions('SPJ:update')
+  @ApiOperation({ summary: 'Tambah Uang Perpal Kru (Uang Makan Tambahan Menginap di Terminal / Luar Kota)' })
+  async addPerpalPayment(
+    @Param('id') id: string,
+    @Body() dto: AddPerpalPaymentDto,
+    @Req() req: RequestInterface,
+  ): Promise<ResponseInterface> {
+    const data = await this.crewMealPaymentsService.addPerpalPayment(
+      id,
+      dto,
+      req.user.id,
+    );
+    return {
+      status: true,
+      message: 'Uang perpal kru berhasil dicatat',
+      data,
+    };
+  }
+
+  @Post(':id/crew-payments/full-seat-bonus')
+  @RequirePermissions('SPJ:update')
+  @ApiOperation({ summary: 'Klaim Bonus Full Seat Kru (Okupansi Penumpang 100%)' })
+  async claimFullSeatBonus(
+    @Param('id') id: string,
+    @Body() dto: ClaimFullSeatBonusDto,
+    @Req() req: RequestInterface,
+  ): Promise<ResponseInterface> {
+    const data = await this.crewMealPaymentsService.claimFullSeatBonus(
+      id,
+      dto,
+      req.user.id,
+    );
+    return {
+      status: true,
+      message: 'Bonus full seat kru berhasil dicatat',
       data,
     };
   }

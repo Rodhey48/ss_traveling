@@ -80,3 +80,71 @@ export class DisburseEarlyMealPaymentDto {
   @IsString()
   notes?: string;
 }
+
+export class AddPerpalPaymentDto {
+  @ApiProperty({
+    description: 'Daftar ID penugasan kru yang berhak menerima uang perpal',
+    type: [String],
+  })
+  @IsNotEmpty()
+  crewAssignmentIds!: string[];
+
+  @ApiPropertyOptional({
+    description: 'Lokasi terminal tempat bus perpal/menginap',
+    example: 'Terminal Giwangan Yogyakarta',
+  })
+  @IsOptional()
+  @IsString()
+  terminalLocation?: string;
+
+  @ApiPropertyOptional({
+    description: 'Jumlah hari perpal menginap di terminal',
+    example: 1,
+    default: 1,
+  })
+  @IsOptional()
+  daysCount?: number;
+
+  @ApiProperty({
+    description: 'Nominal uang perpal per orang per hari',
+    example: '100000.00',
+  })
+  @IsNotEmpty()
+  @IsNumberString()
+  amountPerPersonPerDay!: string;
+
+  @ApiPropertyOptional({
+    enum: CrewPayoutTiming,
+    default: CrewPayoutTiming.AT_SETTLEMENT,
+  })
+  @IsOptional()
+  @IsEnum(CrewPayoutTiming)
+  payoutTiming?: CrewPayoutTiming;
+
+  @ApiPropertyOptional({ description: 'Catatan tambahan alasan perpal' })
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
+export class ClaimFullSeatBonusDto {
+  @ApiProperty({
+    description: 'Daftar ID penugasan kru yang menerima bonus full seat',
+    type: [String],
+  })
+  @IsNotEmpty()
+  crewAssignmentIds!: string[];
+
+  @ApiProperty({
+    description: 'Nominal bonus full seat per orang kru',
+    example: '150000.00',
+  })
+  @IsNotEmpty()
+  @IsNumberString()
+  bonusAmountPerPerson!: string;
+
+  @ApiPropertyOptional({ description: 'Catatan tambahan klaim bonus' })
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}

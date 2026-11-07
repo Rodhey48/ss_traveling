@@ -10,6 +10,10 @@ import {
   CrewMealPaymentCategory,
   CrewAssignmentRole,
 } from '../../@models/trips';
+import { AccountEntity } from '../../@models/finance/account.entity';
+import { AgentEntity, AgentType, AgentSettlementType } from '../../@models/master-rules/agent.entity';
+import { BankAccountEntity } from '../../@models/finance/bank-account.entity';
+import { AccountingPostingService } from '../../finance/services/accounting-posting.service';
 
 describe('SpjRevenueService', () => {
   let service: SpjRevenueService;
@@ -17,6 +21,10 @@ describe('SpjRevenueService', () => {
   let revRepo: any;
   let mealPaymentRepo: any;
   let crewRepo: any;
+  let accountRepo: any;
+  let agentRepo: any;
+  let bankAccountRepo: any;
+  let postingService: any;
 
   beforeEach(async () => {
     spjRepo = {
@@ -40,6 +48,34 @@ describe('SpjRevenueService', () => {
       findOne: jest.fn(),
     };
 
+    accountRepo = {
+      find: jest.fn().mockResolvedValue([
+        { id: 'acc-12103', code: '12103' },
+        { id: 'acc-41101', code: '41101' },
+        { id: 'acc-54101', code: '54101' },
+        { id: 'acc-22101', code: '22101' },
+        { id: 'acc-11121', code: '11121' },
+      ]),
+      findOne: jest.fn(),
+    };
+
+    agentRepo = {
+      findOne: jest.fn().mockResolvedValue({
+        id: 'agent-1',
+        name: 'Agen Lebak Bulus',
+        agentType: AgentType.OFFLINE,
+        settlementType: AgentSettlementType.CASH_TO_CREW,
+      }),
+    };
+
+    bankAccountRepo = {
+      findOne: jest.fn(),
+    };
+
+    postingService = {
+      postJournal: jest.fn().mockResolvedValue({ id: 'journal-uuid-1', journalNo: 'JV/2611/0001' }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SpjRevenueService,
@@ -47,6 +83,10 @@ describe('SpjRevenueService', () => {
         { provide: getRepositoryToken(SpjRevenueDeclarationEntity), useValue: revRepo },
         { provide: getRepositoryToken(CrewMealPaymentEntity), useValue: mealPaymentRepo },
         { provide: getRepositoryToken(SpjCrewAssignmentEntity), useValue: crewRepo },
+        { provide: getRepositoryToken(AccountEntity), useValue: accountRepo },
+        { provide: getRepositoryToken(AgentEntity), useValue: agentRepo },
+        { provide: getRepositoryToken(BankAccountEntity), useValue: bankAccountRepo },
+        { provide: AccountingPostingService, useValue: postingService },
       ],
     }).compile();
 
@@ -99,6 +139,36 @@ describe('SpjRevenueService', () => {
         }),
       );
       expect(mealPaymentRepo.save).toHaveBeenCalled();
+      expect(result).toBeDefined();
+    });
+
+    it('harus mencatat penjualan tiket agen dan memposting jurnal otomatis secara atomik', async () => {
+      spjRepo.findOne.mockResolvedValue({
+        id: 'spj-1',
+        spjNo: 'SPJ/AKAP/2611/0001',
+        companyId: 'comp-1',
+        vehicleId: 'veh-1',
+        crewAssignments: [],
+      });
+
+      const result = await service.create(
+        'spj-1',
+        {
+          declarationType: SpjRevenueDeclarationType.TICKET_AGENT,
+          amount: '1250000.00',
+          agentId: 'agent-1',
+          ticketCount: 5,
+          ticketPrice: '250000.00',
+          agentCommissionAmount: '100000.00',
+          settlementType: AgentSettlementType.CASH_TO_CREW,
+          sourceReference: 'MNF-LBB-05',
+        },
+        'admin-user-1',
+      );
+
+      expect(agentRepo.findOne).toHaveBeenCalledWith({ where: { id: 'agent-1' } });
+      expect(postingService.postJournal).toHaveBeenCalled();
+      expect(revRepo.save).toHaveBeenCalled();
       expect(result).toBeDefined();
     });
   });

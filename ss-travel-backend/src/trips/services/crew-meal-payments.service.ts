@@ -17,6 +17,8 @@ import {
 import {
   CreateCrewMealPaymentDto,
   DisburseEarlyMealPaymentDto,
+  AddPerpalPaymentDto,
+  ClaimFullSeatBonusDto,
 } from '../../@dto/trips/crew-meal-payment.dto';
 import { MoneyHelper } from '../../@common/helpers/money.helper';
 
@@ -188,6 +190,105 @@ export class CrewMealPaymentsService {
           });
           await this.paymentRepo.save(incPay);
         }
+      }
+    }
+
+    return this.findBySpjId(spjId);
+  }
+
+  /**
+   * Menambahkan Uang Perpal Kru (Uang Makan Tambahan Menginap di Terminal / Luar Kota)
+   */
+  async addPerpalPayment(
+    spjId: string,
+    dto: AddPerpalPaymentDto,
+    userId: string,
+  ): Promise<CrewMealPaymentEntity[]> {
+    const spj = await this.spjRepo.findOne({
+      where: { id: spjId },
+      relations: ['crewAssignments'],
+    });
+
+    if (!spj) {
+      throw new NotFoundException(`SPJ ID '${spjId}' tidak ditemukan.`);
+    }
+
+    const days = Math.max(1, Number(dto.daysCount) || 1);
+    const ratePerDay = MoneyHelper.toAmount(dto.amountPerPersonPerDay);
+    const totalAmountPerPerson = MoneyHelper.mul(ratePerDay, days);
+
+    for (const assignmentId of dto.crewAssignmentIds) {
+      const assignment = spj.crewAssignments?.find((c) => c.id === assignmentId);
+      if (!assignment || !assignment.crewId) continue;
+
+      const perpalPayment = this.paymentRepo.create({
+        companyId: spj.companyId,
+        spjId,
+        crewAssignmentId: assignment.id,
+        crewId: assignment.crewId,
+        paymentCategory: CrewMealPaymentCategory.PERPAL_ALLOWANCE,
+        amount: totalAmountPerPerson,
+        payoutTiming: dto.payoutTiming || CrewPayoutTiming.AT_SETTLEMENT,
+        status: CrewMealPaymentStatus.PENDING,
+        notes: `Uang Perpal (${days} Hari di ${dto.terminalLocation || 'Terminal'})${dto.notes ? ' - ' + dto.notes : ''}`,
+      });
+
+      await this.paymentRepo.save(perpalPayment);
+    }
+
+    return this.findBySpjId(spjId);
+  }
+
+  /**
+   * Klaim Bonus Full Seat Kru (Okupansi Penumpang 100%)
+   */
+  async claimFullSeatBonus(
+    spjId: string,
+    dto: ClaimFullSeatBonusDto,
+    userId: string,
+  ): Promise<CrewMealPaymentEntity[]> {
+    const spj = await this.spjRepo.findOne({
+      where: { id: spjId },
+      relations: ['crewAssignments'],
+    });
+
+    if (!spj) {
+      throw new NotFoundException(`SPJ ID '${spjId}' tidak ditemukan.`);
+    }
+
+    const bonusAmount = MoneyHelper.toAmount(dto.bonusAmountPerPerson);
+
+    for (const assignmentId of dto.crewAssignmentIds) {
+      const assignment = spj.crewAssignments?.find((c) => c.id === assignmentId);
+      if (!assignment || !assignment.crewId) continue;
+
+      // Cek apakah sudah pernah ada bonus full seat untuk assignment ini
+      const existing = await this.paymentRepo.findOne({
+        where: {
+          spjId,
+          crewAssignmentId: assignment.id,
+          paymentCategory: CrewMealPaymentCategory.FULL_SEAT_BONUS,
+        },
+      });
+
+      if (existing) {
+        existing.amount = bonusAmount;
+        if (dto.notes) existing.notes = `Bonus Full Seat (100% Okupansi) - ${dto.notes}`;
+        await this.paymentRepo.save(existing);
+      } else {
+        const bonusPay = this.paymentRepo.create({
+          companyId: spj.companyId,
+          spjId,
+          crewAssignmentId: assignment.id,
+          crewId: assignment.crewId,
+          paymentCategory: CrewMealPaymentCategory.FULL_SEAT_BONUS,
+          amount: bonusAmount,
+          payoutTiming: CrewPayoutTiming.AT_SETTLEMENT,
+          status: CrewMealPaymentStatus.PENDING,
+          notes: `Bonus Full Seat (100% Okupansi)${dto.notes ? ' - ' + dto.notes : ''}`,
+        });
+
+        await this.paymentRepo.save(bonusPay);
       }
     }
 

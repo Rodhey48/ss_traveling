@@ -7,10 +7,13 @@ import {
   SpjExpenseEntity,
   SpjUjEntity,
   SpjUjExpenseEntity,
+  SpjLegEntity,
   SpjExpenseType,
   SpjExpensePaymentSource,
   SpjExpenseStatus,
 } from '../../@models/trips';
+import { ApInvoiceLineEntity } from '../../@models/finance/ap-invoice-line.entity';
+import { RestaurantEntity } from '../../@models/master-rules/restaurant.entity';
 
 describe('SpjExpensesService', () => {
   let service: SpjExpensesService;
@@ -19,6 +22,9 @@ describe('SpjExpensesService', () => {
   let ujRepo: any;
   let ujExpenseRepo: any;
   let ujService: any;
+  let legRepo: any;
+  let apInvoiceLineRepo: any;
+  let restaurantRepo: any;
 
   beforeEach(async () => {
     spjRepo = {
@@ -49,6 +55,21 @@ describe('SpjExpensesService', () => {
       getOrCreateUj: jest.fn(),
     };
 
+    legRepo = {
+      findOne: jest.fn(),
+      save: jest.fn((entity) => Promise.resolve(entity)),
+    };
+
+    apInvoiceLineRepo = {
+      find: jest.fn().mockResolvedValue([]),
+    };
+
+    restaurantRepo = {
+      find: jest.fn().mockResolvedValue([
+        { id: 'rm-1', code: 'RM-01', name: 'RM Taman Selera', ratePerPax: 25000 },
+      ]),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SpjExpensesService,
@@ -56,6 +77,9 @@ describe('SpjExpensesService', () => {
         { provide: getRepositoryToken(SpjExpenseEntity), useValue: expenseRepo },
         { provide: getRepositoryToken(SpjUjEntity), useValue: ujRepo },
         { provide: getRepositoryToken(SpjUjExpenseEntity), useValue: ujExpenseRepo },
+        { provide: getRepositoryToken(SpjLegEntity), useValue: legRepo },
+        { provide: getRepositoryToken(ApInvoiceLineEntity), useValue: apInvoiceLineRepo },
+        { provide: getRepositoryToken(RestaurantEntity), useValue: restaurantRepo },
         { provide: SpjUjService, useValue: ujService },
       ],
     }).compile();
@@ -133,6 +157,24 @@ describe('SpjExpensesService', () => {
 
       expect(mockExpense.status).toBe(SpjExpenseStatus.APPROVED);
       expect(expenseRepo.save).toHaveBeenCalled();
+    });
+  });
+
+  describe('getMealServiceStatus', () => {
+    it('harus mengambil status servis makan dan kupon penumpang per leg', async () => {
+      spjRepo.findOne.mockResolvedValue({
+        id: 'spj-1',
+        spjNo: 'SPJ/AKAP/2611/0001',
+        legs: [
+          { id: 'leg-1', origin: 'Jakarta', destination: 'Yogyakarta', passengerCount: 24, mealPaxCount: 22 },
+        ],
+      });
+
+      const result = await service.getMealServiceStatus('spj-1');
+      expect(result).toBeDefined();
+      expect(result.legs.length).toBe(1);
+      expect(result.restaurants.length).toBe(1);
+      expect(result.isBilled).toBe(false);
     });
   });
 });

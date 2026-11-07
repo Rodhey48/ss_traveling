@@ -82,8 +82,8 @@ export class AgentsService {
 
   /**
    * Smart Filter Arah Rute SPJ (Blueprint Addendum v1.7):
-   * - Keberangkatan (Jakarta/Tangerang -> Yogya): Hanya tampil Agen Kota Jakarta/Tangerang + Agen Online/OTA.
-   * - Kepulangan (Yogya -> Jakarta/Tangerang): Hanya tampil Agen Kota Yogyakarta + Agen Online/OTA.
+   * - Keberangkatan Barat -> Timur (Jakarta/Tangerang/Bogor/Bekasi -> Jateng/DIY): Agen Barat + Online OTA
+   * - Kepulangan Timur -> Barat (Yogyakarta/Solo/Klaten/Magelang -> Barat): Agen Timur + Online OTA
    */
   async findAgentsByRoute(origin: string, destination?: string): Promise<AgentEntity[]> {
     const orig = (origin || '').trim().toUpperCase();
@@ -93,12 +93,44 @@ export class AgentsService {
       .leftJoinAndSelect('a.commissionRules', 'rules')
       .where('a.is_active = true');
 
-    if (orig.includes('JAKARTA') || orig.includes('TANGERANG')) {
-      // Leg Keberangkatan Barat -> Timur
-      qb.andWhere("(a.city IN ('JAKARTA', 'TANGERANG', 'ALL') OR a.agent_type = 'ONLINE_OTA')");
-    } else if (orig.includes('YOGYAKARTA') || orig.includes('JOGJA')) {
-      // Leg Kepulangan Timur -> Barat
-      qb.andWhere("(a.city IN ('YOGYAKARTA', 'ALL') OR a.agent_type = 'ONLINE_OTA')");
+    const isWestOrigin =
+      orig.includes('JAKARTA') ||
+      orig.includes('TANGERANG') ||
+      orig.includes('CIPUTAT') ||
+      orig.includes('REMPOA') ||
+      orig.includes('BOGOR') ||
+      orig.includes('BEKASI') ||
+      orig.includes('DEPOK') ||
+      orig.includes('BANTEN') ||
+      orig.includes('LEBAK BULUS') ||
+      orig.includes('PULO GEBANG') ||
+      orig.includes('PORIS');
+
+    const isEastOrigin =
+      orig.includes('YOGYAKARTA') ||
+      orig.includes('JOGJA') ||
+      orig.includes('SLEMAN') ||
+      orig.includes('BANTUL') ||
+      orig.includes('WATES') ||
+      orig.includes('KULON PROGO') ||
+      orig.includes('KLATEN') ||
+      orig.includes('SOLO') ||
+      orig.includes('SURAKARTA') ||
+      orig.includes('MAGELANG') ||
+      orig.includes('MUNTILAN') ||
+      orig.includes('GIWANGAN') ||
+      orig.includes('JOMBOR');
+
+    if (isWestOrigin) {
+      // Keberangkatan Barat (Jabodetabek & Banten)
+      qb.andWhere(
+        "(a.city IN ('JAKARTA', 'TANGERANG', 'SOUTH TANGERANG', 'BOGOR', 'BEKASI', 'DEPOK', 'ALL') OR a.agent_type = 'ONLINE_OTA')",
+      );
+    } else if (isEastOrigin) {
+      // Kepulangan Timur (DIY & Jawa Tengah)
+      qb.andWhere(
+        "(a.city IN ('YOGYAKARTA', 'SLEMAN', 'BANTUL', 'KULON PROGO', 'KLATEN', 'SOLO', 'SURAKARTA', 'MAGELANG', 'ALL') OR a.agent_type = 'ONLINE_OTA')",
+      );
     }
 
     return qb

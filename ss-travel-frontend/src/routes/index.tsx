@@ -17,6 +17,7 @@ import PartnersPage from '@/pages/partners';
 import JournalsPage from '@/pages/journals';
 import SchedulesPage from '@/pages/schedules';
 import SpjsPage from '@/pages/spjs';
+import SpjFinancePage from '@/pages/spjs/finance';
 import CashierPage from '@/pages/cashier';
 import PettyCashPage from '@/pages/petty-cash';
 import TreasuryPage from '@/pages/treasury';
@@ -25,6 +26,8 @@ import ArInvoicesPage from '@/pages/ar-invoices';
 import TripProfitabilityPage from '@/pages/reports/trip-profitability';
 import GeneralLedgerPage from '@/pages/reports/general-ledger';
 import PeriodClosingPage from '@/pages/period-closing';
+import CoordinationFeesPage from '@/pages/finance/coordination-fees';
+import RestaurantSettlementsPage from '@/pages/finance/restaurant-settlements';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import { ProtectedRoute } from './protected-route';
 import { GuestRoute } from './guest-route';
@@ -63,9 +66,14 @@ export default function AppRouter() {
         <Route path="journals" element={<JournalsPage />} />
         <Route path="schedules" element={<SchedulesPage />} />
         <Route path="spjs" element={<SpjsPage />} />
+        <Route path="spjs/:id/finance" element={<SpjFinancePage />} />
         <Route path="cashier" element={<CashierPage />} />
         <Route path="petty-cash" element={<PettyCashPage />} />
         <Route path="treasury" element={<TreasuryPage />} />
+        <Route path="coordination-fees" element={<CoordinationFeesPage />} />
+        <Route path="finance/coordination-fees" element={<CoordinationFeesPage />} />
+        <Route path="restaurant-settlements" element={<RestaurantSettlementsPage />} />
+        <Route path="finance/restaurant-settlements" element={<RestaurantSettlementsPage />} />
         <Route path="ap-invoices" element={<ApInvoicesPage />} />
         <Route path="ar-invoices" element={<ArInvoicesPage />} />
         <Route path="reports/trip-profitability" element={<TripProfitabilityPage />} />

@@ -61,5 +61,11 @@ export * from './cashier/crew-cash-remittance.entity';
 export * from './cashier/crew-cash-remittance-allocation.entity';
 export * from './cashier/crew-cash-discrepancy.entity';
 export * from './finance/cash-transaction.entity';
+export * from './finance/coordination-fee-batch.entity';
+export * from './trips/spj-coordination-fee.entity';
+export * from './finance/restaurant-settlement-batch.entity';
+export * from './trips/spj-meal-record.entity';
+
+
 
 

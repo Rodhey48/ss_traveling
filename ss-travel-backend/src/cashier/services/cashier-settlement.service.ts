@@ -22,6 +22,7 @@ import {
   TripServiceType,
   SpjRevenueDeclarationEntity,
   CrewMealPaymentEntity,
+  CrewMealPaymentCategory,
   CrewMealPaymentStatus,
   SpjExpensePaymentSource,
   CashAccountEntity,
@@ -280,6 +281,9 @@ export class CashierSettlementService {
       id: string;
       type: string;
       amount: number;
+      settlementType?: string;
+      isCashHeldByCrew?: boolean;
+      hasJournal?: boolean;
       sourceReference?: string;
       crewCommissionAmount?: number;
       allocatedAmount: number;
@@ -288,10 +292,16 @@ export class CashierSettlementService {
 
     if (spj.revenueDeclarations && spj.revenueDeclarations.length > 0) {
       for (const rev of spj.revenueDeclarations) {
+        // HANYA jika kru memegang fisik kas tunai (CASH_TO_CREW atau tiket langsung/kargo) yang ditagihkan kasir ke kru!
+        const isCashHeldByCrew =
+          !rev.settlementType || rev.settlementType === 'CASH_TO_CREW';
+
         const revAmount = Number(rev.amount);
-        totalRevenueExpected = Number(
-          MoneyHelper.add(totalRevenueExpected, revAmount),
-        );
+        if (isCashHeldByCrew) {
+          totalRevenueExpected = Number(
+            MoneyHelper.add(totalRevenueExpected, revAmount),
+          );
+        }
 
         // Cari total alokasi dari remittances untuk deklarasi ini
         let allocated = 0;
@@ -311,6 +321,9 @@ export class CashierSettlementService {
           id: rev.id,
           type: rev.declarationType,
           amount: revAmount,
+          settlementType: rev.settlementType,
+          isCashHeldByCrew,
+          hasJournal: !!rev.journalId,
           sourceReference: rev.sourceReference,
           crewCommissionAmount: rev.crewCommissionAmount ? Number(rev.crewCommissionAmount) : 0,
           allocatedAmount: allocated,
@@ -646,6 +659,8 @@ export class CashierSettlementService {
           '41101', // Pendapatan Tiket AKAP
           '43101', // Pendapatan Kargo
           '23101', // Utang Kompensasi Kru
+          '12102', // Piutang Agen Online (OTA)
+          '12103', // Piutang Agen Offline (Loket)
         ]),
       },
     });
@@ -722,6 +737,36 @@ export class CashierSettlementService {
       }
     }
 
+    // Tambahkan Beban Kompensasi Kru yang dibayarkan tunai oleh kasir meja garasi
+    if (MoneyHelper.isGreaterThan(settlement.totalCashPaid, 0) && summary.cashDesk.pendingMealPayments) {
+      for (const pay of summary.cashDesk.pendingMealPayments) {
+        let acc = accountMap.get('53101'); // Default Uang Makan & Perpal Kru
+        if (pay.paymentCategory === CrewMealPaymentCategory.TRIP_INCENTIVE) {
+          acc = accountMap.get('53102') || acc;
+        } else if (pay.paymentCategory === CrewMealPaymentCategory.FULL_SEAT_BONUS) {
+          acc = accountMap.get('53103') || acc;
+        } else if (pay.paymentCategory === CrewMealPaymentCategory.CARGO_COMMISSION) {
+          acc = accountMap.get('53104') || acc;
+        } else if (pay.paymentCategory === CrewMealPaymentCategory.PERPAL_ALLOWANCE) {
+          acc = accountMap.get('53101') || acc;
+        }
+
+        if (acc && MoneyHelper.isGreaterThan(pay.amount, 0)) {
+          lines.push({
+            accountId: acc.id,
+            debit: Number(pay.amount),
+            credit: 0,
+            description: `${acc.name} - ${pay.crew?.name || 'Kru'} (${pay.paymentCategory}) SPJ ${spj.spjNo}`,
+            tripId: spj.id,
+            vehicleId: spj.vehicleId,
+            businessUnitId,
+            profitCenterId,
+            costCenterId,
+          });
+        }
+      }
+    }
+
     // --- SISI KREDIT ---
     if (MoneyHelper.isGreaterThan(settlement.totalUjDisbursed, 0)) {
       lines.push({
@@ -737,27 +782,53 @@ export class CashierSettlementService {
       });
     }
 
-    let totalTiketRev = 0;
+    let totalDirectTiketRev = 0;
+    let totalAgentTiketPiutangSettled = 0;
     let totalKargoRev = 0;
 
     for (const decl of summary.kantong2Revenue.breakdownDeclarations) {
+      if ((decl as any).isCashHeldByCrew === false) {
+        // Uang fisik tidak dipegang kru (sudah transfer bank / tempo AR), tidak disetor kasir
+        continue;
+      }
+
       if (decl.type.includes('CARGO')) {
         totalKargoRev = Number(
           MoneyHelper.add(totalKargoRev, decl.amount),
         );
+      } else if ((decl as any).hasJournal) {
+        // Tiket agen yang sudah terbentuk jurnal piutangnya: Kasir mengkredit Piutang Agen (12103)
+        totalAgentTiketPiutangSettled = Number(
+          MoneyHelper.add(totalAgentTiketPiutangSettled, decl.amount),
+        );
       } else {
-        totalTiketRev = Number(
-          MoneyHelper.add(totalTiketRev, decl.amount),
+        totalDirectTiketRev = Number(
+          MoneyHelper.add(totalDirectTiketRev, decl.amount),
         );
       }
     }
 
-    if (tiketAcc && MoneyHelper.isGreaterThan(totalTiketRev, 0)) {
+    if (tiketAcc && MoneyHelper.isGreaterThan(totalDirectTiketRev, 0)) {
       lines.push({
         accountId: tiketAcc.id,
         debit: 0,
-        credit: totalTiketRev,
+        credit: totalDirectTiketRev,
         description: `Pendapatan tiket kas tunai perjalanan SPJ ${spj.spjNo}`,
+        tripId: spj.id,
+        vehicleId: spj.vehicleId,
+        businessUnitId,
+        profitCenterId,
+        costCenterId,
+      });
+    }
+
+    const piutangAgenOfflineAcc = accountMap.get('12103');
+    if (piutangAgenOfflineAcc && MoneyHelper.isGreaterThan(totalAgentTiketPiutangSettled, 0)) {
+      lines.push({
+        accountId: piutangAgenOfflineAcc.id,
+        debit: 0,
+        credit: totalAgentTiketPiutangSettled,
+        description: `Pelunasan setoran kas tiket agen offline SPJ ${spj.spjNo}`,
         tripId: spj.id,
         vehicleId: spj.vehicleId,
         businessUnitId,

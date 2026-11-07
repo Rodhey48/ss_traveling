@@ -11,6 +11,10 @@ import { SpjEntity } from './spj.entity';
 import { SpjLegEntity } from './spj-leg.entity';
 import { UsersEntity } from '../user/user.entity';
 import { CrewCashRemittanceAllocationEntity } from '../cashier/crew-cash-remittance-allocation.entity';
+import { AgentEntity, AgentSettlementType } from '../master-rules/agent.entity';
+import { SeatClassEntity } from '../fleet/seat-class.entity';
+import { BankAccountEntity } from '../finance/bank-account.entity';
+import { JournalEntryEntity } from '../finance/journal-entry.entity';
 import {
   SpjRevenueDeclarationType,
   SpjRevenueDeclarationStatus,
@@ -145,6 +149,65 @@ export class SpjRevenueDeclarationEntity extends BaseEntity {
     name: 'cargo_item_description',
   })
   cargoItemDescription?: string;
+
+  // --- ATRIBUT PENJUALAN TIKET AGENT & KOMISI (Addendum v1.7 & Skenario 1) ---
+  @Column({ type: 'uuid', name: 'agent_id', nullable: true })
+  agentId?: string;
+
+  @ManyToOne(() => AgentEntity, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'agent_id' })
+  agent?: AgentEntity;
+
+  @Column({ type: 'uuid', name: 'seat_class_id', nullable: true })
+  seatClassId?: string;
+
+  @ManyToOne(() => SeatClassEntity, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'seat_class_id' })
+  seatClass?: SeatClassEntity;
+
+  @Column({ type: 'int', nullable: true, name: 'ticket_count' })
+  ticketCount?: number;
+
+  @Column({
+    type: 'numeric',
+    precision: 20,
+    scale: 2,
+    nullable: true,
+    name: 'ticket_price',
+  })
+  ticketPrice?: string;
+
+  @Column({
+    type: 'numeric',
+    precision: 20,
+    scale: 2,
+    nullable: true,
+    default: '0.00',
+    name: 'agent_commission_amount',
+  })
+  agentCommissionAmount?: string;
+
+  @Column({
+    type: 'enum',
+    enum: AgentSettlementType,
+    nullable: true,
+    name: 'settlement_type',
+  })
+  settlementType?: AgentSettlementType;
+
+  @Column({ type: 'uuid', name: 'bank_account_id', nullable: true })
+  bankAccountId?: string;
+
+  @ManyToOne(() => BankAccountEntity, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'bank_account_id' })
+  bankAccount?: BankAccountEntity;
+
+  @Column({ type: 'uuid', name: 'journal_id', nullable: true })
+  journalId?: string;
+
+  @ManyToOne(() => JournalEntryEntity, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'journal_id' })
+  journal?: JournalEntryEntity;
 
   @Column({
     type: 'enum',

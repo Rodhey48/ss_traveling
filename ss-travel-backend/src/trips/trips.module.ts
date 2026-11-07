@@ -22,6 +22,11 @@ import { ProfitCenterEntity } from '../@models/organization/profit-center.entity
 import { CostCenterEntity } from '../@models/organization/cost-center.entity';
 import { CashAccountEntity } from '../@models/finance/cash-account.entity';
 import { BankAccountEntity } from '../@models/finance/bank-account.entity';
+import { AccountEntity } from '../@models/finance/account.entity';
+import { AgentEntity } from '../@models/master-rules/agent.entity';
+import { SeatClassEntity } from '../@models/fleet/seat-class.entity';
+import { ApInvoiceLineEntity } from '../@models/finance/ap-invoice-line.entity';
+import { RestaurantEntity } from '../@models/master-rules/restaurant.entity';
 
 import { FinanceModule } from '../finance/finance.module';
 import { MasterRulesModule } from '../master-rules/master-rules.module';
@@ -59,6 +64,11 @@ import { JWTService } from '../@services/jwt/jwt.service';
       CostCenterEntity,
       CashAccountEntity,
       BankAccountEntity,
+      AccountEntity,
+      AgentEntity,
+      SeatClassEntity,
+      ApInvoiceLineEntity,
+      RestaurantEntity,
     ]),
     FinanceModule,
     MasterRulesModule,

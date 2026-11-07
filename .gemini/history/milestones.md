@@ -2,6 +2,78 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-11-07: Implementasi Uang Perpal Kru, Bonus Full Seat, Uang Koordinasi Lapangan, & Pembayaran Restoran Mitra Gelondongan Completed
+- **Struktur 6 Bagian Bersusun Halaman Mandiri Keuangan SPJ (`/spjs/:id/finance`)**:
+  - Penataan ulang hierarki 1 Card Induk menjadi 6 bagian berurutan tanpa tab dengan ringkasan total metrik dinamis di setiap header bagian:
+    1. **Bagian 1 (Amplop Uang Jalan UJ & Pengembalian Kasir)**: Plafon UJ, pencairan multi-line garasi, pengembalian kas supir, dan rollover estafet breakdown.
+    2. **Bagian 2 (Biaya Operasional SPJ)**: Pengeluaran nota fisik BBM solar (liter + odometer KM), tol Trans-Jawa, retribusi terminal, dan parkir.
+    3. **Bagian 3 (Deklarasi Kas & Penjualan Tiket Mitra Agen)**: Penjualan tiket loket agen (100% Bruto, kalkulasi komisi otomatis, preview jurnal akuntansi), tiket langsung, dan titipan kargo motor/paket kardus.
+    4. **Bagian 4 (Tagihan Servis Makan Restoran Mitra)**: Pemilihan restoran singgah, kupon riil pax fleksibel editable, snapshot tarif per pax dengan edit manual, akrual Beban 51102 vs Utang 21101, status transfer gelondongan, dan tombol hapus kupon.
+    5. **Bagian 5 (Beban Koordinasi Lapangan & Pengurus Jalur)**: Snapshot tarif tiket terjual per leg, matching principle Beban 52105 vs Utang 22102, filter ketat zona Barat/Timur tanpa kebocoran leg 0-tiket, tombol sinkronisasi, tautan kelola gelondongan, dan tombol hapus.
+    6. **Bagian 6 (Hak Kompensasi Kru & Early Payout)**: Uang makan supir, uang perpal menginap di terminal, premi ritase supir, bonus full seat 100%, komisi kargo dinamis, transfer early di jalan via bank.
+- **Kompensasi Kru Khusus Operasional Lapangan**:
+  - **Uang Perpal Kru (`PERPAL_ALLOWANCE`)**: Kompensasi uang makan tambahan & biaya tunggu saat bus menginap 1 hari atau lebih di terminal tujuan (tidak langsung PP). Input hari, lokasi terminal, nominal harian per kru, checklist personil, dan opsi transfer langsung di jalan (*early payout*) vs kasir pool.
+  - **Bonus Full Seat Kru (`FULL_SEAT_BONUS`)**: Apresiasi load factor 100% penuh. Live counter kapasitas armada bus vs total tiket terjual, nominal bonus per orang, dan checklist kru penerima.
+  - **Fleksibilitas Komisi Kru Kargo**: Sinkronisasi dua arah real-time persentase (`%`) $\leftrightarrow$ nominal rupiah (`Rp`), tombol cepat preset (10%, 15%, 20%, 25%, 30%), kalkulasi net kas kantor, dropdown personil supir penerima komisi, serta auto-muncul di Bagian 6.
+  - **Sinkronisasi Kasir Garasi**: `CashierSettlementService` mendebet langsung akun beban yang tepat (`53101`, `53102`, `53103`, `53104`) saat kasir membayar kompensasi tunai di meja kasir sehingga jurnal kasir seimbang 100%.
+- **Modul Uang Koordinasi Lapangan Berbasis Tiket Terjual (`/finance/coordination-fees`)**:
+  - Akun COA resmi: `52105 — Beban Koordinasi Lapangan & Pengurus Jalur` (Beban) dan `22102 — Utang Jasa Koordinator Lapangan (Barat & Timur)` (Utang).
+  - Perhitungan snapshot otomatis: `Tiket Terjual x Tarif per Pax (Rp 10.000)`.
+  - Filter ketat per leg/zona: Tiket Jakarta/Barat hanya memberi hak fee ke Koordinator Barat. Leg dengan 0 tiket dilewati dan tidak menghasilkan fee ke Koordinator Timur.
+  - Halaman mandiri `/finance/coordination-fees` (urutan ke-3 di grup menu Keuangan):
+    - Tab 1: Tagihan Siap Bayar Gelondongan (*Multi-select checklist SPJ, sticky summary bar, modal eksekusi bulk transfer bank*).
+    - Tab 2: Riwayat Pembayaran Gelondongan (*Detail batch & tombol Salin Format Teks WhatsApp siap kirim ke koordinator*).
+    - Tab 3: Pengaturan Tarif & Koordinator (*Master rules per zona Barat & Timur*).
+- **Modul Pembayaran Servis Makan Restoran Mitra Gelondongan (`/finance/restaurant-settlements`)**:
+  - Pola gelondongan identik untuk tagihan kupon makan penumpang bus AKAP:
+    - Akun COA: `51102 — Beban Servis Makan Penumpang` vs `21101 — Utang Usaha Vendor Restoran Mitra`.
+    - Akrual otomatis di SPJ dan pelunasan utang via mutasi transfer bank kantor pusat.
+  - Halaman mandiri `/finance/restaurant-settlements` (urutan ke-4 di grup menu Keuangan):
+    - Tab 1: Tagihan Restoran Siap Bayar Gelondongan (*Filter per restoran, multi-select checklist SPJ, sticky summary bar, modal eksekusi bulk transfer bank*).
+    - Tab 2: Riwayat Pembayaran Gelondongan (*Detail batch & tombol Salin Format Teks WhatsApp rincian kupon per SPJ ke pemilik rumah makan*).
+    - Tab 3: Daftar Restoran Mitra Resmi (*Profil alamat, kota, tarif per pax, dan rekening bank*).
+- **Fitur Reversal Jurnal Otomatis & Hapus Record Manual**:
+  - Setiap penghapusan kewajiban koordinasi atau servis makan secara manual (atau via tombol sinkronisasi) otomatis mengeksekusi *journal reversal* via `JournalReversalService` agar buku besar bebas dari utang siluman.
+- **Kualitas & Verifikasi Lengkap**:
+  - Seluruh 35 unit test suites backend (264 unit tests total) lulus 100%.
+  - Backend NestJS build `yarn build` sukses 100%.
+  - Frontend Vite React build `yarn build` sukses 100% (`✓ built in 1.25s`).
+  - 6 migrasi database TypeORM sukses dieksekusi di database PostgreSQL.
+
+### 2026-11-07: Implementasi Halaman Mandiri /spjs/:id/finance & Otomasi Penjualan Tiket Agen dengan Jurnal Akuntansi Completed
+- **Halaman Mandiri Full-Page Keuangan SPJ (`/spjs/:id/finance`)**:
+  - Transformasi `SpjFinanceModal` menjadi halaman mandiri full-page bersusun tanpa tab, menyajikan seluruh informasi keuangan SPJ dalam 1 halaman:
+    1. **Executive KPI Header Bar**: Kartu metrik live (Total UJ Dicairkan, Terpakai di Jalan, Sisa Saldo UJ Kru, Bruto Tiket & Kargo, Hak Kompensasi Kru) dengan Glassmorphism.
+    2. **Section 1 (Amplop Uang Jalan UJ)**: Riwayat pencairan bertahap multi-line, riwayat pengembalian fisik sisa kas supir, permintaan tambahan UJ di jalan, dan tombol aksi rollover estafet UJ (Skenario 3 Breakdown).
+    3. **Section 2 (Biaya Operasional SPJ)**: Pengeluaran nota fisik BBM solar (liter + odometer KM + SPBU), tol Trans-Jawa, retribusi terminal, dan servis makan penumpang.
+    4. **Section 3 (Penerimaan Kas & Penjualan Tiket Agen)**: Deklarasi kas langsung tiket/kargo bagasi dan integrasi tiket agen.
+    5. **Section 4 (Hak Kompensasi Kru & Early Payout)**: Uang makan supir, premi ritase, bonus full-seat 100%, komisi kargo bagasi, dan transfer nafkah keluarga kru di jalan (Skenario 2).
+  - Navigasi mulus via tombol `[💰 Keuangan & UJ]` pada daftar tabel `/spjs` dan `SpjDetailModal`.
+- **Integrasi Penjualan Tiket Agen & Otomasi Jurnal (Blueprint Skenario 1 & Addendum v1.7)**:
+  - **Form Cerdas Penjualan Tiket Agen (`Dialog A`)**:
+    - *Smart Route Filter*: Otomatis menyaring mitra agen terminal/loket fisik atau OTA yang searah dengan rute/leg perjalanan SPJ.
+    - Pilihan kelas kursi (*Sleeper*, *Luxury Seat 2-1*, *Executive*), jumlah tiket (Pax), harga tiket satuan, dan total omzet kotor (Bruto).
+    - Kalkulasi otomatis hak komisi agen via `AgentService.calculateCommission()` atau aturan master `agent_commission_rules`.
+    - Pilihan metode setoran: `CASH_TO_CREW` (titip tunai ke kru), `BANK_TRANSFER` (transfer ke rekening bank perusahaan), atau `CASH_TO_OFFICE` / `AR_INVOICE` (tempo).
+  - **Modal Konfirmasi & Preview Jurnal Akuntansi (`Dialog B`)**:
+    - Menampilkan simulasi mutasi Debit/Kredit sebelum penyimpanan permanen ke buku besar:
+      - `(D) 12103` Piutang Agen Penjualan Tiket Offline / `(D) 12102` Online OTA [Bruto]
+      - `(D) 54101` Beban Komisi Agen Penjualan Tiket [Hak Komisi]
+      - `(K) 41101` Pendapatan Tiket AKAP Reguler [Bruto]
+      - `(K) 22101` Utang Komisi Agen Penjualan Tiket [Hak Komisi]
+      - *(Jika BANK_TRANSFER)*: `(D) 11121` Bank Perusahaan vs `(K) 12103` Piutang Agen.
+- **Backend Architecture & Migration**:
+  - Migrasi `1782900000000-add-agent-ticket-sales-to-spj-revenue.ts`: Kolom `agent_id`, `seat_class_id`, `ticket_count`, `ticket_price`, `agent_commission_amount`, `settlement_type`, `bank_account_id`, `journal_id` pada `spj_revenue_declarations`.
+  - Migrasi `1783000000000-seed-additional-network-agents.ts`: Penambahan 15 mitra agen jaringan riil (Lebak Bulus, Kalideres, Kampung Rambutan, Grogol, Bekasi, Bogor, Poris, Klaten, Solo, Kartasura, Wates, Prambanan, Muntilan, Tiket.com) dan aturan komisi kelas kursi lengkap (total 21 agen di DB).
+  - Penambahan tipe `TICKET_AGENT` pada enum `SpjRevenueDeclarationType`.
+  - Integrasi `AccountingPostingService` pada `SpjRevenueService.create()`: Otomatis memposting jurnal pengakuan piutang, pendapatan tiket bruto, beban komisi, dan utang komisi agen secara atomik.
+  - Penyesuaian `CashierSettlementService`: Kasir pool hanya menagih fisik kas kru untuk tiket yang `CASH_TO_CREW`, dan mengkredit `Piutang Agen (12103)` (bukan double-counting pendapatan) saat settlement kasir.
+  - **Integrasi Servis Kupon Makan Restoran Mitra (AP Vendor & Penagihan Berkala)**:
+    - Endpoint `GET /api/v1/spjs/:id/meal-service` dan `PUT /api/v1/spjs/:id/legs/:legId/meal-service` di `SpjFinanceController`.
+    - Integrasi status penagihan invoice vendor restoran mitra (`ap_invoice_lines`) langsung ke dokumen SPJ terkait.
+    - Sub-bagian visual interaktif pada Bagian 2 (Biaya Operasional) di `/spjs/:id/finance` untuk mencatat kupon riil penumpang per leg, catatan selisih (pax tidur/puasa), estimasi tagihan (@ Rp 25.000), serta status invoice AP (`🟡 Menunggu Tagihan Vendor` vs `🟢 Ditagihkan pada AP Bill #xxx`).
+  - Seluruh 33 test suites (255 tests) backend lulus 100% dan frontend Vite build lulus 100%.
+
 ### 2026-11-06: Penyempurnaan Standar Produksi Halaman /menu-management (Hirarki Menu Navigasi, Routing & ACL RBAC) Completed
 - **Integrasi Statistik KPI Header Dinamis Real-Time**:
   - 4 Kartu Metrik Header dengan desain Glassmorphism dan border aksen warna tematik:

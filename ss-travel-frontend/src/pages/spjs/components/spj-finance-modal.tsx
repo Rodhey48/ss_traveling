@@ -148,6 +148,8 @@ export default function SpjFinanceModal({
   const [revAmount, setRevAmount] = useState('');
   const [revRef, setRevRef] = useState('');
   const [revCargoCommissionPct, setRevCargoCommissionPct] = useState('20.00');
+  const [revCargoCommissionAmount, setRevCargoCommissionAmount] = useState('70000');
+  const [revRecipientCrewAssignmentId, setRevRecipientCrewAssignmentId] = useState('');
   const [revSenderName, setRevSenderName] = useState('');
   const [revSenderPhone, setRevSenderPhone] = useState('');
   const [revReceiverName, setRevReceiverName] = useState('');
@@ -417,6 +419,8 @@ export default function SpjFinanceModal({
         amount: cleanDots(revAmount),
         sourceReference: revRef,
         crewCommissionPercentage: isCargo ? revCargoCommissionPct : '0.00',
+        crewCommissionAmount: isCargo ? cleanDots(revCargoCommissionAmount) : '0.00',
+        recipientCrewAssignmentId: isCargo && revRecipientCrewAssignmentId ? revRecipientCrewAssignmentId : undefined,
         cargoSenderName: isCargo ? revSenderName : undefined,
         cargoSenderPhone: isCargo ? revSenderPhone : undefined,
         cargoReceiverName: isCargo ? revReceiverName : undefined,
@@ -566,34 +570,34 @@ export default function SpjFinanceModal({
               value={activeTab}
               onValueChange={(val: any) => setActiveTab(val)}
             >
-              <TabsList className="grid grid-cols-4 w-full h-10 p-1 bg-muted/50 rounded-lg border border-border/40">
+              <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full h-auto sm:h-11 p-1.5 bg-muted/70 dark:bg-zinc-900/80 rounded-xl border border-border/50 gap-1.5 shadow-2xs">
                 <TabsTrigger
                   value="uj"
-                  className="flex items-center gap-2 text-xs font-semibold data-[state=active]:bg-background data-[state=active]:shadow-xs"
+                  className="flex items-center justify-center gap-2 py-2 sm:py-1.5 text-xs font-semibold data-[state=active]:[&>svg]:text-white"
                 >
-                  <Wallet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  1. Uang Jalan (UJ)
+                  <Wallet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 transition-colors shrink-0" />
+                  <span>1. Uang Jalan (UJ)</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="expenses"
-                  className="flex items-center gap-2 text-xs font-semibold data-[state=active]:bg-background data-[state=active]:shadow-xs"
+                  className="flex items-center justify-center gap-2 py-2 sm:py-1.5 text-xs font-semibold data-[state=active]:[&>svg]:text-white"
                 >
-                  <Receipt className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                  2. Biaya SPJ ({expenses.length})
+                  <Receipt className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 transition-colors shrink-0" />
+                  <span>2. Biaya SPJ ({expenses.length})</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="revenues"
-                  className="flex items-center gap-2 text-xs font-semibold data-[state=active]:bg-background data-[state=active]:shadow-xs"
+                  className="flex items-center justify-center gap-2 py-2 sm:py-1.5 text-xs font-semibold data-[state=active]:[&>svg]:text-white"
                 >
-                  <Coins className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                  3. Deklarasi Kas ({revenues.length})
+                  <Coins className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 transition-colors shrink-0" />
+                  <span>3. Deklarasi Kas ({revenues.length})</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="crew_payments"
-                  className="flex items-center gap-2 text-xs font-semibold data-[state=active]:bg-background data-[state=active]:shadow-xs"
+                  className="flex items-center justify-center gap-2 py-2 sm:py-1.5 text-xs font-semibold data-[state=active]:[&>svg]:text-white"
                 >
-                  <CreditCard className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                  4. Hak Kru ({crewPayments.length})
+                  <CreditCard className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 transition-colors shrink-0" />
+                  <span>4. Hak Kru ({crewPayments.length})</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -2152,9 +2156,13 @@ export default function SpjFinanceModal({
                   type="text"
                   inputMode="numeric"
                   value={revAmount}
-                  onChange={(e) =>
-                    setRevAmount(formatNumberWithDots(e.target.value))
-                  }
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    setRevAmount(formatNumberWithDots(raw));
+                    const gross = Number(cleanDots(raw)) || 0;
+                    const comm = (gross * (Number(revCargoCommissionPct) || 0)) / 100;
+                    setRevCargoCommissionAmount(String(Math.round(comm)));
+                  }}
                   placeholder="0"
                   className="pl-9 h-9 text-xs font-mono font-semibold"
                   required
@@ -2162,38 +2170,134 @@ export default function SpjFinanceModal({
               </div>
             </div>
 
-            {/* Slider Komisi Dinamis Kru Kargo (Addendum v1.9) */}
+            {/* Slider & Nominal Komisi Dinamis Kru Kargo (Addendum v1.9) */}
             {(revType === 'CARGO_MOTORCYCLE' || revType === 'CARGO_BOX') && (
-              <div className="p-3 bg-muted/25 border border-border/60 rounded-lg space-y-2.5">
+              <div className="p-3.5 bg-slate-50 dark:bg-zinc-900/40 border border-slate-200/80 dark:border-white/10 rounded-xl space-y-3">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-foreground">
-                    Hak Komisi Kru Kargo:
+                  <span className="font-semibold text-foreground flex items-center gap-1.5">
+                    <Coins className="w-3.5 h-3.5 text-amber-600" />
+                    Pengaturan Hak Komisi Kru Kargo:
                   </span>
-                  <span className="font-mono font-bold text-foreground">
-                    {revCargoCommissionPct}% (
-                    {formatRupiah(
-                      (Number(cleanDots(revAmount) || 0) *
-                        Number(revCargoCommissionPct)) /
-                        100,
-                    )}
-                    )
+                  <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
+                    {formatRupiah(cleanDots(revCargoCommissionAmount))} ({Number(revCargoCommissionPct || 0).toFixed(2)}%)
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  {['15.00', '20.00', '25.00'].map((pct) => (
-                    <Button
-                      key={pct}
-                      type="button"
-                      size="sm"
-                      variant={
-                        revCargoCommissionPct === pct ? 'default' : 'outline'
-                      }
-                      onClick={() => setRevCargoCommissionPct(pct)}
-                      className="h-7 text-xs font-mono flex-1"
-                    >
-                      {pct}%
-                    </Button>
-                  ))}
+
+                {/* Dropdown Pemilihan Personil Kru Penerima Komisi */}
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-semibold text-foreground">
+                    Personil Kru Penerima Hak Komisi <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={revRecipientCrewAssignmentId}
+                    onValueChange={setRevRecipientCrewAssignmentId}
+                  >
+                    <SelectTrigger className="h-8 text-xs font-normal">
+                      <SelectValue placeholder="Pilih Personil Kru Penerima Komisi" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {spj.crewAssignments && spj.crewAssignments.length > 0 ? (
+                        spj.crewAssignments.map((c) => (
+                          <SelectItem key={c.id} value={c.id} className="text-xs font-normal">
+                            👤 {c.crew?.name || 'Kru'} ({c.role})
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="none" disabled className="text-xs font-normal">
+                          Belum ada kru di SPJ ini
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Preset Chips Cepat */}
+                <div className="space-y-1">
+                  <span className="text-[10px] text-muted-foreground font-medium">Pilihan Cepat Persentase:</span>
+                  <div className="flex items-center gap-1.5">
+                    {['10.00', '15.00', '20.00', '25.00', '30.00'].map((pct) => (
+                      <Button
+                        key={pct}
+                        type="button"
+                        size="sm"
+                        variant={Number(revCargoCommissionPct).toFixed(2) === pct ? 'default' : 'outline'}
+                        onClick={() => {
+                          setRevCargoCommissionPct(pct);
+                          const gross = Number(cleanDots(revAmount)) || 0;
+                          const comm = (gross * Number(pct)) / 100;
+                          setRevCargoCommissionAmount(String(Math.round(comm)));
+                        }}
+                        className={`h-6 text-[11px] font-mono flex-1 px-1.5 ${
+                          Number(revCargoCommissionPct).toFixed(2) === pct
+                            ? 'bg-amber-600 hover:bg-amber-700 text-white font-bold'
+                            : 'border-slate-300 dark:border-zinc-700'
+                        }`}
+                      >
+                        {Number(pct)}%
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Dua Input Dua Arah yang Fleksibel (Persen & Rupiah) */}
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div className="space-y-1">
+                    <Label className="text-[11px] font-semibold text-foreground">
+                      Kustom Persentase (%)
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={revCargoCommissionPct}
+                        onChange={(e) => {
+                          const pct = e.target.value;
+                          setRevCargoCommissionPct(pct);
+                          const gross = Number(cleanDots(revAmount)) || 0;
+                          const comm = (gross * (Number(pct) || 0)) / 100;
+                          setRevCargoCommissionAmount(String(Math.round(comm)));
+                        }}
+                        placeholder="20.00"
+                        className="h-8 text-xs font-mono font-bold pr-7"
+                      />
+                      <span className="absolute right-2.5 top-2 text-xs font-bold text-muted-foreground select-none">%</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-[11px] font-semibold text-foreground">
+                      Atau Nominal Rupiah Langsung (Rp)
+                    </Label>
+                    <div className="relative">
+                      <span className="absolute left-2.5 top-2 text-xs font-semibold text-muted-foreground select-none">Rp</span>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        value={formatNumberWithDots(revCargoCommissionAmount)}
+                        onChange={(e) => {
+                          const rawNominal = cleanDots(e.target.value);
+                          setRevCargoCommissionAmount(rawNominal);
+                          const gross = Number(cleanDots(revAmount)) || 0;
+                          if (gross > 0) {
+                            const calculatedPct = ((Number(rawNominal) || 0) / gross) * 100;
+                            setRevCargoCommissionPct(calculatedPct.toFixed(2));
+                          }
+                        }}
+                        placeholder="0"
+                        className="pl-8 h-8 text-xs font-mono font-bold text-amber-600 dark:text-amber-400"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rincian Bersih Setoran ke Kasir Pool */}
+                <div className="flex items-center justify-between p-2 bg-muted/40 rounded-lg text-[11px] border border-border/50">
+                  <span className="text-muted-foreground">Net Setoran Bersih ke Kantor (Kantong 2):</span>
+                  <span className="font-mono font-bold text-foreground">
+                    {formatRupiah((Number(cleanDots(revAmount)) || 0) - (Number(cleanDots(revCargoCommissionAmount)) || 0))}
+                  </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 pt-1 text-xs">

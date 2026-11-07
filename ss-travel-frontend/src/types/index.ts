@@ -705,6 +705,9 @@ export interface Restaurant {
   ratePerPax: number;
   settlementType: RestaurantSettlementType;
   contactPerson?: string;
+  bankName?: string;
+  bankAccountNumber?: string;
+  bankAccountName?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -1131,6 +1134,7 @@ export type SpjAdditionalRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 export type SpjRevenueDeclarationType =
   | 'TICKET_CASH'
   | 'AGENT_DEPOSIT'
+  | 'TICKET_AGENT'
   | 'CARGO_MOTORCYCLE'
   | 'CARGO_BOX'
   | 'CHARTER_CASH';
@@ -1141,7 +1145,8 @@ export type CrewMealPaymentCategory =
   | 'MEAL_ALLOWANCE'
   | 'TRIP_INCENTIVE'
   | 'FULL_SEAT_BONUS'
-  | 'CARGO_COMMISSION';
+  | 'CARGO_COMMISSION'
+  | 'PERPAL_ALLOWANCE';
 
 export type CrewMealPaymentStatus = 'PENDING' | 'PAID' | 'CANCELLED';
 
@@ -1279,6 +1284,18 @@ export interface SpjRevenueDeclaration {
   cargoReceiverName?: string;
   cargoReceiverPhone?: string;
   cargoItemDescription?: string;
+  agentId?: string;
+  agent?: Agent;
+  seatClassId?: string;
+  seatClass?: SeatClass;
+  ticketCount?: number;
+  ticketPrice?: string;
+  agentCommissionAmount?: string;
+  settlementType?: AgentSettlementType;
+  bankAccountId?: string;
+  bankAccount?: BankAccount;
+  journalId?: string;
+  journal?: JournalEntry;
   status: SpjRevenueDeclarationStatus;
   verifiedBy?: string;
   verifier?: User;
@@ -1370,11 +1387,20 @@ export interface CreateSpjRevenueDeclarationFormData {
   amount: string;
   sourceReference?: string;
   crewCommissionPercentage?: string;
+  crewCommissionAmount?: string;
+  recipientCrewAssignmentId?: string;
   cargoSenderName?: string;
   cargoSenderPhone?: string;
   cargoReceiverName?: string;
   cargoReceiverPhone?: string;
   cargoItemDescription?: string;
+  agentId?: string;
+  seatClassId?: string;
+  ticketCount?: number;
+  ticketPrice?: string;
+  agentCommissionAmount?: string;
+  settlementType?: AgentSettlementType;
+  bankAccountId?: string;
   notes?: string;
 }
 
@@ -1383,6 +1409,140 @@ export interface DisburseEarlyMealPaymentFormData {
   bankAccountId?: string;
   cashAccountId?: string;
   receiptRef?: string;
+  notes?: string;
+}
+
+/**
+ * --- UANG KOORDINASI LAPANGAN (ZONA BARAT & TIMUR) ---
+ */
+export type SpjCoordinationFeeStatus = 'UNPAID' | 'PENDING_BATCH' | 'PAID';
+export type CoordinationFeeBatchStatus = 'DRAFT' | 'COMPLETED' | 'CANCELLED';
+
+export interface SpjCoordinationFee {
+  id: string;
+  spjId: string;
+  spj?: Spj;
+  spjLegId?: string;
+  spjLeg?: SpjLeg;
+  zone: CoordinatorZone;
+  ticketCount: number;
+  feePerPax: number;
+  totalFee: number;
+  coordinatorUserId?: string;
+  coordinatorUser?: User;
+  status: SpjCoordinationFeeStatus;
+  settlementBatchId?: string;
+  settlementBatch?: CoordinationFeeBatch;
+  journalId?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CoordinationFeeBatch {
+  id: string;
+  batchNo: string;
+  zone: CoordinatorZone;
+  coordinatorUserId?: string;
+  coordinatorUser?: User;
+  coordinatorName?: string;
+  totalSpjs: number;
+  totalTickets: number;
+  totalAmount: number;
+  paymentDate: string;
+  bankAccountId?: string;
+  bankAccount?: CashAccount;
+  referenceNumber?: string;
+  receiptUrl?: string;
+  journalId?: string;
+  status: CoordinationFeeBatchStatus;
+  notes?: string;
+  createdById?: string;
+  createdBy?: User;
+  items?: SpjCoordinationFee[];
+  whatsappRemittanceText?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CoordinatorFeeRule {
+  id: string;
+  zone: CoordinatorZone;
+  feePerPax: number;
+  effectiveFrom: string;
+  effectiveUntil?: string;
+  coordinatorUserId?: string;
+  coordinatorUser?: User;
+}
+
+export interface CreateCoordinationFeeBatchFormData {
+  zone: CoordinatorZone;
+  spjCoordinationFeeIds: string[];
+  paymentDate: string;
+  bankAccountId: string;
+  referenceNumber?: string;
+  receiptUrl?: string;
+  notes?: string;
+}
+
+/**
+ * --- TAGIHAN SERVIS MAKAN RESTORAN MITRA (GELONDONGAN) ---
+ */
+export type SpjMealRecordStatus = 'UNPAID' | 'PENDING_BATCH' | 'PAID';
+
+export interface SpjMealRecord {
+  id: string;
+  spjId: string;
+  spj?: Spj;
+  spjLegId?: string;
+  spjLeg?: SpjLeg;
+  restaurantId: string;
+  restaurant?: Restaurant;
+  manifestPax: number;
+  actualPax: number;
+  ratePerPax: number;
+  totalAmount: number;
+  status: SpjMealRecordStatus;
+  settlementBatchId?: string;
+  settlementBatch?: RestaurantSettlementBatch;
+  journalId?: string;
+  discrepancyNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RestaurantSettlementBatch {
+  id: string;
+  batchNo: string;
+  restaurantId: string;
+  restaurant?: Restaurant;
+  restaurantName?: string;
+  totalSpjs: number;
+  totalCoupons: number;
+  totalAmount: number;
+  paymentDate: string;
+  bankAccountId?: string;
+  bankAccount?: CashAccount;
+  referenceNumber?: string;
+  receiptUrl?: string;
+  journalId?: string;
+  status: string;
+  notes?: string;
+  createdById?: string;
+  createdBy?: User;
+  items?: SpjMealRecord[];
+  whatsappRemittanceText?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateRestaurantSettlementBatchFormData {
+  restaurantId: string;
+  spjMealRecordIds: string[];
+  paymentDate: string;
+  bankAccountId: string;
+  referenceNumber?: string;
+  receiptUrl?: string;
   notes?: string;
 }
 

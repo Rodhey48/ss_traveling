@@ -113,6 +113,7 @@ export enum SpjAdditionalRequestStatus {
 export enum SpjRevenueDeclarationType {
   TICKET_CASH = 'TICKET_CASH',
   AGENT_DEPOSIT = 'AGENT_DEPOSIT',
+  TICKET_AGENT = 'TICKET_AGENT',
   CARGO_MOTORCYCLE = 'CARGO_MOTORCYCLE',
   CARGO_BOX = 'CARGO_BOX',
   CHARTER_CASH = 'CHARTER_CASH',
@@ -129,6 +130,7 @@ export enum CrewMealPaymentCategory {
   TRIP_INCENTIVE = 'TRIP_INCENTIVE',
   FULL_SEAT_BONUS = 'FULL_SEAT_BONUS',
   CARGO_COMMISSION = 'CARGO_COMMISSION',
+  PERPAL_ALLOWANCE = 'PERPAL_ALLOWANCE',
 }
 
 export enum CrewMealPaymentStatus {

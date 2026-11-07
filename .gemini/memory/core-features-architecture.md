@@ -562,6 +562,44 @@ Response error autentikasi menggunakan struktur terstandar:
     *   **Watermark & Favicon Pendopo**: Watermark 420px logo Pendopo SS Transport pada kartu login dan multi-format favicon persegi di `public/` (`favicon.webp`, `favicon.png`, `favicon.ico`, `apple-touch-icon.png`).
 
     ---
+
+    ## 18. Arsitektur Finansial SPJ Full-Page, Uang Perpal, Uang Koordinasi & Restoran Gelondongan
+
+    ### A. Struktur 6 Bagian Bersusun Halaman Mandiri Keuangan SPJ (`/spjs/:id/finance`)
+    *   **1 Card Induk Tanpa Tab**: Seluruh pembukuan SPJ ditampilkan dalam 1 lembar dokumen bersusun dengan Executive KPI Bar di atas dan badge metrik total dinamis di setiap header bagian:
+        1.  **Bagian 1: Amplop Uang Jalan (UJ) & Pengembalian Kasir**: Plafon UJ, pencairan multi-line, pengembalian fisik sisa kas supir, permintaan tambahan UJ, dan rollover bus breakdown.
+        2.  **Bagian 2: Biaya Operasional SPJ**: Murni nota fisik BBM solar (liter + odometer KM), tol Trans-Jawa, retribusi terminal, parkir, dan perbaikan darurat.
+        3.  **Bagian 3: Deklarasi Kas & Penjualan Tiket Mitra Agen**: Tiket langsung, kargo motor/paket kardus, serta integrasi tiket agen (100% Bruto, komisi master otomatis, preview jurnal akuntansi).
+        4.  **Bagian 4: Tagihan Servis Makan Restoran Mitra**: Pemilihan restoran singgah, kupon riil pax fleksibel editable, snapshot tarif per pax dari master dengan edit manual, akrual Beban 51102 vs Utang 21101, status transfer gelondongan, dan tombol hapus kupon.
+        5.  **Bagian 5: Beban Koordinasi Lapangan & Pengurus Jalur**: Snapshot tarif per tiket terjual per leg, matching principle Beban 52105 vs Utang 22102, filter ketat zona Barat/Timur tanpa kebocoran leg 0-tiket, tombol sinkronisasi, tautan kelola gelondongan, dan tombol hapus.
+        6.  **Bagian 6: Hak Kompensasi Kru & Early Payout**: Uang makan supir, uang perpal menginap di terminal, premi ritase supir, bonus full seat 100%, komisi kargo dinamis, transfer early di jalan via bank.
+
+    ### B. Kompensasi Kru Khusus Operasional Lapangan
+    *   **Uang Perpal Kru (`PERPAL_ALLOWANCE`)**: Kompensasi uang makan tambahan & biaya tunggu saat bus menginap 1 hari atau lebih di terminal tujuan (tidak langsung PP). Input hari, lokasi terminal, nominal harian per kru, checklist personil, dan opsi transfer langsung di jalan (*early payout*) vs kasir pool. Beban dialokasikan ke akun `53101`.
+    *   **Bonus Full Seat Kru (`FULL_SEAT_BONUS`)**: Apresiasi load factor 100% penuh. Live counter kapasitas armada bus vs total tiket terjual, nominal bonus per orang, dan checklist kru penerima. Beban dialokasikan ke akun `53103`.
+    *   **Fleksibilitas Komisi Kru Kargo**: Sinkronisasi dua arah real-time persentase (`%`) $\leftrightarrow$ nominal rupiah (`Rp`), tombol cepat preset (10%, 15%, 20%, 25%, 30%), kalkulasi net kas kantor, dropdown personil supir penerima komisi, serta auto-muncul di Bagian 6.
+    *   **Sinkronisasi Kasir Meja Pool (`CashierSettlementService`)**: Saat kasir membayar kompensasi tunai di meja kasir garasi, sistem mendebet langsung akun beban yang tepat (`53101`, `53102`, `53103`, `53104`) sehingga seluruh jurnal kasir seimbang 100%.
+
+    ### C. Modul Uang Koordinasi Lapangan Berbasis Tiket Terjual (`/finance/coordination-fees`)
+    *   **Pemetaan COA Resmi**: `52105 — Beban Koordinasi Lapangan & Pengurus Jalur` (Beban) dan `22102 — Utang Jasa Koordinator Lapangan (Barat & Timur)` (Utang).
+    *   **Snapshot Tiket Per Leg**: `Tiket Terjual x Tarif per Pax (Rp 10.000)`. Filter ketat per leg/zona memastikan tiket Jakarta/Barat hanya memberi hak fee ke Koordinator Barat, dan leg dengan 0 tiket dilewati otomatis.
+    *   **Halaman Mandiri (Menu Urutan ke-3 di Keuangan)**:
+        *   Tab 1: Tagihan Siap Bayar Gelondongan (Multi-select checklist SPJ, sticky summary bar, modal eksekusi bulk transfer bank).
+        *   Tab 2: Riwayat Pembayaran Gelondongan (Detail batch & tombol Salin Format Teks WhatsApp siap kirim ke koordinator).
+        *   Tab 3: Pengaturan Tarif & Koordinator (Master rules per zona Barat & Timur).
+
+    ### D. Modul Pembayaran Servis Makan Restoran Mitra Gelondongan (`/finance/restaurant-settlements`)
+    *   **Pemetaan COA Resmi**: `51102 — Beban Servis Makan Penumpang` (Beban) vs `21101 — Utang Usaha Vendor Restoran Mitra` (Utang).
+    *   **Snapshot & Edit Manual**: Tarif per pax otomatis ter-snapshot dari master restoran saat dipilih, namun dapat diedit manual menyesuaikan porsi khusus perjalanan. Nilai pax juga bisa diedit bebas (misal 22 pax karena 3 orang tidur/puasa).
+    *   **Halaman Mandiri (Menu Urutan ke-4 di Keuangan)**:
+        *   Tab 1: Tagihan Restoran Siap Bayar Gelondongan (Filter per restoran, multi-select checklist SPJ, sticky summary bar, modal eksekusi bulk transfer bank).
+        *   Tab 2: Riwayat Pembayaran Gelondongan (Detail batch & tombol Salin Format Teks WhatsApp rincian kupon per SPJ ke pemilik rumah makan).
+        *   Tab 3: Daftar Restoran Mitra Resmi (Profil alamat, kota, tarif per pax, dan rekening bank).
+
+    ### E. Reversal Jurnal Otomatis & Pembersihan Record Manual
+    *   Setiap penghapusan kewajiban koordinasi atau servis makan secara manual (atau via tombol sinkronisasi) otomatis mengeksekusi *journal reversal* via `JournalReversalService` agar buku besar bebas dari utang siluman.
+
+    ---
     *Gunakan dokumen ini sebagai referensi saat melakukan pengembangan fitur baru atau debugging sistem otorisasi.*
 
 

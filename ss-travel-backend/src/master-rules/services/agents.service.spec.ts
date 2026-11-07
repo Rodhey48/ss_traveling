@@ -81,7 +81,7 @@ describe('AgentsService', () => {
       const result = await service.findAgentsByRoute('TANGERANG', 'YOGYAKARTA');
 
       expect(mockQb.andWhere).toHaveBeenCalledWith(
-        "(a.city IN ('JAKARTA', 'TANGERANG', 'ALL') OR a.agent_type = 'ONLINE_OTA')",
+        "(a.city IN ('JAKARTA', 'TANGERANG', 'SOUTH TANGERANG', 'BOGOR', 'BEKASI', 'DEPOK', 'ALL') OR a.agent_type = 'ONLINE_OTA')",
       );
       expect(result.length).toBe(2);
     });
@@ -103,7 +103,7 @@ describe('AgentsService', () => {
       const result = await service.findAgentsByRoute('YOGYAKARTA', 'JAKARTA');
 
       expect(mockQb.andWhere).toHaveBeenCalledWith(
-        "(a.city IN ('YOGYAKARTA', 'ALL') OR a.agent_type = 'ONLINE_OTA')",
+        "(a.city IN ('YOGYAKARTA', 'SLEMAN', 'BANTUL', 'KULON PROGO', 'KLATEN', 'SOLO', 'SURAKARTA', 'MAGELANG', 'ALL') OR a.agent_type = 'ONLINE_OTA')",
       );
       expect(result.length).toBe(2);
     });

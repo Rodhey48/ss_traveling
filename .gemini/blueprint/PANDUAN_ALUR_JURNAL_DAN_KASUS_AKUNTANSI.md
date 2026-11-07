@@ -208,6 +208,52 @@ Setiap tiket resmi bus SS Traveling sudah termasuk 1x makan prasmanan di Restora
 
 ---
 
+#### Kasus 1.7: Uang Perpal Kru (Uang Makan Tambahan Menginap di Terminal / Luar Kota)
+* **Peristiwa:** Bus tiba di kota tujuan (Terminal Giwangan Yogyakarta), namun tidak langsung putar balik PP hari itu juga karena rotasi armada atau menunggu arus balik liburan. Supir & kondektur (3 personil) harus menginap (*perpal*) 1 hari di terminal. Disepakati uang makan perpal tambahan Rp 100.000 / personil / hari (total Rp 300.000).
+* **Mekanisme Pencairan:**
+  - **Jika Ditransfer Segera di Jalan (*Early Payout* via Mobile Banking):**
+    - **(DEBET)** `53101` Beban Uang Makan & Perpal Kru: Rp 300.000
+    - **(KREDIT)** `11121` Bank BCA Operasional: Rp 300.000
+  - **Jika Dicairkan Saat Pulang ke Garasi (Kasir Meja Pool):**
+    - **(DEBET)** `53101` Beban Uang Makan & Perpal Kru: Rp 300.000
+    - **(KREDIT)** `11101` Kas Operasional Pool: Rp 300.000
+
+---
+
+#### Kasus 1.8: Bonus Full Seat Kru (Okupansi Penumpang 100% Penuh)
+* **Peristiwa:** Seluruh kapasitas kursi bus (misal 28 kursi) terisi penuh 28 tiket tanpa sisa. Sesuai master data kompensasi, kru berhak atas bonus full seat Rp 150.000 per supir.
+* **Jurnal (JV):**
+  - **(DEBET)** `53103` Beban Bonus Full Seat Kru Bus: Rp 150.000
+  - **(KREDIT)** `11101` Kas Operasional Pool (atau `23101` Utang Kru): Rp 150.000
+
+---
+
+#### Kasus 1.9: Uang Koordinasi Lapangan Berbasis Tiket Terjual (Akrual SPJ & Bulk Transfer Bank)
+* **Peristiwa:** Leg 1 (Jakarta $\to$ Yogyakarta) terjual 20 lembar tiket. Sesuai aturan master tarif Zona Barat, hak fee koordinasi pengurus jalur adalah Rp 10.000 / pax = Rp 200.000. Supir tidak membayar uang ini di jalan (*Non-UJ*), melainkan ditanggung kantor pusat dan ditransfer secara gelondongan berkala.
+* **Tahap 1: Akrual Otomatis pada SPJ (Matching Principle)**
+  Beban otomatis melekat pada dokumen SPJ dan armada bus ini untuk menghitung laba rugi riil trip:
+  - **(DEBET)** `52105` Beban Koordinasi Lapangan & Pengurus Jalur: Rp 200.000
+  - **(KREDIT)** `22102` Utang Jasa Koordinator Lapangan (Barat & Timur): Rp 200.000
+* **Tahap 2: Pembayaran Gelondongan via Bank (`/finance/coordination-fees`)**
+  Di akhir pekan, Finance mengakumulasikan **10 SPJ** senilai total **Rp 2.000.000** ke rekening Koordinator Wilayah Barat via Bank BCA:
+  - **(DEBET)** `22102` Utang Jasa Koordinator Lapangan: Rp 2.000.000 *(10 SPJ lunas)*
+  - **(KREDIT)** `11121` Bank BCA Operasional: Rp 2.000.000
+
+---
+
+#### Kasus 1.10: Tagihan Servis Makan Restoran Mitra (Akrual SPJ & Bulk Settlement Bank)
+* **Peristiwa:** Bus singgah di RM Taman Selera (Cipali KM 102). Dari manifes 25 penumpang, 22 kupon makan riil ditukarkan (3 penumpang tidur/puasa). Tarif standar Rp 25.000 / kupon (total Rp 550.000). UJ supir tidak dipotong sepeser pun.
+* **Tahap 1: Akrual Otomatis pada SPJ (Matching Principle)**
+  Beban servis makan otomatis diakui melekat pada trip SPJ:
+  - **(DEBET)** `51102` Beban Servis Makan Penumpang (Kupon Bus): Rp 550.000
+  - **(KREDIT)** `21101` Utang Usaha Vendor Restoran Mitra: Rp 550.000
+* **Tahap 2: Pembayaran Gelondongan via Bank (`/finance/restaurant-settlements`)**
+  Finance mengakumulasikan **15 SPJ** senilai total **Rp 8.250.000** ke rekening pemilik Rumah Makan Mitra via Bank BCA:
+  - **(DEBET)** `21101` Utang Usaha Vendor Restoran Mitra: Rp 8.250.000 *(15 SPJ lunas)*
+  - **(KREDIT)** `11121` Bank BCA Operasional: Rp 8.250.000
+
+---
+
 ### KATEGORI 2: Sewa Bus Pariwisata / Charter (Bus SS-02 PT Mitra Sejahtera)
 
 Bisnis pariwisata memiliki siklus unik: kontrak disepakati jauh hari sebelum tanggal keberangkatan, sehingga menggunakan mekanisme **Uang Muka (DP)** dan **Piutang Pelunasan (AR)**.

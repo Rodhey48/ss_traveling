@@ -108,4 +108,67 @@ describe('CrewMealPaymentsService', () => {
       expect(result.length).toBe(2);
     });
   });
+
+  describe('addPerpalPayment', () => {
+    it('harus menambahkan uang perpal untuk personil kru yang menginap di terminal', async () => {
+      spjRepo.findOne.mockResolvedValue({
+        id: 'spj-1',
+        companyId: 'comp-1',
+        crewAssignments: [
+          { id: 'assign-1', crewId: 'driver-1' },
+          { id: 'assign-2', crewId: 'driver-2' },
+        ],
+      });
+
+      paymentRepo.find.mockResolvedValue([
+        { id: 'p1', amount: '100000.00' },
+        { id: 'p2', amount: '100000.00' },
+      ]);
+
+      const result = await service.addPerpalPayment(
+        'spj-1',
+        {
+          crewAssignmentIds: ['assign-1', 'assign-2'],
+          terminalLocation: 'Terminal Giwangan Yogyakarta',
+          daysCount: 1,
+          amountPerPersonPerDay: '100000.00',
+        },
+        'user-1',
+      );
+
+      expect(paymentRepo.create).toHaveBeenCalledTimes(2);
+      expect(paymentRepo.save).toHaveBeenCalled();
+      expect(result.length).toBe(2);
+    });
+  });
+
+  describe('claimFullSeatBonus', () => {
+    it('harus mencatat klaim bonus full seat 100% untuk kru', async () => {
+      spjRepo.findOne.mockResolvedValue({
+        id: 'spj-1',
+        companyId: 'comp-1',
+        crewAssignments: [
+          { id: 'assign-1', crewId: 'driver-1' },
+        ],
+      });
+
+      paymentRepo.findOne.mockResolvedValue(null);
+      paymentRepo.find.mockResolvedValue([
+        { id: 'p1', amount: '150000.00' },
+      ]);
+
+      const result = await service.claimFullSeatBonus(
+        'spj-1',
+        {
+          crewAssignmentIds: ['assign-1'],
+          bonusAmountPerPerson: '150000.00',
+        },
+        'user-1',
+      );
+
+      expect(paymentRepo.create).toHaveBeenCalled();
+      expect(paymentRepo.save).toHaveBeenCalled();
+      expect(result).toBeDefined();
+    });
+  });
 });

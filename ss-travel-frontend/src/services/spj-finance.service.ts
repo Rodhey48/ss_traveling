@@ -146,12 +146,76 @@ export const SpjFinanceService = {
     return response.data.data;
   },
 
+  disburseEarly: async (
+    paymentId: string,
+    data: DisburseEarlyMealPaymentFormData,
+  ): Promise<CrewMealPayment> => {
+    const response = await api.post(
+      `api/v1/spjs/crew-payments/${paymentId}/early-disburse`,
+      data,
+    );
+    return response.data.data;
+  },
+
   disburseEarlyPayment: async (
     paymentId: string,
     data: DisburseEarlyMealPaymentFormData,
   ): Promise<CrewMealPayment> => {
     const response = await api.post(
       `api/v1/spjs/crew-payments/${paymentId}/early-disburse`,
+      data,
+    );
+    return response.data.data;
+  },
+
+  addPerpalPayment: async (
+    spjId: string,
+    data: {
+      crewAssignmentIds: string[];
+      terminalLocation?: string;
+      daysCount?: number;
+      amountPerPersonPerDay: string;
+      payoutTiming?: 'AT_SETTLEMENT' | 'EARLY_DISBURSEMENT';
+      notes?: string;
+    },
+  ): Promise<CrewMealPayment[]> => {
+    const response = await api.post(
+      `api/v1/spjs/${spjId}/crew-payments/perpal`,
+      data,
+    );
+    return response.data.data;
+  },
+
+  claimFullSeatBonus: async (
+    spjId: string,
+    data: {
+      crewAssignmentIds: string[];
+      bonusAmountPerPerson: string;
+      notes?: string;
+    },
+  ): Promise<CrewMealPayment[]> => {
+    const response = await api.post(
+      `api/v1/spjs/${spjId}/crew-payments/full-seat-bonus`,
+      data,
+    );
+    return response.data.data;
+  },
+
+  // -------------------------------------------------------------
+  // 5. SERVIS MAKAN PENUMPANG RESTORAN MITRA (AP INVOICE VENDOR)
+  // -------------------------------------------------------------
+  getMealService: async (spjId: string): Promise<any> => {
+    const response = await api.get(`api/v1/spjs/${spjId}/meal-service`);
+    return response.data.data;
+  },
+
+  updateLegMealService: async (
+    spjId: string,
+    legId: string,
+    data: { mealPaxCount: number; mealDiscrepancyNotes?: string },
+  ): Promise<any> => {
+    const response = await api.put(
+      `api/v1/spjs/${spjId}/legs/${legId}/meal-service`,
       data,
     );
     return response.data.data;

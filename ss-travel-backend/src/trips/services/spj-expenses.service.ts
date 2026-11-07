@@ -10,6 +10,7 @@ import {
   SpjExpenseEntity,
   SpjUjEntity,
   SpjUjExpenseEntity,
+  SpjLegEntity,
   SpjExpensePaymentSource,
 } from '../../@models/trips';
 import {
@@ -18,6 +19,8 @@ import {
 } from '../../@dto/trips/spj-expense.dto';
 import { MoneyHelper } from '../../@common/helpers/money.helper';
 import { SpjUjService } from './spj-uj.service';
+import { ApInvoiceLineEntity } from '../../@models/finance/ap-invoice-line.entity';
+import { RestaurantEntity } from '../../@models/master-rules/restaurant.entity';
 
 @Injectable()
 export class SpjExpensesService {
@@ -30,6 +33,12 @@ export class SpjExpensesService {
     private readonly ujRepo: Repository<SpjUjEntity>,
     @InjectRepository(SpjUjExpenseEntity)
     private readonly ujExpenseRepo: Repository<SpjUjExpenseEntity>,
+    @InjectRepository(SpjLegEntity)
+    private readonly legRepo: Repository<SpjLegEntity>,
+    @InjectRepository(ApInvoiceLineEntity)
+    private readonly apInvoiceLineRepo: Repository<ApInvoiceLineEntity>,
+    @InjectRepository(RestaurantEntity)
+    private readonly restaurantRepo: Repository<RestaurantEntity>,
     private readonly ujService: SpjUjService,
   ) {}
 
@@ -176,5 +185,78 @@ export class SpjExpensesService {
 
     await this.expenseRepo.remove(expense);
     return { success: true };
+  }
+
+  /**
+   * Mengambil status servis makan penumpang dan tagihan invoice AP rumah makan mitra (Skenario 1)
+   */
+  async getMealServiceStatus(spjId: string): Promise<any> {
+    const spj = await this.spjRepo.findOne({
+      where: { id: spjId },
+      relations: ['legs'],
+    });
+
+    if (!spj) {
+      throw new NotFoundException(`SPJ ID '${spjId}' tidak ditemukan.`);
+    }
+
+    const apLines = await this.apInvoiceLineRepo.find({
+      where: { tripId: spjId },
+      relations: ['invoice'],
+    });
+
+    const restaurants = await this.restaurantRepo.find({
+      where: { isActive: true },
+      order: { name: 'ASC' },
+    });
+
+    const isBilled = apLines.length > 0;
+    const billedDetails = apLines.map((line) => ({
+      lineId: line.id,
+      invoiceId: line.invoice?.id,
+      billNo: line.invoice?.billNo,
+      vendorInvoiceNo: line.invoice?.vendorInvoiceNo,
+      vendorName: line.invoice?.vendorName,
+      invoiceDate: line.invoice?.invoiceDate,
+      invoiceStatus: line.invoice?.status,
+      manifestPaxCount: line.manifestPaxCount,
+      couponCount: line.couponCount,
+      amount: line.amount,
+      discrepancyNotes: line.discrepancyNotes,
+    }));
+
+    return {
+      spjId,
+      spjNo: spj.spjNo,
+      isBilled,
+      billedDetails,
+      legs: spj.legs?.sort((a, b) => (a.sequenceNo || 0) - (b.sequenceNo || 0)) || [],
+      restaurants,
+    };
+  }
+
+  /**
+   * Mencatat / memperbarui jumlah kupon makan riil yang ditukarkan penumpang pada leg SPJ
+   */
+  async updateLegMealService(
+    spjId: string,
+    legId: string,
+    mealPaxCount: number,
+    discrepancyNotes?: string,
+  ): Promise<SpjLegEntity> {
+    const leg = await this.legRepo.findOne({
+      where: { id: legId, spjId },
+    });
+
+    if (!leg) {
+      throw new NotFoundException(`Leg SPJ ID '${legId}' tidak ditemukan.`);
+    }
+
+    leg.mealPaxCount = Number(mealPaxCount) || 0;
+    if (discrepancyNotes !== undefined) {
+      leg.mealDiscrepancyNotes = discrepancyNotes || '';
+    }
+
+    return this.legRepo.save(leg);
   }
 }

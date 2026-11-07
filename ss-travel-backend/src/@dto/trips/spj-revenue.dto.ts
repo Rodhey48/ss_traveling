@@ -5,12 +5,15 @@ import {
   IsOptional,
   IsString,
   IsNumberString,
+  IsInt,
+  Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   SpjRevenueDeclarationType,
   SpjRevenueDeclarationStatus,
 } from '../../@models/trips/trip.enums';
+import { AgentSettlementType } from '../../@models/master-rules/agent.entity';
 
 export class CreateSpjRevenueDeclarationDto {
   @ApiPropertyOptional({ description: 'ID Leg SPJ jika spesifik leg tertentu' })
@@ -45,6 +48,22 @@ export class CreateSpjRevenueDeclarationDto {
   @IsNumberString()
   crewCommissionPercentage?: string;
 
+  @ApiPropertyOptional({
+    description: 'Nominal hak komisi kru kargo (jika diisi nominal rupiah langsung)',
+    example: '70000.00',
+  })
+  @IsOptional()
+  @IsNumberString()
+  crewCommissionAmount?: string;
+
+  @ApiPropertyOptional({
+    description: 'ID penugasan kru yang berhak menerima komisi kargo',
+    example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+  })
+  @IsOptional()
+  @IsUUID()
+  recipientCrewAssignmentId?: string;
+
   // Metadata kargo
   @ApiPropertyOptional({ description: 'Nama pengirim paket' })
   @IsOptional()
@@ -70,6 +89,46 @@ export class CreateSpjRevenueDeclarationDto {
   @IsOptional()
   @IsString()
   cargoItemDescription?: string;
+
+  // --- ATRIBUT PENJUALAN TIKET AGENT & KOMISI ---
+  @ApiPropertyOptional({ description: 'ID Mitra Agen Penjual Tiket' })
+  @IsOptional()
+  @IsUUID()
+  agentId?: string;
+
+  @ApiPropertyOptional({ description: 'ID Kelas Kursi Armada Bus' })
+  @IsOptional()
+  @IsUUID()
+  seatClassId?: string;
+
+  @ApiPropertyOptional({ description: 'Jumlah lembar tiket terjual', example: 5 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  ticketCount?: number;
+
+  @ApiPropertyOptional({ description: 'Harga satuan per lembar tiket', example: '250000.00' })
+  @IsOptional()
+  @IsNumberString()
+  ticketPrice?: string;
+
+  @ApiPropertyOptional({ description: 'Total hak komisi agen', example: '100000.00' })
+  @IsOptional()
+  @IsNumberString()
+  agentCommissionAmount?: string;
+
+  @ApiPropertyOptional({
+    enum: AgentSettlementType,
+    description: 'Metode penyerahan setoran uang tiket oleh agen',
+  })
+  @IsOptional()
+  @IsEnum(AgentSettlementType)
+  settlementType?: AgentSettlementType;
+
+  @ApiPropertyOptional({ description: 'ID Rekening Bank jika setor via transfer bank' })
+  @IsOptional()
+  @IsUUID()
+  bankAccountId?: string;
 
   @ApiPropertyOptional({ description: 'Catatan tambahan penerimaan' })
   @IsOptional()

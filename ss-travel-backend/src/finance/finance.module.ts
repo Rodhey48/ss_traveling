@@ -27,6 +27,11 @@ import {
   VehicleEntity,
   CrewCashDiscrepancyEntity,
   CashTransactionEntity,
+  CoordinatorFeeRuleEntity,
+  CoordinationFeeBatchEntity,
+  SpjCoordinationFeeEntity,
+  RestaurantSettlementBatchEntity,
+  SpjMealRecordEntity,
 } from '../@models';
 import { AccountsService } from './services/accounts.service';
 import { CashBankService } from './services/cash-bank.service';
@@ -41,6 +46,8 @@ import { FinancialReportsService } from './services/financial-reports.service';
 import { TripProfitabilityService } from './services/trip-profitability.service';
 import { PeriodClosingService } from './services/period-closing.service';
 import { PettyCashService } from './services/petty-cash.service';
+import { CoordinationFeesService } from './services/coordination-fees.service';
+import { RestaurantSettlementsService } from './services/restaurant-settlements.service';
 import { AccountsController } from './controllers/accounts.controller';
 import { CashAccountsController } from './controllers/cash-accounts.controller';
 import { BankAccountsController } from './controllers/bank-accounts.controller';
@@ -54,6 +61,8 @@ import { FinancialReportsController } from './controllers/financial-reports.cont
 import { TripProfitabilityController } from './controllers/trip-profitability.controller';
 import { PeriodClosingController } from './controllers/period-closing.controller';
 import { PettyCashController } from './controllers/petty-cash.controller';
+import { CoordinationFeesController } from './controllers/coordination-fees.controller';
+import { RestaurantSettlementsController } from './controllers/restaurant-settlements.controller';
 import { JWTService } from '../@services/jwt/jwt.service';
 
 @Module({
@@ -85,6 +94,11 @@ import { JWTService } from '../@services/jwt/jwt.service';
       VehicleEntity,
       CrewCashDiscrepancyEntity,
       CashTransactionEntity,
+      CoordinatorFeeRuleEntity,
+      CoordinationFeeBatchEntity,
+      SpjCoordinationFeeEntity,
+      RestaurantSettlementBatchEntity,
+      SpjMealRecordEntity,
     ]),
   ],
   controllers: [
@@ -101,6 +115,8 @@ import { JWTService } from '../@services/jwt/jwt.service';
     TripProfitabilityController,
     PeriodClosingController,
     PettyCashController,
+    CoordinationFeesController,
+    RestaurantSettlementsController,
   ],
   providers: [
     AccountsService,
@@ -116,6 +132,8 @@ import { JWTService } from '../@services/jwt/jwt.service';
     TripProfitabilityService,
     PeriodClosingService,
     PettyCashService,
+    CoordinationFeesService,
+    RestaurantSettlementsService,
     JWTService,
   ],
   exports: [
@@ -132,6 +150,8 @@ import { JWTService } from '../@services/jwt/jwt.service';
     TripProfitabilityService,
     PeriodClosingService,
     PettyCashService,
+    CoordinationFeesService,
+    RestaurantSettlementsService,
   ],
 })
 export class FinanceModule {}

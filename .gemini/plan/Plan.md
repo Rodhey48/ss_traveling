@@ -266,6 +266,11 @@ Setiap tahap dikerjakan secara paralel per fitur (*Vertical Slice*): **Database 
       * [x] Tab 3: **Deklarasi Penerimaan Kas Kru (Anti-Netting)**: Input tiket tunai langsung naik pool dan resi kargo (pilihan kargo motor vs kardus + slider/preset persentase komisi kru 20%).
       * [x] Tab 4: **Hak Kompensasi Kru & Early Payout**: Daftar hak uang makan, premi ritase, bonus full seat, komisi kargo, serta tombol pencairan nafkah premi di jalan via transfer bank (Skenario 2).
     * [x] Integrasi tombol aksi cepat `[💰 Keuangan & UJ]` pada setiap baris tabel dokumen SPJ (`/spjs`) dan modal detail SPJ.
+    * [x] **Halaman Mandiri Full-Page Keuangan SPJ (`/spjs/:id/finance`)**:
+      * [x] Layout lapang vertikal bersusun tanpa tab: Header KPI Live, Section 1 (Amplop UJ & Pencairan/Pengembalian), Section 2 (Biaya Operasional BBM & Tol), Section 3 (Penerimaan Kas & Penjualan Tiket Agen), Section 4 (Hak Kompensasi Kru & Early Payout).
+      * [x] Form Cerdas Penjualan Tiket Mitra Agen (`Dialog A`): Smart Route Filter, kuota pax, kelas kursi, kalkulasi komisi otomatis master `agent_commission_rules`, dan pilihan metode setoran (`CASH_TO_CREW`, `BANK_TRANSFER`, `CASH_TO_OFFICE`).
+      * [x] Modal Konfirmasi & Preview Jurnal Akuntansi (`Dialog B`): Simulasi instan mutasi Debit Piutang Agen `12103`/`12102` & Beban Komisi `54101` vs Kredit Pendapatan Tiket `41101` & Utang Komisi `22101` sebelum posting permanen.
+      * [x] Penyesuaian backend atomik di `SpjRevenueService` dan `CashierSettlementService` tanpa double-counting omzet.
 
 ---
 
