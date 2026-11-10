@@ -14,7 +14,8 @@ import {
   MetricCardGridSkeleton,
   TableSkeletonRows,
 } from '@/components/shared/skeleton-loaders';
-import type { TripProfitabilityViewMode, TripServiceType } from '@/types';
+import type { TripProfitabilityViewMode, TripServiceType, CostCenter } from '@/types';
+import { OrganizationService } from '@/services/organization.service';
 import { useQuery } from '@tanstack/react-query';
 import {
   ArrowRight,
@@ -29,6 +30,7 @@ import {
   TrendingUp,
   X,
   RotateCcw,
+  Building2,
 } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { TripProfitabilityDetailModal } from './TripProfitabilityDetailModal';
@@ -36,6 +38,7 @@ import { TripProfitabilityDetailModal } from './TripProfitabilityDetailModal';
 export default function TripProfitabilityPage() {
   const [viewMode, setViewMode] = useState<TripProfitabilityViewMode>('BY_JOURNEY_GROUP');
   const [serviceType, setServiceType] = useState<string>('ALL');
+  const [selectedCostCenterId, setSelectedCostCenterId] = useState<string>('ALL');
   const [searchInput, setSearchInput] = useState<string>('');
   const [debouncedSearch, setDebouncedSearch] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
@@ -52,12 +55,28 @@ export default function TripProfitabilityPage() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
+  // Load Cost Centers
+  const { data: ccData } = useQuery({
+    queryKey: ['cost-centers-list'],
+    queryFn: () => OrganizationService.getCostCenters(),
+  });
+  const costCenters = (ccData?.data as CostCenter[]) || [];
+
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['trip-profitability', viewMode, serviceType, debouncedSearch, startDate, endDate],
+    queryKey: [
+      'trip-profitability',
+      viewMode,
+      serviceType,
+      selectedCostCenterId,
+      debouncedSearch,
+      startDate,
+      endDate,
+    ],
     queryFn: () =>
       ReportService.getTripProfitability({
         viewMode,
         serviceType: serviceType === 'ALL' ? undefined : (serviceType as TripServiceType),
+        costCenterId: selectedCostCenterId === 'ALL' ? undefined : selectedCostCenterId,
         search: debouncedSearch || undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
@@ -77,6 +96,7 @@ export default function TripProfitabilityPage() {
     setSearchInput('');
     setDebouncedSearch('');
     setServiceType('ALL');
+    setSelectedCostCenterId('ALL');
     setStartDate('');
     setEndDate('');
   };
@@ -85,10 +105,11 @@ export default function TripProfitabilityPage() {
     return (
       debouncedSearch !== '' ||
       serviceType !== 'ALL' ||
+      selectedCostCenterId !== 'ALL' ||
       startDate !== '' ||
       endDate !== ''
     );
-  }, [debouncedSearch, serviceType, startDate, endDate]);
+  }, [debouncedSearch, serviceType, selectedCostCenterId, startDate, endDate]);
 
   return (
     <div className="space-y-6 p-6">
@@ -265,6 +286,22 @@ export default function TripProfitabilityPage() {
             </SelectContent>
           </Select>
 
+          {/* Filter Cost Center */}
+          <Select value={selectedCostCenterId} onValueChange={setSelectedCostCenterId}>
+            <SelectTrigger className="w-48 h-8.5 text-xs">
+              <Building2 className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
+              <SelectValue placeholder="Cost Center" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL" className="text-xs font-semibold">Semua Cost Center</SelectItem>
+              {costCenters.map((cc) => (
+                <SelectItem key={cc.id} value={cc.id} className="text-xs">
+                  {cc.code} - {cc.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <div className="flex items-center gap-1.5">
             <Input
               type="date"
@@ -313,7 +350,7 @@ export default function TripProfitabilityPage() {
             <thead className="bg-slate-50/80 dark:bg-white/5 border-b border-slate-200/80 dark:border-white/10 text-muted-foreground font-semibold uppercase tracking-wider">
               <tr>
                 <th className="py-3 px-4">No SPJ / Perjalanan</th>
-                <th className="py-3 px-4">Layanan</th>
+                <th className="py-3 px-4">Layanan &amp; Cost Center</th>
                 <th className="py-3 px-4">Armada Bus</th>
                 <th className="py-3 px-4">Rute Trayek</th>
                 <th className="py-3 px-4">Keberangkatan</th>
@@ -331,7 +368,7 @@ export default function TripProfitabilityPage() {
                   rows={6}
                   colWidths={[
                     'w-28',
-                    'w-16',
+                    'w-24',
                     'w-20',
                     'w-36',
                     'w-24',
@@ -374,6 +411,8 @@ export default function TripProfitabilityPage() {
               ) : (
                 items.map((item) => {
                   const isMarginPositive = Number(item.contributionMargin) >= 0;
+                  const ccCode = item.costCenterCode || (item.serviceType === 'WISATA' ? 'CC-OPS-WISATA' : 'CC-OPS-AKAP');
+
                   return (
                     <tr key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-white/5 transition-colors">
                       <td className="py-3.5 px-4">
@@ -388,17 +427,23 @@ export default function TripProfitabilityPage() {
                         <div className="text-[11px] text-muted-foreground">{item.driverName}</div>
                       </td>
 
-                      <td className="py-3.5 px-4">
-                        <Badge
-                          variant="secondary"
-                          className={
-                            item.serviceType === 'AKAP'
-                              ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border-blue-200 dark:border-blue-800/60'
-                              : 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200 dark:border-purple-800/60'
-                          }
-                        >
-                          {item.serviceType}
-                        </Badge>
+                      <td className="py-3.5 px-4 space-y-1">
+                        <div>
+                          <Badge
+                            variant="secondary"
+                            className={
+                              item.serviceType === 'AKAP'
+                                ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border-blue-200 dark:border-blue-800/60 text-[11px]'
+                                : 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200 dark:border-purple-800/60 text-[11px]'
+                            }
+                          >
+                            {item.serviceType}
+                          </Badge>
+                        </div>
+                        <div className="font-mono text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
+                          <Building2 className="w-3 h-3 text-muted-foreground shrink-0" />
+                          <span>{ccCode}</span>
+                        </div>
                       </td>
 
                       <td className="py-3.5 px-4">
@@ -415,12 +460,24 @@ export default function TripProfitabilityPage() {
 
                       <td className="py-3.5 px-4 text-muted-foreground whitespace-nowrap">{item.departureDate}</td>
 
-                      <td className="py-3.5 px-4 text-right font-bold font-mono text-blue-900 dark:text-blue-300">
-                        Rp {Number(item.grossRevenue).toLocaleString('id-ID')}
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="font-bold font-mono text-blue-900 dark:text-blue-300">
+                          Rp {Number(item.grossRevenue).toLocaleString('id-ID')}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground font-mono">
+                          {item.serviceType === 'WISATA'
+                            ? `Charter: Rp ${Number(item.charterRevenue || item.grossRevenue).toLocaleString('id-ID')}`
+                            : `Tiket: Rp ${Number(item.ticketRevenue).toLocaleString('id-ID')}`}
+                        </div>
                       </td>
 
-                      <td className="py-3.5 px-4 text-right font-bold font-mono text-rose-800 dark:text-rose-400">
-                        Rp {Number(item.totalDirectCost).toLocaleString('id-ID')}
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="font-bold font-mono text-rose-800 dark:text-rose-400">
+                          Rp {Number(item.totalDirectCost).toLocaleString('id-ID')}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground font-mono">
+                          BBM: Rp {Number(item.fuelCost).toLocaleString('id-ID')} • Kru: Rp {Number(item.crewCost).toLocaleString('id-ID')}
+                        </div>
                       </td>
 
                       <td className="py-3.5 px-4 text-right font-mono">

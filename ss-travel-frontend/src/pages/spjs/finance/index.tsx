@@ -277,7 +277,9 @@ export default function SpjFinancePage() {
     }
   };
 
-  const loadFinanceData = async (spjId: string) => {
+  const loadFinanceData = async (spjId?: string) => {
+    const targetId = spjId || id;
+    if (!targetId) return;
     try {
       const [
         ujData,
@@ -289,13 +291,13 @@ export default function SpjFinancePage() {
         mealRecordsData,
         restsData,
       ] = await Promise.all([
-        SpjFinanceService.getUj(spjId).catch(() => null),
-        SpjFinanceService.getExpenses(spjId).catch(() => []),
-        SpjFinanceService.getRevenues(spjId).catch(() => []),
-        SpjFinanceService.getCrewPayments(spjId).catch(() => []),
-        SpjFinanceService.getMealService(spjId).catch(() => null),
-        CoordinationFeeService.getSpjFees(spjId).catch(() => []),
-        RestaurantSettlementService.getSpjMealRecords(spjId).catch(() => []),
+        SpjFinanceService.getUj(targetId).catch(() => null),
+        SpjFinanceService.getExpenses(targetId).catch(() => []),
+        SpjFinanceService.getRevenues(targetId).catch(() => []),
+        SpjFinanceService.getCrewPayments(targetId).catch(() => []),
+        SpjFinanceService.getMealService(targetId).catch(() => null),
+        CoordinationFeeService.getSpjFees(targetId).catch(() => []),
+        RestaurantSettlementService.getSpjMealRecords(targetId).catch(() => []),
         RestaurantSettlementService.getRestaurants().catch(() => []),
       ]);
       setUj(ujData);
@@ -851,6 +853,7 @@ export default function SpjFinancePage() {
   };
 
   // Kalkulasi Total Finansial untuk KPI & Header Sub-bagian
+  const isWisata = spj?.serviceType === 'WISATA';
   const totalRevenuesGross = revenues.reduce((acc, r) => acc + Number(r.amount || 0), 0);
   const totalTicketsSold = revenues.reduce((acc, r) => acc + Number(r.ticketCount || 0), 0);
   const totalAgentCommissions = revenues.reduce((acc, r) => acc + Number(r.agentCommissionAmount || 0), 0);
@@ -1483,13 +1486,19 @@ export default function SpjFinancePage() {
               <div className="flex flex-wrap items-center gap-2">
                 <Button
                   size="sm"
+                  disabled={isWisata}
                   onClick={() => {
                     if (filteredAgents.length > 0 && !agentId) {
                       setAgentId(filteredAgents[0].id);
                     }
                     setAgentTicketModalOpen(true);
                   }}
-                  className="h-8 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs gap-1.5"
+                  className={`h-8 text-xs font-semibold gap-1.5 ${
+                    isWisata
+                      ? 'bg-muted text-muted-foreground opacity-60 cursor-not-allowed hover:bg-muted'
+                      : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs'
+                  }`}
+                  title={isWisata ? 'Khusus Layanan AKAP (Layanan Wisata berbasis kontrak charter rombongan)' : undefined}
                 >
                   <Building2 className="w-3.5 h-3.5" /> + Input Tiket Agen
                 </Button>
@@ -1497,6 +1506,9 @@ export default function SpjFinancePage() {
                   size="sm"
                   variant="outline"
                   onClick={() => {
+                    if (isWisata) {
+                      setRevType('CHARTER_CASH');
+                    }
                     if (spj.crewAssignments && spj.crewAssignments.length > 0 && !revRecipientCrewAssignmentId) {
                       const defaultDriver = spj.crewAssignments.find((c) => c.role === 'DRIVER') || spj.crewAssignments[0];
                       if (defaultDriver) setRevRecipientCrewAssignmentId(defaultDriver.id);
@@ -1505,7 +1517,8 @@ export default function SpjFinancePage() {
                   }}
                   className="h-8 text-xs font-medium border-slate-300 dark:border-zinc-700 gap-1.5"
                 >
-                  <Coins className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> + Tiket Langsung / Kargo
+                  <Coins className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />{' '}
+                  {isWisata ? '+ Terima Pelunasan Tunai (Charter)' : '+ Tiket Langsung / Kargo'}
                 </Button>
               </div>
             </div>
@@ -1514,8 +1527,14 @@ export default function SpjFinancePage() {
             <div className="p-3.5 bg-slate-50 dark:bg-zinc-900/40 border border-slate-200/80 dark:border-white/10 rounded-xl flex items-start gap-3">
               <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
               <div className="text-xs text-muted-foreground leading-relaxed">
-                <strong className="text-foreground font-semibold">Standar Akuntansi Bruto &amp; Komisi Terjadwal (Addendum v1.7 &amp; Skenario 1):</strong>{' '}
-                Penjualan tiket agen loket maupun OTA diakui penuh 100% sebagai Pendapatan Tiket (`41101`). Komisi agen diakui sebagai Beban Komisi (`54101`) berpasangan dengan Utang Komisi (`22101`), sehingga hak komisi tidak dipotong di jalan melainkan dibayarkan resmi secara terjadwal oleh tim Finance via transfer bank korporat.
+                <strong className="text-foreground font-semibold">
+                  {isWisata
+                    ? 'Standar Pendapatan Layanan Wisata (Kontrak Charter):'
+                    : 'Standar Akuntansi Bruto & Komisi Terjadwal (Addendum v1.7 & Skenario 1):'}
+                </strong>{' '}
+                {isWisata
+                  ? 'Pendapatan bus pariwisata diakui secara terpusat dari nilai kontrak sewa paket (Akun 42101) melalui DP 30% dan Pelunasan AR 70%. Kru di lapangan tidak menjual tiket agen atau kargo eceran, namun dapat mencatat penerimaan pelunasan sewa tunai (CHARTER_CASH) jika diserahkan langsung oleh penyewa.'
+                  : 'Penjualan tiket agen loket maupun OTA diakui penuh 100% sebagai Pendapatan Tiket (`41101`). Komisi agen diakui sebagai Beban Komisi (`54101`) berpasangan dengan Utang Komisi (`22101`), sehingga hak komisi tidak dipotong di jalan melainkan dibayarkan resmi secara terjadwal oleh tim Finance via transfer bank korporat.'}
               </div>
             </div>
 
@@ -1673,8 +1692,14 @@ export default function SpjFinancePage() {
                 <Button
                   size="sm"
                   variant="outline"
+                  disabled={isWisata}
                   onClick={() => navigate('/finance/restaurant-settlements')}
-                  className="h-8 text-xs font-semibold border-amber-500/60 text-amber-700 dark:text-amber-300 gap-1.5 bg-amber-50/50 dark:bg-amber-950/20 hover:bg-amber-100"
+                  className={`h-8 text-xs font-semibold gap-1.5 ${
+                    isWisata
+                      ? 'border-border text-muted-foreground opacity-60 cursor-not-allowed hover:bg-transparent'
+                      : 'border-amber-500/60 text-amber-700 dark:text-amber-300 bg-amber-50/50 dark:bg-amber-950/20 hover:bg-amber-100'
+                  }`}
+                  title={isWisata ? 'Khusus Layanan AKAP (Layanan Wisata tidak menggunakan kupon restoran mitra)' : undefined}
                 >
                   <UtensilsCrossed className="w-3.5 h-3.5" /> Kelola Pembayaran Restoran ➔
                 </Button>
@@ -1685,8 +1710,14 @@ export default function SpjFinancePage() {
             <div className="p-3.5 bg-slate-50 dark:bg-zinc-900/40 border border-slate-200/80 dark:border-white/10 rounded-xl flex items-start gap-3">
               <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <div className="text-xs text-muted-foreground leading-relaxed">
-                <strong className="text-foreground font-semibold">Standar Pelayanan Tiket Termasuk Makan (Beban 51102 vs Utang 21101):</strong>{' '}
-                Tiket resmi penumpang bus SS Travelink sudah termasuk 1x makan prasmanan di Rumah Makan Mitra (misal: Subang / Cipali / Gringsing). Tagihan diakumulasi dan ditransfer langsung oleh kantor pusat secara gelondongan tanpa memotong Uang Jalan (UJ) supir.
+                <strong className="text-foreground font-semibold">
+                  {isWisata
+                    ? 'Catatan Layanan Pariwisata (Non-Kupon Restoran):'
+                    : 'Standar Pelayanan Tiket Termasuk Makan (Beban 51102 vs Utang 21101):'}
+                </strong>{' '}
+                {isWisata
+                  ? 'Pada layanan sewa bus pariwisata (Wisata/Charter), konsumsi penumpang dan rombongan dikelola mandiri oleh panitia/klien penyewa. Fitur kupon makan restoran mitra (@ Rp 25.000) dinonaktifkan khusus untuk armada pariwisata.'
+                  : 'Tiket resmi penumpang bus SS Travelink sudah termasuk 1x makan prasmanan di Rumah Makan Mitra (misal: Subang / Cipali / Gringsing). Tagihan diakumulasi dan ditransfer langsung oleh kantor pusat secara gelondongan tanpa memotong Uang Jalan (UJ) supir.'}
               </div>
             </div>
 
@@ -1781,6 +1812,7 @@ export default function SpjFinancePage() {
                             <Button
                               size="sm"
                               variant="outline"
+                              disabled={isWisata}
                               onClick={() => {
                                 setSelectedLegForMeal(leg);
                                 setInputMealPaxCount(mealCount);
@@ -1794,7 +1826,12 @@ export default function SpjFinancePage() {
                                 }
                                 setMealCouponModalOpen(true);
                               }}
-                              className="h-7 text-[11px] font-medium border-slate-300 dark:border-zinc-700 gap-1 hover:bg-slate-100 dark:hover:bg-zinc-800"
+                              className={`h-7 text-[11px] font-medium gap-1 ${
+                                isWisata
+                                  ? 'border-border text-muted-foreground opacity-60 cursor-not-allowed hover:bg-transparent'
+                                  : 'border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800'
+                              }`}
+                              title={isWisata ? 'Khusus Layanan AKAP (Konsumsi wisata dikelola panitia rombongan)' : undefined}
                             >
                               ✏️ {mealRec ? 'Edit Kupon' : 'Catat Kupon'}
                             </Button>
@@ -1802,9 +1839,14 @@ export default function SpjFinancePage() {
                               <Button
                                 size="sm"
                                 variant="ghost"
+                                disabled={isWisata}
                                 onClick={() => handleDeleteMealRecord(mealRec.id)}
-                                className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                title="Hapus Kupon Makan"
+                                className={`h-7 w-7 p-0 ${
+                                  isWisata
+                                    ? 'text-muted-foreground opacity-40 cursor-not-allowed'
+                                    : 'text-muted-foreground hover:text-destructive hover:bg-destructive/10'
+                                }`}
+                                title={isWisata ? 'Khusus Layanan AKAP' : 'Hapus Kupon Makan'}
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </Button>
@@ -1853,16 +1895,28 @@ export default function SpjFinancePage() {
                 <Button
                   size="sm"
                   variant="outline"
+                  disabled={isWisata}
                   onClick={handleSyncCoordinationFees}
-                  className="h-8 text-xs font-medium border-slate-300 dark:border-zinc-700 gap-1.5 hover:bg-slate-100 dark:hover:bg-zinc-800"
+                  className={`h-8 text-xs font-medium gap-1.5 ${
+                    isWisata
+                      ? 'border-border text-muted-foreground opacity-60 cursor-not-allowed hover:bg-transparent'
+                      : 'border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800'
+                  }`}
+                  title={isWisata ? 'Khusus Layanan AKAP (Tidak ada biaya koordinasi pengurus jalur terminal pada bus pariwisata)' : undefined}
                 >
-                  <RefreshCw className="w-3.5 h-3.5 text-amber-600" /> Sinkronkan Koordinasi
+                  <RefreshCw className={`w-3.5 h-3.5 ${isWisata ? 'text-muted-foreground' : 'text-amber-600'}`} /> Sinkronkan Koordinasi
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
+                  disabled={isWisata}
                   onClick={() => navigate('/finance/coordination-fees')}
-                  className="h-8 text-xs font-semibold border-amber-500/60 text-amber-700 dark:text-amber-300 gap-1.5 bg-amber-50/50 dark:bg-amber-950/20 hover:bg-amber-100"
+                  className={`h-8 text-xs font-semibold gap-1.5 ${
+                    isWisata
+                      ? 'border-border text-muted-foreground opacity-60 cursor-not-allowed hover:bg-transparent'
+                      : 'border-amber-500/60 text-amber-700 dark:text-amber-300 bg-amber-50/50 dark:bg-amber-950/20 hover:bg-amber-100'
+                  }`}
+                  title={isWisata ? 'Khusus Layanan AKAP (Tidak ada biaya koordinasi pengurus jalur terminal pada bus pariwisata)' : undefined}
                 >
                   Kelola Transfer Gelondongan ➔
                 </Button>
@@ -1873,8 +1927,14 @@ export default function SpjFinancePage() {
             <div className="p-3.5 bg-slate-50 dark:bg-zinc-900/40 border border-slate-200/80 dark:border-white/10 rounded-xl flex items-start gap-3">
               <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <div className="text-xs text-muted-foreground leading-relaxed">
-                <strong className="text-foreground font-semibold">Standar Matching Principle (Beban 52105 vs Utang 22102):</strong>{' '}
-                Uang koordinasi pengurus jalur dihitung proporsional dari tiket penumpang yang terjual per leg. Beban ini otomatis melekat pada dokumen SPJ ini untuk mengukur profitabilitas riil perjalanan bus, namun supir tidak perlu membayar di jalan karena penyelesaian dilakukan langsung oleh kantor pusat secara akumulatif gelondongan.
+                <strong className="text-foreground font-semibold">
+                  {isWisata
+                    ? 'Catatan Layanan Pariwisata (Bebas Koordinasi Jalur):'
+                    : 'Standar Matching Principle (Beban 52105 vs Utang 22102):'}
+                </strong>{' '}
+                {isWisata
+                  ? 'Sewa bus pariwisata beroperasi berdasarkan izin insidentil / kontrak rombongan tanpa melalui jalur terminal reguler. Biaya koordinasi pengurus jalur terminal (Akun 52105) dinonaktifkan untuk layanan ini.'
+                  : 'Uang koordinasi pengurus jalur dihitung proporsional dari tiket penumpang yang terjual per leg. Beban ini otomatis melekat pada dokumen SPJ ini untuk mengukur profitabilitas riil perjalanan bus, namun supir tidak perlu membayar di jalan karena penyelesaian dilakukan langsung oleh kantor pusat secara akumulatif gelondongan.'}
               </div>
             </div>
 
@@ -1945,9 +2005,14 @@ export default function SpjFinancePage() {
                             <Button
                               size="sm"
                               variant="ghost"
+                              disabled={isWisata}
                               onClick={() => handleDeleteCoordinationFee(cf.id)}
-                              className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                              title="Hapus Kewajiban Koordinasi"
+                              className={`h-7 w-7 p-0 ${
+                                isWisata
+                                  ? 'text-muted-foreground opacity-40 cursor-not-allowed'
+                                  : 'text-muted-foreground hover:text-destructive hover:bg-destructive/10'
+                              }`}
+                              title={isWisata ? 'Khusus Layanan AKAP' : 'Hapus Kewajiban Koordinasi'}
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </Button>
@@ -1986,6 +2051,15 @@ export default function SpjFinancePage() {
                         Belum Cair: {formatRupiah(totalCrewPending)}
                       </Badge>
                     )}
+                    {isWisata ? (
+                      <Badge variant="outline" className="text-[10px] font-mono border-purple-400 text-purple-700 dark:text-purple-300 bg-purple-50/50">
+                        🌴 Wisata: Tarif Harian (PER_DAY)
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[10px] font-mono border-border text-muted-foreground">
+                        🚌 AKAP: Tarif Ritase PP (PER_TRIP)
+                      </Badge>
+                    )}
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -2007,13 +2081,19 @@ export default function SpjFinancePage() {
                 </Button>
                 <Button
                   size="sm"
+                  disabled={isWisata}
                   onClick={() => {
                     if (spj.crewAssignments && spj.crewAssignments.length > 0) {
                       setFullSeatSelectedCrew(spj.crewAssignments.map((c) => c.id));
                     }
                     setFullSeatModalOpen(true);
                   }}
-                  className="h-8 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs gap-1.5"
+                  className={`h-8 text-xs font-semibold gap-1.5 ${
+                    isWisata
+                      ? 'bg-muted text-muted-foreground opacity-60 cursor-not-allowed hover:bg-muted'
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                  }`}
+                  title={isWisata ? 'Khusus Layanan AKAP (Bonus Full Seat tidak berlaku untuk charter wisata sesuai Blueprint Addendum v1.8 & v1.10)' : undefined}
                 >
                   <Sparkles className="w-3.5 h-3.5" /> + Klaim Bonus Full Seat
                 </Button>
@@ -3037,10 +3117,13 @@ export default function SpjFinancePage() {
         <DialogContent className="max-w-lg bg-background border border-border/70 rounded-xl shadow-lg">
           <DialogHeader className="pb-2 border-b border-border/50">
             <DialogTitle className="text-base font-semibold flex items-center gap-2 text-foreground">
-              <Coins className="w-4 h-4 text-primary" /> Input Penerimaan Kas Langsung &amp; Kargo
+              <Coins className="w-4 h-4 text-primary" />{' '}
+              {isWisata ? 'Input Pelunasan Sewa Wisata di Lapangan' : 'Input Penerimaan Kas Langsung & Kargo'}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Tiket langsung naik pool/jalan atau kargo motor/kardus di bagasi bus (Anti-Netting).
+              {isWisata
+                ? 'Penerimaan fisik sisa sewa dari penyewa rombongan di lapangan (Anti-Netting).'
+                : 'Tiket langsung naik pool/jalan atau kargo motor/kardus di bagasi bus (Anti-Netting).'}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreateRevenueSubmit} className="space-y-3.5 pt-2">
@@ -3052,10 +3135,18 @@ export default function SpjFinancePage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="TICKET_CASH">Tiket Tunai Langsung Naik</SelectItem>
-                    <SelectItem value="CARGO_MOTORCYCLE">Kargo Sepeda Motor (Bagasi)</SelectItem>
-                    <SelectItem value="CARGO_BOX">Kargo Kardus / Oleh-oleh</SelectItem>
-                    <SelectItem value="CHARTER_CASH">Pelunasan Sewa Wisata di Lapangan</SelectItem>
+                    <SelectItem value="TICKET_CASH" disabled={isWisata}>
+                      Tiket Tunai Langsung Naik {isWisata ? '(Khusus AKAP)' : ''}
+                    </SelectItem>
+                    <SelectItem value="CARGO_MOTORCYCLE" disabled={isWisata}>
+                      Kargo Sepeda Motor (Bagasi) {isWisata ? '(Khusus AKAP)' : ''}
+                    </SelectItem>
+                    <SelectItem value="CARGO_BOX" disabled={isWisata}>
+                      Kargo Kardus / Oleh-oleh {isWisata ? '(Khusus AKAP)' : ''}
+                    </SelectItem>
+                    <SelectItem value="CHARTER_CASH">
+                      Pelunasan Sewa Wisata di Lapangan (Charter)
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>

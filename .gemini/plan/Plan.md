@@ -504,6 +504,88 @@ Setiap tahap dikerjakan secara paralel per fitur (*Vertical Slice*): **Database 
 
 ---
 
+### 📌 Ekspansi Skeleton UI ke 27 Modul Operasional, Finansial, & Master (Completed — 2026-11-04)
+* [x] **Global Loading Bar & Header Indicator**:
+  * [x] Top indeterminate loading bar (`ApiLoadingBar.tsx`) dengan animasi emerald-to-teal.
+  * [x] Live sync indicator pada Header command bar (`Loader2` spinner reaktif via `useApiLoading`).
+* [x] **Modular Skeleton Presets (`skeleton-loaders.tsx`)**:
+  * [x] `MetricCardSkeleton`, `MetricCardGridSkeleton`, `BankAccountCardSkeleton`.
+  * [x] `TableSkeletonRows`, `SpjTableSkeletonRows`, `CashierPendingTableSkeletonRows`, `VehicleCardGridSkeleton`.
+* [x] **Integrasi Menyeluruh di Seluruh Halaman**:
+  * [x] Dashboard (`/dashboard`), Kasir Pool (`/cashier`), SPJ (`/spjs`), Jadwal (`/schedules`), Armada (`/vehicles`), Pelanggan (`/customers`).
+  * [x] AP Invoices (`/ap-invoices`), AR Invoices (`/ar-invoices`), Kas Kecil (`/petty-cash`), Jurnal (`/journals`), Tutup Buku (`/period-closing`), Laporan Trip (`/reports/trip-profitability`).
+  * [x] Master COA (`/accounts`), Kas & Bank (`/cash-bank`), Tarif (`/fares`), Kru (`/crew-rates`), Agen (`/agents`), Mitra (`/partners`), Organisasi (`/organization`), Fiskal (`/fiscal-periods`), User (`/users`), Role (`/roles`), Menu (`/menus`).
+
+---
+
+### 📌 Penyempurnaan Standar Produksi Seluruh Modul Master, CRM & Fiskal (Completed — 2026-11-04)
+* [x] **Eliminasi Total Native Alerts (Zero Native Alerts)**:
+  * [x] Integrasi `ConfirmDialog` terstandarisasi (`variant="danger"` / `variant="warning"`) menggantikan 100% `window.confirm()` dan `window.prompt()`.
+* [x] **Pencarian Live Debounced (300ms) & Multi-Filter Terpadu**:
+  * [x] Menerapkan pencarian instan debounced di `/vehicles`, `/cash-bank`, `/fares`, `/crew-rates`, `/agents`, `/partners`, `/organization`, `/fiscal-periods`, `/customers`.
+  * [x] Tombol reset filter dinamis (`RotateCcw`) yang muncul otomatis saat filter aktif.
+* [x] **Fitur Unggulan per Modul**:
+  * [x] `/vehicles`: Galeri foto multi-image armada (`vehicle_images`), selector layout kabin, modal detail resolusi tinggi, paginasi server-side.
+  * [x] `/cash-bank`: Saldo berjalan GL riil, nomor rekening publik masked dengan tombol 1-klik salin, preset transfer dana.
+  * [x] `/fares`: Kalkulator simulator harga tiket dinamis berbasis $f(\text{Rute}, \text{Musim}, \text{Kelas})$, proteksi musim `REGULER`.
+  * [x] `/crew-rates`: Unit-aware base rates, live total kompensasi, simulator rate snapshotting SPJ.
+  * [x] `/agents`: Smart Route Filter (arah rute leg perjalanan), live komisi calculator dengan preset harga tiket, klasifikasi fisik loket vs OTA.
+  * [x] `/partners`: Simulasi beban kupon makan & fee korlap, preset pax cepat (12, 24, 32, 48 Pax), badge akun AP vs UJ kasir.
+  * [x] `/organization`: Sinkronisasi entitas PT SS Travelink Official, modal CRUD BU/CC/PC dengan auto-uppercase kode.
+  * [x] `/fiscal-periods`: SOP akuntansi kalender, audit reason wajib untuk status `REOPENED`, pintasan ke meja tutup buku.
+  * [x] `/customers`: CRM database leads, tiering Platinum/Gold, quick WhatsApp direct wa.me link & copy actions.
+
+---
+
+### 📌 Penyempurnaan Standar Produksi Modul Finansial, Laporan & Administrasi Sistem (Completed — 2026-11-06)
+* [x] **Modul Akuntansi & Keuangan**:
+  * [x] `/journals`: 11 template preset cerdas jurnal memorial, kalkulator auto-balance, proteksi reversal non-manual ber-tooltip pemandu, filter unit bisnis.
+  * [x] `/ap-invoices`: Penagihan servis makan berkala RM anti-double billing, verifikasi kupon riil vs manifes pax, template preset tagihan bengkel/gaji/utilitas, modal bukti bayar AP.
+  * [x] `/ar-invoices`: Siklus DP wisata 30% akun `24101`, pelunasan 70% akun `12101`, modal kwitansi terima kas/bank, paginasi lengkap pada Tab Invoices & Receipts.
+  * [x] `/petty-cash`: 8 preset SOP akuntansi kas kecil garasi (Standby Driver, Langsir, Cuci Bus, Lembur Mekanik, dll.), modal BKK pengeluaran & BKM replenishment.
+  * [x] `/treasury`: Rekening koran digital GL real-time, antrean transfer dana Maker-Checker berbasis custom permission `actions?.approve`.
+* [x] **Modul Laporan & Tutup Buku**:
+  * [x] `/reports/trip-profitability`: Tampilan ganda (Per Bus vs Per Kelompok Perjalanan Skenario 3), margin badge indikator, modal audit breakdown transaksi.
+  * [x] `/reports/general-ledger`: 4 Tab terpadu (Buku Besar running balance, Neraca Saldo Trial Balance, Laba Rugi Komprehensif PT SS Travelink Official, Neraca Keuangan Aset = Liabilitas + Ekuitas).
+  * [x] `/period-closing`: Audit wizard 6-point checklist kepatuhan, implementasi Skenario 4 (Kemerdekaan Tutup Buku unblocked via akun `11999`), modal penguncian `CLOSED` & pembukaan `REOPENED`.
+* [x] **Modul Manajemen Sistem & RBAC**:
+  * [x] `/users`: 4 kartu metrik header, pencarian debounced ILIKE, filter tipe/status/role, modal user ergonomis, secure admin password reset modal.
+  * [x] `/roles`: Matriks izin RBAC hierarkis berjenjang (Baca, Buat, Ubah, Hapus), auto-check logika Baca, proteksi hapus peran inti sistem (`SUPER_ADMIN`, `DIRECTOR`, `FINANCE_MANAGER`).
+  * [x] `/menu-management`: Visualisasi pohon hierarki rekursif, IconPicker Lucide, proteksi circular reference parent, custom actions tag input (`approve`, `export`, dll.).
+
+---
+
+### 📌 SPJ Full-Page Finance, Kompensasi Kru, Uang Koordinasi & Restoran Gelondongan (Completed — 2026-11-07)
+* [x] **Halaman Mandiri Keuangan SPJ (`/spjs/:id/finance`)**:
+  * [x] Layout lapang vertikal bersusun 6 bagian tanpa tab dengan kartu metrik ringkasan dinamis pada masing-masing header bagian.
+  * [x] Bagian 1: Amplop UJ, pencairan multi-line, pengembalian sisa kas fisik supir, dan rollover bus breakdown.
+  * [x] Bagian 2: Pengeluaran nota fisik BBM solar (liter + KM), tol Trans-Jawa, retribusi terminal, parkir, dan perbaikan darurat.
+  * [x] Bagian 3: Deklarasi penerimaan kas kru & integrasi cerdas penjualan tiket mitra agen (100% Bruto, kalkulasi komisi otomatis, preview jurnal akuntansi atomik).
+  * [x] Bagian 4: Tagihan servis makan restoran mitra (pilihan RM, kupon riil pax fleksibel editable, snapshot tarif per pax dengan edit manual, akrual Beban 51102 vs Utang 21101, status transfer gelondongan, dan tombol hapus).
+  * [x] Bagian 5: Beban koordinasi lapangan (snapshot tiket terjual per leg, matching principle Beban 52105 vs Utang 22102, filter ketat zona Barat/Timur tanpa kebocoran leg 0-tiket, tombol sinkronisasi, link ke halaman gelondongan, dan tombol hapus).
+  * [x] Bagian 6: Hak kompensasi kru khusus operasional lapangan:
+    * [x] **Uang Perpal Kru (`PERPAL_ALLOWANCE`)**: Kompensasi uang makan tambahan & biaya tunggu menginap di terminal tujuan (Beban `53101`), input hari, lokasi terminal, nominal harian, checklist personil, opsi early payout transfer bank vs kasir pool.
+    * [x] **Bonus Full Seat Kru (`FULL_SEAT_BONUS`)**: Apresiasi okupansi 100% penuh (Beban `53103`), live counter kapasitas bus vs tiket terjual, nominal bonus per orang, checklist penerima.
+    * [x] **Fleksibilitas Komisi Kru Kargo**: Dua arah persentase $\leftrightarrow$ nominal rupiah, tombol preset (10%, 15%, 20%, 25%, 30%), kalkulasi net kantor, dropdown supir penerima.
+    * [x] **Sinkronisasi Kasir Meja Pool**: Debit langsung ke akun beban yang tepat (`53101`, `53102`, `53103`, `53104`) saat kasir membayar tunai di garasi sehingga jurnal rekonsiliasi kasir seimbang 100%.
+* [x] **Modul Uang Koordinasi Lapangan Berbasis Tiket Terjual (`/finance/coordination-fees`)**:
+  * [x] Akun COA resmi: `52105 — Beban Koordinasi Lapangan & Pengurus Jalur` vs `22102 — Utang Jasa Koordinator Lapangan`.
+  * [x] Snapshot tiket per leg: `Tiket Terjual x Tarif per Pax (Rp 10.000)`. Filter ketat Barat/Timur.
+  * [x] Halaman mandiri 3 tab: Tagihan Siap Bayar Gelondongan (checklist SPJ, summary bar, modal bulk transfer bank), Riwayat Pembayaran Gelondongan (detail batch & generator Salin Teks WhatsApp ke koordinator), dan Pengaturan Tarif Master Rules.
+* [x] **Modul Pembayaran Servis Makan Restoran Mitra Gelondongan (`/finance/restaurant-settlements`)**:
+  * [x] Akun COA resmi: `51102 — Beban Servis Makan Penumpang` vs `21101 — Utang Usaha Vendor Restoran Mitra`.
+  * [x] Snapshot tarif per pax dari master dengan kemampuan edit manual porsi khusus & jumlah pax riil fleksibel.
+  * [x] Halaman mandiri 3 tab: Tagihan Restoran Siap Bayar Gelondongan (filter RM, checklist SPJ, summary bar, modal bulk transfer bank), Riwayat Pembayaran Gelondongan (detail batch & generator Salin Teks WhatsApp ke pemilik RM), dan Profil Restoran Mitra Resmi.
+* [x] **Fitur Reversal Jurnal Otomatis & Pembersihan Record**:
+  * [x] Setiap penghapusan record koordinasi atau kupon makan manual otomatis mengeksekusi reversal jurnal akrual via `JournalReversalService`.
+* [x] **Perbaikan Hirarki COA Akun 52105**:
+  * [x] Migrasi `1783700000000-set-parent-id-for-account-52105.ts`: Menetapkan `parent_id` akun `52105` ke akun header `52` di bawah Kepala `5 BEBAN`.
+* [x] **Automated Testing & Build**:
+  * [x] 35 unit test suites backend (264 unit tests total) lulus 100%.
+  * [x] Backend NestJS `yarn build` sukses 100%.
+
+---
+
 ### 📌 Tahap 10: E2E Simulation Testing & System Polish (Final Verification)
 * [ ] **Simulasi End-to-End Penuh di Browser**:
   * [ ] **Simulasi Skenario 1**: Penerbitan Jadwal & SPJ AKAP PP Bus SS-01 $\to$ Pencairan UJ Rp 3.5jt $\to$ Penjualan Tiket Bruto & Kargo Motor Komisi 20% $\to$ Rekonsiliasi Kasir Pool (Kantong UJ Balanced Rp 0 + Kantong Setoran Matched) $\to$ Posting Jurnal SPJ Rp 16.68jt $\to$ Penagihan AP Servis Makan RM Taman Selera Subang $\to$ Cek Laporan Margin Trip (+Rp 6.57jt).

@@ -98,6 +98,11 @@ export class IncomeStatementFilterDto {
   @IsOptional()
   @IsUUID()
   businessUnitId?: string;
+
+  @ApiPropertyOptional({ description: 'Filter Cost Center' })
+  @IsOptional()
+  @IsUUID()
+  costCenterId?: string;
 }
 
 export class BalanceSheetFilterDto {
@@ -140,6 +145,11 @@ export class TripProfitabilityFilterDto {
   @IsOptional()
   @IsUUID()
   vehicleId?: string;
+
+  @ApiPropertyOptional({ description: 'Filter ID Cost Center Operasional' })
+  @IsOptional()
+  @IsUUID()
+  costCenterId?: string;
 
   @ApiPropertyOptional({
     enum: TripProfitabilityViewMode,

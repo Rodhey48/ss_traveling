@@ -2214,6 +2214,8 @@ export interface IncomeStatementResponse {
     startDate: string;
     endDate: string;
     periodName?: string;
+    businessUnitId?: string;
+    costCenterId?: string;
   };
   revenues: {
     groups: PnLGroup[];
@@ -2270,6 +2272,7 @@ export interface TripProfitabilityFilterParams {
   endDate?: string;
   serviceType?: TripServiceType;
   vehicleId?: string;
+  costCenterId?: string;
   viewMode?: TripProfitabilityViewMode;
   search?: string;
 }
@@ -2281,6 +2284,9 @@ export interface TripProfitabilityItem {
   parentSpjNo?: string;
   hasReplacement: boolean;
   serviceType: string;
+  costCenterId?: string;
+  costCenterCode?: string;
+  costCenterName?: string;
   departureDate: string;
   origin: string;
   destination: string;
@@ -2330,6 +2336,8 @@ export interface TripProfitabilityDetailResponse {
     source: string;
     description: string;
     amount: string;
+    costCenterCode?: string;
+    costCenterName?: string;
   }>;
   costDetails: Array<{
     category: string;
@@ -2337,6 +2345,8 @@ export interface TripProfitabilityDetailResponse {
     accountName: string;
     description: string;
     amount: string;
+    costCenterCode?: string;
+    costCenterName?: string;
   }>;
   journalEntries: Array<{
     journalId: string;
@@ -2346,6 +2356,7 @@ export interface TripProfitabilityDetailResponse {
     description: string;
     totalDebit: string;
     totalCredit: string;
+    costCenterCode?: string;
   }>;
 }
 

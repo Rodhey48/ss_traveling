@@ -21,6 +21,9 @@ export interface TripProfitabilityItem {
   parentSpjNo?: string;
   hasReplacement: boolean;
   serviceType: string;
+  costCenterId?: string;
+  costCenterCode?: string;
+  costCenterName?: string;
   departureDate: string;
   origin: string;
   destination: string;
@@ -73,6 +76,8 @@ export interface TripProfitabilityDetailResponse {
     source: string;
     description: string;
     amount: string;
+    costCenterCode?: string;
+    costCenterName?: string;
   }>;
   costDetails: Array<{
     category: string;
@@ -80,6 +85,8 @@ export interface TripProfitabilityDetailResponse {
     accountName: string;
     description: string;
     amount: string;
+    costCenterCode?: string;
+    costCenterName?: string;
   }>;
   journalEntries: Array<{
     journalId: string;
@@ -89,6 +96,7 @@ export interface TripProfitabilityDetailResponse {
     description: string;
     totalDebit: string;
     totalCredit: string;
+    costCenterCode?: string;
   }>;
 }
 
@@ -117,11 +125,14 @@ export class TripProfitabilityService {
     const spjQb = this.spjRepo
       .createQueryBuilder('spj')
       .leftJoinAndSelect('spj.vehicle', 'vehicle')
+      .leftJoinAndSelect('spj.costCenter', 'costCenter')
       .leftJoinAndSelect('spj.tripSchedule', 'schedule')
       .leftJoinAndSelect('spj.parentSpj', 'parentSpj')
       .leftJoinAndSelect('parentSpj.vehicle', 'parentVehicle')
+      .leftJoinAndSelect('parentSpj.costCenter', 'parentCostCenter')
       .leftJoinAndSelect('spj.replacementSpjs', 'replacementSpjs')
       .leftJoinAndSelect('replacementSpjs.vehicle', 'replacementVehicle')
+      .leftJoinAndSelect('replacementSpjs.costCenter', 'replacementCostCenter')
       .leftJoinAndSelect('spj.crewAssignments', 'crewAssignments')
       .leftJoinAndSelect('crewAssignments.crew', 'crewUser')
       .leftJoinAndSelect('spj.revenueDeclarations', 'revDecl')
@@ -144,6 +155,9 @@ export class TripProfitabilityService {
     }
     if (filter.vehicleId) {
       spjQb.andWhere('spj.vehicleId = :vId', { vId: filter.vehicleId });
+    }
+    if (filter.costCenterId) {
+      spjQb.andWhere('spj.costCenterId = :ccId', { ccId: filter.costCenterId });
     }
     if (filter.search) {
       spjQb.andWhere(
@@ -170,11 +184,14 @@ export class TripProfitabilityService {
 
     const spjIds = spjs.map((s) => s.id);
 
-    // Ambil seluruh journal_lines POSTED yang tertaut ke trip_id
+    // Ambil seluruh journal_lines POSTED yang tertaut ke trip_id beserta cost center
     const journalLinesQuery = `
       SELECT 
         jl.trip_id AS "tripId",
         jl.vehicle_id AS "vehicleId",
+        jl.cost_center_id AS "costCenterId",
+        cc.code AS "costCenterCode",
+        cc.name AS "costCenterName",
         a.code AS "accountCode",
         a.name AS "accountName",
         a.type AS "accountType",
@@ -184,12 +201,16 @@ export class TripProfitabilityService {
       FROM journal_lines jl
       INNER JOIN journal_entries j ON j.id = jl.journal_entry_id
       INNER JOIN accounts a ON a.id = jl.account_id
+      LEFT JOIN cost_centers cc ON cc.id = jl.cost_center_id
       WHERE j.status = 'POSTED' AND jl.trip_id IN (${spjIds.map((_, idx) => `$${idx + 1}`).join(',')})
     `;
 
     const lines: Array<{
       tripId: string;
       vehicleId: string;
+      costCenterId?: string;
+      costCenterCode?: string;
+      costCenterName?: string;
       accountCode: string;
       accountName: string;
       accountType: string;
@@ -258,6 +279,10 @@ export class TripProfitabilityService {
 
       const pax = spj.legs?.reduce((acc, curr) => acc + (curr.passengerCount || 0), 0) || 0;
 
+      const fallbackCostCenterCode = spj.serviceType === 'WISATA' ? 'CC-OPS-WISATA' : 'CC-OPS-AKAP';
+      const fallbackCostCenterName =
+        spj.serviceType === 'WISATA' ? 'Operasional Divisi Pariwisata' : 'Operasional Divisi AKAP';
+
       items.push({
         id: spj.id,
         journeyGroupId: spj.parentSpjId || spj.id,
@@ -265,6 +290,9 @@ export class TripProfitabilityService {
         parentSpjNo: spj.parentSpj?.spjNo,
         hasReplacement: Boolean(spj.parentSpjId || (spj.replacementSpjs && spj.replacementSpjs.length > 0)),
         serviceType: spj.serviceType,
+        costCenterId: spj.costCenterId,
+        costCenterCode: spj.costCenter?.code || fallbackCostCenterCode,
+        costCenterName: spj.costCenter?.name || fallbackCostCenterName,
         departureDate,
         origin,
         destination,
@@ -412,12 +440,19 @@ export class TripProfitabilityService {
       const destination =
         parentSpj.tripSchedule?.destination || parentSpj.legs?.[0]?.destination || 'Yogyakarta';
 
+      const fallbackCostCenterCode = parentSpj.serviceType === 'WISATA' ? 'CC-OPS-WISATA' : 'CC-OPS-AKAP';
+      const fallbackCostCenterName =
+        parentSpj.serviceType === 'WISATA' ? 'Operasional Divisi Pariwisata' : 'Operasional Divisi AKAP';
+
       items.push({
         id: groupId,
         journeyGroupId: groupId,
         spjNo: hasReplacement ? `${parentSpj.spjNo} (Konsolidasi)` : parentSpj.spjNo,
         hasReplacement,
         serviceType: parentSpj.serviceType,
+        costCenterId: parentSpj.costCenterId,
+        costCenterCode: parentSpj.costCenter?.code || fallbackCostCenterCode,
+        costCenterName: parentSpj.costCenter?.name || fallbackCostCenterName,
         departureDate,
         origin,
         destination,
@@ -587,11 +622,14 @@ export class TripProfitabilityService {
       where: { id },
       relations: [
         'vehicle',
+        'costCenter',
         'tripSchedule',
         'parentSpj',
         'parentSpj.vehicle',
+        'parentSpj.costCenter',
         'replacementSpjs',
         'replacementSpjs.vehicle',
+        'replacementSpjs.costCenter',
         'crewAssignments',
         'crewAssignments.crew',
         'revenueDeclarations',
@@ -609,7 +647,7 @@ export class TripProfitabilityService {
       const parentId = mainSpj.parentSpjId || mainSpj.id;
       const allRelated = await this.spjRepo.find({
         where: [{ id: parentId }, { parentSpjId: parentId }],
-        relations: ['vehicle'],
+        relations: ['vehicle', 'costCenter'],
       });
       targetSpjIds = allRelated.map((s) => s.id);
     }
@@ -619,18 +657,27 @@ export class TripProfitabilityService {
       .createQueryBuilder('jl')
       .innerJoinAndSelect('jl.journalEntry', 'j')
       .innerJoinAndSelect('jl.account', 'a')
+      .leftJoinAndSelect('jl.costCenter', 'cc')
       .where('j.status = :st', { st: 'POSTED' })
       .andWhere('jl.tripId IN (:...targetSpjIds)', { targetSpjIds })
       .orderBy('j.journalDate', 'ASC')
       .getMany();
 
-    const revenueDetails: Array<{ source: string; description: string; amount: string }> = [];
+    const revenueDetails: Array<{
+      source: string;
+      description: string;
+      amount: string;
+      costCenterCode?: string;
+      costCenterName?: string;
+    }> = [];
     const costDetails: Array<{
       category: string;
       accountCode: string;
       accountName: string;
       description: string;
       amount: string;
+      costCenterCode?: string;
+      costCenterName?: string;
     }> = [];
 
     const journalMap = new Map<string, any>();
@@ -646,11 +693,15 @@ export class TripProfitabilityService {
           description: entry.description,
           totalDebit: entry.totalDebit,
           totalCredit: entry.totalCredit,
+          costCenterCode: jl.costCenter?.code,
         });
       }
 
       const acc = jl.account;
       if (!acc) continue;
+
+      const ccCode = jl.costCenter?.code || (mainSpj.serviceType === 'WISATA' ? 'CC-OPS-WISATA' : 'CC-OPS-AKAP');
+      const ccName = jl.costCenter?.name || (mainSpj.serviceType === 'WISATA' ? 'Operasional Divisi Pariwisata' : 'Operasional Divisi AKAP');
 
       if (acc.type === 'REVENUE') {
         const net = MoneyHelper.sub(jl.credit, jl.debit);
@@ -658,12 +709,15 @@ export class TripProfitabilityService {
           source: acc.name,
           description: jl.description || entry?.description || '-',
           amount: net,
+          costCenterCode: ccCode,
+          costCenterName: ccName,
         });
       } else if (acc.type === 'EXPENSE') {
         const net = MoneyHelper.sub(jl.debit, jl.credit);
         let category = 'Biaya Operasional Langsung';
         if (acc.code === '51101') category = 'BBM Solar Armada';
         else if (acc.code === '51102') category = 'Servis Makan Penumpang (RM Mitra)';
+        else if (acc.code === '52105') category = 'Uang Koordinasi Pengurus Jalur';
         else if (acc.code.startsWith('521')) category = 'Tol & Parkir Perjalanan';
         else if (acc.code.startsWith('531')) category = 'Hak & Uang Makan Kru';
         else if (acc.code.startsWith('541')) category = 'Komisi Agen & Rekanan';
@@ -675,6 +729,8 @@ export class TripProfitabilityService {
           accountName: acc.name,
           description: jl.description || entry?.description || '-',
           amount: net,
+          costCenterCode: ccCode,
+          costCenterName: ccName,
         });
       }
     }

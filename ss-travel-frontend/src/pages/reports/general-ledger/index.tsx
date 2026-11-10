@@ -23,7 +23,8 @@ import {
 } from '@/components/ui/select';
 import { ReportService } from '@/services/report.service';
 import { AccountService } from '@/services/account.service';
-import type { Account } from '@/types';
+import { OrganizationService } from '@/services/organization.service';
+import type { Account, CostCenter, BusinessUnit } from '@/types';
 
 export default function GeneralLedgerPage() {
   const [activeTab, setActiveTab] = useState<'GL' | 'TB' | 'PNL' | 'BS'>('GL');
@@ -33,6 +34,8 @@ export default function GeneralLedgerPage() {
   const [endDate, setEndDate] = useState<string>('');
   const [asOfDate, setAsOfDate] = useState<string>('');
   const [selectedAccountId, setSelectedAccountId] = useState<string>('ALL');
+  const [selectedCostCenterId, setSelectedCostCenterId] = useState<string>('ALL');
+  const [selectedBusinessUnitId, setSelectedBusinessUnitId] = useState<string>('ALL');
 
   // Load Accounts for dropdown
   const { data: accountsData } = useQuery({
@@ -41,18 +44,40 @@ export default function GeneralLedgerPage() {
   });
   const postableAccounts = (accountsData?.data as Account[]) || [];
 
+  // Load Cost Centers & Business Units
+  const { data: ccData } = useQuery({
+    queryKey: ['cost-centers-list'],
+    queryFn: () => OrganizationService.getCostCenters(),
+  });
+  const costCenters = (ccData?.data as CostCenter[]) || [];
+
+  const { data: buData } = useQuery({
+    queryKey: ['business-units-list'],
+    queryFn: () => OrganizationService.getBusinessUnits(),
+  });
+  const businessUnits = (buData?.data as BusinessUnit[]) || [];
+
   // Query GL
   const {
     data: glData,
     isLoading: isGlLoading,
     refetch: refetchGl,
   } = useQuery({
-    queryKey: ['report-gl', selectedAccountId, startDate, endDate],
+    queryKey: [
+      'report-gl',
+      selectedAccountId,
+      startDate,
+      endDate,
+      selectedCostCenterId,
+      selectedBusinessUnitId,
+    ],
     queryFn: () =>
       ReportService.getGeneralLedger({
         accountId: selectedAccountId === 'ALL' ? undefined : selectedAccountId,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
+        costCenterId: selectedCostCenterId === 'ALL' ? undefined : selectedCostCenterId,
+        businessUnitId: selectedBusinessUnitId === 'ALL' ? undefined : selectedBusinessUnitId,
       }),
     enabled: activeTab === 'GL',
   });
@@ -63,11 +88,12 @@ export default function GeneralLedgerPage() {
     isLoading: isTbLoading,
     refetch: refetchTb,
   } = useQuery({
-    queryKey: ['report-tb', startDate, endDate],
+    queryKey: ['report-tb', startDate, endDate, selectedBusinessUnitId],
     queryFn: () =>
       ReportService.getTrialBalance({
         startDate: startDate || undefined,
         endDate: endDate || undefined,
+        businessUnitId: selectedBusinessUnitId === 'ALL' ? undefined : selectedBusinessUnitId,
       }),
     enabled: activeTab === 'TB',
   });
@@ -78,11 +104,19 @@ export default function GeneralLedgerPage() {
     isLoading: isPnlLoading,
     refetch: refetchPnl,
   } = useQuery({
-    queryKey: ['report-pnl', startDate, endDate],
+    queryKey: [
+      'report-pnl',
+      startDate,
+      endDate,
+      selectedCostCenterId,
+      selectedBusinessUnitId,
+    ],
     queryFn: () =>
       ReportService.getIncomeStatement({
         startDate: startDate || undefined,
         endDate: endDate || undefined,
+        costCenterId: selectedCostCenterId === 'ALL' ? undefined : selectedCostCenterId,
+        businessUnitId: selectedBusinessUnitId === 'ALL' ? undefined : selectedBusinessUnitId,
       }),
     enabled: activeTab === 'PNL',
   });
@@ -93,10 +127,11 @@ export default function GeneralLedgerPage() {
     isLoading: isBsLoading,
     refetch: refetchBs,
   } = useQuery({
-    queryKey: ['report-bs', asOfDate],
+    queryKey: ['report-bs', asOfDate, selectedBusinessUnitId],
     queryFn: () =>
       ReportService.getBalanceSheet({
         asOfDate: asOfDate || undefined,
+        businessUnitId: selectedBusinessUnitId === 'ALL' ? undefined : selectedBusinessUnitId,
       }),
     enabled: activeTab === 'BS',
   });
@@ -110,12 +145,21 @@ export default function GeneralLedgerPage() {
     setStartDate('');
     setEndDate('');
     setSelectedAccountId('ALL');
+    setSelectedCostCenterId('ALL');
+    setSelectedBusinessUnitId('ALL');
     setAsOfDate('');
   };
 
   const hasActiveFilters = useMemo(() => {
-    return startDate !== '' || endDate !== '' || selectedAccountId !== 'ALL' || asOfDate !== '';
-  }, [startDate, endDate, selectedAccountId, asOfDate]);
+    return (
+      startDate !== '' ||
+      endDate !== '' ||
+      selectedAccountId !== 'ALL' ||
+      selectedCostCenterId !== 'ALL' ||
+      selectedBusinessUnitId !== 'ALL' ||
+      asOfDate !== ''
+    );
+  }, [startDate, endDate, selectedAccountId, selectedCostCenterId, selectedBusinessUnitId, asOfDate]);
 
   return (
     <div className="space-y-6 p-6">
@@ -130,7 +174,7 @@ export default function GeneralLedgerPage() {
               Laporan Finansial &amp; Akuntansi
             </h1>
             <p className="text-sm text-muted-foreground">
-              Buku Besar (GL), Neraca Saldo, Laba Rugi Komprehensif, dan Neraca Keuangan PT SS Travelink Official
+              Buku Besar (GL), Neraca Saldo, Laba Rugi Komprehensif per Cost Center, dan Neraca Keuangan PT SS Travelink Official
             </p>
           </div>
         </div>
@@ -179,7 +223,7 @@ export default function GeneralLedgerPage() {
         <TabsContent value="GL" className="space-y-4">
           {/* FILTER TOOLBAR */}
           <div className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-4 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-xs flex flex-wrap gap-3 items-center">
-            <div className="w-full sm:w-72">
+            <div className="w-full sm:w-64">
               <label className="text-[11px] font-semibold text-muted-foreground mb-1 block">Pilih Akun COA</label>
               <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
                 <SelectTrigger className="h-8.5 text-xs">
@@ -196,13 +240,31 @@ export default function GeneralLedgerPage() {
               </Select>
             </div>
 
+            <div className="w-48">
+              <label className="text-[11px] font-semibold text-muted-foreground mb-1 block">Cost Center</label>
+              <Select value={selectedCostCenterId} onValueChange={setSelectedCostCenterId}>
+                <SelectTrigger className="h-8.5 text-xs">
+                  <Building2 className="w-3.5 h-3.5 mr-1 text-muted-foreground" />
+                  <SelectValue placeholder="Cost Center" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL" className="text-xs font-semibold">Semua Cost Center</SelectItem>
+                  {costCenters.map((cc) => (
+                    <SelectItem key={cc.id} value={cc.id} className="text-xs">
+                      {cc.code} - {cc.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div>
               <label className="text-[11px] font-semibold text-muted-foreground mb-1 block">Dari Tanggal</label>
               <Input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="h-8.5 text-xs w-40"
+                className="h-8.5 text-xs w-36"
               />
             </div>
 
@@ -212,7 +274,7 @@ export default function GeneralLedgerPage() {
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="h-8.5 text-xs w-40"
+                className="h-8.5 text-xs w-36"
               />
             </div>
 
@@ -511,13 +573,48 @@ export default function GeneralLedgerPage() {
         {/* ------------------------------------------------------------- */}
         <TabsContent value="PNL" className="space-y-4">
           <div className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-4 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-xs flex flex-wrap gap-3 items-center">
+            <div className="w-48">
+              <label className="text-[11px] font-semibold text-muted-foreground mb-1 block">Cost Center (Segmen)</label>
+              <Select value={selectedCostCenterId} onValueChange={setSelectedCostCenterId}>
+                <SelectTrigger className="h-8.5 text-xs">
+                  <Building2 className="w-3.5 h-3.5 mr-1 text-muted-foreground" />
+                  <SelectValue placeholder="Cost Center" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL" className="text-xs font-semibold">Semua Cost Center</SelectItem>
+                  {costCenters.map((cc) => (
+                    <SelectItem key={cc.id} value={cc.id} className="text-xs">
+                      {cc.code} - {cc.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="w-44">
+              <label className="text-[11px] font-semibold text-muted-foreground mb-1 block">Unit Usaha (BU)</label>
+              <Select value={selectedBusinessUnitId} onValueChange={setSelectedBusinessUnitId}>
+                <SelectTrigger className="h-8.5 text-xs">
+                  <SelectValue placeholder="Semua Unit Usaha" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL" className="text-xs font-semibold">Semua Unit Usaha</SelectItem>
+                  {businessUnits.map((bu) => (
+                    <SelectItem key={bu.id} value={bu.id} className="text-xs">
+                      {bu.code} - {bu.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div>
               <label className="text-[11px] font-semibold text-muted-foreground mb-1 block">Dari Tanggal</label>
               <Input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="h-8.5 text-xs w-40"
+                className="h-8.5 text-xs w-36"
               />
             </div>
             <div>
@@ -526,11 +623,11 @@ export default function GeneralLedgerPage() {
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="h-8.5 text-xs w-40"
+                className="h-8.5 text-xs w-36"
               />
             </div>
 
-            {(startDate !== '' || endDate !== '') && (
+            {(startDate !== '' || endDate !== '' || selectedCostCenterId !== 'ALL' || selectedBusinessUnitId !== 'ALL') && (
               <div className="self-end pb-0.5">
                 <Button
                   variant="ghost"
@@ -538,11 +635,13 @@ export default function GeneralLedgerPage() {
                   onClick={() => {
                     setStartDate('');
                     setEndDate('');
+                    setSelectedCostCenterId('ALL');
+                    setSelectedBusinessUnitId('ALL');
                   }}
                   className="h-8.5 text-xs px-2.5 text-muted-foreground hover:text-foreground gap-1"
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
-                  Reset Tanggal
+                  Reset Filter
                 </Button>
               </div>
             )}
@@ -567,6 +666,22 @@ export default function GeneralLedgerPage() {
                 <p className="text-xs text-muted-foreground mt-1">
                   Periode: {pnlResponse.periodInfo.startDate} s/d {pnlResponse.periodInfo.endDate}
                 </p>
+
+                {(selectedCostCenterId !== 'ALL' || selectedBusinessUnitId !== 'ALL') && (
+                  <div className="flex flex-wrap items-center justify-center gap-2 mt-2.5">
+                    {selectedCostCenterId !== 'ALL' && (
+                      <Badge variant="outline" className="font-mono text-xs border-indigo-400 text-indigo-700 dark:text-indigo-300 bg-indigo-50/60 dark:bg-indigo-950/40 gap-1.5 py-1 px-3 font-bold">
+                        <Building2 className="w-3.5 h-3.5" />
+                        Segmen Cost Center: {costCenters.find((c) => c.id === selectedCostCenterId)?.code} - {costCenters.find((c) => c.id === selectedCostCenterId)?.name}
+                      </Badge>
+                    )}
+                    {selectedBusinessUnitId !== 'ALL' && (
+                      <Badge variant="outline" className="font-mono text-xs border-blue-400 text-blue-700 dark:text-blue-300 bg-blue-50/60 dark:bg-blue-950/40 gap-1.5 py-1 px-3">
+                        Unit Usaha: {businessUnits.find((b) => b.id === selectedBusinessUnitId)?.name}
+                      </Badge>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* I. PENDAPATAN OPERASIONAL */}

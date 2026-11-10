@@ -41,6 +41,7 @@ export const ReportService = {
     endDate?: string;
     periodId?: string;
     businessUnitId?: string;
+    costCenterId?: string;
   }): Promise<BaseResponse<IncomeStatementResponse>> => {
     const response = await api.get<BaseResponse<IncomeStatementResponse>>(
       'api/v1/reports/income-statement',

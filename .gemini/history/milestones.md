@@ -2,6 +2,59 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-11-10: Redesign Modal Audit Finansial Perjalanan (TripProfitabilityDetailModal) — Tabbed Dashboard & Smooth Scroll Completed
+- **Penyelesaian Masalah Scroll Modal (Smooth Native Scrolling)**:
+  - Mengeliminasi pembungkus kaku `flex flex-col` dan Radix `<ScrollArea>` yang menyebabkan scrollbar terkunci pada modal tinggi.
+  - Menerapkan `max-w-4xl max-h-[88vh] overflow-y-auto p-6 sm:p-7` langsung pada `DialogContent` sehingga pengguliran (scroll) berjalan mulus dan natural di semua resolusi layar.
+- **Antarmuka Tab Cerdas & Lebih Sederhana (Clean Segmented UX)**:
+  - Mengganti tumpukan 3 tabel raksasa vertikal yang membingungkan dengan navigasi 3 Tab terstruktur:
+    1. **Tab 1: 📊 Ringkasan & Margin**:
+       - Ringkasan 3 Kartu Metrik Utama (Omzet Bruto, Total Beban Langsung, Margin Kontribusi Bersih & Rasio Margin).
+       - Status Kesehatan Margin: Badge indikator otomatis (Margin Prima ≥ 30%, Margin Wajar 0-29%, Defisit < 0%).
+       - **Struktur Biaya Operasional (Share of Revenue)**: Kartu analitik 6 *cost drivers* (BBM Solar, Hak Kru, Restoran Mitra, Koordinasi Jalur, Tol & Parkir, Derek Darurat) lengkap dengan nominal, persentase beban terhadap omzet kotor, dan visual bar proporsional.
+       - Kotak peringatan konsolidasi Skenario 3 (Armada Pengganti) jika perjalanan mengalami pergantian bus di jalan.
+    2. **Tab 2: 📑 Pos Finansial (Pendapatan & Beban Langsung)**:
+       - Rincian pos pendapatan operasional (Tiket, Kargo, Pelunasan Charter) dengan Cost Center tag dan subtotal.
+       - Rincian pos beban langsung dengan ikon kontekstual (Solar, Kupon Makan, Uang Koordinasi, Hak Kru, Derek, Tol), kode dan nama akun COA, serta subtotal.
+       - Banner kalkulasi margin kontribusi bersih di bagian bawah tab: `Omzet - Beban = Net Margin (Rasio %)`.
+    3. **Tab 3: 📜 Jurnal GL ({journalEntries.length})**:
+       - Pengecekan integritas pembukuan ganda otomatis: Indikator Balance (*Debit vs Kredit Seimbang*) dan total mutasi.
+       - Tabel jejak audit voucher jurnal akuntansi (`JV/...`) lengkap dengan tanggal, tipe sumber transaksi, Cost Center, uraian, dan nominal.
+- **Verifikasi Kualitas**:
+  - Frontend Vite React build sukses tanpa warning atau error.
+  - Backend NestJS 35 test suites (264 unit tests total) lulus 100%.
+
+### 2026-11-10: Upgrade Laporan SPJS (Trip Profitability) & Laporan Keuangan (Laba Rugi & GL) per Cost Center Completed
+- **Upgrade Laporan Profitabilitas SPJ Perjalanan (`/reports/trip-profitability`)**:
+  - Filter Cost Center dinamis: Dropdown pilihan Cost Center (`CC-OPS-AKAP`, `CC-OPS-WISATA`, `CC-MNT-GARASI`, dll.) terintegrasi dengan `OrganizationService.getCostCenters()`.
+  - Kolom Layanan & Cost Center: Menampilkan badge jenis layanan (AKAP/WISATA) disertai kode Cost Center resmi pada setiap baris perjalanan.
+  - Subline Breakdown Pos Finansial:
+    - Rincian Omzet: Tiket Retail vs Kargo vs Pelunasan Kontrak Sewa Wisata di Lapangan.
+    - Rincian Beban: Komponen Solar BBM, Tol & Parkir, Kupon Servis Makan Restoran Mitra (`51102`), Hak Kru & Early Payout (`53101`), serta Uang Koordinasi Jalur (`52105`).
+  - Modal Audit Finansial Perjalanan (`TripProfitabilityDetailModal`):
+    - Badge dan nama resmi Cost Center di header dan kartu ringkasan.
+    - Tag Cost Center spesifik pada setiap pos rincian pendapatan dan pos rincian beban operasional.
+    - Kategori beban terinci: Servis Makan Restoran Mitra (`51102`), Uang Koordinasi Jalur (`52105`), BBM Solar (`51101`), Tol (`52101`), Hak Kru (`53101`), Komisi Agen (`54101`), dan Derek Darurat (`55101`).
+- **Upgrade Laporan Finansial & Akuntansi (`/reports/general-ledger`)**:
+  - Filter Dimensi Terpadu: Filter Cost Center dan Unit Usaha (BU) ditambahkan pada Tab Buku Besar (GL) dan Tab Laba Rugi (P&L / Income Statement).
+  - Laporan Laba Rugi Bersegmen (Segmented Income Statement):
+    - Banner penanda segmen Cost Center yang dipilih (`CC-OPS-AKAP` vs `CC-OPS-WISATA`).
+    - Akun pendapatan (41101, 42101, 43101) dan beban operasional langsung (51101, 51102, 52101, 52105, 53101, 54101, 55101) difilter secara akurat pada level `journal_lines`.
+  - Buku Besar (General Ledger): Perhitungan saldo awal dan mutasi periode terfilter berdasarkan Cost Center dan Business Unit.
+- **Backend Architecture & Query Enhancements**:
+  - `TripProfitabilityService`: Agregasi by bus dan by journey group menyertakan atribut `costCenterId`, `costCenterCode`, `costCenterName`, serta query SQL `journal_lines` melakukan join ke tabel `cost_centers`.
+  - `FinancialReportsService.getIncomeStatement`: Query SQL raw menyertakan filter dinamis `cost_center_id` dan `business_unit_id` pada baris jurnal POSTED.
+- **Verifikasi Kualitas Penuh**:
+  - Seluruh 35 unit test suites backend (264 unit tests total) lulus 100%.
+  - Backend NestJS build `yarn build` sukses 100%.
+  - Frontend Vite React build `yarn build` sukses 100%.
+
+### 2026-11-07: Perbaikan Struktur Hirarki COA Akun 52105 (Beban Koordinasi Lapangan) Completed
+- **Kepatuhan Struktur Bagan Akun Standar (COA Single-Entry GL)**:
+  - Migrasi TypeORM `1783700000000-set-parent-id-for-account-52105.ts`: Memperbarui `parent_id` untuk akun `52105 — Beban Koordinasi Lapangan & Pengurus Jalur` agar menginduk ke akun Header `52 — Beban Operasional Tidak Langsung` di bawah Kepala Akun `5 — BEBAN`.
+  - Memastikan konsistensi agregasi laporan keuangan (Laba Rugi Komprehensif & Trial Balance) sehingga seluruh beban operasional pengurus jalur terakumulasi secara rapi di sub-kelompok beban tidak langsung tanpa menyebabkan anomali baris yatim (*orphaned accounts*).
+  - Rollback migration `down()` diuji dan dipastikan memulihkan `parent_id` ke `NULL` jika diperlukan.
+
 ### 2026-11-07: Implementasi Uang Perpal Kru, Bonus Full Seat, Uang Koordinasi Lapangan, & Pembayaran Restoran Mitra Gelondongan Completed
 - **Struktur 6 Bagian Bersusun Halaman Mandiri Keuangan SPJ (`/spjs/:id/finance`)**:
   - Penataan ulang hierarki 1 Card Induk menjadi 6 bagian berurutan tanpa tab dengan ringkasan total metrik dinamis di setiap header bagian:

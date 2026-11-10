@@ -113,6 +113,8 @@ export interface IncomeStatementResponse {
     startDate: string;
     endDate: string;
     periodName?: string;
+    businessUnitId?: string;
+    costCenterId?: string;
   };
   revenues: {
     groups: PnLGroup[];
@@ -244,15 +246,23 @@ export class FinancialReportsService {
 
     for (const acc of accounts) {
       // 1. Hitung Saldo Awal (semua jurnal POSTED sebelum startDate)
-      const openingRaw = await this.lineRepo
+      const openQb = this.lineRepo
         .createQueryBuilder('line')
         .innerJoin('line.journalEntry', 'j')
         .where('line.accountId = :accId', { accId: acc.id })
         .andWhere('j.status = :status', { status: JournalStatus.POSTED })
         .andWhere('j.journalDate < :startDate', { startDate })
         .select('SUM(CAST(line.debit AS numeric))', 'totalDebit')
-        .addSelect('SUM(CAST(line.credit AS numeric))', 'totalCredit')
-        .getRawOne();
+        .addSelect('SUM(CAST(line.credit AS numeric))', 'totalCredit');
+
+      if (filter.businessUnitId) {
+        openQb.andWhere('line.businessUnitId = :buId', { buId: filter.businessUnitId });
+      }
+      if (filter.costCenterId) {
+        openQb.andWhere('line.costCenterId = :ccId', { ccId: filter.costCenterId });
+      }
+
+      const openingRaw = await openQb.getRawOne();
 
       const openDebit = openingRaw?.totalDebit || '0.00';
       const openCredit = openingRaw?.totalCredit || '0.00';
@@ -505,6 +515,23 @@ export class FinancialReportsService {
       filter.periodId,
     );
 
+    const params: any[] = [startDate, endDate];
+    let whereClause = `
+      WHERE j.status = 'POSTED'
+        AND j.journal_date >= $1 AND j.journal_date <= $2
+        AND a.type IN ('REVENUE', 'EXPENSE')
+    `;
+
+    if (filter.businessUnitId) {
+      params.push(filter.businessUnitId);
+      whereClause += ` AND jl.business_unit_id = $${params.length}`;
+    }
+
+    if (filter.costCenterId) {
+      params.push(filter.costCenterId);
+      whereClause += ` AND jl.cost_center_id = $${params.length}`;
+    }
+
     const query = `
       SELECT 
         a.code AS "accountCode",
@@ -515,9 +542,7 @@ export class FinancialReportsService {
       FROM accounts a
       INNER JOIN journal_lines jl ON jl.account_id = a.id
       INNER JOIN journal_entries j ON j.id = jl.journal_entry_id
-      WHERE j.status = 'POSTED'
-        AND j.journal_date >= $1 AND j.journal_date <= $2
-        AND a.type IN ('REVENUE', 'EXPENSE')
+      ${whereClause}
       GROUP BY a.code, a.name, a.type
       ORDER BY a.code ASC
     `;
@@ -528,7 +553,7 @@ export class FinancialReportsService {
       accountType: string;
       netCredit: string;
       netDebit: string;
-    }> = await this.dataSource.query(query, [startDate, endDate]);
+    }> = await this.dataSource.query(query, params);
 
     // Grouping
     const revenueGroups: Record<string, PnLGroup> = {};
@@ -685,6 +710,8 @@ export class FinancialReportsService {
         startDate,
         endDate,
         periodName,
+        businessUnitId: filter.businessUnitId,
+        costCenterId: filter.costCenterId,
       },
       revenues: {
         groups: Object.values(revenueGroups),

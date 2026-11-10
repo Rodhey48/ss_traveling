@@ -600,7 +600,57 @@ Response error autentikasi menggunakan struktur terstandar:
     *   Setiap penghapusan kewajiban koordinasi atau servis makan secara manual (atau via tombol sinkronisasi) otomatis mengeksekusi *journal reversal* via `JournalReversalService` agar buku besar bebas dari utang siluman.
 
     ---
+
+    ## 19. Standarisasi Standar UI/UX Produksi & Komponen Reusable
+
+    ### A. Zero Native Alerts Policy (`ConfirmDialog`)
+    *   **Larangan Browser Native Dialog**: Seluruh `window.confirm()` dan `window.prompt()` dilarang keras di seluruh halaman aplikasi frontend.
+    *   **Standar Komponen `ConfirmDialog`**: Menggunakan komponen modal dialog terstandarisasi (`src/components/shared/confirm-dialog.tsx`) dengan varian visual semantik:
+        *   `danger`: Aksi destruktif (penghapusan armada, pembatalan SPJ, penghapusan role/user, pembatalan invoice). Dilengkapi input prompt alasan wajib jika diperlukan audit trail.
+        *   `warning`: Aksi bersyarat (penutupan periode fiskal, isolasi selisih kasir akun `11999`).
+        *   `primary`: Konfirmasi posting akuntansi (persetujuan invoice AR/AP, approval transfer dana).
+    *   **Stateful Loading**: Setiap dialog wajib mengelola status `isLoading` spinner untuk mencegah eksekusi ganda (*double click* / *race condition*).
+
+    ### B. Debounced Search & Responsive Multi-Filter Architecture
+    *   **300ms Debounced Input**: Seluruh kolom pencarian teks mengintegrasikan mekanisme debounce 300ms untuk mencegah spam panggilan API backend secara simultan saat pengetikan.
+    *   **Tombol Reset Filter Dinamis**: Setiap halaman menyediakan tombol `RotateCcw` / `FilterX` yang muncul secara otomatis bila terdapat query pencarian atau filter aktif untuk mempermudah pemulihan filter standar satu sentuhan.
+    *   **Server-Side Pagination Standar**: Menyediakan pemilih limit baris (`10`, `20`, `50`, `100`), navigasi halaman Sebelumnya/Berikutnya, dan format teks standar: *"Menampilkan X - Y dari Z data"*.
+
+    ### C. Skeleton UI Infrastructure & Live Network Tracker
+    *   **Komponen Atomik Skeleton**: `src/components/ui/skeleton.tsx` berbasis Tailwind v4 `animate-pulse` dengan tema netral transparan.
+    *   **Top Progress Bar (`ApiLoadingBar.tsx`)**: Bar progress indeterminate bergradasi emerald-teal di bagian atas viewport (`z-[9999]`) saat terdapat active HTTP request.
+    *   **Header Live Sync Badge**: Indikator status di command bar sisi kanan header yang memunculkan spinner dan teks *"Sinkronisasi..."* secara otomatis via `useApiLoading`.
+    *   **Preset Skeleton**: `MetricCardGridSkeleton`, `BankAccountCardSkeleton`, `TableSkeletonRows`, `SpjTableSkeletonRows`, `CashierPendingTableSkeletonRows`, dan `VehicleCardGridSkeleton`.
+
+    ---
+
+    ## 20. Tata Kelola Hirarki Bagan Akun Standar (COA) & Penataan Akun 52105
+
+    ### A. Struktur 8 Kelompok Akun Standar Industri Bus
+    *   `1 — ASET`: Aktiva Lancar (111 Kas & Bank, 119 Selisih Kas Sementara 11999, 121 Piutang Usaha & Agen, 131 Uang Jalan SPJ 13101) dan Aktiva Tetap (151 Armada Bus, 161 Akumulasi Penyusutan).
+    *   `2 — LIABILITAS`: Utang Usaha Vendor Restoran & Bengkel (211), Utang Komisi Agen & Korlap (221), Uang Muka DP Sewa Wisata (24101), dan Utang Pokok Pembiayaan Bus (261).
+    *   `3 — EKUITAS`: Modal Disetor & Laba Ditahan.
+    *   `4 — PENDAPATAN OPERASIONAL`: Pendapatan Tiket AKAP Reguler (41101) dan Pendapatan Sewa Wisata (42101).
+    *   `5 — BEBAN OPERASIONAL`:
+        *   `51`: Beban Operasional Langsung Armada (BBM Solar `51101`, Servis Kupon Makan Penumpang `51102`).
+        *   `52`: Beban Operasional Tidak Langsung Fasilitas Perjalanan (Tol Trans-Jawa `52101`, Parkir & Retribusi Terminal `52102`, Snack Onboard `52104`, **Beban Koordinasi Lapangan & Pengurus Jalur `52105`**).
+        *   `53`: Hak & Kompensasi Awak Bus (Uang Makan Supir `53101`, Premi Ritase `53102`, Bonus Full Seat `53103`, Komisi Kargo Kru `53104`, Uang Makan Standby Garasi `53105`, Insentif Langsir `53106`).
+        *   `54`: Beban Keagenan (Komisi Agen Tiket `54101`, Cashback Rekanan B2B Wisata `54103`).
+        *   `55`: Beban Perawatan & Bengkel Armada (Servis Rutin, Sparepart, Oli, Derek Tol).
+        *   `56`: Beban Penyusutan Aset Tetap Armada Bus.
+        *   `57`: Beban Administrasi Umum & Garasi Pool (Gaji, Lembur, Listrik, ATK).
+        *   `58`: Beban Selisih Kasir Pool Dispensasi (`58101`).
+        *   `59`: Beban Bunga Pembiayaan Leasing/Bank.
+    *   `8 — PENDAPATAN & BEBAN NON-OPERASIONAL`: Pendapatan/Beban Diluar Usaha (Laba/Rugi Penjualan Aset, Selisih Kurs, Administrasi Bank).
+
+    ### B. Resolusi Hirarki Parent Akun 52105 (Beban Koordinasi Lapangan)
+    *   **Akar Masalah**: Sebelumnya akun `52105` terdaftar dengan `parent_id = NULL` di tabel `accounts`, sehingga menyebabkan akun ini tampil sebagai root item yang terisolasi dari kelompok beban operasional.
+    *   **Solusi Permanen (Migrasi `1783700000000`)**: Memperbarui `parent_id` akun `52105` agar menginduk ke akun Header `52 — Beban Operasional Tidak Langsung` di bawah Kepala Akun `5 — BEBAN`.
+    *   **Integritas Laporan**: Menjamin agregasi Laba Rugi Komprehensif dan Neraca Saldo (Trial Balance) menghitung beban pengurus jalur secara konsisten dalam sub-total beban tidak langsung.
+
+    ---
     *Gunakan dokumen ini sebagai referensi saat melakukan pengembangan fitur baru atau debugging sistem otorisasi.*
+
 
 
 
