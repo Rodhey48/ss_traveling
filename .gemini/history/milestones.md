@@ -2,6 +2,61 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-11-10: Pengujian End-to-End Siklus Finansial SPJ Pariwisata / Wisata Charter (Skenario 2) & Otomasi AR Kontrak Sewa Completed
+- **Pengujian Komprehensif E2E Siklus Finansial SPJ Wisata (`test/spj-wisata-lifecycle.e2e-spec.ts`)**:
+  - Implementasi suite pengujian integrasi E2E 12 tahap mencakup siklus lengkap Skenario 2 (Operasional Sewa Bus Wisata Multi-Day 5 Hari Tour Solo-Yogya):
+    1. **Penerbitan SPJ Wisata (`SPJ/WIS/...`)**: Snapshot tarif harian (`PER_DAY`) uang makan (Rp 500.000) dan premi harian (Rp 750.000) untuk 2 pengemudi (Driver Utama & Driver Cadangan) serta rute PP 5 hari.
+    2. **Penerimaan Uang Muka (DP 30%)**: Klien mentransfer DP Rp 5.250.000 via Bank BCA (`11104`) dengan pencatatan liabilitas `Pendapatan Diterima di Muka (DP Sewa Wisata)` (`24101`).
+    3. **Pencairan UJ Awal Garasi**: Kasir mencairkan UJ tunai Rp 6.000.000 dari Kas Operasional Pool (`11101`) ke amplop kru.
+    4. **Operasional Tour di Lapangan**: Kru menginput nota riil biaya UJ (BBM Solar Rp 3.200.000, Tol Trans Jawa Rp 1.500.000, Parkir Kawasan Wisata Rp 450.000, Cuci Bus Rp 150.000, Homestay Kru Rp 300.000 = Total Biaya Riil Rp 5.600.000).
+    5. **Penambahan UJ Darurat Hari ke-3**: Transfer bank darurat Rp 1.000.000 dari kantor ke rekening supir di Yogyakarta sehingga total plafon UJ menjadi Rp 7.000.000.
+    6. **Mid-Trip Early Payout**: Kru mencairkan uang nafkah keluarga di jalan sebesar Rp 800.000 via transfer bank BCA; sistem memposting Jurnal Akuntansi #4 `(D) 53102 Beban Premi Kru` vs `(K) 11104 Bank BCA` dan menandai baris pembayaran berstatus `PAID` agar tidak dibayar ganda di meja kasir.
+    7. **Penerbitan Invoice Pelunasan 70% & Pengakuan Pendapatan 100%**: Sistem menerbitkan invoice pelunasan Rp 12.250.000 dan memposting jurnal atomik pengakuan pendapatan sewa 100% (Rp 17.500.000):
+       - `(D) 12101 Piutang Sewa Charter Bus Wisata` Rp 12.250.000
+       - `(D) 24101 Pendapatan Diterima di Muka (Pembebasan DP)` Rp 5.250.000
+       - `(K) 42101 Pendapatan Sewa Bus Pariwisata / Charter` Rp 17.500.000
+       - Menautkan seluruh baris ke dimensi `tripId`, `vehicleId`, dan `costCenterId` (`CC-OPS-WISATA`).
+    8. **Pelunasan Invoice oleh Klien**: Klien mentransfer pelunasan Rp 12.250.000 ke Bank BCA; sistem memposting jurnal pelunasan piutang `(D) 11104 Bank BCA` vs `(K) 12101 Piutang Sewa` sehingga saldo piutang dan liabilitas DP tuntas menjadi Rp 0.00.
+    9. **Kepulangan Armada di Pool & Pengembalian Sisa UJ**: Supir menyetor fisik kas sisa UJ Rp 1.400.000 (Plafon Rp 7jt - Riil Rp 5.6jt); status UJ menjadi `BALANCED` (Saldo UJ = Rp 0).
+    10. **Rekonsiliasi Kasir Pool & Settlement**: Kasir membayarkan sisa hak uang makan kru tunai Rp 1.000.000; kas bersih masuk laci kasir `+Rp 400.000` (`netCashDesk`), menghasilkan Jurnal Rekonsiliasi Kasir yang seimbang sempurna (Total Debit = Total Kredit = Rp 7.000.000) dan status SPJ menjadi `SETTLED`.
+    11. **Audit Profitabilitas SPJ Wisata (`/reports/trip-profitability/:id`)**: Omzet charter Rp 17.500.000, Beban Solar Rp 3.200.000, Beban Tol & Parkir/Homestay Rp 2.400.000, Beban Kru Rp 2.500.000 (Early Premi Rp 1.5jt + Makan Rp 1.0jt), Total Beban Langsung Rp 8.100.000, Margin Kontribusi Bersih `+Rp 9.400.000` (Rasio Margin ~53.71%), dan pemetaan Cost Center `CC-OPS-WISATA`.
+    12. **Audit Laporan Laba Rugi Komprehensif (`/reports/income-statement`)**: Memastikan pos pendapatan sewa pariwisata (`42101`) dan pos beban operasional langsung armada/kru teragregasi secara akurat pada periode berjalan.
+- **Penyempurnaan Arsitektur & Akuntansi Backend**:
+  - `ArService.createCharterPelunasanInvoice()`: Mengarahkan akun pendapatan baris faktur ke `42101`, mendeteksi DP terkonfirmasi, dan memposting pengakuan pendapatan 100% serta pembebasan DP `24101` secara atomik.
+  - `CrewMealPaymentsService.disburseEarly()`: Injeksi opsional layanan akuntansi untuk memposting jurnal mid-trip payout hak kru `53102` vs `11104 Bank BCA` secara langsung saat transfer dilakukan di tengah perjalanan.
+  - `CashierSettlementService`: Mengalokasikan pengeluaran UJ pariwisata khusus (`PARKING_TOURISM`, `RETRIBUTION`, `CREW_LODGING`) ke akun `52102 — Beban Parkir, TPR & Penyeberangan Ferry` dan `OTHER` ke `52103 — Beban Cuci Bus & Perlengkapan Armada`.
+- **Verifikasi Kualitas Penuh**:
+  - Backend E2E Test Suites: 5 suites, 37 tests lulus 100% (termasuk suite baru SPJ Wisata 12 tests & AKAP 13 tests).
+  - Backend Unit Test Suites: 35 suites, 264 tests lulus 100%.
+  - Frontend Vite React Build: Berhasil bersih tanpa error (`✓ built in 2.63s`).
+
+### 2026-11-10: Pengujian End-to-End Siklus Finansial SPJ, Otomasi Jurnal Rekonsiliasi Kasir & Verifikasi Akurasi Laba Rugi Completed
+- **Pengujian Komprehensif E2E Siklus Finansial SPJ (`test/spj-finance-lifecycle.e2e-spec.ts`)**:
+  - Implementasi suite pengujian integrasi E2E 13 tahap mencakup siklus lengkap Skenario 1 (Operasional Normal AKAP):
+    1. Inisiasi SPJ AKAP dengan 2 rute (Legs) dan penugasan kru (`Driver 1`).
+    2. Penerbitan SPJ (`ISSUED`) dan pelepasan keberangkatan armada (`IN_PROGRESS`).
+    3. Pencairan Uang Jalan (UJ) Awal Rp 3.500.000 via kas operasional pool.
+    4. Pengeluaran operasional riil di jalan menggunakan UJ (BBM Rp 1.600.000, Tol Rp 900.000, Cuci/Parkir Rp 100.000 = Total Rp 2.600.000).
+    5. Pengembalian sisa fisik UJ Rp 900.000 ke kasir hingga amplop UJ seimbang (`BALANCED`).
+    6. Deklarasi omzet bruto: Tiket tunai langsung kru (Rp 1.000.000), kargo motor (Rp 350.000) dan kargo box (Rp 100.000) dengan perhitungan komisi kru otomatis 20% (Rp 90.000), serta tiket agen offline loket (Rp 2.000.000) dengan pengakuan piutang agen (`12103`) dan komisi agen (`54101`).
+    7. Pencatatan hak kompensasi kru yang dibayar saat kepulangan (Uang makan driver Rp 400.000 & klaim full seat bonus Rp 150.000).
+    8. Penyelesaian operasional kepulangan bus di garasi (`COMPLETED` & `UNDER_REVIEW`).
+    9. Validasi kalkulasi Dua Kantong Kas Kru (Anti-Netting) secara otomatis di meja kasir.
+    10. Proses rekonsiliasi kasir pool (Anti-Netting) dengan penerbitan nomor BKM/BKK dan penjurnalan rekonsiliasi atomik yang seimbang sempurna (Total Debit = Total Kredit = Rp 6.950.000).
+    11. Verifikasi audit Margin Kontribusi Perjalanan (`/reports/trip-profitability`): Omzet Bruto Rp 3.450.000, Total Beban Langsung Rp 3.400.000, Margin Kontribusi Bersih Rp 50.000, dan pemetaan Cost Center `CC-OPS-AKAP`.
+    12. Verifikasi Laporan Laba Rugi Komprehensif (`/reports/income-statement`): Menjamin formula `Gross Profit = Total Revenue - Direct Costs` dan `Net Income = Total Revenue - Total Expense` menghasilkan angka yang akurat dan konsisten.
+- **Perbaikan Edge-Case Kas Meja Kasir Bernilai Negatif (`netCashDesk < 0`)**:
+  - Memperbaiki bug pada `CashierSettlementService.postSettlementReconciliationJournal()` ketika kasir mengeluarkan kas fisik pool untuk membayar hak kru (uang makan/bonus) yang nominalnya melebihi penerimaan sisa UJ dan setoran tiket.
+  - Menambahkan baris kredit ke akun `Kas Operasional Pool` (`11101`) sebesar `Math.abs(netCashDesk)`, sehingga jurnal rekonsiliasi selalu seimbang dan tidak lagi melempar error *Jurnal tidak seimbang*.
+- **Sinkronisasi Transaksi Kasir (`calculateSettlement`)**:
+  - Mengalirkan `manager: EntityManager` ke dalam `calculateSettlement()` agar pembacaan setoran kas (`remittances`) berada dalam koneksi transaksi yang sama, mencegah kegagalan verifikasi gerbang settlement akibat isolasi transaksi PostgreSQL (`READ COMMITTED`).
+- **Koreksi Klasifikasi Akun 52105 pada Analitik Cost Driver**:
+  - Memperbaiki pemetaan akun `52105` (Uang Koordinasi Pengurus Jalur) pada `TripProfitabilityService.calculateCostsFromLines()` agar dialokasikan ke `agentAndPartnerCost` (kartu "Koordinasi Jalur") dan tidak tercampur ke "Tol & Parkir" (`52101`-`52104`).
+- **Verifikasi Kualitas Menyeluruh**:
+  - Backend E2E Test Suites: 4 suites, 25 tests lulus 100%.
+  - Backend Unit Test Suites: 35 suites, 264 tests lulus 100%.
+  - Frontend Vite React Build: Berhasil bersih tanpa kendala (1.25s).
+
 ### 2026-11-10: Redesign Modal Audit Finansial Perjalanan (TripProfitabilityDetailModal) — Tabbed Dashboard & Smooth Scroll Completed
 - **Penyelesaian Masalah Scroll Modal (Smooth Native Scrolling)**:
   - Mengeliminasi pembungkus kaku `flex flex-col` dan Radix `<ScrollArea>` yang menyebabkan scrollbar terkunci pada modal tinggi.

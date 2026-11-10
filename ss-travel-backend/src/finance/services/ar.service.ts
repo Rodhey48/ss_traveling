@@ -250,10 +250,40 @@ export class ArService {
         attempts++;
       }
 
+      const revenueAccount =
+        (await this.accountRepo.findOne({
+          where: { code: '42101' },
+        })) || arAccount;
+
+      const dpAccount =
+        (await this.accountRepo.findOne({
+          where: { code: '24101' },
+        })) || arAccount;
+
+      const dpReceipts =
+        manager && typeof manager.find === 'function'
+          ? await manager.find(ArReceiptEntity, {
+              where: {
+                downPaymentTripId: spj.id,
+                isDownPayment: true,
+                status: ArReceiptStatus.CONFIRMED,
+              },
+            })
+          : [];
+
+      const dpTotal = dpReceipts.reduce<number>(
+        (acc: number, curr: any) => parseFloat(MoneyHelper.add(acc, curr.amount)),
+        0,
+      );
+
+      const totalRevenue = parseFloat(
+        MoneyHelper.add(dto.remainingAmount, dpTotal),
+      );
+
       const line = manager.create(ArInvoiceLineEntity, {
         lineNo: 1,
         description: `Pelunasan 70% Kontrak Sewa Wisata (${spj.spjNo})`,
-        accountId: arAccount.id,
+        accountId: revenueAccount.id,
         qty: 1,
         unitPrice: dto.remainingAmount,
         amount: dto.remainingAmount,
@@ -283,7 +313,75 @@ export class ArService {
         lines: [line],
       });
 
-      return await manager.save(ArInvoiceEntity, invoice);
+      const savedInvoice = await manager.save(ArInvoiceEntity, invoice);
+
+      // Posting Jurnal Pengakuan Pendapatan Sewa Wisata 100% (Skenario 2)
+      if (
+        this.accountingPostingService &&
+        typeof this.accountingPostingService.postJournal === 'function'
+      ) {
+        const journalLines: any[] = [];
+        let lineNo = 1;
+
+        // Debit: Piutang Sewa Wisata 12101 (nominal tagihan pelunasan 70%)
+        journalLines.push({
+          lineNo: lineNo++,
+          accountId: arAccount.id,
+          debit: dto.remainingAmount,
+          credit: 0,
+          description: `Piutang Pelunasan Sewa Wisata: ${dto.customerName} (${savedInvoice.invoiceNo})`,
+          tripId: spj.id,
+          vehicleId: spj.vehicleId,
+          costCenterId: spj.costCenterId,
+          businessUnitId: spj.businessUnitId,
+        });
+
+        // Debit: Pembebasan DP Sewa Wisata 24101 (jika ada DP terkonfirmasi)
+        if (dpTotal > 0 && dpAccount) {
+          journalLines.push({
+            lineNo: lineNo++,
+            accountId: dpAccount.id,
+            debit: dpTotal,
+            credit: 0,
+            description: `Pembebasan Uang Muka (DP) Sewa Wisata ${dto.customerName} (${spj.spjNo})`,
+            tripId: spj.id,
+            vehicleId: spj.vehicleId,
+            costCenterId: spj.costCenterId,
+            businessUnitId: spj.businessUnitId,
+          });
+        }
+
+        // Kredit: Pendapatan Sewa Bus Pariwisata / Charter 42101 (100% Nilai Kontrak)
+        journalLines.push({
+          lineNo: lineNo++,
+          accountId: revenueAccount.id,
+          debit: 0,
+          credit: totalRevenue,
+          description: `Pendapatan Sewa Bus Pariwisata / Charter: ${dto.customerName} (${spj.spjNo})`,
+          tripId: spj.id,
+          vehicleId: spj.vehicleId,
+          costCenterId: spj.costCenterId,
+          businessUnitId: spj.businessUnitId,
+        });
+
+        const journal = await this.accountingPostingService.postJournal(
+          {
+            journalDate: dto.invoiceDate,
+            sourceType: JournalSourceType.AR_INVOICE,
+            sourceId: savedInvoice.id,
+            description: `Pengakuan Pendapatan Sewa Wisata & Invoice: ${dto.customerName} (${savedInvoice.invoiceNo})`,
+            lines: journalLines,
+            idempotencyKey: `AR-INV-CHARTER-${savedInvoice.id}`,
+          },
+          actorId,
+          manager,
+        );
+
+        savedInvoice.journalEntryId = journal.id;
+        return await manager.save(ArInvoiceEntity, savedInvoice);
+      }
+
+      return savedInvoice;
     });
   }
 

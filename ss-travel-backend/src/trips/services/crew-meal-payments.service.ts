@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -14,6 +15,11 @@ import {
   CrewPayoutTiming,
   SpjPaymentMethod,
 } from '../../@models/trips';
+import { AccountEntity } from '../../@models/finance/account.entity';
+import { BankAccountEntity } from '../../@models/finance/bank-account.entity';
+import { CashAccountEntity } from '../../@models/finance/cash-account.entity';
+import { AccountingPostingService } from '../../finance/services/accounting-posting.service';
+import { JournalSourceType } from '../../@models/finance/journal-entry.entity';
 import {
   CreateCrewMealPaymentDto,
   DisburseEarlyMealPaymentDto,
@@ -31,6 +37,14 @@ export class CrewMealPaymentsService {
     private readonly paymentRepo: Repository<CrewMealPaymentEntity>,
     @InjectRepository(SpjCrewAssignmentEntity)
     private readonly crewAssignmentRepo: Repository<SpjCrewAssignmentEntity>,
+    @InjectRepository(AccountEntity)
+    private readonly accountRepo: Repository<AccountEntity>,
+    @InjectRepository(BankAccountEntity)
+    private readonly bankAccountRepo: Repository<BankAccountEntity>,
+    @InjectRepository(CashAccountEntity)
+    private readonly cashAccountRepo: Repository<CashAccountEntity>,
+    @Optional()
+    private readonly accountingPostingService?: AccountingPostingService,
   ) {}
 
   /**
@@ -119,7 +133,81 @@ export class CrewMealPaymentsService {
       payment.notes = payment.notes ? `${payment.notes} | ${dto.notes}` : dto.notes;
     }
 
-    return this.paymentRepo.save(payment);
+    const saved = await this.paymentRepo.save(payment);
+
+    // Posting Jurnal Mid-Trip Payout (Skenario 2 Jurnal #4)
+    if (
+      this.accountingPostingService &&
+      typeof this.accountingPostingService.postJournal === 'function'
+    ) {
+      try {
+        let debitAccountId: string | undefined;
+        const targetAccCode =
+          payment.paymentCategory === CrewMealPaymentCategory.TRIP_INCENTIVE
+            ? '53102'
+            : '53101';
+        const expenseAcc = await this.accountRepo.findOne({
+          where: { code: targetAccCode },
+        });
+        if (expenseAcc) debitAccountId = expenseAcc.id;
+
+        let creditAccountId: string | undefined;
+        if (
+          dto.paymentMethod === SpjPaymentMethod.BANK_TRANSFER &&
+          dto.bankAccountId
+        ) {
+          const bank = await this.bankAccountRepo.findOne({
+            where: { id: dto.bankAccountId },
+          });
+          if (bank) creditAccountId = bank.accountId;
+        } else if (dto.cashAccountId) {
+          const cash = await this.cashAccountRepo.findOne({
+            where: { id: dto.cashAccountId },
+          });
+          if (cash) creditAccountId = cash.accountId;
+        }
+
+        if (debitAccountId && creditAccountId) {
+          const numAmount = parseFloat(payment.amount);
+          await this.accountingPostingService.postJournal(
+            {
+              journalDate: new Date().toISOString().split('T')[0],
+              sourceType: JournalSourceType.BANK_TRANSACTION,
+              sourceId: saved.id,
+              description: `Pencairan di Muka Kompensasi Kru (${payment.paymentCategory}) SPJ ${payment.spj?.spjNo || payment.spjId} - ${payment.crew?.name || 'Kru'}`,
+              lines: [
+                {
+                  accountId: debitAccountId,
+                  debit: numAmount,
+                  credit: 0,
+                  description: `Beban ${targetAccCode} Mid-Trip Payout: ${payment.crew?.name || 'Kru'}`,
+                  tripId: payment.spjId,
+                  vehicleId: payment.spj?.vehicleId,
+                  costCenterId: payment.spj?.costCenterId,
+                  businessUnitId: payment.spj?.businessUnitId,
+                },
+                {
+                  accountId: creditAccountId,
+                  debit: 0,
+                  credit: numAmount,
+                  description: `Pencairan Bank/Kas Hak Kru: ${payment.crew?.name || 'Kru'}`,
+                  tripId: payment.spjId,
+                  vehicleId: payment.spj?.vehicleId,
+                  costCenterId: payment.spj?.costCenterId,
+                  businessUnitId: payment.spj?.businessUnitId,
+                },
+              ],
+              idempotencyKey: `CREW-EARLY-${saved.id}`,
+            },
+            userId,
+          );
+        }
+      } catch (err) {
+        // Abaikan jika posting gagal agar tidak memblokir operasional di jalan
+      }
+    }
+
+    return saved;
   }
 
   /**

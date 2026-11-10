@@ -11,6 +11,10 @@ import {
   SpjPaymentMethod,
   CrewAssignmentRole,
 } from '../../@models/trips';
+import { AccountEntity } from '../../@models/finance/account.entity';
+import { BankAccountEntity } from '../../@models/finance/bank-account.entity';
+import { CashAccountEntity } from '../../@models/finance/cash-account.entity';
+import { AccountingPostingService } from '../../finance/services/accounting-posting.service';
 
 describe('CrewMealPaymentsService', () => {
   let service: CrewMealPaymentsService;
@@ -34,12 +38,32 @@ describe('CrewMealPaymentsService', () => {
       findOne: jest.fn(),
     };
 
+    const accountRepo = {
+      findOne: jest.fn(),
+    };
+
+    const bankAccountRepo = {
+      findOne: jest.fn(),
+    };
+
+    const cashAccountRepo = {
+      findOne: jest.fn(),
+    };
+
+    const accountingPostingService = {
+      postJournal: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CrewMealPaymentsService,
         { provide: getRepositoryToken(SpjEntity), useValue: spjRepo },
         { provide: getRepositoryToken(CrewMealPaymentEntity), useValue: paymentRepo },
         { provide: getRepositoryToken(SpjCrewAssignmentEntity), useValue: crewAssignmentRepo },
+        { provide: getRepositoryToken(AccountEntity), useValue: accountRepo },
+        { provide: getRepositoryToken(BankAccountEntity), useValue: bankAccountRepo },
+        { provide: getRepositoryToken(CashAccountEntity), useValue: cashAccountRepo },
+        { provide: AccountingPostingService, useValue: accountingPostingService },
       ],
     }).compile();
 

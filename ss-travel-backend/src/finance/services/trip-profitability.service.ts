@@ -586,9 +586,9 @@ export class TripProfitabilityService {
 
       if (code === '51101') fuel = MoneyHelper.add(fuel, net);
       else if (code === '51102') mealCoupon = MoneyHelper.add(mealCoupon, net);
+      else if (code === '52105' || code.startsWith('541')) agent = MoneyHelper.add(agent, net);
       else if (code.startsWith('521')) toll = MoneyHelper.add(toll, net);
       else if (code.startsWith('531')) crew = MoneyHelper.add(crew, net);
-      else if (code.startsWith('541')) agent = MoneyHelper.add(agent, net);
       else if (code.startsWith('551')) repair = MoneyHelper.add(repair, net);
     }
 

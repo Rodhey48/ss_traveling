@@ -124,6 +124,8 @@ export interface IncomeStatementResponse {
     directFleetCosts: PnLGroup[];
     crewCosts: PnLGroup[];
     agentPartnerCosts: PnLGroup[];
+    directCosts: string;
+    operatingExpenses: string;
     maintenanceCosts: PnLGroup[];
     generalPoolCosts: PnLGroup[];
     otherCosts: PnLGroup[];
@@ -721,6 +723,8 @@ export class FinancialReportsService {
         directFleetCosts: Object.values(fleetGroups),
         crewCosts: Object.values(crewGroups),
         agentPartnerCosts: Object.values(agentGroups),
+        directCosts,
+        operatingExpenses,
         maintenanceCosts: Object.values(mntGroups),
         generalPoolCosts: Object.values(generalGroups),
         otherCosts: Object.values(otherGroups),

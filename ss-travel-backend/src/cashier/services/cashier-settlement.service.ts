@@ -5,7 +5,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, In } from 'typeorm';
+import { Repository, DataSource, In, EntityManager } from 'typeorm';
 import {
   CrewCashSettlementEntity,
   CrewCashRemittanceEntity,
@@ -176,24 +176,42 @@ export class CashierSettlementService {
   /**
    * Menghitung dan menyajikan kalkulasi Dua Kantong Kas Kru (Anti-Netting) secara real-time
    */
-  async calculateSettlement(spjId: string): Promise<SettlementSummaryResult> {
-    const spj = await this.spjRepo.findOne({
-      where: { id: spjId },
-      relations: [
-        'vehicle',
-        'legs',
-        'crewAssignments',
-        'crewAssignments.crew',
-        'ujs',
-        'ujs.disbursements',
-        'ujs.returns',
-        'expenses',
-        'revenueDeclarations',
-        'crewMealPayments',
-        'settlements',
-        'discrepancies',
-      ],
-    });
+  async calculateSettlement(spjId: string, manager?: any): Promise<SettlementSummaryResult> {
+    const spj = manager && typeof manager.findOne === 'function'
+      ? await manager.findOne(SpjEntity, {
+          where: { id: spjId },
+          relations: [
+            'vehicle',
+            'legs',
+            'crewAssignments',
+            'crewAssignments.crew',
+            'ujs',
+            'ujs.disbursements',
+            'ujs.returns',
+            'expenses',
+            'revenueDeclarations',
+            'crewMealPayments',
+            'settlements',
+            'discrepancies',
+          ],
+        })
+      : await this.spjRepo.findOne({
+          where: { id: spjId },
+          relations: [
+            'vehicle',
+            'legs',
+            'crewAssignments',
+            'crewAssignments.crew',
+            'ujs',
+            'ujs.disbursements',
+            'ujs.returns',
+            'expenses',
+            'revenueDeclarations',
+            'crewMealPayments',
+            'settlements',
+            'discrepancies',
+          ],
+        });
 
     if (!spj) {
       throw new NotFoundException(`SPJ dengan ID '${spjId}' tidak ditemukan.`);
@@ -208,11 +226,17 @@ export class CashierSettlementService {
         : null;
 
     // Ambil setoran aktual remittances
-    const remittances = await this.remittanceRepo.find({
-      where: { spjId },
-      relations: ['allocations', 'depositorCrew', 'cashAccount'],
-      order: { createdAt: 'ASC' },
-    });
+    const remittances = manager && typeof manager.find === 'function'
+      ? await manager.find(CrewCashRemittanceEntity, {
+          where: { spjId },
+          relations: ['allocations', 'depositorCrew', 'cashAccount'],
+          order: { createdAt: 'ASC' },
+        })
+      : await this.remittanceRepo.find({
+          where: { spjId },
+          relations: ['allocations', 'depositorCrew', 'cashAccount'],
+          order: { createdAt: 'ASC' },
+        });
 
     // 1. KANTONG 1: Uang Jalan (Plafon vs Nota vs Sisa Fisik Kembali)
     let totalUjDisbursed = 0;
@@ -346,10 +370,15 @@ export class CashierSettlementService {
     );
 
     // Cek apakah ada temuan selisih yang dicatat di crew_cash_discrepancies
-    const discrepancies = await this.discrepancyRepo.find({
-      where: { spjId },
-      relations: ['reportedBy', 'responsibleCrew', 'resolvedBy'],
-    });
+    const discrepancies = manager && typeof manager.find === 'function'
+      ? await manager.find(CrewCashDiscrepancyEntity, {
+          where: { spjId },
+          relations: ['reportedBy', 'responsibleCrew', 'resolvedBy'],
+        })
+      : await this.discrepancyRepo.find({
+          where: { spjId },
+          relations: ['reportedBy', 'responsibleCrew', 'resolvedBy'],
+        });
 
     let revenueStatus = SettlementRevenueStatus.PENDING;
     if (MoneyHelper.isEqual(revenueBalance, 0)) {
@@ -485,8 +514,8 @@ export class CashierSettlementService {
         }
       }
 
-      // 2. Hitung kembali kondisi Dua Kantong Kas Kru
-      const summary = await this.calculateSettlement(spj.id);
+      // 2. Hitung kembali kondisi Dua Kantong Kas Kru (menggunakan manager agar data remittance yang baru di-insert terlihat)
+      const summary = await this.calculateSettlement(spj.id, manager);
 
       const totalDisbursed = summary.kantong1Uj.totalDisbursed;
       const totalSpent = summary.kantong1Uj.totalSpent;
@@ -677,7 +706,8 @@ export class CashierSettlementService {
     const ujAcc = accountMap.get('13101');
     const bbmAcc = accountMap.get('51101');
     const tolAcc = accountMap.get('52101');
-    const parkirAcc = accountMap.get('52103');
+    const parkirAcc = accountMap.get('52102') || accountMap.get('52103');
+    const cuciAcc = accountMap.get('52103') || parkirAcc;
     const tiketAcc = accountMap.get('41101');
     const kargoAcc = accountMap.get('43101');
 
@@ -719,8 +749,18 @@ export class CashierSettlementService {
 
     for (const exp of summary.kantong1Uj.breakdownExpenses) {
       let acc = bbmAcc;
-      if (exp.type === SpjExpenseType.TOLL) acc = tolAcc || bbmAcc;
-      else if (exp.type === SpjExpenseType.PARKING) acc = parkirAcc || bbmAcc;
+      if (exp.type === SpjExpenseType.TOLL) {
+        acc = tolAcc || bbmAcc;
+      } else if (
+        exp.type === SpjExpenseType.PARKING ||
+        exp.type === SpjExpenseType.PARKING_TOURISM ||
+        exp.type === SpjExpenseType.RETRIBUTION ||
+        exp.type === SpjExpenseType.CREW_LODGING
+      ) {
+        acc = parkirAcc || bbmAcc;
+      } else if (exp.type === SpjExpenseType.OTHER) {
+        acc = cuciAcc || parkirAcc || bbmAcc;
+      }
 
       if (acc) {
         lines.push({
@@ -843,6 +883,20 @@ export class CashierSettlementService {
         debit: 0,
         credit: totalKargoRev,
         description: `Pendapatan paket kargo bagasi SPJ ${spj.spjNo}`,
+        tripId: spj.id,
+        vehicleId: spj.vehicleId,
+        businessUnitId,
+        profitCenterId,
+        costCenterId,
+      });
+    }
+
+    if (MoneyHelper.isLessThan(netCashDesk, 0)) {
+      lines.push({
+        accountId: kasPoolAcc.id,
+        debit: 0,
+        credit: Math.abs(netCashDesk),
+        description: `Pengeluaran kas fisik meja kasir SPJ ${spj.spjNo} (${settlement.bkkNo || 'BKK'})`,
         tripId: spj.id,
         vehicleId: spj.vehicleId,
         businessUnitId,
