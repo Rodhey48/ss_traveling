@@ -25,6 +25,10 @@ export class CreateTripScheduleDto {
 
   @IsUUID()
   @IsOptional()
+  routeId?: string;
+
+  @IsUUID()
+  @IsOptional()
   vehicleId?: string;
 
   @IsDateString()

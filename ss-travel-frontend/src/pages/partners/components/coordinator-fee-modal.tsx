@@ -17,13 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { UserCheck, Check, Sparkles, Loader2 } from 'lucide-react';
+import { UserCheck, Loader2, Route as RouteIcon } from 'lucide-react';
 import type {
   CoordinatorFeeRule,
   CoordinatorFeeRuleFormData,
-  CoordinatorZone,
   User,
+  Route,
 } from '@/types';
+import { RouteService } from '@/services/route.service';
 import { toast } from 'sonner';
 
 interface CoordinatorFeeModalProps {
@@ -43,8 +44,11 @@ export default function CoordinatorFeeModal({
   users,
   loading,
 }: CoordinatorFeeModalProps) {
+  const [availableRoutes, setAvailableRoutes] = useState<Route[]>([]);
   const [formData, setFormData] = useState<CoordinatorFeeRuleFormData>({
-    zone: 'WEST',
+    routeId: '',
+    origin: 'ALL',
+    destination: 'ALL',
     coordinatorUserId: '',
     feePerPax: 10000,
     isActive: true,
@@ -59,22 +63,60 @@ export default function CoordinatorFeeModal({
   };
 
   useEffect(() => {
+    if (isOpen) {
+      RouteService.findAll()
+        .then((res) => {
+          if (res.status && Array.isArray(res.data)) {
+            setAvailableRoutes(res.data);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     if (rule) {
       setFormData({
-        zone: rule.zone,
+        routeId: rule.routeId || '',
+        origin: rule.origin,
+        destination: rule.destination,
         coordinatorUserId: rule.coordinatorUserId || '',
         feePerPax: Number(rule.feePerPax),
         isActive: rule.isActive ?? true,
       });
     } else {
       setFormData({
-        zone: 'WEST',
+        routeId: '',
+        origin: 'ALL',
+        destination: 'ALL',
         coordinatorUserId: '',
         feePerPax: 10000,
         isActive: true,
       });
     }
   }, [rule, isOpen]);
+
+  const handleRouteChange = (selectedRouteId: string) => {
+    if (selectedRouteId === 'CUSTOM') {
+      setFormData((prev) => ({
+        ...prev,
+        routeId: '',
+        origin: 'ALL',
+        destination: 'ALL',
+      }));
+      return;
+    }
+
+    const r = availableRoutes.find((item) => item.id === selectedRouteId);
+    if (r) {
+      setFormData((prev) => ({
+        ...prev,
+        routeId: r.id,
+        origin: r.origin,
+        destination: r.destination,
+      }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,8 +125,16 @@ export default function CoordinatorFeeModal({
       return;
     }
 
+    if (!formData.origin || !formData.destination) {
+      toast.error('Kota asal dan kota tujuan wajib diisi');
+      return;
+    }
+
     await onSubmit({
       ...formData,
+      routeId: formData.routeId || undefined,
+      origin: formData.origin.toUpperCase().trim(),
+      destination: formData.destination.toUpperCase().trim(),
       feePerPax: Number(formData.feePerPax),
       coordinatorUserId:
         formData.coordinatorUserId && formData.coordinatorUserId !== 'NONE'
@@ -107,39 +157,84 @@ export default function CoordinatorFeeModal({
           </DialogTitle>
           <DialogDescription className="text-xs">
             {rule
-              ? 'Perbarui standar fee jasa penanganan penumpang wilayah barat atau timur.'
-              : 'Konfigurasikan besaran fee korlap per penumpang berdasarkan zonasi operasional rute dinas.'}
+              ? 'Perbarui standar fee jasa penanganan penumpang untuk rute operasional ini.'
+              : 'Konfigurasikan besaran fee korlap per penumpang berdasarkan master rute trayek atau titik rute umum.'}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
-          {/* Zona Wilayah Korlap */}
+          {/* Pilihan Master Rute */}
+          {!rule && availableRoutes.length > 0 && (
+            <div className="space-y-1.5 p-3 rounded-lg border bg-muted/20">
+              <Label className="text-xs font-semibold flex items-center gap-1.5">
+                <RouteIcon className="h-3.5 w-3.5 text-indigo-600" />
+                Pilih Dari Master Rute Trayek (Otomatis)
+              </Label>
+              <Select
+                value={formData.routeId || 'CUSTOM'}
+                onValueChange={handleRouteChange}
+                disabled={loading}
+              >
+                <SelectTrigger className="h-9 text-xs">
+                  <SelectValue placeholder="Pilih rute trayek..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CUSTOM">
+                    -- Masukkan Manual / Rute Umum (ALL - ALL) --
+                  </SelectItem>
+                  {availableRoutes.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.code} - {r.name} ({r.origin} ➔ {r.destination})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-muted-foreground">
+                Memilih master rute akan langsung mengaitkan aturan tarif dan mengisi kota asal/tujuan secara otomatis.
+              </p>
+            </div>
+          )}
+
+          {/* Kota Asal (Origin) */}
           <div className="space-y-1.5">
-            <Label htmlFor="zone" className="text-xs font-semibold">
-              Zona Wilayah Penanganan <span className="text-destructive">*</span>
+            <Label htmlFor="origin" className="text-xs font-semibold">
+              Kota Asal / Titik Keberangkatan <span className="text-destructive">*</span>
             </Label>
-            <Select
-              value={formData.zone}
-              onValueChange={(val) =>
+            <Input
+              id="origin"
+              placeholder="Contoh: JAKARTA, TANGERANG, SURABAYA, atau ALL"
+              value={formData.origin}
+              onChange={(e) =>
                 setFormData((prev) => ({
                   ...prev,
-                  zone: val as CoordinatorZone,
+                  origin: e.target.value,
                 }))
               }
+              className="text-xs h-9 uppercase"
+              required
               disabled={Boolean(rule) || loading}
-            >
-              <SelectTrigger id="zone" className="text-xs h-9">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="WEST" className="text-xs">
-                  Zona Barat (Jabodetabek / Pool Ciputat) — Leg Keberangkatan
-                </SelectItem>
-                <SelectItem value="EAST" className="text-xs">
-                  Zona Timur (Jateng &amp; DIY / Terminal Yogya) — Leg Kepulangan
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            />
+          </div>
+
+          {/* Kota Tujuan (Destination) */}
+          <div className="space-y-1.5">
+            <Label htmlFor="destination" className="text-xs font-semibold">
+              Kota Tujuan / Titik Akhir <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="destination"
+              placeholder="Contoh: SURABAYA, YOGYAKARTA, atau ALL"
+              value={formData.destination}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  destination: e.target.value,
+                }))
+              }
+              className="text-xs h-9 uppercase"
+              required
+              disabled={Boolean(rule) || loading}
+            />
           </div>
 
           {/* Personel Korlap Lapangan */}
@@ -158,114 +253,66 @@ export default function CoordinatorFeeModal({
               disabled={loading}
             >
               <SelectTrigger id="coordinatorUser" className="text-xs h-9">
-                <SelectValue placeholder="Pilih User Korlap" />
+                <SelectValue placeholder="Pilih Korlap Penanggung Jawab" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="NONE" className="text-xs">
-                  -- Umum / Tanpa Pengikatan User Khusus (Berlaku Semua Korlap) --
+                <SelectItem value="NONE" className="text-xs text-muted-foreground">
+                  -- Tanpa Korlap Spesifik (Umum) --
                 </SelectItem>
                 {users.map((u) => (
                   <SelectItem key={u.id} value={u.id} className="text-xs">
-                    {u.name} ({u.email})
+                    {u.name} {u.phone ? `(${u.phone})` : ''}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-[10px] text-muted-foreground">
-              Jika dikosongkan, aturan fee berlaku umum untuk seluruh SPJ pada zona tersebut.
+          </div>
+
+          {/* Besaran Fee Per Pax */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="feePerPax" className="text-xs font-semibold">
+                Tarif Fee per Pax (Rp) <span className="text-destructive">*</span>
+              </Label>
+              <span className="text-xs font-bold text-primary font-mono">
+                {formatCurrency(formData.feePerPax)} / Penumpang
+              </span>
+            </div>
+            <Input
+              id="feePerPax"
+              type="number"
+              step="500"
+              min="0"
+              value={formData.feePerPax}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  feePerPax: Number(e.target.value),
+                }))
+              }
+              className="text-xs h-9 font-mono"
+              required
+              disabled={loading}
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Tarif standar perintis: Rp 10.000 / tiket. Nilai ini menjadi dasar otomatisasi utang jasa pada SPJ.
             </p>
           </div>
 
-          {/* Besaran Fee & Status Keaktifan */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
-            <div className="space-y-1.5">
-              <Label htmlFor="feePerPax" className="text-xs font-semibold flex items-center justify-between">
-                <span>Fee per Pax (Rp) <span className="text-destructive">*</span></span>
-                <span className="font-mono text-xs font-black text-emerald-600 dark:text-emerald-400">
-                  {formatCurrency(formData.feePerPax || 0)}
-                </span>
-              </Label>
-              <Input
-                id="feePerPax"
-                type="number"
-                min={0}
-                step={500}
-                value={formData.feePerPax}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    feePerPax: Number(e.target.value) || 0,
-                  }))
-                }
-                className="font-mono text-xs font-bold h-9"
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="isActive" className="text-xs font-semibold">
-                Status Aturan
-              </Label>
-              <Select
-                value={formData.isActive ? 'ACTIVE' : 'INACTIVE'}
-                onValueChange={(val) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    isActive: val === 'ACTIVE',
-                  }))
-                }
-                disabled={loading}
-              >
-                <SelectTrigger id="isActive" className="text-xs h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ACTIVE" className="text-xs">
-                    <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
-                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                      Aktif Berlaku
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="INACTIVE" className="text-xs">
-                    <span className="flex items-center gap-1.5 text-zinc-500 font-medium">
-                      <span className="h-2 w-2 rounded-full bg-zinc-400" />
-                      Non-Aktif
-                    </span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <DialogFooter className="pt-3 border-t border-slate-200/80 dark:border-white/10 gap-2">
+          <DialogFooter className="pt-2 gap-2">
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={onClose}
               disabled={loading}
-              className="text-xs h-8.5"
+              className="text-xs"
             >
               Batal
             </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="text-xs h-8.5 gap-1.5"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Menyimpan...
-                </>
-              ) : rule ? (
-                <>
-                  <Check className="h-3.5 w-3.5" /> Simpan Perubahan
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-3.5 w-3.5" /> Buat Aturan Fee
-                </>
-              )}
+            <Button type="submit" size="sm" disabled={loading} className="text-xs gap-1.5">
+              {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {rule ? 'Simpan Perubahan' : 'Buat Aturan Fee'}
             </Button>
           </DialogFooter>
         </form>

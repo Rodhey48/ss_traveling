@@ -75,15 +75,20 @@ export class CreateFareMatrixDto {
   @IsNotEmpty()
   fareSeasonId!: string;
 
-  @ApiProperty({ example: 'TANGERANG', description: 'Kota Asal' })
-  @IsString()
-  @IsNotEmpty()
-  origin!: string;
+  @ApiPropertyOptional({ description: 'ID Master Rute Trayek (opsional jika spesifik rute)' })
+  @IsUUID()
+  @IsOptional()
+  routeId?: string;
 
-  @ApiProperty({ example: 'YOGYAKARTA', description: 'Kota Tujuan' })
+  @ApiPropertyOptional({ example: 'TANGERANG', description: 'Kota Asal' })
   @IsString()
-  @IsNotEmpty()
-  destination!: string;
+  @IsOptional()
+  origin?: string;
+
+  @ApiPropertyOptional({ example: 'YOGYAKARTA', description: 'Kota Tujuan' })
+  @IsString()
+  @IsOptional()
+  destination?: string;
 
   @ApiProperty({ description: 'ID Master Kelas Kursi (seat_classes)' })
   @IsUUID()
@@ -112,6 +117,31 @@ export class CreateFareMatrixDto {
 }
 
 export class UpdateFareMatrixDto {
+  @ApiPropertyOptional({ description: 'ID Musim Tarif (fare_seasons)' })
+  @IsUUID()
+  @IsOptional()
+  fareSeasonId?: string;
+
+  @ApiPropertyOptional({ description: 'ID Master Kelas Kursi (seat_classes)' })
+  @IsUUID()
+  @IsOptional()
+  seatClassId?: string;
+
+  @ApiPropertyOptional({ description: 'ID Master Rute Trayek' })
+  @IsUUID()
+  @IsOptional()
+  routeId?: string;
+
+  @ApiPropertyOptional({ example: 'JAKARTA' })
+  @IsString()
+  @IsOptional()
+  origin?: string;
+
+  @ApiPropertyOptional({ example: 'YOGYAKARTA' })
+  @IsString()
+  @IsOptional()
+  destination?: string;
+
   @ApiPropertyOptional({ example: 450000 })
   @IsNumber()
   @Min(0)
@@ -135,15 +165,20 @@ export class UpdateFareMatrixDto {
 }
 
 export class FareCalculationQueryDto {
-  @ApiProperty({ example: 'TANGERANG', description: 'Kota Asal' })
-  @IsString()
-  @IsNotEmpty()
-  origin!: string;
+  @ApiPropertyOptional({ description: 'ID Master Rute Trayek' })
+  @IsUUID()
+  @IsOptional()
+  routeId?: string;
 
-  @ApiProperty({ example: 'YOGYAKARTA', description: 'Kota Tujuan' })
+  @ApiPropertyOptional({ example: 'TANGERANG', description: 'Kota Asal' })
   @IsString()
-  @IsNotEmpty()
-  destination!: string;
+  @IsOptional()
+  origin?: string;
+
+  @ApiPropertyOptional({ example: 'YOGYAKARTA', description: 'Kota Tujuan' })
+  @IsString()
+  @IsOptional()
+  destination?: string;
 
   @ApiProperty({ description: 'ID Kelas Kursi' })
   @IsUUID()

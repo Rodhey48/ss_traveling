@@ -12,6 +12,7 @@ import { BusinessUnitEntity } from '../organization/business-unit.entity';
 import { CostCenterEntity } from '../organization/cost-center.entity';
 import { ProfitCenterEntity } from '../organization/profit-center.entity';
 import { VehicleEntity } from '../fleet/vehicle.entity';
+import { RouteEntity } from '../master-rules/route.entity';
 import { TripScheduleEntity } from './trip-schedule.entity';
 import { SpjLegEntity } from './spj-leg.entity';
 import { SpjCrewAssignmentEntity } from './spj-crew-assignment.entity';
@@ -55,6 +56,13 @@ export class SpjEntity extends BaseEntity {
     default: TripServiceType.AKAP,
   })
   serviceType!: TripServiceType;
+
+  @Column({ type: 'uuid', name: 'route_id', nullable: true })
+  routeId?: string;
+
+  @ManyToOne(() => RouteEntity, { onDelete: 'RESTRICT', nullable: true })
+  @JoinColumn({ name: 'route_id' })
+  route?: RouteEntity;
 
   @Column({ type: 'uuid', name: 'trip_schedule_id', nullable: true })
   tripScheduleId?: string;

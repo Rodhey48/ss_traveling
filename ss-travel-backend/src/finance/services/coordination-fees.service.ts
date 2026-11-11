@@ -14,7 +14,6 @@ import {
 } from '../../@models';
 import {
   CoordinatorFeeRuleEntity,
-  CoordinatorZone,
 } from '../../@models/master-rules/coordinator-fee-rule.entity';
 import {
   SpjCoordinationFeeEntity,
@@ -64,37 +63,6 @@ export class CoordinationFeesService {
   ) {}
 
   /**
-   * Deteksi zona koordinator berdasarkan kota asal / leg perjalanan
-   */
-  private detectZone(originCity: string): CoordinatorZone {
-    const city = (originCity || '').toLowerCase();
-    const westKeywords = [
-      'jakarta',
-      'tangerang',
-      'ciputat',
-      'bogor',
-      'bekasi',
-      'depok',
-      'merak',
-      'serang',
-      'cilegon',
-      'poris',
-      'rawamangun',
-      'rambutan',
-      'pinang',
-      'kalideres',
-      'barat',
-    ];
-
-    for (const kw of westKeywords) {
-      if (city.includes(kw)) {
-        return CoordinatorZone.WEST;
-      }
-    }
-    return CoordinatorZone.EAST;
-  }
-
-  /**
    * Menghitung dan menyinkronkan kewajiban Uang Koordinasi Lapangan atas SPJ
    * (Diakui sebagai Beban 52105 vs Utang 22102)
    */
@@ -116,14 +84,11 @@ export class CoordinationFeesService {
     }
 
     const rules = await this.ruleRepo.find({
-      where: spj.companyId ? { companyId: spj.companyId } : {},
+      where: spj.companyId ? { companyId: spj.companyId, isActive: true } : { isActive: true },
       relations: ['coordinatorUser'],
     });
 
-    const ruleMap = new Map<CoordinatorZone, CoordinatorFeeRuleEntity>();
-    for (const r of rules) {
-      ruleMap.set(r.zone, r);
-    }
+    const ruleFallback = rules.find((r) => r.origin === 'ALL' && r.destination === 'ALL');
 
     const accounts = await this.accountRepo.find({
       where: { code: In(['52105', '22102']) },
@@ -136,30 +101,17 @@ export class CoordinationFeesService {
     const expenseAcc = accMap.get('52105');
     const payableAcc = accMap.get('22102');
 
-    const westKeywords = [
-      'jakarta',
-      'tangerang',
-      'ciputat',
-      'bogor',
-      'bekasi',
-      'depok',
-      'merak',
-      'serang',
-      'cilegon',
-      'poris',
-      'rawamangun',
-      'rambutan',
-      'pinang',
-      'kalideres',
-      'barat',
-      'banten',
-    ];
-
     const result: SpjCoordinationFeeEntity[] = [];
 
     for (const leg of spj.legs) {
-      const zone = this.detectZone(leg.origin);
-      const rule = ruleMap.get(zone);
+      let rule = spj.routeId ? rules.find((r) => r.routeId === spj.routeId) : null;
+      if (!rule) {
+        rule = rules.find((r) => r.origin === leg.origin && r.destination === leg.destination);
+      }
+      if (!rule) {
+        rule = ruleFallback;
+      }
+      
       const feePerPax = rule?.feePerPax || 10000;
 
       // Cari apakah sudah ada entitas koordinasi fee untuk leg ini
@@ -167,7 +119,6 @@ export class CoordinationFeesService {
         where: {
           spjId,
           spjLegId: leg.id,
-          zone,
         },
       });
 
@@ -180,13 +131,7 @@ export class CoordinationFeesService {
             if (r.spjLegId) {
               return r.spjLegId === leg.id;
             }
-            // 2. Jika tidak ada spjLegId tapi ada data agen, periksa lokasi kota agen
-            if (r.agent) {
-              const agentLoc = `${r.agent.city || ''} ${r.agent.address || ''} ${r.agent.name || ''}`.toLowerCase();
-              const isAgentWest = westKeywords.some((kw) => agentLoc.includes(kw));
-              return zone === CoordinatorZone.WEST ? isAgentWest : !isAgentWest;
-            }
-            // 3. Fallback: hanya jika leg pertama SPJ (awal keberangkatan)
+            // 2. Fallback: hanya jika leg pertama SPJ (awal keberangkatan)
             return spj.legs?.[0]?.id === leg.id;
           })
           .reduce((acc, r) => acc + (r.ticketCount || 0), 0);
@@ -205,7 +150,7 @@ export class CoordinationFeesService {
             try {
               await this.journalReversalService.reverseJournal(
                 feeEntity.journalId,
-                { reason: `Pembatalan Akrual Uang Koordinasi Zona ${zone} (0 Tiket Terjual) SPJ ${spj.spjNo}` },
+                { reason: `Pembatalan Akrual Uang Koordinasi Rute ${leg.origin}-${leg.destination} (0 Tiket Terjual) SPJ ${spj.spjNo}` },
                 userId,
               );
             } catch (err) {
@@ -226,15 +171,18 @@ export class CoordinationFeesService {
           companyId: spj.companyId,
           spjId,
           spjLegId: leg.id,
-          zone,
+          origin: leg.origin,
+          destination: leg.destination,
           ticketCount,
           feePerPax,
           totalFee,
           coordinatorUserId: rule?.coordinatorUserId,
           status: SpjCoordinationFeeStatus.UNPAID,
-          notes: `Uang koordinasi ${zone === CoordinatorZone.WEST ? 'Wilayah Barat' : 'Wilayah Timur'} (${leg.origin} ➔ ${leg.destination})`,
+          notes: `Uang koordinasi Rute (${leg.origin} ➔ ${leg.destination})`,
         });
       } else {
+        feeEntity.origin = leg.origin;
+        feeEntity.destination = leg.destination;
         feeEntity.ticketCount = ticketCount;
         feeEntity.feePerPax = feePerPax;
         feeEntity.totalFee = totalFee;
@@ -262,7 +210,7 @@ export class CoordinationFeesService {
                   accountId: expenseAcc.id,
                   debit: totalFee,
                   credit: 0,
-                  description: `Beban Koordinasi Lapangan Zona ${zone} SPJ ${spj.spjNo}`,
+                  description: `Beban Koordinasi Lapangan Rute ${leg.origin}-${leg.destination} SPJ ${spj.spjNo}`,
                   tripId: spj.id,
                   vehicleId: spj.vehicleId,
                   businessUnitId: spj.businessUnitId,
@@ -273,7 +221,7 @@ export class CoordinationFeesService {
                   accountId: payableAcc.id,
                   debit: 0,
                   credit: totalFee,
-                  description: `Utang Koordinasi Lapangan Zona ${zone} SPJ ${spj.spjNo}`,
+                  description: `Utang Koordinasi Lapangan Rute ${leg.origin}-${leg.destination} SPJ ${spj.spjNo}`,
                   tripId: spj.id,
                   vehicleId: spj.vehicleId,
                   businessUnitId: spj.businessUnitId,
@@ -281,7 +229,7 @@ export class CoordinationFeesService {
                   costCenterId: spj.costCenterId,
                 },
               ],
-              idempotencyKey: `SPJ-KOR-ACCRUAL-${spj.id}-${leg.id}-${zone}`,
+              idempotencyKey: `SPJ-KOR-ACCRUAL-${spj.id}-${leg.id}`,
             },
             userId,
           );
@@ -345,7 +293,7 @@ export class CoordinationFeesService {
       try {
         await this.journalReversalService.reverseJournal(
           fee.journalId,
-          { reason: `Penghapusan Manual Uang Koordinasi Zona ${fee.zone} SPJ ${fee.spj?.spjNo || '-'}` },
+          { reason: `Penghapusan Manual Uang Koordinasi Rute ${fee.origin}-${fee.destination} SPJ ${fee.spj?.spjNo || '-'}` },
           userId,
         );
       } catch (err) {
@@ -383,8 +331,12 @@ export class CoordinationFeesService {
       .where('fee.status = :status', { status: SpjCoordinationFeeStatus.UNPAID })
       .andWhere('fee.total_fee > 0');
 
-    if (query?.zone) {
-      qb.andWhere('fee.zone = :zone', { zone: query.zone });
+    if (query?.origin) {
+      qb.andWhere('fee.origin ILIKE :origin', { origin: `%${query.origin}%` });
+    }
+    
+    if (query?.destination) {
+      qb.andWhere('fee.destination ILIKE :destination', { destination: `%${query.destination}%` });
     }
 
     if (query?.search) {
@@ -448,7 +400,7 @@ export class CoordinationFeesService {
     const totalSpjs = uniqueSpjIds.size;
 
     const coordinatorUser = fees.find((f) => f.coordinatorUser)?.coordinatorUser;
-    const coordinatorName = coordinatorUser?.name || `Koordinator Zona ${dto.zone}`;
+    const coordinatorName = coordinatorUser?.name || `Koordinator Rute ${dto.origin}-${dto.destination}`;
 
     // Generate batch number
     const dateStr = dto.paymentDate.replace(/-/g, '').slice(0, 6);
@@ -460,13 +412,13 @@ export class CoordinationFeesService {
       {
         journalDate: dto.paymentDate,
         sourceType: JournalSourceType.BANK_TRANSACTION,
-        description: `Pembayaran Gelondongan Fee Koordinasi Zona ${dto.zone} (${batchNo}) - ${totalSpjs} SPJ / ${totalTickets} Tiket`,
+        description: `Pembayaran Gelondongan Fee Koordinasi Rute ${dto.origin}-${dto.destination} (${batchNo}) - ${totalSpjs} SPJ / ${totalTickets} Tiket`,
         lines: [
           {
             accountId: payableAcc.id,
             debit: totalAmount,
             credit: 0,
-            description: `Pelunasan Utang Koordinasi Lapangan Zona ${dto.zone} (${batchNo})`,
+            description: `Pelunasan Utang Koordinasi Lapangan Rute ${dto.origin}-${dto.destination} (${batchNo})`,
           },
           {
             accountId: bankAccount.accountId,
@@ -484,7 +436,8 @@ export class CoordinationFeesService {
     const batch = this.batchRepo.create({
       companyId: fees[0].companyId,
       batchNo,
-      zone: dto.zone,
+      origin: dto.origin,
+      destination: dto.destination,
       coordinatorUserId: coordinatorUser?.id,
       coordinatorName,
       totalSpjs,
@@ -548,7 +501,7 @@ export class CoordinationFeesService {
     waText += `*PT SS TRAVELINK OFFICIAL*\n`;
     waText += `----------------------------------------\n`;
     waText += `No. Batch: ${batch.batchNo}\n`;
-    waText += `Wilayah / Zona: ${batch.zone === CoordinatorZone.WEST ? 'Barat (Jabodetabek)' : 'Timur (DIY / Jateng)'}\n`;
+    waText += `Rute Korlap: ${batch.origin} ➔ ${batch.destination}\n`;
     waText += `Penerima: ${batch.coordinatorName}\n`;
     waText += `Tanggal Transfer: ${batch.paymentDate}\n`;
     waText += `Rekening Asal: ${batch.bankAccount?.name || 'Bank BCA'}\n`;
@@ -583,7 +536,7 @@ export class CoordinationFeesService {
   async getRules(): Promise<CoordinatorFeeRuleEntity[]> {
     return this.ruleRepo.find({
       relations: ['coordinatorUser'],
-      order: { zone: 'ASC' },
+      order: { origin: 'ASC', destination: 'ASC' },
     });
   }
 
@@ -599,7 +552,9 @@ export class CoordinationFeesService {
       throw new NotFoundException(`Aturan tarif ID '${id}' tidak ditemukan.`);
     }
 
-    rule.feePerPax = Number(dto.feePerPax);
+    if (dto.feePerPax !== undefined) {
+      rule.feePerPax = Number(dto.feePerPax);
+    }
     if (dto.coordinatorUserId !== undefined) {
       rule.coordinatorUserId = dto.coordinatorUserId;
     }

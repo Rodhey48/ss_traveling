@@ -144,7 +144,8 @@ export class PartnersController {
     @Query() query: CoordinatorFeeQueryDto,
   ): Promise<ResponseInterface> {
     const data = await this.partnersService.getFeeForRoute(
-      query.legDirection,
+      query.origin,
+      query.destination,
       Number(query.paxCount),
     );
     return {

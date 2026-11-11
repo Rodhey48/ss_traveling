@@ -125,6 +125,10 @@ export class CreateSpjDto {
   serviceType!: TripServiceType;
 
   @IsUUID()
+  @IsOptional()
+  routeId?: string;
+
+  @IsUUID()
   @IsNotEmpty()
   vehicleId!: string;
 

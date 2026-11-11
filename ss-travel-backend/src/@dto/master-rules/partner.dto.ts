@@ -12,7 +12,6 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { RestaurantSettlementType } from '../../@models/master-rules/restaurant.entity';
-import { CoordinatorZone } from '../../@models/master-rules/coordinator-fee-rule.entity';
 
 export class CreateRestaurantDto {
   @ApiProperty({ example: 'RM-04', description: 'Kode unik rumah makan mitra' })
@@ -104,9 +103,20 @@ export class UpdateRestaurantDto {
 }
 
 export class CreateCoordinatorFeeRuleDto {
-  @ApiProperty({ enum: CoordinatorZone, example: CoordinatorZone.WEST })
-  @IsEnum(CoordinatorZone)
-  zone!: CoordinatorZone;
+  @ApiPropertyOptional({ example: 'uuid-route', description: 'ID Master Rute Trayek' })
+  @IsUUID()
+  @IsOptional()
+  routeId?: string;
+
+  @ApiPropertyOptional({ example: 'JAKARTA', description: 'Kota Asal Rute (default ALL)' })
+  @IsString()
+  @IsOptional()
+  origin?: string;
+
+  @ApiPropertyOptional({ example: 'SURABAYA', description: 'Kota Tujuan Rute (default ALL)' })
+  @IsString()
+  @IsOptional()
+  destination?: string;
 
   @ApiPropertyOptional({ description: 'ID Pengguna Korlap Lapangan (users)' })
   @IsUUID()
@@ -135,6 +145,21 @@ export class CreateCoordinatorFeeRuleDto {
 }
 
 export class UpdateCoordinatorFeeRuleDto {
+  @ApiPropertyOptional({ description: 'ID Master Rute Trayek' })
+  @IsUUID()
+  @IsOptional()
+  routeId?: string;
+
+  @ApiPropertyOptional({ example: 'JAKARTA' })
+  @IsString()
+  @IsOptional()
+  origin?: string;
+
+  @ApiPropertyOptional({ example: 'YOGYAKARTA' })
+  @IsString()
+  @IsOptional()
+  destination?: string;
+
   @ApiPropertyOptional({ description: 'ID Pengguna Korlap Lapangan' })
   @IsUUID()
   @IsOptional()
@@ -176,13 +201,15 @@ export class CalculateMealExpenseQueryDto {
 }
 
 export class CoordinatorFeeQueryDto {
-  @ApiProperty({
-    example: 'DEPARTURE',
-    description: 'Arah Leg (DEPARTURE = Berangkat/West, RETURN = Pulang/East)',
-  })
+  @ApiProperty({ example: 'JAKARTA', description: 'Kota Asal Rute' })
   @IsString()
   @IsNotEmpty()
-  legDirection!: string;
+  origin!: string;
+
+  @ApiProperty({ example: 'SURABAYA', description: 'Kota Tujuan Rute' })
+  @IsString()
+  @IsNotEmpty()
+  destination!: string;
 
   @ApiProperty({ example: 24, description: 'Jumlah Penumpang (Pax)' })
   @Type(() => Number)

@@ -17,8 +17,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Ticket, Check, Sparkles, Loader2 } from 'lucide-react';
-import type { FareMatrix, FareMatrixFormData, FareSeason, SeatClass } from '@/types';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Ticket, Loader2, Route as RouteIcon, Calendar } from 'lucide-react';
+import type { FareMatrix, FareMatrixFormData, FareSeason, SeatClass, Route } from '@/types';
+import { RouteService } from '@/services/route.service';
 import { toast } from 'sonner';
 
 interface FareMatrixModalProps {
@@ -40,12 +42,15 @@ export default function FareMatrixModal({
   seatClasses,
   loading,
 }: FareMatrixModalProps) {
+  const [availableRoutes, setAvailableRoutes] = useState<Route[]>([]);
   const [formData, setFormData] = useState<FareMatrixFormData>({
     fareSeasonId: '',
+    routeId: '',
     origin: 'TANGERANG',
     destination: 'YOGYAKARTA',
     seatClassId: '',
     amount: 350000,
+    effectiveFrom: new Date().toISOString().split('T')[0],
     isActive: true,
   });
 
@@ -58,26 +63,67 @@ export default function FareMatrixModal({
   };
 
   useEffect(() => {
+    if (isOpen) {
+      RouteService.findAll()
+        .then((res) => {
+          if (res.status && Array.isArray(res.data)) {
+            setAvailableRoutes(res.data);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     if (matrix) {
       setFormData({
         fareSeasonId: matrix.fareSeasonId,
+        routeId: matrix.routeId || '',
         origin: matrix.origin,
         destination: matrix.destination,
         seatClassId: matrix.seatClassId,
         amount: Number(matrix.amount),
+        effectiveFrom: matrix.effectiveFrom
+          ? matrix.effectiveFrom.split('T')[0]
+          : new Date().toISOString().split('T')[0],
+        effectiveUntil: matrix.effectiveUntil
+          ? matrix.effectiveUntil.split('T')[0]
+          : undefined,
         isActive: matrix.isActive ?? true,
       });
     } else {
       setFormData({
         fareSeasonId: seasons[0]?.id || '',
+        routeId: '',
         origin: 'TANGERANG',
         destination: 'YOGYAKARTA',
         seatClassId: seatClasses[0]?.id || '',
         amount: 350000,
+        effectiveFrom: new Date().toISOString().split('T')[0],
         isActive: true,
       });
     }
   }, [matrix, seasons, seatClasses, isOpen]);
+
+  const handleRouteChange = (selectedRouteId: string) => {
+    if (selectedRouteId === 'CUSTOM') {
+      setFormData((prev) => ({
+        ...prev,
+        routeId: '',
+      }));
+      return;
+    }
+
+    const r = availableRoutes.find((item) => item.id === selectedRouteId);
+    if (r) {
+      setFormData((prev) => ({
+        ...prev,
+        routeId: r.id,
+        origin: r.origin,
+        destination: r.destination,
+      }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,7 +131,7 @@ export default function FareMatrixModal({
       toast.error('Pilih musim tarif terlebih dahulu');
       return;
     }
-    if (!formData.origin.trim() || !formData.destination.trim()) {
+    if (!formData.origin?.trim() || !formData.destination?.trim()) {
       toast.error('Kota asal dan tujuan wajib diisi');
       return;
     }
@@ -100,8 +146,9 @@ export default function FareMatrixModal({
 
     await onSubmit({
       ...formData,
-      origin: formData.origin.trim().toUpperCase(),
-      destination: formData.destination.trim().toUpperCase(),
+      routeId: formData.routeId || undefined,
+      origin: formData.origin?.trim().toUpperCase(),
+      destination: formData.destination?.trim().toUpperCase(),
       amount: Number(formData.amount),
     });
   };
@@ -109,6 +156,7 @@ export default function FareMatrixModal({
   const setPresetRoute = (origin: string, destination: string) => {
     setFormData((prev) => ({
       ...prev,
+      routeId: '',
       origin,
       destination,
     }));
@@ -116,10 +164,10 @@ export default function FareMatrixModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg font-bold">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
               <Ticket className="h-5 w-5" />
             </div>
             <div>
@@ -128,8 +176,8 @@ export default function FareMatrixModal({
           </DialogTitle>
           <DialogDescription className="text-xs">
             {matrix
-              ? 'Perbarui harga tiket dasar untuk kombinasi rute, musim, dan kelas kabin bus.'
-              : 'Konfigurasikan harga tiket dasar baru berdasarkan rute, kalender musim, dan kelas kursi.'}
+              ? 'Perbarui harga tiket dasar, tautan master rute, dan status keaktifan tarif.'
+              : 'Konfigurasikan harga tiket dasar baru berdasarkan rute trayek, kalender musim, dan kelas kabin bus.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -158,40 +206,82 @@ export default function FareMatrixModal({
                 ))}
               </SelectContent>
             </Select>
+            {matrix && (
+              <p className="text-[10px] text-muted-foreground">
+                Musim tarif tidak dapat diubah pada entri yang sudah tersimpan.
+              </p>
+            )}
           </div>
 
-          {/* Rute Perjalanan */}
+          {/* Master Rute Trayek Selector (Tersedia baik pada Tambah maupun Edit) */}
+          <div className="space-y-1.5 p-3 rounded-xl border border-indigo-200 dark:border-indigo-900/50 bg-indigo-50/50 dark:bg-indigo-950/20">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-semibold flex items-center gap-1.5 text-indigo-950 dark:text-indigo-200">
+                <RouteIcon className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                Master Rute Trayek (Tautan Entitas)
+              </Label>
+              {formData.routeId && (
+                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-indigo-600 text-white">
+                  Terhubung ke Trayek
+                </span>
+              )}
+            </div>
+            <Select
+              value={formData.routeId || 'CUSTOM'}
+              onValueChange={handleRouteChange}
+              disabled={loading}
+            >
+              <SelectTrigger className="h-9 text-xs bg-background">
+                <SelectValue placeholder="Pilih rute trayek resmi..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="CUSTOM" className="text-xs">
+                  -- Masukkan Manual Kota Asal & Tujuan --
+                </SelectItem>
+                {availableRoutes.map((r) => (
+                  <SelectItem key={r.id} value={r.id} className="text-xs">
+                    <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">{r.code}</span> - {r.name} ({r.origin} ➔ {r.destination})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-[11px] text-muted-foreground">
+              {formData.routeId
+                ? 'Tarif ini diprioritaskan saat bus beroperasi pada rute trayek terpilih.'
+                : 'Pilih master rute untuk menghubungkan tarif ke trayek resmi, atau ketik nama kota manual.'}
+            </p>
+          </div>
+
+          {/* Rute Perjalanan (Asal & Tujuan) */}
           <div className="space-y-2 p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200/80 dark:border-white/10">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                Rute Perjalanan Bus AKAP <span className="text-destructive">*</span>
+                Kota Keberangkatan & Kedatangan <span className="text-destructive">*</span>
               </span>
-              {!matrix && (
-                <div className="flex items-center gap-1">
-                  <span className="text-[10px] text-muted-foreground">Pintas:</span>
-                  <button
-                    type="button"
-                    onClick={() => setPresetRoute('TANGERANG', 'YOGYAKARTA')}
-                    className="text-[10px] px-1.5 py-0.5 rounded bg-muted hover:bg-muted/80 font-mono transition-colors"
-                  >
-                    TNG&rarr;YOG
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPresetRoute('YOGYAKARTA', 'TANGERANG')}
-                    className="text-[10px] px-1.5 py-0.5 rounded bg-muted hover:bg-muted/80 font-mono transition-colors"
-                  >
-                    YOG&rarr;TNG
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPresetRoute('JAKARTA', 'YOGYAKARTA')}
-                    className="text-[10px] px-1.5 py-0.5 rounded bg-muted hover:bg-muted/80 font-mono transition-colors"
-                  >
-                    JKT&rarr;YOG
-                  </button>
-                </div>
-              )}
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-muted-foreground">Pintas:</span>
+                <button
+                  type="button"
+                  onClick={() => setPresetRoute('TANGERANG', 'YOGYAKARTA')}
+                  className="text-[10px] px-1.5 py-0.5 rounded bg-muted hover:bg-muted/80 font-mono transition-colors"
+                >
+                  TNG&rarr;YOG
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPresetRoute('YOGYAKARTA', 'TANGERANG')}
+                  className="text-[10px] px-1.5 py-0.5 rounded bg-muted hover:bg-muted/80 font-mono transition-colors"
+                >
+                  YOG&rarr;TNG
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPresetRoute('JAKARTA', 'YOGYAKARTA')}
+                  className="text-[10px] px-1.5 py-0.5 rounded bg-muted hover:bg-muted/80 font-mono transition-colors"
+                >
+                  JKT&rarr;YOG
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
@@ -202,14 +292,14 @@ export default function FareMatrixModal({
                 <Input
                   id="origin"
                   placeholder="Contoh: TANGERANG"
-                  value={formData.origin}
+                  value={formData.origin || ''}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
                       origin: e.target.value.toUpperCase(),
                     }))
                   }
-                  disabled={Boolean(matrix) || loading}
+                  disabled={loading}
                   className="font-mono text-xs font-bold uppercase h-8.5"
                   required
                 />
@@ -222,14 +312,14 @@ export default function FareMatrixModal({
                 <Input
                   id="destination"
                   placeholder="Contoh: YOGYAKARTA"
-                  value={formData.destination}
+                  value={formData.destination || ''}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
                       destination: e.target.value.toUpperCase(),
                     }))
                   }
-                  disabled={Boolean(matrix) || loading}
+                  disabled={loading}
                   className="font-mono text-xs font-bold uppercase h-8.5"
                   required
                 />
@@ -240,7 +330,7 @@ export default function FareMatrixModal({
           {/* Kelas Kursi Bus */}
           <div className="space-y-1.5">
             <Label htmlFor="seatClassId" className="text-xs font-semibold">
-              Kelas Kursi Bus (*Cabin Class*) <span className="text-destructive">*</span>
+              Kelas Kabin Armada Bus <span className="text-destructive">*</span>
             </Label>
             <Select
               value={formData.seatClassId}
@@ -250,111 +340,115 @@ export default function FareMatrixModal({
               disabled={Boolean(matrix) || loading}
             >
               <SelectTrigger id="seatClassId" className="text-xs h-9">
-                <SelectValue placeholder="Pilih Kelas Kursi" />
+                <SelectValue placeholder="Pilih Kelas Kursi / Kabin" />
               </SelectTrigger>
               <SelectContent>
                 {seatClasses.map((sc) => (
                   <SelectItem key={sc.id} value={sc.id} className="text-xs">
                     <span className="font-semibold">{sc.name}</span>{' '}
                     <span className="font-mono text-muted-foreground text-[11px]">({sc.code})</span>
-                    {sc.defaultLayout && ` • Layout ${sc.defaultLayout}`}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {matrix && (
+              <p className="text-[10px] text-muted-foreground">
+                Kelas kursi dikunci untuk menjaga integritas matriks tarif.
+              </p>
+            )}
           </div>
 
-          {/* Tarif Dasar Tiket & Status Keaktifan */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
-            <div className="sm:col-span-2 space-y-1.5">
-              <Label htmlFor="amount" className="text-xs font-semibold flex items-center justify-between">
-                <span>Tarif Tiket Dasar (Rp) <span className="text-destructive">*</span></span>
-                <span className="font-mono text-xs font-black text-emerald-600 dark:text-emerald-400">
-                  {formatCurrency(formData.amount || 0)}
-                </span>
+          {/* Harga Tiket Dasar */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="amount" className="text-xs font-semibold">
+                Harga Tiket Dasar (Rp) <span className="text-destructive">*</span>
+              </Label>
+              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                {formatCurrency(formData.amount)}
+              </span>
+            </div>
+            <Input
+              id="amount"
+              type="number"
+              step="5000"
+              min="0"
+              value={formData.amount}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  amount: Number(e.target.value),
+                }))
+              }
+              className="text-xs h-9 font-mono font-bold"
+              required
+              disabled={loading}
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Nominal dasar per kursi sebelum potongan diskon atau komisi agen loket.
+            </p>
+          </div>
+
+          {/* Tanggal Efektif & Status Aktif */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end pt-1">
+            <div className="space-y-1.5">
+              <Label htmlFor="effectiveFrom" className="text-xs font-semibold flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                Mulai Berlaku
               </Label>
               <Input
-                id="amount"
-                type="number"
-                min={0}
-                step={5000}
-                placeholder="Contoh: 350000"
-                value={formData.amount}
+                id="effectiveFrom"
+                type="date"
+                value={formData.effectiveFrom || ''}
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    amount: Math.max(0, Number(e.target.value) || 0),
+                    effectiveFrom: e.target.value,
                   }))
                 }
-                className="font-mono text-xs font-bold h-9"
-                required
+                className="text-xs h-9 font-mono"
                 disabled={loading}
               />
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="isActive" className="text-xs font-semibold">
-                Status Matriks
-              </Label>
-              <Select
-                value={formData.isActive ? 'ACTIVE' : 'INACTIVE'}
-                onValueChange={(val) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    isActive: val === 'ACTIVE',
-                  }))
+            {/* Checkbox Status Aktif */}
+            <div className="flex items-center space-x-2 h-9 px-3 rounded-lg border bg-slate-50 dark:bg-white/5">
+              <Checkbox
+                id="matrix-is-active"
+                checked={formData.isActive}
+                onCheckedChange={(checked: boolean) =>
+                  setFormData((prev) => ({ ...prev, isActive: !!checked }))
                 }
                 disabled={loading}
+              />
+              <Label
+                htmlFor="matrix-is-active"
+                className="text-xs font-semibold cursor-pointer select-none"
               >
-                <SelectTrigger id="isActive" className="text-xs h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ACTIVE" className="text-xs">
-                    <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
-                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                      Aktif Berlaku
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="INACTIVE" className="text-xs">
-                    <span className="flex items-center gap-1.5 text-zinc-500 font-medium">
-                      <span className="h-2 w-2 rounded-full bg-zinc-400" />
-                      Non-Aktif
-                    </span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                {formData.isActive ? 'Status: Aktif Berlaku' : 'Status: Non-Aktif'}
+              </Label>
             </div>
           </div>
 
-          <DialogFooter className="pt-3 border-t border-slate-200/80 dark:border-white/10 gap-2">
+          <DialogFooter className="pt-3 gap-2">
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={onClose}
               disabled={loading}
-              className="text-xs h-8.5"
+              className="text-xs"
             >
               Batal
             </Button>
             <Button
               type="submit"
+              size="sm"
               disabled={loading}
-              className="text-xs h-8.5 gap-1.5"
+              className="text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
             >
-              {loading ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Menyimpan...
-                </>
-              ) : matrix ? (
-                <>
-                  <Check className="h-3.5 w-3.5" /> Simpan Perubahan
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-3.5 w-3.5" /> Tambah Matriks Tarif
-                </>
-              )}
+              {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {matrix ? 'Simpan Perubahan' : 'Buat Entri Matriks'}
             </Button>
           </DialogFooter>
         </form>

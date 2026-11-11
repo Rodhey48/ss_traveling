@@ -129,6 +129,7 @@ export class SpjService {
     const skip = (page - 1) * limit;
 
     const qb = this.spjRepo.createQueryBuilder('s')
+      .leftJoinAndSelect('s.route', 'route')
       .leftJoinAndSelect('s.vehicle', 'vehicle')
       .leftJoinAndSelect('s.tripSchedule', 'schedule')
       .leftJoinAndSelect('s.parentSpj', 'parentSpj')
@@ -189,6 +190,7 @@ export class SpjService {
     const spj = await this.spjRepo.findOne({
       where: { id },
       relations: [
+        'route',
         'vehicle',
         'tripSchedule',
         'tripSchedule.customer',
@@ -277,6 +279,7 @@ export class SpjService {
     const spj = this.spjRepo.create({
       spjNo,
       serviceType: dto.serviceType,
+      routeId: dto.routeId || undefined,
       vehicleId: dto.vehicleId,
       tripScheduleId: dto.tripScheduleId,
       parentSpjId: dto.parentSpjId,
@@ -511,6 +514,7 @@ export class SpjService {
 
     const spj = await this.create({
       serviceType: schedule.serviceType,
+      routeId: schedule.routeId,
       vehicleId,
       tripScheduleId: schedule.id,
       notes: dto?.notes || schedule.notes,

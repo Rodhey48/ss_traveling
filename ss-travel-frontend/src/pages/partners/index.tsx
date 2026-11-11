@@ -79,7 +79,8 @@ export default function PartnersPage() {
   const [restStatusFilter, setRestStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
 
   // Filter Tab 2 (Koordinator)
-  const [coordZoneFilter, setCoordZoneFilter] = useState('ALL');
+  const [coordOriginFilter, setCoordOriginFilter] = useState('');
+  const [coordDestinationFilter, setCoordDestinationFilter] = useState('');
   const [coordStatusFilter, setCoordStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
 
   // Modals State
@@ -103,7 +104,8 @@ export default function PartnersPage() {
   const [simMealPax, setSimMealPax] = useState<number>(24);
   const [mealResult, setMealResult] = useState<CalculatedMealResult | null>(null);
 
-  const [simLegDirection, setSimLegDirection] = useState<'DEPARTURE' | 'RETURN'>('DEPARTURE');
+  const [simCoordOrigin, setSimCoordOrigin] = useState('JAKARTA');
+  const [simCoordDestination, setSimCoordDestination] = useState('YOGYAKARTA');
   const [simCoordPax, setSimCoordPax] = useState<number>(24);
   const [coordResult, setCoordResult] =
     useState<CalculatedCoordinatorFeeResult | null>(null);
@@ -179,10 +181,11 @@ export default function PartnersPage() {
   };
 
   const isCoordFilterActive =
-    coordZoneFilter !== 'ALL' || coordStatusFilter !== 'ALL';
+    coordOriginFilter.trim() !== '' || coordDestinationFilter.trim() !== '' || coordStatusFilter !== 'ALL';
 
   const handleResetCoordFilters = () => {
-    setCoordZoneFilter('ALL');
+    setCoordOriginFilter('');
+    setCoordDestinationFilter('');
     setCoordStatusFilter('ALL');
   };
 
@@ -212,10 +215,10 @@ export default function PartnersPage() {
     try {
       if (selectedFee) {
         await PartnerService.updateCoordinatorFee(selectedFee.id, formData);
-        toast.success(`Aturan fee korlap Zona ${formData.zone} berhasil diperbarui`);
+        toast.success(`Aturan fee korlap Rute ${formData.origin}-${formData.destination} berhasil diperbarui`);
       } else {
         await PartnerService.createCoordinatorFee(formData);
-        toast.success(`Aturan fee korlap Zona ${formData.zone} berhasil dibuat`);
+        toast.success(`Aturan fee korlap Rute ${formData.origin}-${formData.destination} berhasil dibuat`);
       }
       setIsFeeModalOpen(false);
       fetchData();
@@ -238,7 +241,7 @@ export default function PartnersPage() {
       } else {
         const fee = itemToDelete.item as CoordinatorFeeRule;
         await PartnerService.deleteCoordinatorFee(fee.id);
-        toast.success(`Aturan fee korlap Zona ${fee.zone} berhasil dihapus`);
+        toast.success(`Aturan fee korlap Rute ${fee.origin}-${fee.destination} berhasil dihapus`);
       }
       setItemToDelete(null);
       fetchData();
@@ -275,7 +278,8 @@ export default function PartnersPage() {
     setSimulating(true);
     try {
       const res = await PartnerService.getFeeForRoute({
-        legDirection: simLegDirection,
+        origin: simCoordOrigin,
+        destination: simCoordDestination,
         paxCount: Math.max(1, Number(simCoordPax) || 1),
       });
       if (res?.data) {
@@ -316,12 +320,13 @@ export default function PartnersPage() {
   // Filtered Coordinators
   const filteredCoordinators = useMemo(() => {
     return coordinatorFees.filter((f) => {
-      if (coordZoneFilter !== 'ALL' && f.zone !== coordZoneFilter) return false;
+      if (coordOriginFilter.trim() !== '' && !f.origin.toUpperCase().includes(coordOriginFilter.toUpperCase())) return false;
+      if (coordDestinationFilter.trim() !== '' && !f.destination.toUpperCase().includes(coordDestinationFilter.toUpperCase())) return false;
       if (coordStatusFilter === 'ACTIVE' && !f.isActive) return false;
       if (coordStatusFilter === 'INACTIVE' && f.isActive) return false;
       return true;
     });
-  }, [coordinatorFees, coordZoneFilter, coordStatusFilter]);
+  }, [coordinatorFees, coordOriginFilter, coordDestinationFilter, coordStatusFilter]);
 
   // Dynamic KPI Stats
   const activeRestCount = useMemo(
@@ -336,11 +341,11 @@ export default function PartnersPage() {
   }, [restaurants]);
 
   const westFeeRule = useMemo(
-    () => coordinatorFees.find((f) => f.zone === 'WEST' && f.isActive),
+    () => coordinatorFees.find((f) => f.origin === 'JAKARTA' && f.destination === 'YOGYAKARTA' && f.isActive),
     [coordinatorFees],
   );
   const eastFeeRule = useMemo(
-    () => coordinatorFees.find((f) => f.zone === 'EAST' && f.isActive),
+    () => coordinatorFees.find((f) => f.origin === 'YOGYAKARTA' && f.destination === 'JAKARTA' && f.isActive),
     [coordinatorFees],
   );
 
@@ -415,7 +420,7 @@ export default function PartnersPage() {
 
           <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs border-l-4 border-l-purple-600">
             <CardHeader className="p-4 pb-2">
-              <CardDescription className="text-xs">Fee Korlap Barat (Ciputat)</CardDescription>
+              <CardDescription className="text-xs">Fee Rute Jakarta &rarr; Yogya</CardDescription>
               <CardTitle className="text-2xl font-bold text-purple-700 dark:text-purple-400 flex items-center justify-between">
                 <span>
                   {westFeeRule ? formatCurrency(westFeeRule.feePerPax) : 'Rp 10.000'}{' '}
@@ -426,14 +431,14 @@ export default function PartnersPage() {
             </CardHeader>
             <CardContent className="px-4 pb-3">
               <p className="text-[11px] text-muted-foreground">
-                Jabodetabek (Leg Keberangkatan / West)
+                Rute Keberangkatan (JAKARTA &rarr; YOGYAKARTA)
               </p>
             </CardContent>
           </Card>
 
           <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs border-l-4 border-l-amber-500">
             <CardHeader className="p-4 pb-2">
-              <CardDescription className="text-xs">Fee Korlap Timur (Yogya)</CardDescription>
+              <CardDescription className="text-xs">Fee Rute Yogya &rarr; Jakarta</CardDescription>
               <CardTitle className="text-2xl font-bold text-amber-700 dark:text-amber-400 flex items-center justify-between">
                 <span>
                   {eastFeeRule ? formatCurrency(eastFeeRule.feePerPax) : 'Rp 10.000'}{' '}
@@ -444,7 +449,7 @@ export default function PartnersPage() {
             </CardHeader>
             <CardContent className="px-4 pb-3">
               <p className="text-[11px] text-muted-foreground">
-                Jateng &amp; DIY (Leg Kepulangan / East)
+                Rute Kepulangan (YOGYAKARTA &rarr; JAKARTA)
               </p>
             </CardContent>
           </Card>
@@ -744,16 +749,19 @@ export default function PartnersPage() {
           {/* Toolbar Multi-Filter */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md p-3.5 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-xs">
             <div className="flex flex-wrap items-center gap-2.5">
-              <Select value={coordZoneFilter} onValueChange={setCoordZoneFilter}>
-                <SelectTrigger className="w-full sm:w-44 h-8.5 text-xs">
-                  <SelectValue placeholder="Semua Zona" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL" className="text-xs">Semua Zona Wilayah</SelectItem>
-                  <SelectItem value="WEST" className="text-xs">Zona WEST (Barat)</SelectItem>
-                  <SelectItem value="EAST" className="text-xs">Zona EAST (Timur)</SelectItem>
-                </SelectContent>
-              </Select>
+              <Input
+                placeholder="Asal (Origin)"
+                value={coordOriginFilter}
+                onChange={(e) => setCoordOriginFilter(e.target.value)}
+                className="w-full sm:w-32 h-8.5 text-xs uppercase"
+              />
+              <span className="text-xs text-muted-foreground px-1">&rarr;</span>
+              <Input
+                placeholder="Tujuan (Destination)"
+                value={coordDestinationFilter}
+                onChange={(e) => setCoordDestinationFilter(e.target.value)}
+                className="w-full sm:w-32 h-8.5 text-xs uppercase"
+              />
 
               <Select
                 value={coordStatusFilter}
@@ -777,7 +785,7 @@ export default function PartnersPage() {
                   size="sm"
                   onClick={handleResetCoordFilters}
                   className="h-8.5 px-2.5 text-xs text-muted-foreground hover:text-foreground gap-1.5"
-                  title="Reset filter zonasi"
+                  title="Reset filter rute"
                 >
                   <RotateCcw className="h-3.5 w-3.5" /> Reset
                 </Button>
@@ -785,7 +793,7 @@ export default function PartnersPage() {
             </div>
 
             <div className="text-xs text-muted-foreground font-medium">
-              Menampilkan <strong className="text-foreground">{filteredCoordinators.length}</strong> aturan zonasi fee korlap
+              Menampilkan <strong className="text-foreground">{filteredCoordinators.length}</strong> aturan fee korlap rute
             </div>
           </div>
 
@@ -793,8 +801,8 @@ export default function PartnersPage() {
             <Table>
               <TableHeader className="bg-slate-50/80 dark:bg-white/5">
                 <TableRow className="border-b border-slate-200/80 dark:border-white/10">
-                  <TableHead className="w-40">Zona Wilayah</TableHead>
-                  <TableHead className="min-w-64">Cakupan Wilayah Operasional</TableHead>
+                  <TableHead className="min-w-48">Rute Trayek (Asal &rarr; Tujuan)</TableHead>
+                  <TableHead className="min-w-64">Cakupan / Keterangan Operasional</TableHead>
                   <TableHead className="w-56">Personel Korlap Terdaftar</TableHead>
                   <TableHead className="text-right w-40">Besaran Fee / Pax</TableHead>
                   <TableHead className="w-24 text-center">Status</TableHead>
@@ -806,7 +814,7 @@ export default function PartnersPage() {
                   <TableSkeletonRows
                     rows={4}
                     colWidths={[
-                      'w-32',
+                      'w-36',
                       'w-48',
                       'w-32',
                       'w-24 ml-auto',
@@ -826,7 +834,7 @@ export default function PartnersPage() {
                         </h4>
                         <p className="text-xs text-muted-foreground max-w-sm">
                           {isCoordFilterActive
-                            ? 'Tidak ada aturan fee korlap yang sesuai dengan filter zonasi.'
+                            ? 'Tidak ada aturan fee korlap yang sesuai dengan filter rute.'
                             : 'Belum ada aturan fee koordinator lapangan yang dikonfigurasi.'}
                         </p>
                         {isCoordFilterActive ? (
@@ -862,21 +870,24 @@ export default function PartnersPage() {
                       className="hover:bg-slate-50/80 dark:hover:bg-white/5 transition-colors"
                     >
                       <TableCell className="font-bold text-xs text-foreground">
-                        <div className="flex items-center gap-1.5">
-                          <Badge
-                            variant={f.zone === 'WEST' ? 'default' : 'secondary'}
-                            className="text-[10px]"
-                          >
-                            ZONA {f.zone}
-                          </Badge>
-                          <span>{f.zone === 'WEST' ? 'Wilayah Barat' : 'Wilayah Timur'}</span>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-white/10 px-2.5 py-1 rounded-md text-xs font-mono font-bold">
+                            <span className="text-primary">{f.origin}</span>
+                            <span className="text-muted-foreground">&rarr;</span>
+                            <span className="text-primary">{f.destination}</span>
+                          </div>
+                          {f.origin === 'ALL' && f.destination === 'ALL' && (
+                            <Badge variant="outline" className="text-[10px] text-amber-600 dark:text-amber-400 border-amber-300">
+                              Global Fallback
+                            </Badge>
+                          )}
                         </div>
                       </TableCell>
 
                       <TableCell className="text-xs text-muted-foreground">
-                        {f.zone === 'WEST'
-                          ? 'Jabodetabek (Ciputat, Pulo Gebang, Rambutan, dsb.) — Leg Keberangkatan'
-                          : 'Jawa Tengah & DIY (Giwangan, Jombor, Sleman, Solo) — Leg Kepulangan'}
+                        {f.origin === 'ALL' && f.destination === 'ALL'
+                          ? 'Berlaku umum untuk semua rute perjalanan tanpa konfigurasi tarif khusus'
+                          : `Rute operasional dari ${f.origin} menuju ${f.destination}`}
                       </TableCell>
 
                       <TableCell className="text-xs">
@@ -1065,50 +1076,35 @@ export default function PartnersPage() {
                     Kalkulator Fee Jasa Koordinator Lapangan (Korlap)
                   </CardTitle>
                   <CardDescription className="text-[11px]">
-                    Simulasi otomatis: Leg Berangkat &rarr; Zona WEST vs Leg Pulang &rarr; Zona EAST.
+                    Simulasi otomatis: Kalkulasi fee berdasarkan Kota Asal dan Tujuan leg perjalanan SPJ.
                   </CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="p-4 pt-3 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+              <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 items-end">
                 <div className="sm:col-span-2 space-y-1">
-                  <label className="text-[11px] font-semibold text-muted-foreground">Arah Leg Perjalanan</label>
-                  <Select
-                    value={simLegDirection}
-                    onValueChange={(val) =>
-                      setSimLegDirection(val as 'DEPARTURE' | 'RETURN')
-                    }
-                  >
-                    <SelectTrigger className="h-8.5 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="DEPARTURE" className="text-xs">
-                        Leg Berangkat (Barat &rarr; Timur / Zone WEST)
-                      </SelectItem>
-                      <SelectItem value="RETURN" className="text-xs">
-                        Leg Pulang (Timur &rarr; Barat / Zone EAST)
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <label className="text-[11px] font-semibold text-muted-foreground">Rute Asal (Origin)</label>
+                  <Input
+                    placeholder="JAKARTA"
+                    value={simCoordOrigin}
+                    onChange={(e) => setSimCoordOrigin(e.target.value.toUpperCase())}
+                    className="h-8.5 font-mono text-xs uppercase"
+                  />
+                </div>
+                <div className="sm:col-span-2 space-y-1">
+                  <label className="text-[11px] font-semibold text-muted-foreground">Rute Tujuan (Destination)</label>
+                  <Input
+                    placeholder="YOGYAKARTA"
+                    value={simCoordDestination}
+                    onChange={(e) => setSimCoordDestination(e.target.value.toUpperCase())}
+                    className="h-8.5 font-mono text-xs uppercase"
+                  />
                 </div>
 
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
                     <label className="text-[11px] font-semibold text-muted-foreground">Pax</label>
-                    <div className="flex items-center gap-1">
-                      {[12, 24, 32, 48].map((pax) => (
-                        <button
-                          key={pax}
-                          type="button"
-                          onClick={() => setSimCoordPax(pax)}
-                          className="text-[10px] px-1 rounded bg-muted hover:bg-muted/80 font-mono transition-colors"
-                        >
-                          {pax}
-                        </button>
-                      ))}
-                    </div>
                   </div>
                   <Input
                     type="number"
@@ -1118,17 +1114,17 @@ export default function PartnersPage() {
                     className="h-8.5 font-mono text-xs font-bold"
                   />
                 </div>
+              </div>
 
-                <div>
-                  <Button
-                    onClick={handleSimulateCoord}
-                    disabled={simulating}
-                    className="w-full h-8.5 text-xs gap-1.5"
-                  >
-                    <Sparkles className="h-3.5 w-3.5" />
-                    {simulating ? 'Menghitung...' : 'Hitung Fee Korlap'}
-                  </Button>
-                </div>
+              <div>
+                <Button
+                  onClick={handleSimulateCoord}
+                  disabled={simulating}
+                  className="w-full h-8.5 text-xs gap-1.5"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {simulating ? 'Menghitung...' : 'Hitung Fee Korlap'}
+                </Button>
               </div>
 
               {coordResult && (
@@ -1137,11 +1133,7 @@ export default function PartnersPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <FileCheck2 className="h-4 w-4 text-primary" />
                       <span className="font-bold text-xs text-foreground">
-                        Zona {coordResult.zone} (
-                        {coordResult.legDirection === 'DEPARTURE'
-                          ? 'Barat / Ciputat'
-                          : 'Timur / Yogya'}
-                        )
+                        Rute {coordResult.origin} &rarr; {coordResult.destination}
                       </span>
                       {coordResult.coordinatorName && (
                         <Badge variant="outline" className="text-[10px]">
@@ -1164,6 +1156,7 @@ export default function PartnersPage() {
               )}
             </CardContent>
           </Card>
+
         </TabsContent>
       </Tabs>
 
@@ -1198,7 +1191,7 @@ export default function PartnersPage() {
         description={
           itemToDelete?.type === 'restaurant'
             ? `Apakah Anda yakin ingin menghapus rumah makan mitra '${(itemToDelete?.item as Restaurant)?.name}' (${(itemToDelete?.item as Restaurant)?.code})?`
-            : `Apakah Anda yakin ingin menghapus aturan fee koordinator lapangan untuk Zona ${(itemToDelete?.item as CoordinatorFeeRule)?.zone}?`
+            : `Apakah Anda yakin ingin menghapus aturan fee koordinator lapangan untuk Rute ${(itemToDelete?.item as CoordinatorFeeRule)?.origin}-${(itemToDelete?.item as CoordinatorFeeRule)?.destination}?`
         }
         variant="danger"
         confirmText="Hapus Data"

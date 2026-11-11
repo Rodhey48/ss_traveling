@@ -10,7 +10,6 @@ import { CompanyEntity } from '../organization/company.entity';
 import { UsersEntity } from '../user/user.entity';
 import { CashAccountEntity } from '../finance/cash-account.entity';
 import { JournalEntryEntity } from '../finance/journal-entry.entity';
-import { CoordinatorZone } from '../master-rules/coordinator-fee-rule.entity';
 import { SpjCoordinationFeeEntity } from '../trips/spj-coordination-fee.entity';
 
 export enum CoordinationFeeBatchStatus {
@@ -38,11 +37,11 @@ export class CoordinationFeeBatchEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 60, unique: true, name: 'batch_no' })
   batchNo!: string;
 
-  @Column({
-    type: 'enum',
-    enum: CoordinatorZone,
-  })
-  zone!: CoordinatorZone;
+  @Column({ type: 'varchar', length: 100, default: 'ALL' })
+  origin!: string;
+
+  @Column({ type: 'varchar', length: 100, default: 'ALL' })
+  destination!: string;
 
   @Column({ type: 'uuid', name: 'coordinator_user_id', nullable: true })
   coordinatorUserId?: string;

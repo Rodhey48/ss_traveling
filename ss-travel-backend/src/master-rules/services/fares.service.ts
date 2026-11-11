@@ -9,6 +9,7 @@ import { Repository } from 'typeorm';
 import { FareSeasonEntity } from '../../@models/master-rules/fare-season.entity';
 import { FareMatrixEntity } from '../../@models/master-rules/fare-matrix.entity';
 import { SeatClassEntity } from '../../@models/fleet/seat-class.entity';
+import { RouteEntity } from '../../@models/master-rules/route.entity';
 import {
   CreateFareSeasonDto,
   UpdateFareSeasonDto,
@@ -25,6 +26,9 @@ export interface CalculatedFareResult {
   origin: string;
   destination: string;
   travelDate: string;
+  routeId?: string;
+  routeName?: string;
+  routeCode?: string;
   seatClass: {
     id: string;
     code: string;
@@ -41,6 +45,8 @@ export class FaresService {
     private readonly matrixRepo: Repository<FareMatrixEntity>,
     @InjectRepository(SeatClassEntity)
     private readonly seatClassRepo: Repository<SeatClassEntity>,
+    @InjectRepository(RouteEntity)
+    private readonly routeRepo: Repository<RouteEntity>,
   ) {}
 
   // ==========================================
@@ -50,14 +56,14 @@ export class FaresService {
   async findAllSeasons(): Promise<FareSeasonEntity[]> {
     return this.seasonRepo.find({
       order: { startDate: 'ASC' },
-      relations: ['matrices'],
+      relations: ['matrices', 'matrices.route'],
     });
   }
 
   async findOneSeason(id: string): Promise<FareSeasonEntity> {
     const season = await this.seasonRepo.findOne({
       where: { id },
-      relations: ['matrices', 'matrices.seatClass'],
+      relations: ['matrices', 'matrices.seatClass', 'matrices.route'],
     });
     if (!season) {
       throw new NotFoundException(`Musim tarif dengan ID '${id}' tidak ditemukan.`);
@@ -98,20 +104,26 @@ export class FaresService {
 
     const startDate = dto.startDate || season.startDate;
     const endDate = dto.endDate || season.endDate;
+
     if (new Date(startDate) > new Date(endDate)) {
       throw new BadRequestException(
         'Tanggal mulai (startDate) tidak boleh lebih besar dari tanggal selesai (endDate).',
       );
     }
 
-    Object.assign(season, dto);
+    Object.assign(season, {
+      ...dto,
+      startDate,
+      endDate,
+    });
+
     return this.seasonRepo.save(season);
   }
 
   async deleteSeason(id: string): Promise<{ success: boolean; message: string }> {
     const season = await this.findOneSeason(id);
     if (season.code === 'REGULER') {
-      throw new BadRequestException('Musim tarif REGULER tidak boleh dihapus.');
+      throw new BadRequestException('Musim REGULER adalah sistem default dan tidak dapat dihapus.');
     }
     await this.seasonRepo.remove(season);
     return {
@@ -121,7 +133,7 @@ export class FaresService {
   }
 
   // ==========================================
-  // FARE MATRIX (Matriks Tarif per Rute & Kelas)
+  // FARE MATRIX (Matriks Harga Tiket Rute & Kelas)
   // ==========================================
 
   async findAllMatrix(seasonId?: string): Promise<FareMatrixEntity[]> {
@@ -132,7 +144,7 @@ export class FaresService {
 
     return this.matrixRepo.find({
       where,
-      relations: ['fareSeason', 'seatClass'],
+      relations: ['fareSeason', 'seatClass', 'route'],
       order: {
         origin: 'ASC',
         destination: 'ASC',
@@ -141,10 +153,14 @@ export class FaresService {
     });
   }
 
+  async findAllMatrices(seasonId?: string): Promise<FareMatrixEntity[]> {
+    return this.findAllMatrix(seasonId);
+  }
+
   async findOneMatrix(id: string): Promise<FareMatrixEntity> {
     const matrix = await this.matrixRepo.findOne({
       where: { id },
-      relations: ['fareSeason', 'seatClass'],
+      relations: ['fareSeason', 'seatClass', 'route'],
     });
     if (!matrix) {
       throw new NotFoundException(`Matriks tarif dengan ID '${id}' tidak ditemukan.`);
@@ -169,10 +185,27 @@ export class FaresService {
       throw new NotFoundException(`Master kelas kursi tidak ditemukan.`);
     }
 
+    let origin = dto.origin ? dto.origin.trim().toUpperCase() : '';
+    let destination = dto.destination ? dto.destination.trim().toUpperCase() : '';
+
+    if (dto.routeId) {
+      const route = await this.routeRepo.findOne({ where: { id: dto.routeId } });
+      if (!route) {
+        throw new NotFoundException(`Master rute trayek dengan ID '${dto.routeId}' tidak ditemukan.`);
+      }
+      if (!origin) origin = route.origin;
+      if (!destination) destination = route.destination;
+    }
+
+    if (!origin || !destination) {
+      throw new BadRequestException('Kota Asal dan Kota Tujuan harus ditentukan atau dipilih melalui Master Rute.');
+    }
+
     const matrix = this.matrixRepo.create({
       fareSeasonId: dto.fareSeasonId,
-      origin: dto.origin.trim().toUpperCase(),
-      destination: dto.destination.trim().toUpperCase(),
+      routeId: dto.routeId || undefined,
+      origin,
+      destination,
       seatClassId: dto.seatClassId,
       amount: dto.amount,
       effectiveFrom: dto.effectiveFrom ? new Date(dto.effectiveFrom) : new Date(),
@@ -185,8 +218,21 @@ export class FaresService {
 
   async updateMatrix(id: string, dto: UpdateFareMatrixDto): Promise<FareMatrixEntity> {
     const matrix = await this.findOneMatrix(id);
+
+    if (dto.routeId) {
+      const route = await this.routeRepo.findOne({ where: { id: dto.routeId } });
+      if (!route) {
+        throw new NotFoundException(`Master rute trayek tidak ditemukan.`);
+      }
+    }
+
+    const { fareSeasonId: _seasonId, seatClassId: _classId, ...allowedUpdates } = dto;
+
     Object.assign(matrix, {
-      ...dto,
+      ...allowedUpdates,
+      origin: dto.origin ? dto.origin.trim().toUpperCase() : matrix.origin,
+      destination: dto.destination ? dto.destination.trim().toUpperCase() : matrix.destination,
+      routeId: dto.routeId !== undefined ? (dto.routeId || null) : matrix.routeId,
       effectiveFrom: dto.effectiveFrom ? new Date(dto.effectiveFrom) : matrix.effectiveFrom,
       effectiveUntil: dto.effectiveUntil ? new Date(dto.effectiveUntil) : matrix.effectiveUntil,
     });
@@ -208,12 +254,28 @@ export class FaresService {
 
   /**
    * Menghitung tarif tiket dinamis:
-   * Harga Tiket = f(Rute Asal-Tujuan, Musim Tarif / Tuslah, seat_class_id)
-   * Mengutamakan musim khusus aktif (misal Lebaran / Liburan), jika tidak ada fallback ke REGULER.
+   * Harga Tiket = f(Route/Rute Asal-Tujuan, Musim Tarif / Tuslah, seat_class_id)
+   * Prioritas 1: Pencarian berbasis routeId spesifik pada musim aktif
+   * Prioritas 2: Pencarian berbasis origin-destination pada musim aktif
+   * Prioritas 3: Fallback ke musim REGULER (routeId / origin-destination)
    */
   async calculateFare(dto: FareCalculationQueryDto): Promise<CalculatedFareResult> {
-    const origin = dto.origin.trim().toUpperCase();
-    const destination = dto.destination.trim().toUpperCase();
+    let origin = dto.origin ? dto.origin.trim().toUpperCase() : '';
+    let destination = dto.destination ? dto.destination.trim().toUpperCase() : '';
+    let matchedRoute: RouteEntity | null = null;
+
+    if (dto.routeId) {
+      matchedRoute = await this.routeRepo.findOne({ where: { id: dto.routeId } });
+      if (matchedRoute) {
+        if (!origin) origin = matchedRoute.origin;
+        if (!destination) destination = matchedRoute.destination;
+      }
+    }
+
+    if (!origin || !destination) {
+      throw new BadRequestException('Kota Asal dan Tujuan harus ditentukan atau dipilih melalui Master Rute.');
+    }
+
     const travelDate = dto.travelDate || new Date().toISOString().split('T')[0];
 
     // 1. Validasi Seat Class
@@ -234,16 +296,33 @@ export class FaresService {
 
     // 3. Cek apakah ada matriks tarif pada musim aktif yang cocok
     for (const season of activeSeasons) {
-      const match = await this.matrixRepo.findOne({
-        where: {
-          fareSeasonId: season.id,
-          origin,
-          destination,
-          seatClassId: dto.seatClassId,
-          isActive: true,
-        },
-        relations: ['seatClass'],
-      });
+      // 3.a Prioritas Route ID spesifik
+      let match: FareMatrixEntity | null = null;
+      if (dto.routeId) {
+        match = await this.matrixRepo.findOne({
+          where: {
+            fareSeasonId: season.id,
+            routeId: dto.routeId,
+            seatClassId: dto.seatClassId,
+            isActive: true,
+          },
+          relations: ['seatClass', 'route'],
+        });
+      }
+
+      // 3.b Fallback ke Origin & Destination
+      if (!match) {
+        match = await this.matrixRepo.findOne({
+          where: {
+            fareSeasonId: season.id,
+            origin,
+            destination,
+            seatClassId: dto.seatClassId,
+            isActive: true,
+          },
+          relations: ['seatClass', 'route'],
+        });
+      }
 
       if (match) {
         return {
@@ -254,6 +333,9 @@ export class FaresService {
           origin,
           destination,
           travelDate,
+          routeId: match.routeId || matchedRoute?.id,
+          routeName: match.route?.name || matchedRoute?.name,
+          routeCode: match.route?.code || matchedRoute?.code,
           seatClass: {
             id: seatClass.id,
             code: seatClass.code,
@@ -269,16 +351,32 @@ export class FaresService {
     });
 
     if (regulerSeason) {
-      const regulerMatch = await this.matrixRepo.findOne({
-        where: {
-          fareSeasonId: regulerSeason.id,
-          origin,
-          destination,
-          seatClassId: dto.seatClassId,
-          isActive: true,
-        },
-        relations: ['seatClass'],
-      });
+      let regulerMatch: FareMatrixEntity | null = null;
+
+      if (dto.routeId) {
+        regulerMatch = await this.matrixRepo.findOne({
+          where: {
+            fareSeasonId: regulerSeason.id,
+            routeId: dto.routeId,
+            seatClassId: dto.seatClassId,
+            isActive: true,
+          },
+          relations: ['seatClass', 'route'],
+        });
+      }
+
+      if (!regulerMatch) {
+        regulerMatch = await this.matrixRepo.findOne({
+          where: {
+            fareSeasonId: regulerSeason.id,
+            origin,
+            destination,
+            seatClassId: dto.seatClassId,
+            isActive: true,
+          },
+          relations: ['seatClass', 'route'],
+        });
+      }
 
       if (regulerMatch) {
         return {
@@ -289,6 +387,9 @@ export class FaresService {
           origin,
           destination,
           travelDate,
+          routeId: regulerMatch.routeId || matchedRoute?.id,
+          routeName: regulerMatch.route?.name || matchedRoute?.name,
+          routeCode: regulerMatch.route?.code || matchedRoute?.code,
           seatClass: {
             id: seatClass.id,
             code: seatClass.code,

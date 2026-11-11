@@ -509,6 +509,8 @@ export interface FareMatrix {
   companyId?: string;
   fareSeasonId: string;
   fareSeason?: FareSeason;
+  routeId?: string;
+  route?: Route;
   origin: string;
   destination: string;
   seatClassId: string;
@@ -523,8 +525,9 @@ export interface FareMatrix {
 
 export interface FareMatrixFormData {
   fareSeasonId: string;
-  origin: string;
-  destination: string;
+  routeId?: string;
+  origin?: string;
+  destination?: string;
   seatClassId: string;
   amount: number;
   effectiveFrom?: string;
@@ -533,8 +536,9 @@ export interface FareMatrixFormData {
 }
 
 export interface FareCalculationQuery {
-  origin: string;
-  destination: string;
+  routeId?: string;
+  origin?: string;
+  destination?: string;
   seatClassId: string;
   travelDate?: string;
 }
@@ -547,6 +551,9 @@ export interface CalculatedFareResult {
   origin: string;
   destination: string;
   travelDate: string;
+  routeId?: string;
+  routeName?: string;
+  routeCode?: string;
   seatClass: {
     id: string;
     code: string;
@@ -741,7 +748,10 @@ export interface CalculatedMealResult {
 export interface CoordinatorFeeRule {
   id: string;
   companyId?: string;
-  zone: CoordinatorZone;
+  routeId?: string;
+  route?: Route;
+  origin: string;
+  destination: string;
   coordinatorUserId?: string;
   coordinatorUser?: User;
   feePerPax: number;
@@ -753,7 +763,9 @@ export interface CoordinatorFeeRule {
 }
 
 export interface CoordinatorFeeRuleFormData {
-  zone: CoordinatorZone;
+  routeId?: string;
+  origin: string;
+  destination: string;
   coordinatorUserId?: string;
   feePerPax: number;
   effectiveFrom?: string;
@@ -762,8 +774,8 @@ export interface CoordinatorFeeRuleFormData {
 }
 
 export interface CalculatedCoordinatorFeeResult {
-  zone: CoordinatorZone;
-  legDirection: string;
+  origin: string;
+  destination: string;
   feePerPax: number;
   paxCount: number;
   totalFee: number;
@@ -894,6 +906,34 @@ export type SpjLegStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLE
 export type CrewAssignmentRole = 'DRIVER' | 'CO_DRIVER' | 'CONDUCTOR' | 'STEWARDESS' | 'MECHANIC' | 'HELPER';
 export type CrewAssignmentStatus = 'ASSIGNED' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'REPLACED';
 
+export interface Route {
+  id: string;
+  companyId?: string;
+  code: string;
+  name: string;
+  origin: string;
+  destination: string;
+  via?: string;
+  distanceKm?: number;
+  estimatedHours?: number;
+  serviceType: TripServiceType;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RouteFormData {
+  code: string;
+  name: string;
+  origin: string;
+  destination: string;
+  via?: string;
+  distanceKm?: number;
+  estimatedHours?: number;
+  serviceType?: TripServiceType;
+  isActive?: boolean;
+}
+
 export interface BufferWarning {
   type: 'VEHICLE' | 'CREW';
   targetId: string;
@@ -913,6 +953,8 @@ export interface TripSchedule {
   companyId?: string;
   scheduleNo: string;
   serviceType: TripServiceType;
+  routeId?: string;
+  route?: Route;
   businessUnitId?: string;
   businessUnit?: BusinessUnit;
   costCenterId?: string;
@@ -986,6 +1028,8 @@ export interface Spj {
   companyId?: string;
   spjNo: string;
   serviceType: TripServiceType;
+  routeId?: string;
+  route?: Route;
   tripScheduleId?: string;
   tripSchedule?: TripSchedule;
   parentSpjId?: string;
@@ -1014,6 +1058,7 @@ export interface Spj {
 
 export interface CreateTripScheduleFormData {
   serviceType: TripServiceType;
+  routeId?: string;
   vehicleId?: string;
   plannedDepartureAt: string;
   plannedReturnAt: string;
@@ -1048,6 +1093,7 @@ export interface ScheduleFilterParams {
 
 export interface CreateSpjFormData {
   serviceType: TripServiceType;
+  routeId?: string;
   vehicleId: string;
   tripScheduleId?: string;
   notes?: string;
@@ -1424,7 +1470,8 @@ export interface SpjCoordinationFee {
   spj?: Spj;
   spjLegId?: string;
   spjLeg?: SpjLeg;
-  zone: CoordinatorZone;
+  origin: string;
+  destination: string;
   ticketCount: number;
   feePerPax: number;
   totalFee: number;
@@ -1442,7 +1489,8 @@ export interface SpjCoordinationFee {
 export interface CoordinationFeeBatch {
   id: string;
   batchNo: string;
-  zone: CoordinatorZone;
+  origin: string;
+  destination: string;
   coordinatorUserId?: string;
   coordinatorUser?: User;
   coordinatorName?: string;
@@ -1465,18 +1513,9 @@ export interface CoordinationFeeBatch {
   updatedAt: string;
 }
 
-export interface CoordinatorFeeRule {
-  id: string;
-  zone: CoordinatorZone;
-  feePerPax: number;
-  effectiveFrom: string;
-  effectiveUntil?: string;
-  coordinatorUserId?: string;
-  coordinatorUser?: User;
-}
-
 export interface CreateCoordinationFeeBatchFormData {
-  zone: CoordinatorZone;
+  origin: string;
+  destination: string;
   spjCoordinationFeeIds: string[];
   paymentDate: string;
   bankAccountId: string;

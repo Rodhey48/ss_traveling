@@ -27,6 +27,16 @@ export class SeedFinanceMaster1888888888891 implements MigrationInterface {
     );
     const mntCcId = mntCcRows.length > 0 ? mntCcRows[0].id : null;
 
+    const akapCcRows = await queryRunner.query(
+      `SELECT id FROM "cost_centers" WHERE code = 'CC-OPS-AKAP' LIMIT 1`,
+    );
+    const akapCcId = akapCcRows.length > 0 ? akapCcRows[0].id : null;
+
+    const wisataCcRows = await queryRunner.query(
+      `SELECT id FROM "cost_centers" WHERE code = 'CC-OPS-WISATA' LIMIT 1`,
+    );
+    const wisataCcId = wisataCcRows.length > 0 ? wisataCcRows[0].id : null;
+
     // 3. Define Chart of Accounts Hierarchies
     interface AccountSeed {
       code: string;
@@ -42,17 +52,17 @@ export class SeedFinanceMaster1888888888891 implements MigrationInterface {
       // 1. ASET
       { code: '1', name: 'ASET', type: 'ASSET', normalBalance: 'DEBIT', parentCode: null, isPostable: false },
       { code: '11', name: 'Kas dan Bank', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '1', isPostable: false },
-      { code: '11101', name: 'Kas Operasional Pool (Ciputat/Jakarta)', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Kas fisik harian kasir garasi Ciputat' },
-      { code: '11102', name: 'Kas Operasional Cabang (Yogyakarta)', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Kas fisik cabang perwakilan Yogya' },
-      { code: '11103', name: 'Kas Kecil (Petty Cash Garasi)', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Kas kecil biaya harian operasional & mekanik bengkel' },
+      { code: '11101', name: 'Kas Operasional Pool Ciputat', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Kas utama operasional office dan garasi' },
+      { code: '11102', name: 'Kas Operasional Wisata', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Kas fisik untuk UJ & penerimaan WISATA' },
+      { code: '11103', name: 'Kas Operasional AKAP', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Kas fisik untuk UJ & penerimaan AKAP' },
       { code: '11104', name: 'Bank Operasional Perusahaan', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Rekening bank operasional utama perusahaan' },
       { code: '11105', name: 'Kas Kartu Uang Elektronik (Pool E-Toll)', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Saldo kartu e-toll pool untuk perjalanan bus' },
-      { code: '11111', name: 'Bank BCA Induk (Pusat Penerimaan)', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Rekening induk penerimaan tiket & charter via BCA' },
-      { code: '11112', name: 'Bank Mandiri Induk (Pusat Penerimaan)', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Rekening induk penerimaan tiket & charter via Mandiri' },
-      { code: '11121', name: 'Bank BCA Operasional AKAP', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Rekening operasional pengeluaran armada AKAP BCA' },
-      { code: '11122', name: 'Bank BCA Operasional Wisata', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Rekening operasional pengeluaran armada Wisata BCA' },
-      { code: '11123', name: 'Bank Mandiri Operasional AKAP', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Rekening operasional pengeluaran armada AKAP Mandiri' },
-      { code: '11124', name: 'Bank Mandiri Operasional Wisata', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Rekening operasional pengeluaran armada Wisata Mandiri' },
+      { code: '11111', name: 'Bank BCA Induk (Pusat Penerimaan)', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Rekening Induk Pusat Penerimaan BCA' },
+      { code: '11112', name: 'Bank Mandiri Induk (Pusat Penerimaan)', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Rekening Induk Pusat Penerimaan Mandiri' },
+      { code: '11121', name: 'Bank BCA Operasional Bus AKAP', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Rekening Pengeluaran Operasional Bus AKAP' },
+      { code: '11122', name: 'Bank BCA Operasional Wisata', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Rekening Pengeluaran Operasional Pariwisata' },
+      { code: '11123', name: 'Bank Mandiri Operasional Bus AKAP Induk', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Rekening Pengeluaran Operasional Bus AKAP' },
+      { code: '11124', name: 'Bank Mandiri Operasional Wisata Induk', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Rekening Pengeluaran Operasional Pariwisata' },
       { code: '11999', name: 'Selisih Kas Operasional Sementara (Penampung Skenario 4)', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '11', isPostable: true, description: 'Akun penampung neraca selisih kas kasir belum investigasi agar tutup buku unblocked' },
 
       { code: '12', name: 'Piutang Usaha (AR)', type: 'ASSET', normalBalance: 'DEBIT', parentCode: '1', isPostable: false },
@@ -229,123 +239,147 @@ export class SeedFinanceMaster1888888888891 implements MigrationInterface {
 
     // 4. Seed Cash Accounts
     const cashPoolAccountId = accountIdMap.get('11101');
-    const cashYogyaAccountId = accountIdMap.get('11102');
-    const cashPettyAccountId = accountIdMap.get('11103');
+    const cashWisataAccountId = accountIdMap.get('11102');
+    const cashAkapAccountId = accountIdMap.get('11103');
 
     if (cashPoolAccountId) {
       await queryRunner.query(
         `INSERT INTO "cash_accounts" 
           ("id", "company_id", "code", "name", "account_id", "custodian_user_id", "cost_center_id", "description", "is_active")
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)
-         ON CONFLICT ("code") DO NOTHING`,
+         ON CONFLICT ("code") DO UPDATE SET
+          "name" = EXCLUDED."name",
+          "description" = EXCLUDED."description",
+          "account_id" = EXCLUDED."account_id"`,
         [
           uuidv4(),
           companyId,
-          'CASH-POOL-CIPUTAT',
+          'CASH-OPS-OFFICE',
           'Kas Operasional Pool Ciputat',
           cashPoolAccountId,
           cashierId,
           poolCcId,
-          'Kas fisik utama laci kasir pool Ciputat untuk penerimaan tiket/kargo & pencairan UJ',
+          'Kas utama operasional office dan garasi',
         ],
       );
     }
 
-    if (cashYogyaAccountId) {
-      await queryRunner.query(
-        `INSERT INTO "cash_accounts" 
-          ("id", "company_id", "code", "name", "account_id", "custodian_user_id", "cost_center_id", "description", "is_active")
-         VALUES ($1, $2, $3, $4, $5, null, null, $6, true)
-         ON CONFLICT ("code") DO NOTHING`,
-        [
-          uuidv4(),
-          companyId,
-          'CASH-BRANCH-YOGYA',
-          'Kas Operasional Cabang Yogyakarta',
-          cashYogyaAccountId,
-          'Kas fisik perwakilan terminal Giwangan Yogyakarta',
-        ],
-      );
-    }
-
-    if (cashPettyAccountId) {
+    if (cashWisataAccountId) {
       await queryRunner.query(
         `INSERT INTO "cash_accounts" 
           ("id", "company_id", "code", "name", "account_id", "custodian_user_id", "cost_center_id", "description", "is_active")
          VALUES ($1, $2, $3, $4, $5, null, $6, $7, true)
-         ON CONFLICT ("code") DO NOTHING`,
+         ON CONFLICT ("code") DO UPDATE SET
+          "name" = EXCLUDED."name",
+          "description" = EXCLUDED."description",
+          "account_id" = EXCLUDED."account_id"`,
         [
           uuidv4(),
           companyId,
-          'CASH-PETTY-GARASI',
-          'Kas Kecil (Petty Cash Garasi)',
-          cashPettyAccountId,
-          mntCcId,
-          'Kas kecil bengkel garasi untuk belanja darurat perlengkapan bus & alat teknik',
+          'CASH-OPS-WISATA',
+          'Kas Operasional Wisata',
+          cashWisataAccountId,
+          wisataCcId,
+          'Kas fisik untuk UJ & penerimaan WISATA',
         ],
       );
     }
 
-    // 5. Seed Bank Accounts
-    const bankGlAccountId = accountIdMap.get('11104');
-    if (bankGlAccountId) {
+    if (cashAkapAccountId) {
       await queryRunner.query(
-        `INSERT INTO "bank_accounts" 
-          ("id", "company_id", "code", "bank_name", "account_name", "account_number", "account_number_masked", "account_id", "currency", "description", "is_active")
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'IDR', $9, true)
-         ON CONFLICT ("code") DO NOTHING`,
+        `INSERT INTO "cash_accounts" 
+          ("id", "company_id", "code", "name", "account_id", "custodian_user_id", "cost_center_id", "description", "is_active")
+         VALUES ($1, $2, $3, $4, $5, null, $6, $7, true)
+         ON CONFLICT ("code") DO UPDATE SET
+          "name" = EXCLUDED."name",
+          "description" = EXCLUDED."description",
+          "account_id" = EXCLUDED."account_id"`,
         [
           uuidv4(),
           companyId,
-          'BANK-BCA-OPS',
-          'BCA',
-          'PT SS Travelink Official',
-          '8229994370',
-          '•••• •••• 4370',
-          bankGlAccountId,
-          'Rekening korporat BCA KCU Ciputat operasional utama',
+          'CASH-OPS-AKAP',
+          'Kas Operasional AKAP',
+          cashAkapAccountId,
+          akapCcId,
+          'Kas fisik untuk UJ & penerimaan AKAP',
         ],
       );
+    }
 
-      await queryRunner.query(
-        `INSERT INTO "bank_accounts" 
-          ("id", "company_id", "code", "bank_name", "account_name", "account_number", "account_number_masked", "account_id", "currency", "description", "is_active")
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'IDR', $9, true)
-         ON CONFLICT ("code") DO NOTHING`,
-        [
-          uuidv4(),
-          companyId,
-          'BANK-MANDIRI-OPS',
-          'Bank Mandiri',
-          'PT SS Travelink Official',
-          '1560012345678',
-          '•••• •••• 5678',
-          bankGlAccountId,
-          'Rekening cadangan penerimaan transfer bank Mandiri',
-        ],
-      );
+    // 5. Seed Bank Accounts (6 Rekening Bank Terdaftar Sesuai Matriks Perusahaan)
+    const corporateBankConfigs = [
+      {
+        code: 'BANK-BCA-MAIN',
+        name: 'BCA',
+        accName: 'PT SS Travelink Official (Induk)',
+        accNo: '8830192801',
+        mask: '•••• •••• 2801',
+        glCode: '11111',
+        desc: 'Rekening Induk Pusat Penerimaan BCA',
+      },
+      {
+        code: 'BANK-MANDIRI-MAIN',
+        name: 'Mandiri',
+        accName: 'PT SS Travelink Official (Induk)',
+        accNo: '1560012341112',
+        mask: '•••• •••• 1112',
+        glCode: '11112',
+        desc: 'Rekening Induk Pusat Penerimaan Mandiri',
+      },
+      {
+        code: 'BANK-BCA-OPS-AKAP',
+        name: 'BCA',
+        accName: 'PT SS Travelink Official (Ops AKAP)',
+        accNo: '8830192821',
+        mask: '•••• •••• 2821',
+        glCode: '11121',
+        desc: 'Rekening Pengeluaran Operasional Bus AKAP',
+      },
+      {
+        code: 'BANK-BCA-OPS-WIS',
+        name: 'BCA',
+        accName: 'PT SS Travelink Official (Ops Wisata)',
+        accNo: '8830192822',
+        mask: '•••• •••• 2822',
+        glCode: '11122',
+        desc: 'Rekening Pengeluaran Operasional Pariwisata',
+      },
+      {
+        code: 'BANK-MANDIRI-OPS-AKAP-MAIN',
+        name: 'Mandiri',
+        accName: 'PT SS Travelink Official (Ops AKAP Induk)',
+        accNo: '1560012341123',
+        mask: '•••• •••• 1123',
+        glCode: '11123',
+        desc: 'Rekening Pengeluaran Operasional Bus AKAP',
+      },
+      {
+        code: 'BANK-MANDIRI-OPS-WIS-MAIN',
+        name: 'Mandiri',
+        accName: 'PT SS Travelink Official (Ops Wisata Induk)',
+        accNo: '1560012341124',
+        mask: '•••• •••• 1124',
+        glCode: '11124',
+        desc: 'Rekening Pengeluaran Operasional Pariwisata',
+      },
+    ];
 
-      // 6 Rekening Bank Treasury Terpisah (2 Induk + 4 Operasional)
-      const corporateBankConfigs = [
-        { code: 'BANK-BCA-MAIN', name: 'BCA', accName: 'PT SS Travelink Official (Induk)', accNo: '8830192801', mask: '•••• •••• 2801', glCode: '11111', desc: 'Rekening Induk Pusat Penerimaan BCA' },
-        { code: 'BANK-MANDIRI-MAIN', name: 'Bank Mandiri', accName: 'PT SS Travelink Official (Induk)', accNo: '1560012341112', mask: '•••• •••• 1112', glCode: '11112', desc: 'Rekening Induk Pusat Penerimaan Mandiri' },
-        { code: 'BANK-BCA-OPS-AKAP', name: 'BCA', accName: 'PT SS Travelink Official (Ops AKAP)', accNo: '8830192821', mask: '•••• •••• 2821', glCode: '11121', desc: 'Rekening Pengeluaran Operasional Armada Bus AKAP BCA' },
-        { code: 'BANK-BCA-OPS-WIS', name: 'BCA', accName: 'PT SS Travelink Official (Ops Wisata)', accNo: '8830192822', mask: '•••• •••• 2822', glCode: '11122', desc: 'Rekening Pengeluaran Operasional Armada Pariwisata BCA' },
-        { code: 'BANK-MANDIRI-OPS-AKAP', name: 'Bank Mandiri', accName: 'PT SS Travelink Official (Ops AKAP)', accNo: '1560012341123', mask: '•••• •••• 1123', glCode: '11123', desc: 'Rekening Pengeluaran Operasional Armada Bus AKAP Mandiri' },
-        { code: 'BANK-MANDIRI-OPS-WIS', name: 'Bank Mandiri', accName: 'PT SS Travelink Official (Ops Wisata)', accNo: '1560012341124', mask: '•••• •••• 1124', glCode: '11124', desc: 'Rekening Pengeluaran Operasional Armada Pariwisata Mandiri' },
-      ];
-
-      for (const cbc of corporateBankConfigs) {
-        const cbcGlId = accountIdMap.get(cbc.glCode);
-        if (cbcGlId) {
-          await queryRunner.query(
-            `INSERT INTO "bank_accounts" 
-              ("id", "company_id", "code", "bank_name", "account_name", "account_number", "account_number_masked", "account_id", "currency", "description", "is_active")
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'IDR', $9, true)
-             ON CONFLICT ("code") DO NOTHING`,
-            [uuidv4(), companyId, cbc.code, cbc.name, cbc.accName, cbc.accNo, cbc.mask, cbcGlId, cbc.desc],
-          );
-        }
+    for (const cbc of corporateBankConfigs) {
+      const cbcGlId = accountIdMap.get(cbc.glCode);
+      if (cbcGlId) {
+        await queryRunner.query(
+          `INSERT INTO "bank_accounts" 
+            ("id", "company_id", "code", "bank_name", "account_name", "account_number", "account_number_masked", "account_id", "currency", "description", "is_active")
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'IDR', $9, true)
+           ON CONFLICT ("code") DO UPDATE SET
+            "bank_name" = EXCLUDED."bank_name",
+            "account_name" = EXCLUDED."account_name",
+            "account_number" = EXCLUDED."account_number",
+            "account_number_masked" = EXCLUDED."account_number_masked",
+            "account_id" = EXCLUDED."account_id",
+            "description" = EXCLUDED."description"`,
+          [uuidv4(), companyId, cbc.code, cbc.name, cbc.accName, cbc.accNo, cbc.mask, cbcGlId, cbc.desc],
+        );
       }
     }
 
@@ -425,8 +459,8 @@ export class SeedFinanceMaster1888888888891 implements MigrationInterface {
     await queryRunner.query(`DELETE FROM "document_sequences" WHERE period_key = '2610'`);
     await queryRunner.query(`DELETE FROM "fiscal_periods" WHERE fiscal_year_id IN (SELECT id FROM "fiscal_years" WHERE year = 2026)`);
     await queryRunner.query(`DELETE FROM "fiscal_years" WHERE year = 2026`);
-    await queryRunner.query(`DELETE FROM "bank_accounts" WHERE code IN ('BANK-BCA-OPS', 'BANK-MANDIRI-OPS')`);
-    await queryRunner.query(`DELETE FROM "cash_accounts" WHERE code IN ('CASH-POOL-CIPUTAT', 'CASH-BRANCH-YOGYA', 'CASH-PETTY-GARASI')`);
+    await queryRunner.query(`DELETE FROM "bank_accounts" WHERE code LIKE 'BANK-%'`);
+    await queryRunner.query(`DELETE FROM "cash_accounts" WHERE code LIKE 'CASH-%'`);
     await queryRunner.query(`DELETE FROM "accounts"`);
   }
 }

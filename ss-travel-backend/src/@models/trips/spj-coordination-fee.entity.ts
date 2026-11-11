@@ -10,7 +10,6 @@ import { SpjEntity } from './spj.entity';
 import { SpjLegEntity } from './spj-leg.entity';
 import { UsersEntity } from '../user/user.entity';
 import { JournalEntryEntity } from '../finance/journal-entry.entity';
-import { CoordinatorZone } from '../master-rules/coordinator-fee-rule.entity';
 import { CoordinationFeeBatchEntity } from '../finance/coordination-fee-batch.entity';
 
 export enum SpjCoordinationFeeStatus {
@@ -49,11 +48,11 @@ export class SpjCoordinationFeeEntity extends BaseEntity {
   @JoinColumn({ name: 'spj_leg_id' })
   spjLeg?: SpjLegEntity;
 
-  @Column({
-    type: 'enum',
-    enum: CoordinatorZone,
-  })
-  zone!: CoordinatorZone;
+  @Column({ type: 'varchar', length: 100, default: 'ALL' })
+  origin!: string;
+
+  @Column({ type: 'varchar', length: 100, default: 'ALL' })
+  destination!: string;
 
   @Column({ type: 'int', name: 'ticket_count', default: 0 })
   ticketCount!: number;

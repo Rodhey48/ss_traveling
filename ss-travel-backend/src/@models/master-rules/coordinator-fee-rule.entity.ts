@@ -2,11 +2,7 @@ import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { BaseEntity } from '../base.entity';
 import { CompanyEntity } from '../organization/company.entity';
 import { UsersEntity } from '../user/user.entity';
-
-export enum CoordinatorZone {
-  WEST = 'WEST', // Jabodetabek (Jakarta, Tangerang, Bogor, dsb)
-  EAST = 'EAST', // Jateng & DIY (Yogyakarta, Solo, Klaten, dsb)
-}
+import { RouteEntity } from './route.entity';
 
 @Entity('coordinator_fee_rules')
 export class CoordinatorFeeRuleEntity extends BaseEntity {
@@ -24,11 +20,18 @@ export class CoordinatorFeeRuleEntity extends BaseEntity {
   @JoinColumn({ name: 'company_id' })
   company?: CompanyEntity;
 
-  @Column({
-    type: 'enum',
-    enum: CoordinatorZone,
-  })
-  zone!: CoordinatorZone;
+  @Column({ type: 'uuid', name: 'route_id', nullable: true })
+  routeId?: string;
+
+  @ManyToOne(() => RouteEntity, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'route_id' })
+  route?: RouteEntity;
+
+  @Column({ type: 'varchar', length: 100, default: 'ALL' })
+  origin!: string;
+
+  @Column({ type: 'varchar', length: 100, default: 'ALL' })
+  destination!: string;
 
   @Column({ type: 'uuid', name: 'coordinator_user_id', nullable: true })
   coordinatorUserId?: string;
@@ -48,7 +51,7 @@ export class CoordinatorFeeRuleEntity extends BaseEntity {
       from: (value: string) => parseFloat(value),
     },
   })
-  feePerPax!: number; // misal: 10000.00 / pax
+  feePerPax!: number;
 
   @Column({
     type: 'timestamptz',

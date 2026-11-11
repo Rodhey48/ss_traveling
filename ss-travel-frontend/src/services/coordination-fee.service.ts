@@ -4,12 +4,12 @@ import type {
   CoordinationFeeBatch,
   CoordinatorFeeRule,
   CreateCoordinationFeeBatchFormData,
-  CoordinatorZone,
 } from '@/types';
 
 export const CoordinationFeeService = {
   getPendingFees: async (query?: {
-    zone?: CoordinatorZone;
+    origin?: string;
+    destination?: string;
     search?: string;
   }): Promise<SpjCoordinationFee[]> => {
     const response = await api.get('api/v1/finance/coordination-fees/pending', {

@@ -12,6 +12,7 @@ import { CostCenterEntity } from '../organization/cost-center.entity';
 import { VehicleEntity } from '../fleet/vehicle.entity';
 import { CustomerEntity } from '../customer/customer.entity';
 import { UsersEntity } from '../user/user.entity';
+import { RouteEntity } from '../master-rules/route.entity';
 import { SpjEntity } from './spj.entity';
 import { TripServiceType, TripScheduleStatus } from './trip.enums';
 
@@ -41,6 +42,13 @@ export class TripScheduleEntity extends BaseEntity {
     default: TripServiceType.AKAP,
   })
   serviceType!: TripServiceType;
+
+  @Column({ type: 'uuid', name: 'route_id', nullable: true })
+  routeId?: string;
+
+  @ManyToOne(() => RouteEntity, { onDelete: 'RESTRICT', nullable: true })
+  @JoinColumn({ name: 'route_id' })
+  route?: RouteEntity;
 
   @Column({ type: 'uuid', name: 'business_unit_id', nullable: true })
   businessUnitId?: string;

@@ -555,8 +555,9 @@ memakai presisi lebih tinggi bila diperlukan.
                           `settlement_type`,         invoiced bulanan via AP vendor)
                           `is_active`                
 
-  `coordinator_fee_rules` `id`, `zone`,              aturan fee koordinator wilayah
-                          `coordinator_user_id`,     (WEST/Barat & EAST/Timur) berbasis
+  `coordinator_fee_rules` `id`, `origin`,              aturan fee koordinator wilayah
+                          `destination`,             berbasis rute perjalanan
+                          `coordinator_user_id`,     dan
                           `fee_per_pax`,             jumlah pax (default Rp10.000/pax)
                           `effective_from`,          
                           `effective_until`,         
@@ -2504,23 +2505,24 @@ Setiap penumpang bus AKAP reguler mendapatkan fasilitas 1x servis makan di rumah
   - **Pemetaan Akun Akuntansi:** Didebitkan ke akun COA **`53103 — Beban Bonus Full Seat Kru`** (kelompok hak kru operasional).
 
 ## 3. Fee Koordinator Wilayah Lapangan (`coordinator_fee_rules`)
-Perusahaan memiliki 2 koordinator lapangan di wilayah strategis:
-- **Zonasi Koordinator:**
-  - `WEST`: Koordinator Wilayah Barat (Jakarta, Tangerang, Bogor, Bekasi / Jabodetabek).
-  - `EAST`: Koordinator Wilayah Timur (Yogyakarta, Klaten, Solo, Magelang / Jateng-DIY).
+Perusahaan memiliki koordinator lapangan di wilayah strategis:
+- **Rute Koordinator:**
+  - `JAKARTA` $\to$ `YOGYAKARTA`: Koordinator rute keberangkatan dari wilayah Barat (Jakarta, Tangerang, Bogor, Bekasi / Jabodetabek).
+  - `YOGYAKARTA` $\to$ `JAKARTA`: Koordinator rute kepulangan dari wilayah Timur (Yogyakarta, Klaten, Solo, Magelang / Jateng-DIY).
 - **Tabel Aturan `coordinator_fee_rules`:**
   - `id`: Primary key UUID.
-  - `zone`: Enum `WEST` / `EAST`.
+  - `origin`: Kota Asal rute (contoh: `JAKARTA`, `TANGERANG`).
+  - `destination`: Kota Tujuan rute (contoh: `YOGYAKARTA`).
   - `coordinator_user_id`: FK ke `users.id` (personel koordinator terdaftar).
   - `fee_per_pax`: Tarif jasa per penumpang (saat ini bernilai default **Rp10.000 per penumpang**, dan dapat disesuaikan di master data secara dinamis tanpa mengubah kode program).
   - `effective_from` & `effective_until`: Rentang masa berlaku tarif fee.
   - `is_active`: Status keaktifan aturan.
-- **Otomasi Zonasi Per Arah Leg SPJ (Anti-Salah Hitung):**
-  - Sistem mengaitkan kalkulasi fee secara otomatis dengan arah rute leg perjalanan:
-    - **Leg Keberangkatan (Jakarta/Tangerang $\to$ Yogyakarta):** Sistem otomatis mengalokasikan fee kepada **Koordinator Wilayah Barat (`WEST`)** sebesar:
-      $$\text{Fee Barat} = \text{Jumlah Penumpang Leg Berangkat} \times \text{fee\_per\_pax}$$
-    - **Leg Kepulangan (Yogyakarta $\to$ Jakarta/Tangerang):** Sistem otomatis mengalokasikan fee kepada **Koordinator Wilayah Timur (`EAST`)** sebesar:
-      $$\text{Fee Timur} = \text{Jumlah Penumpang Leg Pulang} \times \text{fee\_per\_pax}$$
+- **Otomasi Fee Per Arah Leg SPJ (Anti-Salah Hitung):**
+  - Sistem mengaitkan kalkulasi fee secara otomatis dengan kota asal (origin) dan tujuan (destination) leg perjalanan:
+    - **Leg Keberangkatan (Jakarta/Tangerang $\to$ Yogyakarta):** Sistem otomatis mengalokasikan fee berdasarkan rute ini sebesar:
+      $$\text{Fee Korlap} = \text{Jumlah Penumpang Leg Berangkat} \times \text{fee\_per\_pax}$$
+    - **Leg Kepulangan (Yogyakarta $\to$ Jakarta/Tangerang):** Sistem otomatis mengalokasikan fee berdasarkan rute ini sebesar:
+      $$\text{Fee Korlap} = \text{Jumlah Penumpang Leg Pulang} \times \text{fee\_per\_pax}$$
   - Fee koordinator dicatat sebagai biaya SPJ kategori `COORDINATOR_FEE`.
   - **Pemetaan Akun Akuntansi:** Didebitkan ke akun COA **`54102 — Beban Uang Jasa Koordinator Lapangan`**.
   - Sumber pembayaran dapat diselesaikan tunai oleh kru dari UJ di lapangan atau dibayarkan periodik melalui kasir cabang/pool (`22102 — Utang Jasa Koordinator Lapangan`).

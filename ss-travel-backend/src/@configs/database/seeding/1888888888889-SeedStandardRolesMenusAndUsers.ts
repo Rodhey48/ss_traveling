@@ -37,7 +37,7 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
       }
     }
 
-    // 2. 11 Standard Roles
+    // 2. 12 Standard Roles
     const rolesData = [
       { name: 'SUPER_ADMIN', description: 'Super Administrator with full access' },
       { name: 'DIRECTOR', description: 'Direksi / Owner - Executive Analytics' },
@@ -45,6 +45,7 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
       { name: 'ACCOUNTANT', description: 'Akuntan - Jurnal, GL & Tutup Periode' },
       { name: 'FINANCE_AR_AP', description: 'Staff Finance - AR & AP Invoicing' },
       { name: 'POOL_CASHIER', description: 'Kasir Pool - UJ & Penerimaan Kas' },
+      { name: 'OPS_MANAGER', description: 'Manajer Operasional - Pengawasan Armada, SPJ & Dispatching' },
       { name: 'OPS_ADMIN', description: 'Admin Operasional - Jadwal & SPJ Dispatcher' },
       { name: 'FIELD_COORDINATOR', description: 'Koordinator Lapangan / Korlap' },
       { name: 'CREW_DRIVER', description: 'Pengemudi / Driver Bus' },
@@ -71,7 +72,7 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
       }
     }
 
-    // 3. 14 Testing Users (All with password: Asd123)
+    // 3. Testing Users (All with password: Asd123)
     const usersData = [
       {
         email: 'superadmin@sstravel.com',
@@ -122,6 +123,14 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
         roleName: 'POOL_CASHIER',
       },
       {
+        email: 'ops.manager@sstravel.com',
+        name: 'Pak Bambang (Operations Manager)',
+        nip: 'OM-001',
+        phone: '081200000015',
+        type: 'admin',
+        roleName: 'OPS_MANAGER',
+      },
+      {
         email: 'ops.admin@sstravel.com',
         name: 'Dispatcher Operasional',
         nip: 'OPS-001',
@@ -162,10 +171,74 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
         roleName: 'CREW_DRIVER',
       },
       {
+        email: 'driver.slamet@sstravel.com',
+        name: 'Pak Slamet (Driver Cadangan)',
+        nip: 'DRV-004',
+        phone: '081200000016',
+        type: 'employee',
+        roleName: 'CREW_DRIVER',
+      },
+      {
+        email: 'driver.agus@sstravel.com',
+        name: 'Pak Agus Riyadi (Driver AKAP)',
+        nip: 'DRV-005',
+        phone: '081200000017',
+        type: 'employee',
+        roleName: 'CREW_DRIVER',
+      },
+      {
+        email: 'driver.yanto@sstravel.com',
+        name: 'Pak Triyanto (Driver Wisata)',
+        nip: 'DRV-006',
+        phone: '081200000018',
+        type: 'employee',
+        roleName: 'CREW_DRIVER',
+      },
+      {
         email: 'conductor.anto@sstravel.com',
         name: 'Mas Anto (Kondektur SS-01)',
         nip: 'CND-001',
         phone: '081200000012',
+        type: 'employee',
+        roleName: 'CREW_CONDUCTOR',
+      },
+      {
+        email: 'conductor.dodi@sstravel.com',
+        name: 'Mas Dodi (Kondektur Bus)',
+        nip: 'CND-002',
+        phone: '081200000019',
+        type: 'employee',
+        roleName: 'CREW_CONDUCTOR',
+      },
+      {
+        email: 'conductor.fajar@sstravel.com',
+        name: 'Mas Fajar (Kondektur Bus)',
+        nip: 'CND-003',
+        phone: '081200000020',
+        type: 'employee',
+        roleName: 'CREW_CONDUCTOR',
+      },
+      {
+        email: 'conductor.rizky@sstravel.com',
+        name: 'Mas Rizky (Kondektur Bus)',
+        nip: 'CND-004',
+        phone: '081200000021',
+        type: 'employee',
+        roleName: 'CREW_CONDUCTOR',
+      },
+      {
+        email: 'conductor.bayu@sstravel.com',
+        name: 'Mas Bayu (Helper / Kondektur)',
+        nip: 'CND-005',
+        phone: '081200000022',
+        type: 'employee',
+        roleName: 'CREW_CONDUCTOR',
+      },
+      {
+        email: 'conductor.ilham@sstravel.com',
+        name: 'Mas Ilham (Helper / Kondektur)',
+        nip: 'CND-006',
+        phone: '081200000023',
         type: 'employee',
         roleName: 'CREW_CONDUCTOR',
       },
@@ -374,10 +447,20 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
       },
       {
         id: uuidv4(),
+        name: 'Master Rute & Trayek',
+        url: '/routes',
+        icon: 'Route',
+        sequence: 8,
+        aclName: 'Routes',
+        parentId: masterGroupId,
+        moduleId: fleetModId,
+      },
+      {
+        id: uuidv4(),
         name: 'Periode Fiskal',
         url: '/fiscal-periods',
         icon: 'CalendarRange',
-        sequence: 8,
+        sequence: 9,
         aclName: 'FiscalPeriods',
         parentId: masterGroupId,
         moduleId: accModId,
@@ -387,7 +470,7 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
         name: 'Pengaturan Organisasi',
         url: '/organization',
         icon: 'Building2',
-        sequence: 8,
+        sequence: 10,
         aclName: 'Organization',
         parentId: masterGroupId,
         moduleId: authModId,
@@ -480,10 +563,30 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
       },
       {
         id: uuidv4(),
+        name: 'Uang Koordinasi Lapangan',
+        url: '/finance/coordination-fees',
+        icon: 'Coins',
+        sequence: 3,
+        aclName: 'Finance',
+        parentId: financeGroupId,
+        moduleId: finModId,
+      },
+      {
+        id: uuidv4(),
+        name: 'Tagihan Restoran Mitra',
+        url: '/finance/restaurant-settlements',
+        icon: 'UtensilsCrossed',
+        sequence: 4,
+        aclName: 'Finance',
+        parentId: financeGroupId,
+        moduleId: finModId,
+      },
+      {
+        id: uuidv4(),
         name: 'Jurnal Umum',
         url: '/journals',
         icon: 'BookOpen',
-        sequence: 3,
+        sequence: 5,
         aclName: 'Journals',
         parentId: financeGroupId,
         moduleId: accModId,
@@ -493,7 +596,7 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
         name: 'Profitabilitas Trip',
         url: '/reports/trip-profitability',
         icon: 'TrendingUp',
-        sequence: 4,
+        sequence: 6,
         aclName: 'TripProfitability',
         parentId: financeGroupId,
         moduleId: accModId,
@@ -503,7 +606,7 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
         name: 'Buku Besar & Neraca Saldo',
         url: '/reports/general-ledger',
         icon: 'Scale',
-        sequence: 5,
+        sequence: 7,
         aclName: 'GeneralLedger',
         parentId: financeGroupId,
         moduleId: accModId,
@@ -513,7 +616,7 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
         name: 'Tutup Buku Bulanan',
         url: '/period-closing',
         icon: 'Lock',
-        sequence: 6,
+        sequence: 8,
         aclName: 'PeriodClosing',
         parentId: financeGroupId,
         moduleId: accModId,
@@ -580,7 +683,13 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
       if (!rId) return;
       await queryRunner.query(
         `INSERT INTO "role-menus" ("id", "roleId", "menuId", "isRead", "isCreate", "isUpdate", "isDelete", "is_active", "createdAt", "updatedAt")
-         VALUES ($1, $2, $3, $4, $5, $6, $7, true, NOW(), NOW())`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, true, NOW(), NOW())
+         ON CONFLICT ("roleId", "menuId") DO UPDATE SET
+          "isRead" = EXCLUDED."isRead" OR "role-menus"."isRead",
+          "isCreate" = EXCLUDED."isCreate" OR "role-menus"."isCreate",
+          "isUpdate" = EXCLUDED."isUpdate" OR "role-menus"."isUpdate",
+          "isDelete" = EXCLUDED."isDelete" OR "role-menus"."isDelete",
+          "updatedAt" = NOW()`,
         [uuidv4(), rId, menuId, perms.isRead, perms.isCreate, perms.isUpdate, perms.isDelete],
       );
     };
@@ -644,7 +753,7 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
         });
       }
 
-      // 6.4 ACCOUNTANT: Full on Journals, GL, COA, Cash/Bank, Period Closing
+      // 6.4 ACCOUNTANT: Full on Journals, GL, COA, Cash/Bank, Period Closing, Coordination Fees, Restaurant Settlements
       if (
         mId === dashboardId ||
         mId === financeGroupId ||
@@ -656,7 +765,8 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
         acl === 'PeriodClosing' ||
         acl === 'Accounts' ||
         acl === 'CashBank' ||
-        acl === 'FiscalPeriods'
+        acl === 'FiscalPeriods' ||
+        acl === 'Finance'
       ) {
         if (mId === masterGroupId) {
           await assignPermission('ACCOUNTANT', mId, { isRead: true, isCreate: false, isUpdate: false, isDelete: false });
@@ -665,12 +775,13 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
         }
       }
 
-      // 6.5 FINANCE_AR_AP: Full on AP & AR Invoices, Customers, Partners
+      // 6.5 FINANCE_AR_AP: Full on AP & AR Invoices, Customers, Partners, Coordination Fees, Restaurant Settlements
       if (
         mId === dashboardId ||
         mId === financeGroupId ||
         acl === 'ApInvoices' ||
-        acl === 'ArInvoices'
+        acl === 'ArInvoices' ||
+        acl === 'Finance'
       ) {
         await assignPermission('FINANCE_AR_AP', mId, { isRead: true, isCreate: true, isUpdate: true, isDelete: false });
       } else if (
@@ -697,7 +808,7 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
         await assignPermission('POOL_CASHIER', mId, { isRead: true, isCreate: true, isUpdate: true, isDelete: false });
       }
 
-      // 6.7 OPS_ADMIN: Full on Schedules, SPJ, Vehicles, Customers, Fares, Agents, Partners
+      // 6.7 OPS_MANAGER & OPS_ADMIN
       if (
         mId === dashboardId ||
         mId === opsGroupId ||
@@ -707,9 +818,16 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
         acl === 'Customers' ||
         acl === 'Fares' ||
         acl === 'Agents' ||
-        acl === 'Partners'
+        acl === 'Partners' ||
+        acl === 'Routes'
       ) {
+        await assignPermission('OPS_MANAGER', mId, { isRead: true, isCreate: true, isUpdate: true, isDelete: true });
         await assignPermission('OPS_ADMIN', mId, { isRead: true, isCreate: true, isUpdate: true, isDelete: false });
+      } else if (acl === 'TripProfitability') {
+        await assignPermission('OPS_MANAGER', financeGroupId, { isRead: true, isCreate: false, isUpdate: false, isDelete: false });
+        await assignPermission('OPS_MANAGER', mId, { isRead: true, isCreate: false, isUpdate: false, isDelete: false });
+      } else if (mId === cashierGroupId || isUnderParent(mId, cashierGroupId)) {
+        await assignPermission('OPS_MANAGER', mId, { isRead: true, isCreate: false, isUpdate: false, isDelete: false });
       }
 
       // 6.8 FIELD_COORDINATOR: Read on Schedules, SPJ, Partners

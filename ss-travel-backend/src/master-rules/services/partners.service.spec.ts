@@ -8,7 +8,6 @@ import {
 } from '../../@models/master-rules/restaurant.entity';
 import {
   CoordinatorFeeRuleEntity,
-  CoordinatorZone,
 } from '../../@models/master-rules/coordinator-fee-rule.entity';
 import { UsersEntity } from '../../@models/user/user.entity';
 
@@ -103,35 +102,39 @@ describe('PartnersService', () => {
   });
 
   describe('getFeeForRoute', () => {
-    it('should calculate fee for DEPARTURE (Zone WEST)', async () => {
+    it('should calculate fee for specific Route (JAKARTA-YOGYAKARTA)', async () => {
       coordinatorFeeRepo.findOne.mockResolvedValueOnce({
         id: 'cfr-1',
-        zone: CoordinatorZone.WEST,
+        origin: 'JAKARTA',
+        destination: 'YOGYAKARTA',
         feePerPax: 10000,
         coordinatorUserId: 'u-1',
         coordinatorUser: { id: 'u-1', name: 'Pak Korlap Barat' },
       });
 
-      const result = await service.getFeeForRoute('DEPARTURE', 30);
+      const result = await service.getFeeForRoute('JAKARTA', 'YOGYAKARTA', 30);
 
-      expect(result.zone).toBe(CoordinatorZone.WEST);
+      expect(result.origin).toBe('JAKARTA');
+      expect(result.destination).toBe('YOGYAKARTA');
       expect(result.feePerPax).toBe(10000);
       expect(result.paxCount).toBe(30);
       expect(result.totalFee).toBe(300000);
       expect(result.coordinatorName).toBe('Pak Korlap Barat');
     });
 
-    it('should calculate fee for RETURN (Zone EAST)', async () => {
+    it('should calculate fee for specific Route (YOGYAKARTA-JAKARTA)', async () => {
       coordinatorFeeRepo.findOne.mockResolvedValueOnce({
         id: 'cfr-2',
-        zone: CoordinatorZone.EAST,
+        origin: 'YOGYAKARTA',
+        destination: 'JAKARTA',
         feePerPax: 10000,
         coordinatorUserId: null,
       });
 
-      const result = await service.getFeeForRoute('RETURN', 24);
+      const result = await service.getFeeForRoute('YOGYAKARTA', 'JAKARTA', 24);
 
-      expect(result.zone).toBe(CoordinatorZone.EAST);
+      expect(result.origin).toBe('YOGYAKARTA');
+      expect(result.destination).toBe('JAKARTA');
       expect(result.feePerPax).toBe(10000);
       expect(result.paxCount).toBe(24);
       expect(result.totalFee).toBe(240000);

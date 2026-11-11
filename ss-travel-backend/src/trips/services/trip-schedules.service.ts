@@ -202,6 +202,7 @@ export class TripSchedulesService {
     const skip = (page - 1) * limit;
 
     const qb = this.scheduleRepo.createQueryBuilder('s')
+      .leftJoinAndSelect('s.route', 'route')
       .leftJoinAndSelect('s.vehicle', 'vehicle')
       .leftJoinAndSelect('s.customer', 'customer')
       .leftJoinAndSelect('s.plannedDriver1', 'driver1')
@@ -242,7 +243,7 @@ export class TripSchedulesService {
 
     if (query.search) {
       qb.andWhere(
-        '(s.scheduleNo ILIKE :search OR s.origin ILIKE :search OR s.destination ILIKE :search OR customer.institutionName ILIKE :search OR vehicle.code ILIKE :search)',
+        '(s.scheduleNo ILIKE :search OR s.origin ILIKE :search OR s.destination ILIKE :search OR customer.institutionName ILIKE :search OR vehicle.code ILIKE :search OR route.name ILIKE :search)',
         { search: `%${query.search}%` },
       );
     }
@@ -262,6 +263,7 @@ export class TripSchedulesService {
     const end = new Date(endDate);
 
     return this.scheduleRepo.createQueryBuilder('s')
+      .leftJoinAndSelect('s.route', 'route')
       .leftJoinAndSelect('s.vehicle', 'vehicle')
       .leftJoinAndSelect('s.customer', 'customer')
       .leftJoinAndSelect('s.plannedDriver1', 'driver1')
@@ -278,6 +280,7 @@ export class TripSchedulesService {
     const schedule = await this.scheduleRepo.findOne({
       where: { id },
       relations: [
+        'route',
         'vehicle',
         'customer',
         'plannedDriver1',
@@ -376,6 +379,7 @@ export class TripSchedulesService {
     const schedule = this.scheduleRepo.create({
       scheduleNo,
       serviceType: dto.serviceType,
+      routeId: dto.routeId || undefined,
       vehicleId: dto.vehicleId,
       plannedDepartureAt: departure,
       plannedReturnAt: returnAt,

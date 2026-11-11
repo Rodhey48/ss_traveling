@@ -226,7 +226,8 @@ Response error autentikasi menggunakan struktur terstandar:
 
 ### D. Restoran Mitra & Koordinator Lapangan (`restaurants`, `coordinator_fee_rules`)
 *   **Restoran Servis Makan AKAP**: Standar tarif kupon makan Rp 25.000/pax. Terpisah antara `INVOICED_MONTHLY_AP` (tagihan bulanan AP vendor tanpa melibatkan UJ kru) dan `PAID_BY_CREW_UJ` (tunai kru UJ).
-*   **Zonasi Fee Korlap**: Otomatisasi zonasi tarif fee Rp 10.000/pax berdasarkan arah leg: Leg Berangkat $\to$ Zona `WEST` (Jabodetabek) dan Leg Pulang $\to$ Zona `EAST` (Jateng & DIY).
+*   **Rute Fee Korlap**: Otomatisasi rute tarif fee Rp 10.000/pax berdasarkan asal dan tujuan leg: Leg Berangkat $\to$ Rute `JAKARTA` - `YOGYAKARTA` dan Leg Pulang $\to$ Rute `YOGYAKARTA` - `JAKARTA` (berbasis Rute Origin/Destination).
+
 
 ## 9. Accounting Core Engine & Jurnal Umum (Tahap 4 — Journals, Lines, Idempotency, Posting Atomik, & Reversal)
 
@@ -649,7 +650,32 @@ Response error autentikasi menggunakan struktur terstandar:
     *   **Integritas Laporan**: Menjamin agregasi Laba Rugi Komprehensif dan Neraca Saldo (Trial Balance) menghitung beban pengurus jalur secara konsisten dalam sub-total beban tidak langsung.
 
     ---
+
+    ## 21. Master Rute (Trayek) & Integrasi Matriks Tarif Tiket Dinamis
+
+    ### A. Entitas & Arsitektur Master Rute (`routes`)
+    *   **Entitas Utama**: `RouteEntity` (`src/@models/master-rules/route.entity.ts`) merepresentasikan trayek operasional bus resmi PO Bus SS Travelink dengan atribut `code`, `name`, `origin`, `destination`, `via`, `distanceKm`, `estimatedHours`, `serviceType` (`AKAP`/`WISATA`/`SHUTTLE`), dan `isActive`.
+    *   **Integrasi Sistem-Wide**:
+        *   `TripScheduleEntity`: Relasi ManyToOne `route` (`route_id`, RESTRICT on delete).
+        *   `SpjEntity`: Relasi ManyToOne `route` (`route_id`, RESTRICT on delete), diturunkan otomatis saat `generateFromSchedule`.
+        *   `CoordinatorFeeRuleEntity`: Relasi ManyToOne `route` (`route_id`, SET NULL on delete). Prioritas evaluasi: match `routeId` spesifik $\rightarrow$ match `origin` & `destination` $\rightarrow$ fallback `ALL`.
+        *   `FareMatrixEntity`: Relasi ManyToOne `route` (`route_id`, SET NULL on delete).
+
+    ### B. Resolusi Smart Lookup Dynamic Pricing
+    *   Formula penetapan harga tiket dinamis berbasis rute:
+        1. Prioritas 1: Pencarian berbasis `routeId` spesifik pada kalender musim aktif (Tuslah Lebaran / Liburan).
+        2. Prioritas 2: Fallback ke string `origin` & `destination` pada kalender musim aktif.
+        3. Prioritas 3: Fallback ke `routeId` spesifik pada musim default `REGULER`.
+        4. Prioritas 4: Fallback ke string `origin` & `destination` pada musim default `REGULER`.
+    *   Penetapan ini menjamin backward compatibility dengan data historis yang menggunakan teks kota, sembari mengutamakan ikatan relasional master rute.
+
+    ### C. Paginasi & Standar Validasi Form Edit
+    *   **Paginasi Standar `/fares`**: Tabel matriks tarif tiket dilengkapi kontrol paginasi (10, 25, 50, 100 baris per halaman), tombol navigasi sebelumnya/berikutnya, info baris aktif, dan auto-reset saat pencarian/filter berubah.
+    *   **Defensive DTO & Whitelist Pipeline**: `UpdateFareMatrixDto` dan `UpdateRouteDto` mendeklarasikan kolom-kolom opsional (`code`, `fareSeasonId`, `seatClassId`) sehingga request dari form edit tidak ditolak oleh NestJS `ValidationPipe` (`forbidNonWhitelisted: true`).
+
+    ---
     *Gunakan dokumen ini sebagai referensi saat melakukan pengembangan fitur baru atau debugging sistem otorisasi.*
+
 
 
 

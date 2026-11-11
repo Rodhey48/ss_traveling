@@ -2,6 +2,33 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-11-11: Implementasi Master Rute (Trayek) & Integrasi Matriks Tarif Tiket Dinamis Completed
+- **Entitas & Arsitektur Master Rute (`routes`)**:
+  - Dibuat entitas `RouteEntity` (`master-rules/route.entity.ts`) dengan atribut `code`, `name`, `origin`, `destination`, `via`, `distanceKm`, `estimatedHours`, `serviceType` (`AKAP`/`WISATA`/`SHUTTLE`), dan `isActive`.
+  - Dihubungkan ke entitas operasional dan aturan tarif:
+    - `TripScheduleEntity`: Relasi ManyToOne `route` (`route_id`, RESTRICT on delete).
+    - `SpjEntity`: Relasi ManyToOne `route` (`route_id`, RESTRICT on delete), diturunkan otomatis saat `generateFromSchedule`.
+    - `CoordinatorFeeRuleEntity`: Relasi ManyToOne `route` (`route_id`, SET NULL on delete), dengan resolusi prioritas: match `routeId` spesifik $\rightarrow$ match `origin` & `destination` $\rightarrow$ fallback `ALL`.
+    - `FareMatrixEntity`: Relasi ManyToOne `route` (`route_id`, SET NULL on delete), dengan resolusi harga tiket bertingkat: prioritas `routeId` pada musim aktif $\rightarrow$ fallback `origin` & `destination` $\rightarrow$ fallback musim `REGULER`.
+- **Database Schema Migration & Seeding**:
+  - Migrasi `1794382343229-CreateRoutesAndLinkToSchedulesAndRules.ts`: Tabel `routes` dan foreign key link ke schedules, SPJ, dan fee rules (menggunakan `gen_random_uuid()`).
+  - Migrasi `1794382900000-SeedDefaultRoutesAndMenu.ts`: Seeding 4 rute default PO Bus SS Travelink (`RUT-JKT-YOG-MGL`, `RUT-YOG-JKT-MGL`, `RUT-TNG-YOG-SLO`, `RUT-YOG-TNG-SLO`) serta registrasi menu `Master Rute & Trayek` (`/routes`) dengan hak akses role terpadu.
+  - Migrasi `1794384500000-AddRouteIdToFareMatrix.ts`: Penambahan kolom `route_id` dan FK ke `fare_matrix` beserta backfill data existing yang cocok.
+- **Backend API & Service Layer (`/api/v1/routes`, `/api/v1/fares`)**:
+  - Controller & Service CRUD `RoutesController` dan `RoutesService` dengan validasi pencegahan duplikasi kode rute.
+  - Peningkatan `FaresService.calculateFare()` dengan smart lookup prioritas rute spesifik sebelum fallback ke string kota.
+  - Seluruh unit tests lulus 100% (`fares.service.spec.ts`, `routes.service.spec.ts`, `partners.service.spec.ts`, `crew-rates.service.spec.ts`, `agents.service.spec.ts`, `spj.service.spec.ts`, `coordination-fees.service.spec.ts`).
+- **Frontend Master Data & Simulator Tiket UI**:
+  - Halaman CRUD Master Rute di `/routes` lengkap dengan filter kota, filter status, pencarian debounced, kartu ringkasan, dan dialog konfirmasi penghapusan.
+  - Integrasi dropdown Master Rute pada `FareMatrixModal` di halaman `/fares` untuk pengikatan `routeId` dan pengisian kota otomatis.
+  - Integrasi pemilihan Master Rute pada Simulator Engine Dynamic Pricing di `/fares` dengan penayangan badge rute trayek terpilih.
+  - Tampilan rute trayek di kolom tabel matriks tarif tiket.
+  - **Paginasi Standar & Penyempurnaan Modal Edit Matriks Tarif**:
+    - Penambahan bilah kontrol paginasi standar (pilihan 10, 25, 50, 100 baris per halaman, tombol navigasi sebelumnya/berikutnya, info baris aktif, dan auto-reset ke halaman 1 saat pencarian/filter berubah).
+    - Penyempurnaan modal edit matriks tarif: mengaktifkan tautan Master Rute, input tanggal berlaku, dan checkbox status keaktifan (`isActive`).
+    - Penanganan sanitasi payload edit pada frontend dan backend (`UpdateFareMatrixDto` & `UpdateRouteDto`) untuk mencegah error whitelist validation pipe (`fareSeasonId`, `seatClassId`, dan `code`).
+  - Production build frontend (`yarn build`) dan backend (`yarn build`) terverifikasi sukses bersih tanpa error.
+
 ### 2026-11-10: Pengujian End-to-End Siklus Finansial SPJ Pariwisata / Wisata Charter (Skenario 2) & Otomasi AR Kontrak Sewa Completed
 - **Pengujian Komprehensif E2E Siklus Finansial SPJ Wisata (`test/spj-wisata-lifecycle.e2e-spec.ts`)**:
   - Implementasi suite pengujian integrasi E2E 12 tahap mencakup siklus lengkap Skenario 2 (Operasional Sewa Bus Wisata Multi-Day 5 Hari Tour Solo-Yogya):

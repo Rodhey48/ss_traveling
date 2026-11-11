@@ -242,10 +242,10 @@ export class SeedPricingAndMasterRules1888888888892 implements MigrationInterfac
     // 8. Seed Crew Rate Rules
     // AKAP PP rates (PER_TRIP)
     const akapCrewRates = [
-      { role: 'DRIVER', meal: 150000.0, incentive: 250000.0, bonus: 50000.0 },
-      { role: 'CO_DRIVER', meal: 150000.0, incentive: 250000.0, bonus: 50000.0 },
-      { role: 'CONDUCTOR', meal: 100000.0, incentive: 150000.0, bonus: 50000.0 },
-      { role: 'STEWARDESS', meal: 100000.0, incentive: 150000.0, bonus: 50000.0 },
+      { role: 'DRIVER', meal: 0.0, incentive: 250000.0, bonus: 0.0 },
+      { role: 'CO_DRIVER', meal: 0.0, incentive: 250000.0, bonus: 0.0 },
+      { role: 'CONDUCTOR', meal: 0.0, incentive: 150000.0, bonus: 0.0 },
+      { role: 'STEWARDESS', meal: 0.0, incentive: 150000.0, bonus: 0.0 },
     ];
 
     for (const r of akapCrewRates) {
@@ -258,10 +258,10 @@ export class SeedPricingAndMasterRules1888888888892 implements MigrationInterfac
 
     // Tourism rates (PER_DAY)
     const tourismCrewRates = [
-      { role: 'DRIVER', meal: 100000.0, incentive: 150000.0, bonus: 0.0 },
-      { role: 'CO_DRIVER', meal: 100000.0, incentive: 150000.0, bonus: 0.0 },
-      { role: 'CONDUCTOR', meal: 75000.0, incentive: 100000.0, bonus: 0.0 },
-      { role: 'STEWARDESS', meal: 75000.0, incentive: 100000.0, bonus: 0.0 },
+      { role: 'DRIVER', meal: 0.0, incentive: 150000.0, bonus: 0.0 },
+      { role: 'CO_DRIVER', meal: 0.0, incentive: 150000.0, bonus: 0.0 },
+      { role: 'CONDUCTOR', meal: 0.0, incentive: 100000.0, bonus: 0.0 },
+      { role: 'STEWARDESS', meal: 0.0, incentive: 100000.0, bonus: 0.0 },
     ];
 
     for (const r of tourismCrewRates) {
@@ -318,20 +318,46 @@ export class SeedPricingAndMasterRules1888888888892 implements MigrationInterfac
       );
     }
 
-    // 10. Seed Coordinator Fee Rules
-    // Zone WEST (Jabodetabek)
-    await queryRunner.query(
-      `INSERT INTO "coordinator_fee_rules" ("id", "company_id", "zone", "coordinator_user_id", "fee_per_pax", "effective_from", "is_active")
-       VALUES ($1, $2, 'WEST', $3, 10000.00, CURRENT_TIMESTAMP, true)`,
-      [uuidv4(), companyId, coordinatorId],
+    // 10. Seed Coordinator Fee Rules (Upsert agar tepat rute JAKARTA-YOGYAKARTA & sebaliknya)
+    // Rute JAKARTA -> YOGYAKARTA
+    const existingWest = await queryRunner.query(
+      `SELECT id FROM "coordinator_fee_rules" WHERE origin = 'JAKARTA' AND destination = 'YOGYAKARTA' AND company_id = $1 LIMIT 1`,
+      [companyId],
     );
+    if (existingWest.length > 0) {
+      await queryRunner.query(
+        `UPDATE "coordinator_fee_rules" 
+         SET "coordinator_user_id" = $1, "fee_per_pax" = 10000.00, "is_active" = true 
+         WHERE "id" = $2`,
+        [coordinatorId, existingWest[0].id],
+      );
+    } else {
+      await queryRunner.query(
+        `INSERT INTO "coordinator_fee_rules" ("id", "company_id", "origin", "destination", "coordinator_user_id", "fee_per_pax", "effective_from", "is_active")
+         VALUES ($1, $2, 'JAKARTA', 'YOGYAKARTA', $3, 10000.00, CURRENT_TIMESTAMP, true)`,
+        [uuidv4(), companyId, coordinatorId],
+      );
+    }
 
-    // Zone EAST (Jateng & DIY)
-    await queryRunner.query(
-      `INSERT INTO "coordinator_fee_rules" ("id", "company_id", "zone", "coordinator_user_id", "fee_per_pax", "effective_from", "is_active")
-       VALUES ($1, $2, 'EAST', NULL, 10000.00, CURRENT_TIMESTAMP, true)`,
-      [uuidv4(), companyId],
+    // Rute YOGYAKARTA -> JAKARTA
+    const existingEast = await queryRunner.query(
+      `SELECT id FROM "coordinator_fee_rules" WHERE origin = 'YOGYAKARTA' AND destination = 'JAKARTA' AND company_id = $1 LIMIT 1`,
+      [companyId],
     );
+    if (existingEast.length > 0) {
+      await queryRunner.query(
+        `UPDATE "coordinator_fee_rules" 
+         SET "fee_per_pax" = 10000.00, "is_active" = true 
+         WHERE "id" = $2`,
+        [existingEast[0].id],
+      );
+    } else {
+      await queryRunner.query(
+        `INSERT INTO "coordinator_fee_rules" ("id", "company_id", "origin", "destination", "coordinator_user_id", "fee_per_pax", "effective_from", "is_active")
+         VALUES ($1, $2, 'YOGYAKARTA', 'JAKARTA', NULL, 10000.00, CURRENT_TIMESTAMP, true)`,
+        [uuidv4(), companyId],
+      );
+    }
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
@@ -344,3 +370,4 @@ export class SeedPricingAndMasterRules1888888888892 implements MigrationInterfac
     await queryRunner.query(`DELETE FROM "fare_seasons"`);
   }
 }
+

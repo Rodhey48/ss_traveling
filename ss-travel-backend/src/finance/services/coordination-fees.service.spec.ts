@@ -9,7 +9,6 @@ import {
 } from '../../@models';
 import {
   CoordinatorFeeRuleEntity,
-  CoordinatorZone,
 } from '../../@models/master-rules/coordinator-fee-rule.entity';
 import {
   SpjCoordinationFeeEntity,
@@ -114,8 +113,8 @@ describe('CoordinationFeesService', () => {
         legs: [
           {
             id: 'leg-1',
-            origin: 'Jakarta (Ciputat)',
-            destination: 'Yogyakarta (Giwangan)',
+            origin: 'JAKARTA',
+            destination: 'YOGYAKARTA',
             passengerCount: 20,
           },
         ],
@@ -125,7 +124,7 @@ describe('CoordinationFeesService', () => {
       });
 
       ruleRepo.find.mockResolvedValue([
-        { zone: CoordinatorZone.WEST, feePerPax: 10000 },
+        { origin: 'JAKARTA', destination: 'YOGYAKARTA', feePerPax: 10000, isActive: true },
       ]);
 
       accountRepo.find.mockResolvedValue([
@@ -138,7 +137,8 @@ describe('CoordinationFeesService', () => {
         {
           id: 'fee-1',
           spjId: 'spj-1',
-          zone: CoordinatorZone.WEST,
+          origin: 'JAKARTA',
+          destination: 'YOGYAKARTA',
           ticketCount: 20,
           feePerPax: 10000,
           totalFee: 200000,
@@ -189,7 +189,8 @@ describe('CoordinationFeesService', () => {
       batchRepo.findOne.mockResolvedValue({
         id: 'batch-1',
         batchNo: 'BATCH-KOR-202611-0001',
-        zone: CoordinatorZone.WEST,
+        origin: 'JAKARTA',
+        destination: 'YOGYAKARTA',
         totalSpjs: 2,
         totalTickets: 35,
         totalAmount: 350000,
@@ -200,12 +201,13 @@ describe('CoordinationFeesService', () => {
 
       const result = await service.createBatchSettlement(
         {
-          zone: CoordinatorZone.WEST,
+          origin: 'JAKARTA',
+          destination: 'YOGYAKARTA',
           spjCoordinationFeeIds: ['fee-1', 'fee-2'],
           paymentDate: '2026-11-07',
           bankAccountId: 'bank-bca',
           referenceNumber: 'TRF-BCA-991',
-        },
+        } as any,
         'user-1',
       );
 
@@ -221,7 +223,8 @@ describe('CoordinationFeesService', () => {
       batchRepo.findOne.mockResolvedValue({
         id: 'batch-1',
         batchNo: 'BATCH-KOR-202611-0001',
-        zone: CoordinatorZone.WEST,
+        origin: 'JAKARTA',
+        destination: 'YOGYAKARTA',
         coordinatorName: 'Pak Koordinator Barat',
         paymentDate: '2026-11-07',
         totalSpjs: 1,
@@ -231,7 +234,7 @@ describe('CoordinationFeesService', () => {
         items: [
           {
             spj: { spjNo: 'SPJ-001', vehicle: { plateNumber: 'B 7701 SS' } },
-            spjLeg: { origin: 'Ciputat', destination: 'Yogyakarta' },
+            spjLeg: { origin: 'JAKARTA', destination: 'YOGYAKARTA' },
             ticketCount: 20,
             feePerPax: 10000,
             totalFee: 200000,

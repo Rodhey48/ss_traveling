@@ -1,6 +1,5 @@
 import {
   IsUUID,
-  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -9,17 +8,25 @@ import {
   IsNumberString,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { CoordinatorZone } from '../../@models/master-rules/coordinator-fee-rule.entity';
 
 export class CreateCoordinationFeeBatchDto {
   @ApiProperty({
-    enum: CoordinatorZone,
-    description: 'Wilayah/Zona koordinator (WEST = Barat/Jabodetabek, EAST = Timur/DIY/Jateng)',
-    example: CoordinatorZone.WEST,
+    type: String,
+    description: 'Rute titik awal / terminal keberangkatan (Origin)',
+    example: 'JAKARTA',
   })
   @IsNotEmpty()
-  @IsEnum(CoordinatorZone)
-  zone!: CoordinatorZone;
+  @IsString()
+  origin!: string;
+
+  @ApiProperty({
+    type: String,
+    description: 'Rute titik tujuan / terminal akhir (Destination)',
+    example: 'SURABAYA',
+  })
+  @IsNotEmpty()
+  @IsString()
+  destination!: string;
 
   @ApiProperty({
     type: [String],
@@ -72,12 +79,18 @@ export class CreateCoordinationFeeBatchDto {
 
 export class CoordinationFeeFilterDto {
   @ApiPropertyOptional({
-    enum: CoordinatorZone,
-    description: 'Filter berdasarkan zona koordinator',
+    description: 'Filter berdasarkan origin / rute asal',
   })
   @IsOptional()
-  @IsEnum(CoordinatorZone)
-  zone?: CoordinatorZone;
+  @IsString()
+  origin?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter berdasarkan destination / rute tujuan',
+  })
+  @IsOptional()
+  @IsString()
+  destination?: string;
 
   @ApiPropertyOptional({
     description: 'Pencarian nomor SPJ, rute, atau nama koordinator',

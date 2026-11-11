@@ -1943,12 +1943,12 @@ export default function SpjFinancePage() {
               <Table>
                 <TableHeader className="bg-slate-50 dark:bg-zinc-900/60">
                   <TableRow>
-                    <TableHead className="text-xs font-semibold">Zona Wilayah</TableHead>
+                    <TableHead className="text-xs font-semibold">Rute Trayek</TableHead>
                     <TableHead className="text-xs font-semibold">Leg Perjalanan</TableHead>
                     <TableHead className="text-xs font-semibold text-center">Tiket Terjual</TableHead>
                     <TableHead className="text-xs font-semibold text-right">Tarif / Pax</TableHead>
                     <TableHead className="text-xs font-semibold text-right">Total Beban (52105)</TableHead>
-                    <TableHead className="text-xs font-semibold">Koordinator Wilayah</TableHead>
+                    <TableHead className="text-xs font-semibold">Koordinator Lapangan</TableHead>
                     <TableHead className="text-xs font-semibold text-center">Status Pembayaran</TableHead>
                     <TableHead className="text-xs font-semibold text-right">Aksi</TableHead>
                   </TableRow>
@@ -1964,15 +1964,9 @@ export default function SpjFinancePage() {
                     coordinationFees.map((cf) => (
                       <TableRow key={cf.id} className="hover:bg-muted/20">
                         <TableCell className="text-xs font-bold">
-                          {cf.zone === 'WEST' ? (
-                            <Badge variant="outline" className="text-[10px] font-mono border-blue-400 text-blue-700 dark:text-blue-300 bg-blue-50/50">
-                              🏙️ Barat (Jabodetabek)
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-[10px] font-mono border-emerald-400 text-emerald-700 dark:text-emerald-300 bg-emerald-50/50">
-                              🌾 Timur (DIY / Jateng)
-                            </Badge>
-                          )}
+                          <Badge variant="outline" className="text-[10px] font-mono border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-white/5">
+                            {cf.origin} &rarr; {cf.destination}
+                          </Badge>
                         </TableCell>
                         <TableCell className="text-xs font-medium">
                           {cf.spjLeg ? `${cf.spjLeg.origin} ➔ ${cf.spjLeg.destination}` : 'Rute SPJ'}
@@ -1987,7 +1981,7 @@ export default function SpjFinancePage() {
                           {formatRupiah(cf.totalFee)}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
-                          👤 {cf.coordinatorUser?.name || `Koordinator Zona ${cf.zone}`}
+                          👤 {cf.coordinatorUser?.name || 'Umum (Semua SPJ)'}
                         </TableCell>
                         <TableCell className="text-center">
                           {cf.status === 'PAID' ? (

@@ -12,7 +12,6 @@ import {
 } from '../../@models/master-rules/restaurant.entity';
 import {
   CoordinatorFeeRuleEntity,
-  CoordinatorZone,
 } from '../../@models/master-rules/coordinator-fee-rule.entity';
 import { UsersEntity } from '../../@models/user/user.entity';
 import {
@@ -36,8 +35,8 @@ export interface CalculatedMealResult {
 }
 
 export interface CalculatedCoordinatorFeeResult {
-  zone: CoordinatorZone;
-  legDirection: string;
+  origin: string;
+  destination: string;
   feePerPax: number;
   paxCount: number;
   totalFee: number;
@@ -141,15 +140,15 @@ export class PartnersService {
 
   async findAllCoordinatorFeeRules(): Promise<CoordinatorFeeRuleEntity[]> {
     return this.coordinatorFeeRepo.find({
-      relations: ['coordinatorUser'],
-      order: { zone: 'ASC' },
+      relations: ['coordinatorUser', 'route'],
+      order: { origin: 'ASC', destination: 'ASC' },
     });
   }
 
   async findOneCoordinatorFeeRule(id: string): Promise<CoordinatorFeeRuleEntity> {
     const rule = await this.coordinatorFeeRepo.findOne({
       where: { id },
-      relations: ['coordinatorUser'],
+      relations: ['coordinatorUser', 'route'],
     });
     if (!rule) {
       throw new NotFoundException(`Aturan fee korlap dengan ID '${id}' tidak ditemukan.`);
@@ -166,7 +165,9 @@ export class PartnersService {
     }
 
     const rule = this.coordinatorFeeRepo.create({
-      zone: dto.zone,
+      routeId: dto.routeId || undefined,
+      origin: dto.origin || 'ALL',
+      destination: dto.destination || 'ALL',
       coordinatorUserId: dto.coordinatorUserId || undefined,
       feePerPax: dto.feePerPax,
       effectiveFrom: dto.effectiveFrom ? new Date(dto.effectiveFrom) : new Date(),
@@ -192,6 +193,7 @@ export class PartnersService {
 
     Object.assign(rule, {
       ...dto,
+      routeId: dto.routeId !== undefined ? (dto.routeId || null) : rule.routeId,
       effectiveFrom: dto.effectiveFrom ? new Date(dto.effectiveFrom) : rule.effectiveFrom,
       effectiveUntil: dto.effectiveUntil ? new Date(dto.effectiveUntil) : rule.effectiveUntil,
     });
@@ -209,30 +211,34 @@ export class PartnersService {
   }
 
   /**
-   * Menghitung fee koordinator lapangan:
-   * Leg DEPARTURE (Barat -> Timur) = Zone WEST (Rp 10.000/pax)
-   * Leg RETURN (Timur -> Barat) = Zone EAST (Rp 10.000/pax)
+   * Menghitung fee koordinator lapangan berdasarkan rute origin-destination.
    */
-  async getFeeForRoute(legDirection: string, paxCount: number): Promise<CalculatedCoordinatorFeeResult> {
-    const dir = legDirection.toUpperCase();
-    const zone = dir === 'RETURN' ? CoordinatorZone.EAST : CoordinatorZone.WEST;
+  async getFeeForRoute(origin: string, destination: string, paxCount: number): Promise<CalculatedCoordinatorFeeResult> {
     const count = paxCount > 0 ? paxCount : 0;
 
-    const rule = await this.coordinatorFeeRepo.findOne({
-      where: { zone, isActive: true },
+    let rule = await this.coordinatorFeeRepo.findOne({
+      where: { origin, destination, isActive: true },
       relations: ['coordinatorUser'],
     });
 
     if (!rule) {
-      throw new NotFoundException(`Aturan fee korlap untuk zona '${zone}' tidak ditemukan.`);
+      // Fallback
+      rule = await this.coordinatorFeeRepo.findOne({
+        where: { origin: 'ALL', destination: 'ALL', isActive: true },
+        relations: ['coordinatorUser'],
+      });
+
+      if (!rule) {
+        throw new NotFoundException(`Aturan fee korlap untuk rute '${origin}-${destination}' tidak ditemukan.`);
+      }
     }
 
     const feePerPax = Number(rule.feePerPax);
     const totalFee = feePerPax * count;
 
     return {
-      zone,
-      legDirection: dir,
+      origin: rule.origin,
+      destination: rule.destination,
       feePerPax,
       paxCount: count,
       totalFee,

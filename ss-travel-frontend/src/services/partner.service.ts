@@ -103,7 +103,8 @@ export const PartnerService = {
   },
 
   getFeeForRoute: async (params: {
-    legDirection: string;
+    origin: string;
+    destination: string;
     paxCount: number;
   }): Promise<BaseResponse<CalculatedCoordinatorFeeResult>> => {
     const response = await api.get<BaseResponse<CalculatedCoordinatorFeeResult>>(

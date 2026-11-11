@@ -61,7 +61,6 @@ import type {
   CoordinationFeeBatch,
   CoordinatorFeeRule,
   CashAccount,
-  CoordinatorZone,
 } from '@/types';
 
 export default function CoordinationFeesPage() {
@@ -75,7 +74,7 @@ export default function CoordinationFeesPage() {
   const [bankAccounts, setBankAccounts] = useState<CashAccount[]>([]);
 
   // Filter states
-  const [zoneFilter, setZoneFilter] = useState<'ALL' | CoordinatorZone>('ALL');
+  const [routeFilter, setRouteFilter] = useState<'ALL' | 'JKT_YOGYA' | 'YOGYA_JKT'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Selection states
@@ -112,9 +111,13 @@ export default function CoordinationFeesPage() {
   const loadData = async () => {
     setLoading(true);
     try {
+      const origin = routeFilter === 'JKT_YOGYA' ? 'JAKARTA' : routeFilter === 'YOGYA_JKT' ? 'YOGYAKARTA' : undefined;
+      const destination = routeFilter === 'JKT_YOGYA' ? 'YOGYAKARTA' : routeFilter === 'YOGYA_JKT' ? 'JAKARTA' : undefined;
+
       const [pendingRes, batchRes, ruleRes, accountsRes] = await Promise.all([
         CoordinationFeeService.getPendingFees({
-          zone: zoneFilter === 'ALL' ? undefined : zoneFilter,
+          origin,
+          destination,
           search: searchQuery || undefined,
         }),
         CoordinationFeeService.getBatches(),
@@ -136,7 +139,7 @@ export default function CoordinationFeesPage() {
 
   useEffect(() => {
     loadData();
-  }, [zoneFilter, searchQuery]);
+  }, [routeFilter, searchQuery]);
 
   const toggleSelectFee = (id: string) => {
     setSelectedFeeIds((prev) =>
@@ -170,10 +173,12 @@ export default function CoordinationFeesPage() {
     setBatchSubmitting(true);
     try {
       const firstFee = selectedFees[0];
-      const zone = firstFee ? firstFee.zone : 'WEST';
+      const origin = firstFee ? firstFee.origin : 'ALL';
+      const destination = firstFee ? firstFee.destination : 'ALL';
 
       const res = await CoordinationFeeService.createBatch({
-        zone,
+        origin,
+        destination,
         spjCoordinationFeeIds: selectedFeeIds,
         paymentDate: batchPaymentDate,
         bankAccountId: batchBankAccountId,
@@ -291,22 +296,26 @@ export default function CoordinationFeesPage() {
               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 <div className="flex items-center gap-1.5">
                   <Filter className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span className="text-xs font-semibold text-foreground">Zona Wilayah:</span>
+                  <span className="text-xs font-semibold text-foreground">Filter Rute:</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  {(['ALL', 'WEST', 'EAST'] as const).map((z) => (
+                  {[
+                    { key: 'ALL', label: 'Semua Rute' },
+                    { key: 'JKT_YOGYA', label: 'Jkt ➔ Yogya' },
+                    { key: 'YOGYA_JKT', label: 'Yogya ➔ Jkt' },
+                  ].map((r) => (
                     <Button
-                      key={z}
+                      key={r.key}
                       size="sm"
-                      variant={zoneFilter === z ? 'default' : 'outline'}
-                      onClick={() => setZoneFilter(z)}
+                      variant={routeFilter === r.key ? 'default' : 'outline'}
+                      onClick={() => setRouteFilter(r.key as any)}
                       className={`h-7 text-xs ${
-                        zoneFilter === z
+                        routeFilter === r.key
                           ? 'bg-amber-600 hover:bg-amber-700 text-white font-semibold'
                           : 'border-slate-300 dark:border-zinc-700'
                       }`}
                     >
-                      {z === 'ALL' ? 'Semua Zona' : z === 'WEST' ? 'Barat (Jabodetabek)' : 'Timur (DIY / Jateng)'}
+                      {r.label}
                     </Button>
                   ))}
                 </div>
@@ -355,7 +364,7 @@ export default function CoordinationFeesPage() {
                     <TableHead className="w-10 text-center">Pilih</TableHead>
                     <TableHead className="text-xs font-semibold">No. SPJ &amp; Bus</TableHead>
                     <TableHead className="text-xs font-semibold">Rute Perjalanan</TableHead>
-                    <TableHead className="text-xs font-semibold">Zona</TableHead>
+                    <TableHead className="text-xs font-semibold">Rute Trayek</TableHead>
                     <TableHead className="text-xs font-semibold text-center">Tiket Terjual</TableHead>
                     <TableHead className="text-xs font-semibold text-right">Tarif / Pax</TableHead>
                     <TableHead className="text-xs font-semibold text-right">Total Kewajiban</TableHead>
@@ -420,15 +429,9 @@ export default function CoordinationFeesPage() {
                             )}
                           </TableCell>
                           <TableCell>
-                            {fee.zone === 'WEST' ? (
-                              <Badge variant="outline" className="text-[10px] font-mono border-blue-400 text-blue-700 dark:text-blue-300 bg-blue-50/50">
-                                🏙️ Barat (Jkt)
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="text-[10px] font-mono border-emerald-400 text-emerald-700 dark:text-emerald-300 bg-emerald-50/50">
-                                🌾 Timur (Yogya)
-                              </Badge>
-                            )}
+                            <Badge variant="outline" className="text-[10px] font-mono border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-white/5">
+                              {fee.origin} &rarr; {fee.destination}
+                            </Badge>
                           </TableCell>
                           <TableCell className="text-xs text-center font-mono font-bold text-foreground">
                             {fee.ticketCount} Pax
@@ -440,7 +443,7 @@ export default function CoordinationFeesPage() {
                             {formatRupiah(fee.totalFee)}
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground">
-                            👤 {fee.coordinatorUser?.name || `Koordinator Zona ${fee.zone}`}
+                            👤 {fee.coordinatorUser?.name || 'Umum (Semua SPJ)'}
                           </TableCell>
                           <TableCell className="text-center">
                             <Badge variant="outline" className="text-[10px] border-amber-400 text-amber-700 dark:text-amber-300 bg-amber-50/50 font-medium">
@@ -515,7 +518,7 @@ export default function CoordinationFeesPage() {
                   <TableRow>
                     <TableHead className="text-xs font-semibold">Nomor Batch</TableHead>
                     <TableHead className="text-xs font-semibold">Tanggal Transfer</TableHead>
-                    <TableHead className="text-xs font-semibold">Zona</TableHead>
+                    <TableHead className="text-xs font-semibold">Rute</TableHead>
                     <TableHead className="text-xs font-semibold">Penerima / Koordinator</TableHead>
                     <TableHead className="text-xs font-semibold">Rekening Asal Bank</TableHead>
                     <TableHead className="text-xs font-semibold">Ref Transfer</TableHead>
@@ -542,15 +545,9 @@ export default function CoordinationFeesPage() {
                           {batch.paymentDate}
                         </TableCell>
                         <TableCell>
-                          {batch.zone === 'WEST' ? (
-                            <Badge variant="outline" className="text-[10px] font-mono border-blue-400 text-blue-700 bg-blue-50/50">
-                              Barat
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-[10px] font-mono border-emerald-400 text-emerald-700 bg-emerald-50/50">
-                              Timur
-                            </Badge>
-                          )}
+                          <Badge variant="outline" className="text-[10px] font-mono border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-white/5">
+                            {batch.origin} &rarr; {batch.destination}
+                          </Badge>
                         </TableCell>
                         <TableCell className="text-xs font-medium text-foreground">
                           👤 {batch.coordinatorName || 'Koordinator'}
@@ -602,10 +599,10 @@ export default function CoordinationFeesPage() {
                   <div className="space-y-0.5">
                     <CardTitle className="text-sm font-bold flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-amber-600" />
-                      Zona {r.zone === 'WEST' ? 'Barat (Jabodetabek / Banten)' : 'Timur (DIY / Klaten / Solo)'}
+                      Rute {r.origin} &rarr; {r.destination} {r.origin === 'ALL' && r.destination === 'ALL' ? '(Global Fallback)' : ''}
                     </CardTitle>
                     <CardDescription className="text-xs text-muted-foreground">
-                      Tarif koordinasi otomatis per lembar tiket penumpang bus.
+                      Tarif koordinasi otomatis per lembar tiket penumpang bus rute {r.origin} ke {r.destination}.
                     </CardDescription>
                   </div>
                   <Button
@@ -906,10 +903,10 @@ export default function CoordinationFeesPage() {
           <DialogHeader className="pb-3 border-b border-border/50">
             <DialogTitle className="text-base font-bold flex items-center gap-2 text-foreground">
               <ShieldAlert className="w-5 h-5 text-amber-600" />
-              Edit Tarif Koordinasi Zona {selectedRule?.zone}
+              Edit Tarif Koordinasi Rute {selectedRule?.origin} &rarr; {selectedRule?.destination}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Ubah tarif rupiah per lembar tiket penumpang untuk wilayah {selectedRule?.zone === 'WEST' ? 'Barat' : 'Timur'}.
+              Ubah tarif rupiah per lembar tiket penumpang untuk rute {selectedRule?.origin} menuju {selectedRule?.destination}.
             </DialogDescription>
           </DialogHeader>
 

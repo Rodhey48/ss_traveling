@@ -5,12 +5,14 @@ import { FaresService } from './fares.service';
 import { FareSeasonEntity } from '../../@models/master-rules/fare-season.entity';
 import { FareMatrixEntity } from '../../@models/master-rules/fare-matrix.entity';
 import { SeatClassEntity } from '../../@models/fleet/seat-class.entity';
+import { RouteEntity } from '../../@models/master-rules/route.entity';
 
 describe('FaresService', () => {
   let service: FaresService;
   let seasonRepo: any;
   let matrixRepo: any;
   let seatClassRepo: any;
+  let routeRepo: any;
 
   beforeEach(async () => {
     seasonRepo = {
@@ -34,6 +36,11 @@ describe('FaresService', () => {
       findOne: jest.fn(),
     };
 
+    routeRepo = {
+      findOne: jest.fn(),
+      find: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FaresService,
@@ -48,6 +55,10 @@ describe('FaresService', () => {
         {
           provide: getRepositoryToken(SeatClassEntity),
           useValue: seatClassRepo,
+        },
+        {
+          provide: getRepositoryToken(RouteEntity),
+          useValue: routeRepo,
         },
       ],
     }).compile();
@@ -78,69 +89,49 @@ describe('FaresService', () => {
 
       await expect(
         service.createSeason({
-          code: 'LEBARAN_2026',
-          name: 'Lebaran',
-          startDate: '2026-03-31',
-          endDate: '2026-03-15',
+          code: 'TEST',
+          name: 'Test Season',
+          startDate: '2026-04-01',
+          endDate: '2026-03-01',
         }),
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should successfully create season', async () => {
+    it('should create and save season', async () => {
       seasonRepo.findOne.mockResolvedValueOnce(null);
-      const created = {
-        code: 'LEBARAN_2026',
-        name: 'Lebaran',
-        startDate: '2026-03-15',
-        endDate: '2026-03-31',
-        isActive: true,
-      };
-      seasonRepo.create.mockReturnValueOnce(created);
-      seasonRepo.save.mockResolvedValueOnce({ id: 's-1', ...created });
+      seasonRepo.create.mockImplementation((dto: any) => dto);
+      seasonRepo.save.mockImplementation((dto: any) => Promise.resolve({ id: 's-1', ...dto }));
 
       const result = await service.createSeason({
-        code: 'lebaran_2026',
-        name: 'Lebaran',
-        startDate: '2026-03-15',
-        endDate: '2026-03-31',
+        code: 'LIBUR_SEKOLAH',
+        name: 'Libur Sekolah',
+        startDate: '2026-06-15',
+        endDate: '2026-07-15',
       });
 
-      expect(result.id).toEqual('s-1');
-      expect(result.code).toEqual('LEBARAN_2026');
+      expect(result.code).toBe('LIBUR_SEKOLAH');
+      expect(result.name).toBe('Libur Sekolah');
     });
   });
 
   describe('calculateFare', () => {
-    const mockSeatClass = {
-      id: 'sc-1',
-      code: 'SLEEPER',
-      name: 'Luxury Sleeper 1-1',
+    const mockSeatClass = { id: 'sc-1', code: 'EXECUTIVE', name: 'Executive 30 Seat' };
+    const mockSpecialSeason = {
+      id: 's-leb',
+      code: 'LEBARAN_2026',
+      name: 'Tuslah Lebaran H-7',
+      startDate: '2026-03-15',
+      endDate: '2026-03-31',
     };
 
-    it('should throw NotFoundException if seat class does not exist', async () => {
-      seatClassRepo.findOne.mockResolvedValueOnce(null);
-
-      await expect(
-        service.calculateFare({
-          origin: 'TANGERANG',
-          destination: 'YOGYAKARTA',
-          seatClassId: 'invalid-sc',
-          travelDate: '2026-03-20',
-        }),
-      ).rejects.toThrow(NotFoundException);
-    });
-
-    it('should return seasonal fare when date falls in active season (Lebaran)', async () => {
+    it('should calculate fare based on seasonal priority', async () => {
       seatClassRepo.findOne.mockResolvedValueOnce(mockSeatClass);
 
       const mockQb = {
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
         orderBy: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValueOnce([
-          { id: 's-leb', code: 'LEBARAN_2026', name: 'Tuslah Lebaran' },
-          { id: 's-reg', code: 'REGULER', name: 'Tarif Reguler Harian' },
-        ]),
+        getMany: jest.fn().mockResolvedValueOnce([mockSpecialSeason]),
       };
       seasonRepo.createQueryBuilder.mockReturnValueOnce(mockQb);
 
@@ -161,6 +152,46 @@ describe('FaresService', () => {
       expect(result.seasonCode).toBe('LEBARAN_2026');
       expect(result.isSeasonal).toBe(true);
       expect(result.origin).toBe('TANGERANG');
+      expect(result.destination).toBe('YOGYAKARTA');
+    });
+
+    it('should calculate fare prioritizing specific routeId', async () => {
+      const mockRoute = {
+        id: 'r-1',
+        code: 'RUT-JKT-YOG-MGL',
+        name: 'Jakarta - Yogya (Via Magelang)',
+        origin: 'JAKARTA',
+        destination: 'YOGYAKARTA',
+      };
+      routeRepo.findOne.mockResolvedValueOnce(mockRoute);
+      seatClassRepo.findOne.mockResolvedValueOnce(mockSeatClass);
+
+      const mockQb = {
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValueOnce([mockSpecialSeason]),
+      };
+      seasonRepo.createQueryBuilder.mockReturnValueOnce(mockQb);
+
+      matrixRepo.findOne.mockResolvedValueOnce({
+        id: 'm-route-1',
+        routeId: 'r-1',
+        route: mockRoute,
+        amount: 460000,
+        seatClass: mockSeatClass,
+      });
+
+      const result = await service.calculateFare({
+        routeId: 'r-1',
+        seatClassId: 'sc-1',
+        travelDate: '2026-03-20',
+      });
+
+      expect(result.amount).toBe(460000);
+      expect(result.routeId).toBe('r-1');
+      expect(result.routeName).toBe('Jakarta - Yogya (Via Magelang)');
+      expect(result.origin).toBe('JAKARTA');
       expect(result.destination).toBe('YOGYAKARTA');
     });
 

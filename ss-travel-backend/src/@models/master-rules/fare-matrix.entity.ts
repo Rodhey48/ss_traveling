@@ -3,6 +3,7 @@ import { BaseEntity } from '../base.entity';
 import { CompanyEntity } from '../organization/company.entity';
 import { FareSeasonEntity } from './fare-season.entity';
 import { SeatClassEntity } from '../fleet/seat-class.entity';
+import { RouteEntity } from './route.entity';
 
 @Entity('fare_matrix')
 export class FareMatrixEntity extends BaseEntity {
@@ -28,6 +29,13 @@ export class FareMatrixEntity extends BaseEntity {
   })
   @JoinColumn({ name: 'fare_season_id' })
   fareSeason?: FareSeasonEntity;
+
+  @Column({ type: 'uuid', name: 'route_id', nullable: true })
+  routeId?: string;
+
+  @ManyToOne(() => RouteEntity, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'route_id' })
+  route?: RouteEntity;
 
   @Column({ type: 'varchar', length: 100 })
   origin!: string; // misal: 'TANGERANG', 'JAKARTA'

@@ -35,14 +35,12 @@ export class SeedOrgFleetAndCustomers1888888888890
     // 2. Seed Business Units
     const buAkapId = uuidv4();
     const buWisataId = uuidv4();
-    const buShuttleId = uuidv4();
 
     await queryRunner.query(`
       INSERT INTO "business_units" ("id", "company_id", "code", "name", "description", "is_active")
       VALUES
         ('${buAkapId}', '${activeCompanyId}', 'AKAP', 'AKAP Reguler', 'Layanan Bus Antar Kota Antar Provinsi rute Tangerang - Yogya', true),
-        ('${buWisataId}', '${activeCompanyId}', 'WISATA', 'Pariwisata / Charter', 'Layanan sewa charter bus pariwisata multi-day & city tour', true),
-        ('${buShuttleId}', '${activeCompanyId}', 'SHUTTLE', 'Shuttle & Bandara', 'Layanan shuttle point-to-point dan antar-jemput bandara CGK/YIA', true)
+        ('${buWisataId}', '${activeCompanyId}', 'WISATA', 'Pariwisata / Charter', 'Layanan sewa charter bus pariwisata multi-day & city tour', true)
       ON CONFLICT ("code") DO NOTHING
     `);
 
@@ -52,6 +50,7 @@ export class SeedOrgFleetAndCustomers1888888888890
     const ccAdmHqId = uuidv4();
     const ccOpsAkapId = uuidv4();
     const ccOpsWisataId = uuidv4();
+    const ccOpsOwnerId = uuidv4();
 
     await queryRunner.query(`
       INSERT INTO "cost_centers" ("id", "company_id", "code", "name", "description", "is_active")
@@ -60,7 +59,8 @@ export class SeedOrgFleetAndCustomers1888888888890
         ('${ccMntGarasiId}', '${activeCompanyId}', 'CC-MNT-GARASI', 'Bengkel Garasi & Pemeliharaan', 'Biaya suku cadang, oli, ban, servis mekanik internal', true),
         ('${ccAdmHqId}', '${activeCompanyId}', 'CC-ADM-HQ', 'Administrasi Kantor Pusat', 'Biaya umum, overhead kantor, utilitas, dan legalitas', true),
         ('${ccOpsAkapId}', '${activeCompanyId}', 'CC-OPS-AKAP', 'Operasional Divisi AKAP', 'Biaya operasional perjalanan, BBM solar, tol, komisi agen, dan kupon makan AKAP', true),
-        ('${ccOpsWisataId}', '${activeCompanyId}', 'CC-OPS-WISATA', 'Operasional Divisi Pariwisata', 'Biaya operasional perjalanan wisata, BBM solar, tol, parkir, dan komisi rekanan', true)
+        ('${ccOpsWisataId}', '${activeCompanyId}', 'CC-OPS-WISATA', 'Operasional Divisi Pariwisata', 'Biaya operasional perjalanan wisata, BBM solar, tol, parkir, dan komisi rekanan', true),
+        ('${ccOpsOwnerId}', '${activeCompanyId}', 'CC-OPS-OWNER', 'Operasional Owner & Direksi', 'Biaya operasional, representasi, dan mobilitas pemilik perusahaan', true)
       ON CONFLICT ("code") DO NOTHING
     `);
 
@@ -344,7 +344,7 @@ export class SeedOrgFleetAndCustomers1888888888890
     await queryRunner.query(`DELETE FROM "vehicles" WHERE "code" LIKE 'SS-%'`);
     await queryRunner.query(`DELETE FROM "profit_centers" WHERE "code" LIKE 'PC-%'`);
     await queryRunner.query(`DELETE FROM "cost_centers" WHERE "code" LIKE 'CC-%'`);
-    await queryRunner.query(`DELETE FROM "business_units" WHERE "code" IN ('AKAP', 'WISATA', 'SHUTTLE')`);
+    await queryRunner.query(`DELETE FROM "business_units" WHERE "code" IN ('AKAP', 'WISATA')`);
     await queryRunner.query(`DELETE FROM "companies" WHERE "code" = 'SST'`);
   }
 }

@@ -14,6 +14,7 @@ import FaresPage from '@/pages/fares';
 import AgentsPage from '@/pages/agents';
 import CrewRatesPage from '@/pages/crew-rates';
 import PartnersPage from '@/pages/partners';
+import RoutesPage from '@/pages/routes';
 import JournalsPage from '@/pages/journals';
 import SchedulesPage from '@/pages/schedules';
 import SpjsPage from '@/pages/spjs';
@@ -63,6 +64,7 @@ export default function AppRouter() {
         <Route path="agents" element={<AgentsPage />} />
         <Route path="crew-rates" element={<CrewRatesPage />} />
         <Route path="partners" element={<PartnersPage />} />
+        <Route path="routes" element={<RoutesPage />} />
         <Route path="journals" element={<JournalsPage />} />
         <Route path="schedules" element={<SchedulesPage />} />
         <Route path="spjs" element={<SpjsPage />} />

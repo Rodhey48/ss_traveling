@@ -33,6 +33,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePermission } from '@/hooks/use-permission';
 import { FareService } from '@/services/fare.service';
+import { RouteService } from '@/services/route.service';
 import { VehicleService } from '@/services/vehicle.service';
 import type {
   CalculatedFareResult,
@@ -40,6 +41,7 @@ import type {
   FareMatrixFormData,
   FareSeason,
   FareSeasonFormData,
+  Route,
   SeatClass,
 } from '@/types';
 import {
@@ -47,9 +49,12 @@ import {
   Calculator,
   Calendar,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Edit,
   Plus,
   RotateCcw,
+  Route as RouteIcon,
   Search,
   Sparkles,
   Ticket,
@@ -67,6 +72,7 @@ export default function FaresPage() {
   const [seasons, setSeasons] = useState<FareSeason[]>([]);
   const [matrices, setMatrices] = useState<FareMatrix[]>([]);
   const [seatClasses, setSeatClasses] = useState<SeatClass[]>([]);
+  const [routes, setRoutes] = useState<Route[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Search & Debounce
@@ -77,6 +83,10 @@ export default function FaresPage() {
   const [selectedSeasonFilter, setSelectedSeasonFilter] = useState<string>('ALL');
   const [selectedClassFilter, setSelectedClassFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
+
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
   // Modals state
   const [isSeasonModalOpen, setIsSeasonModalOpen] = useState(false);
@@ -95,6 +105,7 @@ export default function FaresPage() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Simulation calculator state
+  const [simRouteId, setSimRouteId] = useState('CUSTOM');
   const [simOrigin, setSimOrigin] = useState('TANGERANG');
   const [simDestination, setSimDestination] = useState('YOGYAKARTA');
   const [simSeatClassId, setSimSeatClassId] = useState('');
@@ -122,15 +133,21 @@ export default function FaresPage() {
 
   const fetchDependencies = async () => {
     try {
-      const scRes = await VehicleService.getSeatClasses();
+      const [scRes, routeRes] = await Promise.all([
+        VehicleService.getSeatClasses(),
+        RouteService.findAll(),
+      ]);
       if (scRes?.data) {
         setSeatClasses(scRes.data);
         if (scRes.data.length > 0 && !simSeatClassId) {
           setSimSeatClassId(scRes.data[0].id);
         }
       }
+      if (routeRes?.data && Array.isArray(routeRes.data)) {
+        setRoutes(routeRes.data);
+      }
     } catch (err: unknown) {
-      console.error('Failed fetching seat classes', err);
+      console.error('Failed fetching dependencies', err);
     }
   };
 
@@ -170,6 +187,7 @@ export default function FaresPage() {
     setSelectedSeasonFilter('ALL');
     setSelectedClassFilter('ALL');
     setStatusFilter('ALL');
+    setPage(1);
   };
 
   // Handle Season CRUD
@@ -197,7 +215,8 @@ export default function FaresPage() {
     setModalLoading(true);
     try {
       if (selectedMatrix) {
-        await FareService.updateMatrix(selectedMatrix.id, formData);
+        const { fareSeasonId: _sId, seatClassId: _scId, ...updatePayload } = formData;
+        await FareService.updateMatrix(selectedMatrix.id, updatePayload);
         toast.success('Matriks tarif tiket berhasil diperbarui');
       } else {
         await FareService.createMatrix(formData);
@@ -250,6 +269,7 @@ export default function FaresPage() {
     setCalculating(true);
     try {
       const res = await FareService.calculateFare({
+        routeId: simRouteId && simRouteId !== 'CUSTOM' ? simRouteId : undefined,
         origin: simOrigin,
         destination: simDestination,
         seatClassId: simSeatClassId,
@@ -286,13 +306,42 @@ export default function FaresPage() {
         const matchDestination = m.destination.toUpperCase().includes(debouncedSearch);
         const matchSeason = (m.fareSeason?.name || '').toUpperCase().includes(debouncedSearch);
         const matchClass = (m.seatClass?.name || '').toUpperCase().includes(debouncedSearch);
-        if (!matchOrigin && !matchDestination && !matchSeason && !matchClass) {
+        const matchRoute = m.route?.name
+          ? m.route.name.toUpperCase().includes(debouncedSearch)
+          : false;
+        const matchRouteCode = m.route?.code
+          ? m.route.code.toUpperCase().includes(debouncedSearch)
+          : false;
+        if (
+          !matchOrigin &&
+          !matchDestination &&
+          !matchSeason &&
+          !matchClass &&
+          !matchRoute &&
+          !matchRouteCode
+        ) {
           return false;
         }
       }
       return true;
     });
   }, [matrices, selectedSeasonFilter, selectedClassFilter, statusFilter, debouncedSearch]);
+
+  // Pagination calculation
+  const totalMatrices = filteredMatrices.length;
+  const totalPages = Math.ceil(totalMatrices / limit) || 1;
+  const paginatedMatrices = useMemo(() => {
+    const start = (page - 1) * limit;
+    return filteredMatrices.slice(start, start + limit);
+  }, [filteredMatrices, page, limit]);
+
+  const startItem = totalMatrices === 0 ? 0 : (page - 1) * limit + 1;
+  const endItem = Math.min(page * limit, totalMatrices);
+
+  // Auto-reset page when filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, selectedSeasonFilter, selectedClassFilter, statusFilter]);
 
   // Statistik Ringkas
   const regulerMatrices = useMemo(
@@ -462,12 +511,48 @@ export default function FaresPage() {
               </div>
             </CardHeader>
             <CardContent className="p-4 pt-2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 items-end">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3 items-end">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                    <RouteIcon className="h-3 w-3 text-indigo-500" />
+                    Pilih Rute Trayek
+                  </label>
+                  <Select
+                    value={simRouteId}
+                    onValueChange={(val) => {
+                      setSimRouteId(val);
+                      if (val !== 'CUSTOM') {
+                        const r = routes.find((item) => item.id === val);
+                        if (r) {
+                          setSimOrigin(r.origin);
+                          setSimDestination(r.destination);
+                        }
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="h-8.5 text-xs">
+                      <SelectValue placeholder="Pilih Rute..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CUSTOM" className="text-xs">
+                        -- Manual Asal-Tujuan --
+                      </SelectItem>
+                      {routes.map((r) => (
+                        <SelectItem key={r.id} value={r.id} className="text-xs">
+                          {r.code} ({r.origin} ➔ {r.destination})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="space-y-1">
                   <label className="text-[11px] font-semibold text-muted-foreground">Kota Asal</label>
                   <Input
                     value={simOrigin}
-                    onChange={(e) => setSimOrigin(e.target.value.toUpperCase())}
+                    onChange={(e) => {
+                      setSimRouteId('CUSTOM');
+                      setSimOrigin(e.target.value.toUpperCase());
+                    }}
                     placeholder="TANGERANG"
                     className="h-8.5 text-xs font-mono font-bold uppercase"
                   />
@@ -476,7 +561,10 @@ export default function FaresPage() {
                   <label className="text-[11px] font-semibold text-muted-foreground">Kota Tujuan</label>
                   <Input
                     value={simDestination}
-                    onChange={(e) => setSimDestination(e.target.value.toUpperCase())}
+                    onChange={(e) => {
+                      setSimRouteId('CUSTOM');
+                      setSimDestination(e.target.value.toUpperCase());
+                    }}
                     placeholder="YOGYAKARTA"
                     className="h-8.5 text-xs font-mono font-bold uppercase"
                   />
@@ -525,6 +613,11 @@ export default function FaresPage() {
                       <span className="font-bold text-xs flex items-center gap-1.5">
                         {calcResult.origin} <ArrowRight className="h-3 w-3 text-muted-foreground" /> {calcResult.destination}
                       </span>
+                      {calcResult.routeCode && (
+                        <Badge variant="outline" className="text-[10px] font-mono text-indigo-600 dark:text-indigo-400 border-indigo-200">
+                          {calcResult.routeCode}
+                        </Badge>
+                      )}
                       <Badge variant="outline" className="text-[10px] font-mono">
                         {calcResult.seatClass.name}
                       </Badge>
@@ -538,6 +631,11 @@ export default function FaresPage() {
                         </Badge>
                       )}
                     </div>
+                    {calcResult.routeName && (
+                      <p className="text-[11px] text-indigo-600 dark:text-indigo-400 font-medium flex items-center gap-1">
+                        <RouteIcon className="h-3 w-3" /> Trayek Terpilih: {calcResult.routeName}
+                      </p>
+                    )}
                     <p className="text-[11px] text-muted-foreground">
                       Tanggal Keberangkatan Terpilih: <strong className="text-foreground">{calcResult.travelDate}</strong>
                     </p>
@@ -719,7 +817,7 @@ export default function FaresPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredMatrices.map((m) => (
+                  paginatedMatrices.map((m) => (
                     <TableRow
                       key={m.id}
                       className="hover:bg-slate-50/80 dark:hover:bg-white/5 transition-colors"
@@ -730,6 +828,12 @@ export default function FaresPage() {
                           <ArrowRight className="h-3 w-3 text-muted-foreground" />
                           <span className="font-mono font-bold text-foreground">{m.destination}</span>
                         </div>
+                        {m.route && (
+                          <div className="text-[10px] text-indigo-600 dark:text-indigo-400 font-mono flex items-center gap-1 mt-0.5">
+                            <RouteIcon className="h-2.5 w-2.5" />
+                            {m.route.name} ({m.route.code})
+                          </div>
+                        )}
                       </TableCell>
 
                       <TableCell>
@@ -810,6 +914,66 @@ export default function FaresPage() {
                 )}
               </TableBody>
             </Table>
+
+            {/* Paginasi Table */}
+            {filteredMatrices.length > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 border-t border-slate-200/80 dark:border-white/10 text-xs">
+                <div className="text-muted-foreground">
+                  Menampilkan <strong className="text-foreground">{startItem} - {endItem}</strong> dari <strong className="text-foreground">{totalMatrices}</strong> entri tarif
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">Baris per halaman:</span>
+                    <Select
+                      value={String(limit)}
+                      onValueChange={(val) => {
+                        setLimit(Number(val));
+                        setPage(1);
+                      }}
+                    >
+                      <SelectTrigger className="w-18 h-7.5 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10" className="text-xs">10</SelectItem>
+                        <SelectItem value="25" className="text-xs">25</SelectItem>
+                        <SelectItem value="50" className="text-xs">50</SelectItem>
+                        <SelectItem value="100" className="text-xs">100</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">
+                      Halaman {page} dari {totalPages}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        disabled={page <= 1 || loading}
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        className="h-7.5 w-7.5"
+                        title="Halaman Sebelumnya"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        disabled={page >= totalPages || loading}
+                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                        className="h-7.5 w-7.5"
+                        title="Halaman Berikutnya"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </Card>
         </TabsContent>
 
