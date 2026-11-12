@@ -2746,4 +2746,6 @@ export interface StatementReport {
   lines: StatementLine[];
 }
 
+export * from '@/constants/cities';
+
 

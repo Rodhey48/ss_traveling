@@ -367,6 +367,8 @@ export default function SpjFinancePage() {
       orig.includes('BEKASI') ||
       orig.includes('DEPOK') ||
       orig.includes('BANTEN') ||
+      orig.includes('SERANG') ||
+      orig.includes('CILEGON') ||
       orig.includes('LEBAK BULUS') ||
       orig.includes('PULO GEBANG') ||
       orig.includes('PORIS');
@@ -381,18 +383,21 @@ export default function SpjFinancePage() {
       orig.includes('KLATEN') ||
       orig.includes('SOLO') ||
       orig.includes('SURAKARTA') ||
+      orig.includes('SUKOHARJO') ||
+      orig.includes('WONOGIRI') ||
       orig.includes('MAGELANG') ||
       orig.includes('MUNTILAN') ||
+      orig.includes('SURABAYA') ||
       orig.includes('GIWANGAN') ||
       orig.includes('JOMBOR');
 
     return allList.filter((a) => {
       if (a.agentType === 'ONLINE_OTA' || a.city === 'ALL') return true;
       if (isWestOrigin) {
-        return ['JAKARTA', 'TANGERANG', 'SOUTH TANGERANG', 'BOGOR', 'BEKASI', 'DEPOK'].includes(a.city.toUpperCase());
+        return ['JAKARTA', 'TANGERANG', 'SOUTH TANGERANG', 'BOGOR', 'BEKASI', 'DEPOK', 'SERANG', 'CILEGON'].includes(a.city.toUpperCase());
       }
       if (isEastOrigin) {
-        return ['YOGYAKARTA', 'SLEMAN', 'BANTUL', 'KULON PROGO', 'KLATEN', 'SOLO', 'SURAKARTA', 'MAGELANG'].includes(a.city.toUpperCase());
+        return ['YOGYAKARTA', 'SLEMAN', 'BANTUL', 'KULON PROGO', 'KLATEN', 'SOLO', 'SURAKARTA', 'MAGELANG', 'SUKOHARJO', 'WONOGIRI', 'SURABAYA'].includes(a.city.toUpperCase());
       }
       return true;
     });

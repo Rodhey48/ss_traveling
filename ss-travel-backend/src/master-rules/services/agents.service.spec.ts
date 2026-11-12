@@ -81,7 +81,7 @@ describe('AgentsService', () => {
       const result = await service.findAgentsByRoute('TANGERANG', 'YOGYAKARTA');
 
       expect(mockQb.andWhere).toHaveBeenCalledWith(
-        "(a.city IN ('JAKARTA', 'TANGERANG', 'SOUTH TANGERANG', 'BOGOR', 'BEKASI', 'DEPOK', 'ALL') OR a.agent_type = 'ONLINE_OTA')",
+        "(a.city IN ('JAKARTA', 'TANGERANG', 'SOUTH TANGERANG', 'BOGOR', 'BEKASI', 'DEPOK', 'SERANG', 'CILEGON', 'ALL') OR a.agent_type = 'ONLINE_OTA')",
       );
       expect(result.length).toBe(2);
     });
@@ -103,7 +103,7 @@ describe('AgentsService', () => {
       const result = await service.findAgentsByRoute('YOGYAKARTA', 'JAKARTA');
 
       expect(mockQb.andWhere).toHaveBeenCalledWith(
-        "(a.city IN ('YOGYAKARTA', 'SLEMAN', 'BANTUL', 'KULON PROGO', 'KLATEN', 'SOLO', 'SURAKARTA', 'MAGELANG', 'ALL') OR a.agent_type = 'ONLINE_OTA')",
+        "(a.city IN ('YOGYAKARTA', 'SLEMAN', 'BANTUL', 'KULON PROGO', 'KLATEN', 'SOLO', 'SURAKARTA', 'MAGELANG', 'SUKOHARJO', 'WONOGIRI', 'SURABAYA', 'ALL') OR a.agent_type = 'ONLINE_OTA')",
       );
       expect(result.length).toBe(2);
     });
@@ -188,4 +188,51 @@ describe('AgentsService', () => {
       ).rejects.toThrow(NotFoundException);
     });
   });
+
+  describe('update agent', () => {
+    it('should update agent successfully preserving or changing code', async () => {
+      const mockAgent = {
+        id: 'a-1',
+        code: 'AGT-JKT-01',
+        name: 'Agen Lama',
+        city: 'JAKARTA',
+      };
+      agentRepo.findOne
+        .mockResolvedValueOnce(mockAgent) // for findOne(id)
+        .mockResolvedValueOnce(null); // for checking existing code
+      agentRepo.save.mockImplementation((entity: any) => Promise.resolve(entity));
+
+      const updated = await service.update('a-1', {
+        code: 'AGT-JKT-01-NEW',
+        name: 'Agen Baru',
+      });
+
+      expect(updated.code).toBe('AGT-JKT-01-NEW');
+      expect(updated.name).toBe('Agen Baru');
+    });
+
+    it('should throw ConflictException if updated code already exists on another agent', async () => {
+      const mockAgent = {
+        id: 'a-1',
+        code: 'AGT-JKT-01',
+        name: 'Agen Lama',
+      };
+      const anotherAgent = {
+        id: 'a-2',
+        code: 'AGT-JKT-02',
+        name: 'Agen Lain',
+      };
+      agentRepo.findOne
+        .mockResolvedValueOnce(mockAgent) // findOne
+        .mockResolvedValueOnce(anotherAgent); // code check
+
+      await expect(
+        service.update('a-1', {
+          code: 'AGT-JKT-02',
+          name: 'Agen Berubah',
+        }),
+      ).rejects.toThrow(ConflictException);
+    });
+  });
 });
+

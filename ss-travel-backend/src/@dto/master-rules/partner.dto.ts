@@ -61,6 +61,11 @@ export class CreateRestaurantDto {
 }
 
 export class UpdateRestaurantDto {
+  @ApiPropertyOptional({ example: 'RM-04', description: 'Kode unik rumah makan' })
+  @IsString()
+  @IsOptional()
+  code?: string;
+
   @ApiPropertyOptional({ example: 'RM Taman Selera Reborn' })
   @IsString()
   @IsOptional()
@@ -175,6 +180,11 @@ export class CreateCoordinatorDto {
 }
 
 export class UpdateCoordinatorDto {
+  @ApiPropertyOptional({ example: 'KOR-BRT-01', description: 'Kode unik koordinator lapangan' })
+  @IsString()
+  @IsOptional()
+  code?: string;
+
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()

@@ -13,12 +13,15 @@ import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Building2, Check, Sparkles, Loader2 } from 'lucide-react';
+import { Building2, Check, Sparkles, Loader2, MapPin } from 'lucide-react';
 import type { Agent, AgentFormData, AgentType, AgentSettlementType } from '@/types';
+import { CITIES_BY_REGION, OperatingCity } from '@/constants/cities';
 import { toast } from 'sonner';
 
 interface AgentModalProps {
@@ -40,7 +43,7 @@ export default function AgentModal({
     code: '',
     name: '',
     agentType: 'OFFLINE',
-    city: 'JAKARTA',
+    city: OperatingCity.JAKARTA,
     phone: '',
     email: '',
     address: '',
@@ -198,7 +201,8 @@ export default function AgentModal({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="city" className="text-xs font-semibold">
+              <Label htmlFor="city" className="text-xs font-semibold flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-primary" />
                 Kota Domisili (Smart Route Filter) <span className="text-destructive">*</span>
               </Label>
               <Select
@@ -209,15 +213,57 @@ export default function AgentModal({
                 disabled={loading}
               >
                 <SelectTrigger id="city" className="text-xs h-9">
-                  <SelectValue placeholder="Pilih Kota" />
+                  <SelectValue placeholder="Pilih Kota Domisili" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="JAKARTA" className="text-xs">Jakarta</SelectItem>
-                  <SelectItem value="TANGERANG" className="text-xs">Tangerang</SelectItem>
-                  <SelectItem value="YOGYAKARTA" className="text-xs">Yogyakarta</SelectItem>
-                  <SelectItem value="ALL" className="text-xs">Nasional / Semua Kota (OTA)</SelectItem>
+                <SelectContent className="max-h-72">
+                  <SelectGroup>
+                    <SelectLabel className="text-[11px] font-bold text-primary flex items-center gap-1.5">
+                      📍 Zona Barat (Jabodetabek &amp; Banten)
+                    </SelectLabel>
+                    {CITIES_BY_REGION.WEST.map((c) => (
+                      <SelectItem key={c.value} value={c.value} className="text-xs">
+                        {c.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+
+                  <SelectGroup>
+                    <SelectLabel className="text-[11px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5 pt-2">
+                      📍 Zona Tengah (Pantura &amp; Tol Trans-Jawa)
+                    </SelectLabel>
+                    {CITIES_BY_REGION.CENTRAL.map((c) => (
+                      <SelectItem key={c.value} value={c.value} className="text-xs">
+                        {c.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+
+                  <SelectGroup>
+                    <SelectLabel className="text-[11px] font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1.5 pt-2">
+                      📍 Zona Timur (DIY, Solo Raya &amp; Jatim)
+                    </SelectLabel>
+                    {CITIES_BY_REGION.EAST.map((c) => (
+                      <SelectItem key={c.value} value={c.value} className="text-xs">
+                        {c.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+
+                  <SelectGroup>
+                    <SelectLabel className="text-[11px] font-bold text-purple-600 dark:text-purple-400 flex items-center gap-1.5 pt-2">
+                      🌐 Multi-Kota / Online OTA
+                    </SelectLabel>
+                    {CITIES_BY_REGION.NATIONAL.map((c) => (
+                      <SelectItem key={c.value} value={c.value} className="text-xs font-semibold">
+                        {c.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 </SelectContent>
               </Select>
+              <p className="text-[11px] text-muted-foreground">
+                Kota domisili menentukan filter otomatis saat kru bus mengisi penjualan tiket per leg rute.
+              </p>
             </div>
           </div>
 

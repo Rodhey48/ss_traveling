@@ -17,7 +17,9 @@ import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
@@ -40,6 +42,7 @@ import type {
   CalculatedCommissionResult,
   SeatClass,
 } from '@/types';
+import { CITIES_BY_REGION, getOperatingCityLabel } from '@/constants/cities';
 import {
   Building2,
   Calculator,
@@ -418,14 +421,43 @@ export default function AgentsPage() {
 
               {/* Filter Kota */}
               <Select value={selectedCity} onValueChange={setSelectedCity}>
-                <SelectTrigger className="w-full sm:w-40 h-8.5 text-xs">
+                <SelectTrigger className="w-full sm:w-44 h-8.5 text-xs">
                   <SelectValue placeholder="Semua Kota" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL" className="text-xs">Semua Kota Domisili</SelectItem>
-                  <SelectItem value="JAKARTA" className="text-xs">Jakarta</SelectItem>
-                  <SelectItem value="TANGERANG" className="text-xs">Tangerang</SelectItem>
-                  <SelectItem value="YOGYAKARTA" className="text-xs">Yogyakarta</SelectItem>
+                <SelectContent className="max-h-72">
+                  <SelectItem value="ALL" className="text-xs font-semibold">Semua Kota Domisili</SelectItem>
+                  <SelectGroup>
+                    <SelectLabel className="text-[11px] font-bold text-primary">Zona Barat</SelectLabel>
+                    {CITIES_BY_REGION.WEST.map((c) => (
+                      <SelectItem key={c.value} value={c.value} className="text-xs">
+                        {c.shortLabel}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel className="text-[11px] font-bold text-amber-600 dark:text-amber-400">Zona Tengah</SelectLabel>
+                    {CITIES_BY_REGION.CENTRAL.map((c) => (
+                      <SelectItem key={c.value} value={c.value} className="text-xs">
+                        {c.shortLabel}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel className="text-[11px] font-bold text-blue-600 dark:text-blue-400">Zona Timur</SelectLabel>
+                    {CITIES_BY_REGION.EAST.map((c) => (
+                      <SelectItem key={c.value} value={c.value} className="text-xs">
+                        {c.shortLabel}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel className="text-[11px] font-bold text-purple-600 dark:text-purple-400">Nasional</SelectLabel>
+                    {CITIES_BY_REGION.NATIONAL.map((c) => (
+                      <SelectItem key={c.value} value={c.value} className="text-xs">
+                        {c.shortLabel}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 </SelectContent>
               </Select>
 
@@ -562,8 +594,8 @@ export default function AgentsPage() {
                       </TableCell>
 
                       <TableCell>
-                        <Badge variant="secondary" className="font-semibold text-[10px]">
-                          {a.city}
+                        <Badge variant="secondary" className="font-semibold text-[10px]" title={a.city}>
+                          {getOperatingCityLabel(a.city)}
                         </Badge>
                       </TableCell>
 

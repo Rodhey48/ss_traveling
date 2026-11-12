@@ -112,8 +112,21 @@ export class PartnersService {
 
   async updateRestaurant(id: string, dto: UpdateRestaurantDto): Promise<RestaurantEntity> {
     const rest = await this.findOneRestaurant(id);
+
+    if (dto.code && dto.code.trim().toUpperCase() !== rest.code) {
+      const codeUpper = dto.code.trim().toUpperCase();
+      const existing = await this.restaurantRepo.findOne({
+        where: { code: codeUpper },
+      });
+      if (existing && existing.id !== id) {
+        throw new ConflictException(`Rumah makan dengan kode '${codeUpper}' sudah terdaftar.`);
+      }
+      rest.code = codeUpper;
+    }
+
     Object.assign(rest, {
       ...dto,
+      code: rest.code,
       city: dto.city ? dto.city.trim().toUpperCase() : rest.city,
     });
     return this.restaurantRepo.save(rest);
@@ -219,8 +232,20 @@ export class PartnersService {
   async updateCoordinator(id: string, dto: UpdateCoordinatorDto): Promise<CoordinatorEntity> {
     const coordinator = await this.findOneCoordinator(id);
 
+    if (dto.code && dto.code.trim().toUpperCase() !== coordinator.code) {
+      const codeUpper = dto.code.trim().toUpperCase();
+      const existing = await this.coordinatorRepo.findOne({
+        where: { code: codeUpper },
+      });
+      if (existing && existing.id !== id) {
+        throw new ConflictException(`Koordinator lapangan dengan kode '${codeUpper}' sudah terdaftar.`);
+      }
+      coordinator.code = codeUpper;
+    }
+
     Object.assign(coordinator, {
       ...dto,
+      code: coordinator.code,
       name: dto.name !== undefined ? dto.name.trim() : coordinator.name,
       organizationName: dto.organizationName !== undefined ? dto.organizationName?.trim() : coordinator.organizationName,
       phone: dto.phone !== undefined ? dto.phone.trim() : coordinator.phone,

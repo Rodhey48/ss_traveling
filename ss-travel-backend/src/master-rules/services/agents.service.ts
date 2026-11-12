@@ -102,6 +102,8 @@ export class AgentsService {
       orig.includes('BEKASI') ||
       orig.includes('DEPOK') ||
       orig.includes('BANTEN') ||
+      orig.includes('SERANG') ||
+      orig.includes('CILEGON') ||
       orig.includes('LEBAK BULUS') ||
       orig.includes('PULO GEBANG') ||
       orig.includes('PORIS');
@@ -116,20 +118,23 @@ export class AgentsService {
       orig.includes('KLATEN') ||
       orig.includes('SOLO') ||
       orig.includes('SURAKARTA') ||
+      orig.includes('SUKOHARJO') ||
+      orig.includes('WONOGIRI') ||
       orig.includes('MAGELANG') ||
       orig.includes('MUNTILAN') ||
+      orig.includes('SURABAYA') ||
       orig.includes('GIWANGAN') ||
       orig.includes('JOMBOR');
 
     if (isWestOrigin) {
       // Keberangkatan Barat (Jabodetabek & Banten)
       qb.andWhere(
-        "(a.city IN ('JAKARTA', 'TANGERANG', 'SOUTH TANGERANG', 'BOGOR', 'BEKASI', 'DEPOK', 'ALL') OR a.agent_type = 'ONLINE_OTA')",
+        "(a.city IN ('JAKARTA', 'TANGERANG', 'SOUTH TANGERANG', 'BOGOR', 'BEKASI', 'DEPOK', 'SERANG', 'CILEGON', 'ALL') OR a.agent_type = 'ONLINE_OTA')",
       );
     } else if (isEastOrigin) {
-      // Kepulangan Timur (DIY & Jawa Tengah)
+      // Kepulangan Timur (DIY, Solo Raya, Jateng & Jatim)
       qb.andWhere(
-        "(a.city IN ('YOGYAKARTA', 'SLEMAN', 'BANTUL', 'KULON PROGO', 'KLATEN', 'SOLO', 'SURAKARTA', 'MAGELANG', 'ALL') OR a.agent_type = 'ONLINE_OTA')",
+        "(a.city IN ('YOGYAKARTA', 'SLEMAN', 'BANTUL', 'KULON PROGO', 'KLATEN', 'SOLO', 'SURAKARTA', 'MAGELANG', 'SUKOHARJO', 'WONOGIRI', 'SURABAYA', 'ALL') OR a.agent_type = 'ONLINE_OTA')",
       );
     }
 
@@ -170,8 +175,21 @@ export class AgentsService {
 
   async update(id: string, dto: UpdateAgentDto): Promise<AgentEntity> {
     const agent = await this.findOne(id);
+
+    if (dto.code && dto.code.trim().toUpperCase() !== agent.code) {
+      const codeUpper = dto.code.trim().toUpperCase();
+      const existing = await this.agentRepo.findOne({
+        where: { code: codeUpper },
+      });
+      if (existing && existing.id !== id) {
+        throw new ConflictException(`Mitra agen dengan kode '${codeUpper}' sudah terdaftar.`);
+      }
+      agent.code = codeUpper;
+    }
+
     Object.assign(agent, {
       ...dto,
+      code: agent.code,
       city: dto.city ? dto.city.trim().toUpperCase() : agent.city,
     });
     return this.agentRepo.save(agent);

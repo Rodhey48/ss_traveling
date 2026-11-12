@@ -66,6 +66,11 @@ export class CreateAgentDto {
 }
 
 export class UpdateAgentDto {
+  @ApiPropertyOptional({ example: 'AGT-JKT-01', description: 'Kode unik agen penjualan' })
+  @IsString()
+  @IsOptional()
+  code?: string;
+
   @ApiPropertyOptional({ example: 'Agen Terminal Kampung Rambutan Baru' })
   @IsString()
   @IsOptional()
