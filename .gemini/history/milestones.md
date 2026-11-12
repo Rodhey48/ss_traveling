@@ -2,7 +2,7 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
-### 2026-11-12: Rework Master Koordinator Lapangan (Mitra Eksternal) & Integrasi Filter Finansial Dinamis Completed
+### 2026-11-12: Rework Master Koordinator Lapangan (Mitra Eksternal), Integrasi Filter Finansial Dinamis & Standardisasi Kota Operasional Completed
 - **Pemisahan Identitas Master Koordinator dari User Internal (`coordinators`)**:
   - Dibuat entitas independen `CoordinatorEntity` (`master-rules/coordinator.entity.ts`) dengan atribut: `code`, `name`, `type` (`INDIVIDUAL`/`ORGANIZATION`), `organizationName` (nama paguyuban pengurus jalur), `phone` (nomor WhatsApp), `email`, `area` (basis terminal), `address`, `bankName`, `bankAccountNumber`, `bankAccountHolder`, `notes`, dan `isActive`.
   - Migrasi TypeORM `1794390000000-CreateCoordinatorsMasterTableAndLinkRules.ts` berhasil dieksekusi: membuat tabel `coordinators`, menambahkan FK `coordinator_id` ke tabel `coordinator_fee_rules`, `spj_coordination_fees`, dan `coordination_fee_batches`, serta melakukan seeding data master pengurus jalur (`KOR-BRT-01` H. Ahmad Sodik - Paguyuban Jalur Barat, `KOR-TMR-01` Bambang Triyono - Paguyuban Jalur Timur, `KOR-TGH-01` Sutrisno Widodo - Korlap Jalur Tengah) dan backfill otomatis.
@@ -23,7 +23,17 @@
     - **Filter Koordinator Dinamis**: Lookup otomatis dari entitas Master Koordinator (`coordinators`).
     - **Detail Rekening & Callout Card**: Kolom nomor rekening bank dan kontak WhatsApp di tabel tagihan siap bayar gelondongan.
     - **Modal Eksekusi Transfer Gelondongan**: Menampilkan Callout Box informatif berisi nama bank, nomor rekening penerima, atas nama pemilik rekening, tombol 1-klik "Salin No. Rekening", tombol 1-klik "Salin Nominal", serta tombol langsung kirim rincian via WhatsApp Web.
+- **Dukungan Update Kode & Standardisasi Konstanta Kota Operasional Terpusat**:
+  - Memperbaiki penolakan whitelist validation pipe (`property code should not exist`) pada endpoint update agen, restoran, dan koordinator dengan menambahkan `code?: string` ke `UpdateAgentDto`, `UpdateRestaurantDto`, dan `UpdateCoordinatorDto` beserta pengecekan keunikan kode di service backend.
+  - Membuat konstanta kota terpusat `OperatingCity`, `CITIES_BY_REGION`, dan helper `getOperatingCityLabel` (`src/constants/cities.ts`) yang kompatibel dengan flag `erasableSyntaxOnly` TypeScript 5.8+.
+  - Menstandarkan pilihan kota domisili pada `AgentModal` dan filter `/agents` menjadi 4 zona visual terstruktur (Zona Barat, Zona Tengah, Zona Timur, dan Nasional/OTA).
+  - Menyelaraskan Smart Route Filter pada `AgentsService.findAgentsByRoute` dan `/spjs/:id/finance` untuk mencakup seluruh kota operasional baru.
   - Frontend production build (`yarn build`) bersih dan sukses 100%.
+- **Peningkatan Konkurensi Generator Nomor Dokumen & Stabilisasi E2E Test Suite**:
+  - Mengimplementasikan atomic upsert berbasis PostgreSQL native `INSERT ... ON CONFLICT ("document_type", "period_key") DO UPDATE SET "last_number" = "document_sequences"."last_number" + 1, "prefix" = CASE WHEN $3 != '' THEN $3 ELSE "document_sequences"."prefix" END, "updatedAt" = NOW() RETURNING ...` pada `DocumentSequenceService.getNextDocumentNumber`. Mencegah terjadinya error race condition `duplicate key value violates unique constraint "UQ_document_sequences_type_period"` saat pembuatan nomor transaksi finansial secara paralel.
+  - Menyelaraskan kueri akun bank dinamis dan kode rekening BCA (`bankAccountCode`) pada pengujian E2E sewa wisata multi-hari (`test/spj-wisata-lifecycle.e2e-spec.ts`).
+  - Menyelaraskan filter tanggal laporan laba rugi Tahap 12 agar mencakup pencatatan beban settlement kasir pada periode berjalan.
+  - Seluruh test suite E2E lulus 100% pada eksekusi paralel simultan (6 test suites, 43 tests passed) dan seluruh unit test suite backend lulus 100% (36 test suites, 278 tests passed).
 
 ### 2026-11-11: Implementasi Master Rute (Trayek) & Integrasi Matriks Tarif Tiket Dinamis Completed
 - **Entitas & Arsitektur Master Rute (`routes`)**:

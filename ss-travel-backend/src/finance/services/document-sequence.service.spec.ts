@@ -50,9 +50,9 @@ describe('DocumentSequenceService', () => {
   describe('getNextDocumentNumber', () => {
     it('should create sequence starting with 1 when none exists', async () => {
       const mockManager = {
-        findOne: jest.fn().mockResolvedValue(null),
-        create: jest.fn().mockImplementation((entity) => ({ ...entity, lastNumber: 1 })),
-        save: jest.fn().mockImplementation(async (entity) => entity),
+        query: jest.fn().mockResolvedValue([
+          { last_number: 1, prefix: 'SPJ/AKP/2610', padding: 4 },
+        ]),
       };
 
       dataSource.transaction.mockImplementation(async (cb: any) => cb(mockManager));
@@ -65,28 +65,14 @@ describe('DocumentSequenceService', () => {
       );
 
       expect(docNo).toBe('SPJ/AKP/2610/0001');
-      expect(mockManager.findOne).toHaveBeenCalledWith(
-        DocumentSequenceEntity,
-        expect.objectContaining({
-          lock: { mode: 'pessimistic_write' },
-        }),
-      );
-      expect(mockManager.save).toHaveBeenCalled();
+      expect(mockManager.query).toHaveBeenCalled();
     });
 
     it('should increment sequence when existing sequence found', async () => {
-      const existing = {
-        id: 'seq-1',
-        documentType: 'SPJ_AKP',
-        periodKey: '2610',
-        prefix: 'SPJ/AKP/2610',
-        lastNumber: 1,
-        padding: 4,
-      };
-
       const mockManager = {
-        findOne: jest.fn().mockResolvedValue(existing),
-        save: jest.fn().mockImplementation(async (entity) => entity),
+        query: jest.fn().mockResolvedValue([
+          { last_number: 2, prefix: 'SPJ/AKP/2610', padding: 4 },
+        ]),
       };
 
       dataSource.transaction.mockImplementation(async (cb: any) => cb(mockManager));
@@ -99,23 +85,14 @@ describe('DocumentSequenceService', () => {
       );
 
       expect(docNo).toBe('SPJ/AKP/2610/0002');
-      expect(existing.lastNumber).toBe(2);
-      expect(mockManager.save).toHaveBeenCalledWith(existing);
+      expect(mockManager.query).toHaveBeenCalled();
     });
 
     it('should execute inside provided entityManager without new transaction', async () => {
-      const existing = {
-        id: 'seq-1',
-        documentType: 'BKM',
-        periodKey: '2610',
-        prefix: 'BKM/2610',
-        lastNumber: 41,
-        padding: 4,
-      };
-
       const customManager: any = {
-        findOne: jest.fn().mockResolvedValue(existing),
-        save: jest.fn().mockImplementation(async (entity) => entity),
+        query: jest.fn().mockResolvedValue([
+          { last_number: 42, prefix: 'BKM/2610', padding: 4 },
+        ]),
       };
 
       const docNo = await service.getNextDocumentNumber(
@@ -129,7 +106,7 @@ describe('DocumentSequenceService', () => {
 
       expect(docNo).toBe('BKM/2610/0042');
       expect(dataSource.transaction).not.toHaveBeenCalled();
-      expect(customManager.findOne).toHaveBeenCalled();
+      expect(customManager.query).toHaveBeenCalled();
     });
   });
 

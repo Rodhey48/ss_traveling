@@ -30,6 +30,7 @@ describe('SPJ Wisata (Charter Multi-Day) Lifecycle & P&L E2E Verification (Skena
   let driver1Id: string;
   let driver2Id: string;
   let bankAccountId: string;
+  let bankAccountCode: string;
   let cashAccountId: string;
   let customerId: string;
   let customerName: string;
@@ -94,8 +95,26 @@ describe('SPJ Wisata (Charter Multi-Day) Lifecycle & P&L E2E Verification (Skena
       driver2Id = allUsers[1]?.id || allUsers[0].id;
     }
 
-    const bankAccounts = await dataSource.query(`SELECT id FROM "bank_accounts" WHERE "bank_name" ILIKE '%BCA%' LIMIT 1`);
-    bankAccountId = bankAccounts.length > 0 ? bankAccounts[0].id : (await dataSource.query(`SELECT id FROM "bank_accounts" LIMIT 1`))[0].id;
+    const bankAccounts = await dataSource.query(`
+      SELECT b.id, a.code as "accountCode"
+      FROM "bank_accounts" b
+      JOIN "accounts" a ON b.account_id = a.id
+      WHERE b.bank_name ILIKE '%BCA%'
+      LIMIT 1
+    `);
+    if (bankAccounts.length > 0) {
+      bankAccountId = bankAccounts[0].id;
+      bankAccountCode = bankAccounts[0].accountCode;
+    } else {
+      const fallback = await dataSource.query(`
+        SELECT b.id, a.code as "accountCode"
+        FROM "bank_accounts" b
+        JOIN "accounts" a ON b.account_id = a.id
+        LIMIT 1
+      `);
+      bankAccountId = fallback[0].id;
+      bankAccountCode = fallback[0].accountCode;
+    }
 
     const cashAccounts = await dataSource.query(`SELECT id FROM "cash_accounts" LIMIT 1`);
     cashAccountId = cashAccounts[0].id;
@@ -275,7 +294,7 @@ describe('SPJ Wisata (Charter Multi-Day) Lifecycle & P&L E2E Verification (Skena
     expect(res.body.data.journalEntryId).toBeDefined();
     createdJournalIds.push(res.body.data.journalEntryId);
 
-    // Verifikasi Jurnal DP: (D) 11104 Bank BCA 5.250.000, (K) 24101 DP 5.250.000
+    // Verifikasi Jurnal DP: (D) Bank BCA 5.250.000, (K) 24101 DP 5.250.000
     const journalRes = await reqHelper('get', `/api/v1/journals/${res.body.data.journalEntryId}`)
       .expect(200);
 
@@ -283,7 +302,7 @@ describe('SPJ Wisata (Charter Multi-Day) Lifecycle & P&L E2E Verification (Skena
     expect(Number(journal.totalDebit)).toBe(5250000);
     expect(Number(journal.totalCredit)).toBe(5250000);
 
-    const bcaLine = journal.lines.find((l: any) => l.account.code === '11104');
+    const bcaLine = journal.lines.find((l: any) => l.account.code === bankAccountCode);
     const dpLine = journal.lines.find((l: any) => l.account.code === '24101');
     expect(bcaLine).toBeDefined();
     expect(Number(bcaLine.debit)).toBe(5250000);
@@ -473,7 +492,7 @@ describe('SPJ Wisata (Charter Multi-Day) Lifecycle & P&L E2E Verification (Skena
     expect(res.body.data.journalEntryId).toBeDefined();
     createdJournalIds.push(res.body.data.journalEntryId);
 
-    // Verifikasi Jurnal Pelunasan AR: (D) 11104 Bank BCA 12.250.000, (K) 12101 Piutang 12.250.000
+    // Verifikasi Jurnal Pelunasan AR: (D) Bank BCA 12.250.000, (K) 12101 Piutang 12.250.000
     const journalRes = await reqHelper('get', `/api/v1/journals/${res.body.data.journalEntryId}`)
       .expect(200);
 
@@ -481,7 +500,7 @@ describe('SPJ Wisata (Charter Multi-Day) Lifecycle & P&L E2E Verification (Skena
     expect(Number(journal.totalDebit)).toBe(12250000);
     expect(Number(journal.totalCredit)).toBe(12250000);
 
-    const bcaLine = journal.lines.find((l: any) => l.account.code === '11104');
+    const bcaLine = journal.lines.find((l: any) => l.account.code === bankAccountCode);
     const arLine = journal.lines.find((l: any) => l.account.code === '12101');
     expect(bcaLine).toBeDefined();
     expect(Number(bcaLine.debit)).toBe(12250000);
@@ -597,8 +616,8 @@ describe('SPJ Wisata (Charter Multi-Day) Lifecycle & P&L E2E Verification (Skena
   });
 
   it('Tahap 12: Audit Laporan Laba Rugi (Income Statement) Periode Berjalan', async () => {
-    // Kueri laporan laba rugi mencakup periode transaksi Oktober 2026
-    const res = await reqHelper('get', `/api/v1/reports/income-statement?startDate=2026-10-01&endDate=2026-10-31`)
+    // Kueri laporan laba rugi mencakup periode transaksi sewa dan kepulangan
+    const res = await reqHelper('get', `/api/v1/reports/income-statement?startDate=2026-10-01&endDate=2026-12-31`)
       .expect(200);
 
     expect(res.body.status).toBe(true);

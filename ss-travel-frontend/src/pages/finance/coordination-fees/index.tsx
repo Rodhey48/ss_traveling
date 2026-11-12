@@ -1,30 +1,5 @@
-import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
-import {
-  ShieldAlert,
-  CheckCircle2,
-  Search,
-  RefreshCw,
-  Coins,
-  Send,
-  Copy,
-  Check,
-  FileText,
-  Info,
-  MapPin,
-  Building2,
-  Phone,
-  Landmark,
-  ExternalLink,
-  RotateCcw,
-  Route as RouteIcon,
-  Users,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -33,11 +8,21 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -47,31 +32,46 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { CoordinationFeeService } from '@/services/coordination-fee.service';
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 import { CashBankService } from '@/services/cash-bank.service';
-import { RouteService } from '@/services/route.service';
+import { CoordinationFeeService } from '@/services/coordination-fee.service';
 import { PartnerService } from '@/services/partner.service';
+import { RouteService } from '@/services/route.service';
 import type {
-  SpjCoordinationFee,
-  CoordinationFeeBatch,
-  CoordinatorFeeRule,
   CashAccount,
-  Route,
+  CoordinationFeeBatch,
   Coordinator,
+  CoordinatorFeeRule,
+  Route,
+  SpjCoordinationFee,
 } from '@/types';
+import {
+  Building2,
+  Check,
+  CheckCircle2,
+  Coins,
+  Copy,
+  ExternalLink,
+  FileText,
+  Info,
+  Landmark,
+  MapPin,
+  Phone,
+  RefreshCw,
+  RotateCcw,
+  Route as RouteIcon,
+  Search,
+  Send,
+  ShieldAlert,
+  Users,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 export default function CoordinationFeesPage() {
   const [activeTab, setActiveTab] = useState<'pending' | 'batches' | 'rules'>('pending');
@@ -475,22 +475,20 @@ export default function CoordinationFeesPage() {
                         <TableRow
                           key={fee.id}
                           onClick={() => toggleSelectFee(fee.id)}
-                          className={`cursor-pointer transition-colors ${
-                            isSelected
+                          className={`cursor-pointer transition-colors ${isSelected
                               ? 'bg-amber-50/80 dark:bg-amber-950/30'
                               : 'hover:bg-muted/20'
-                          }`}
+                            }`}
                         >
                           <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                             <div
                               onClick={() => toggleSelectFee(fee.id)}
-                              className={`w-4 h-4 rounded mx-auto flex items-center justify-center border cursor-pointer transition-colors ${
-                                isSelected
+                              className={`w-4 h-4 rounded mx-auto flex items-center justify-center border cursor-pointer transition-colors ${isSelected
                                   ? 'bg-amber-600 border-amber-600 text-white'
                                   : 'border-slate-300 dark:border-zinc-700 bg-background'
-                              }`}
+                                }`}
                             >
-                              {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                              {isSelected && <Check className="w-3 h-3 stroke-3" />}
                             </div>
                           </TableCell>
                           <TableCell className="text-xs">
@@ -820,7 +818,7 @@ export default function CoordinationFeesPage() {
           <form onSubmit={handleExecuteBulkPayment} className="p-5 space-y-4 overflow-y-auto flex-1">
             {/* CALLOUT INFO: DATA REKENING PENERIMA (POIN 2) */}
             {targetCoordinator ? (
-              <div className="p-4 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border-2 border-amber-500/30 rounded-2xl space-y-3">
+              <div className="p-4 bg-linear-to-br from-amber-500/10 via-amber-500/5 to-transparent border-2 border-amber-500/30 rounded-2xl space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Landmark className="w-4 h-4 text-amber-600 dark:text-amber-400" />

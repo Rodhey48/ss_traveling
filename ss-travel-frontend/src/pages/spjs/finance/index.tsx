@@ -1,35 +1,21 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import {
-  ArrowLeft,
-  Wallet,
-  Receipt,
-  Coins,
-  CreditCard,
-  PlusCircle,
-  RotateCcw,
-  ArrowRightLeft,
-  Fuel,
-  Info,
-  Send,
-  Trash2,
-  RefreshCw,
-  TrendingDown,
-  CircleDollarSign,
-  Building2,
-  CheckCircle2,
-  FileText,
-  BadgeCheck,
-  UtensilsCrossed,
-  Hotel,
-  Sparkles,
-  Check,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -45,46 +31,60 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { SpjService } from '@/services/spj.service';
-import { SpjFinanceService } from '@/services/spj-finance.service';
-import { CashBankService } from '@/services/cash-bank.service';
+import { Textarea } from '@/components/ui/textarea';
 import { AgentService } from '@/services/agent.service';
-import { VehicleService } from '@/services/vehicle.service';
+import { CashBankService } from '@/services/cash-bank.service';
 import { CoordinationFeeService } from '@/services/coordination-fee.service';
 import { RestaurantSettlementService } from '@/services/restaurant-settlement.service';
+import { SpjFinanceService } from '@/services/spj-finance.service';
+import { SpjService } from '@/services/spj.service';
+import { VehicleService } from '@/services/vehicle.service';
 import type {
-  Spj,
-  SpjUj,
-  SpjExpense,
-  SpjRevenueDeclaration,
-  CrewMealPayment,
-  SpjCoordinationFee,
-  SpjMealRecord,
-  Restaurant,
-  CashAccount,
-  BankAccount,
   Agent,
-  SeatClass,
-  SpjExpenseType,
-  SpjExpensePaymentSource,
-  SpjRevenueDeclarationType,
-  SpjPaymentMethod,
   AgentSettlementType,
+  BankAccount,
+  CashAccount,
+  CrewMealPayment,
+  Restaurant,
+  SeatClass,
+  Spj,
+  SpjCoordinationFee,
+  SpjExpense,
+  SpjExpensePaymentSource,
+  SpjExpenseType,
+  SpjMealRecord,
+  SpjPaymentMethod,
+  SpjRevenueDeclaration,
+  SpjRevenueDeclarationType,
+  SpjUj,
 } from '@/types';
+import {
+  ArrowLeft,
+  ArrowRightLeft,
+  BadgeCheck,
+  Building2,
+  Check,
+  CheckCircle2,
+  CircleDollarSign,
+  Coins,
+  CreditCard,
+  FileText,
+  Fuel,
+  Hotel,
+  Info,
+  PlusCircle,
+  Receipt,
+  RefreshCw,
+  RotateCcw,
+  Send,
+  Sparkles,
+  Trash2,
+  TrendingDown,
+  UtensilsCrossed,
+  Wallet,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 export default function SpjFinancePage() {
@@ -943,8 +943,8 @@ export default function SpjFinancePage() {
                   spj.operationalStatus === 'COMPLETED'
                     ? 'default'
                     : spj.operationalStatus === 'IN_PROGRESS'
-                    ? 'secondary'
-                    : 'outline'
+                      ? 'secondary'
+                      : 'outline'
                 }
                 className="font-mono text-xs px-2.5 py-0.5"
               >
@@ -955,8 +955,8 @@ export default function SpjFinancePage() {
                   spj.financialStatus === 'SETTLED'
                     ? 'default'
                     : spj.financialStatus === 'DISCREPANCY'
-                    ? 'destructive'
-                    : 'secondary'
+                      ? 'destructive'
+                      : 'secondary'
                 }
                 className="font-mono text-xs px-2.5 py-0.5 font-bold"
               >
@@ -1090,8 +1090,8 @@ export default function SpjFinancePage() {
                   spj.financialStatus === 'SETTLED'
                     ? 'default'
                     : spj.financialStatus === 'DISCREPANCY'
-                    ? 'destructive'
-                    : 'secondary'
+                      ? 'destructive'
+                      : 'secondary'
                 }
                 className="text-xs font-mono font-bold"
               >
@@ -1498,11 +1498,10 @@ export default function SpjFinancePage() {
                     }
                     setAgentTicketModalOpen(true);
                   }}
-                  className={`h-8 text-xs font-semibold gap-1.5 ${
-                    isWisata
+                  className={`h-8 text-xs font-semibold gap-1.5 ${isWisata
                       ? 'bg-muted text-muted-foreground opacity-60 cursor-not-allowed hover:bg-muted'
                       : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs'
-                  }`}
+                    }`}
                   title={isWisata ? 'Khusus Layanan AKAP (Layanan Wisata berbasis kontrak charter rombongan)' : undefined}
                 >
                   <Building2 className="w-3.5 h-3.5" /> + Input Tiket Agen
@@ -1699,11 +1698,10 @@ export default function SpjFinancePage() {
                   variant="outline"
                   disabled={isWisata}
                   onClick={() => navigate('/finance/restaurant-settlements')}
-                  className={`h-8 text-xs font-semibold gap-1.5 ${
-                    isWisata
+                  className={`h-8 text-xs font-semibold gap-1.5 ${isWisata
                       ? 'border-border text-muted-foreground opacity-60 cursor-not-allowed hover:bg-transparent'
                       : 'border-amber-500/60 text-amber-700 dark:text-amber-300 bg-amber-50/50 dark:bg-amber-950/20 hover:bg-amber-100'
-                  }`}
+                    }`}
                   title={isWisata ? 'Khusus Layanan AKAP (Layanan Wisata tidak menggunakan kupon restoran mitra)' : undefined}
                 >
                   <UtensilsCrossed className="w-3.5 h-3.5" /> Kelola Pembayaran Restoran ➔
@@ -1831,11 +1829,10 @@ export default function SpjFinancePage() {
                                 }
                                 setMealCouponModalOpen(true);
                               }}
-                              className={`h-7 text-[11px] font-medium gap-1 ${
-                                isWisata
+                              className={`h-7 text-[11px] font-medium gap-1 ${isWisata
                                   ? 'border-border text-muted-foreground opacity-60 cursor-not-allowed hover:bg-transparent'
                                   : 'border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800'
-                              }`}
+                                }`}
                               title={isWisata ? 'Khusus Layanan AKAP (Konsumsi wisata dikelola panitia rombongan)' : undefined}
                             >
                               ✏️ {mealRec ? 'Edit Kupon' : 'Catat Kupon'}
@@ -1846,11 +1843,10 @@ export default function SpjFinancePage() {
                                 variant="ghost"
                                 disabled={isWisata}
                                 onClick={() => handleDeleteMealRecord(mealRec.id)}
-                                className={`h-7 w-7 p-0 ${
-                                  isWisata
+                                className={`h-7 w-7 p-0 ${isWisata
                                     ? 'text-muted-foreground opacity-40 cursor-not-allowed'
                                     : 'text-muted-foreground hover:text-destructive hover:bg-destructive/10'
-                                }`}
+                                  }`}
                                 title={isWisata ? 'Khusus Layanan AKAP' : 'Hapus Kupon Makan'}
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -1902,11 +1898,10 @@ export default function SpjFinancePage() {
                   variant="outline"
                   disabled={isWisata}
                   onClick={handleSyncCoordinationFees}
-                  className={`h-8 text-xs font-medium gap-1.5 ${
-                    isWisata
+                  className={`h-8 text-xs font-medium gap-1.5 ${isWisata
                       ? 'border-border text-muted-foreground opacity-60 cursor-not-allowed hover:bg-transparent'
                       : 'border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800'
-                  }`}
+                    }`}
                   title={isWisata ? 'Khusus Layanan AKAP (Tidak ada biaya koordinasi pengurus jalur terminal pada bus pariwisata)' : undefined}
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isWisata ? 'text-muted-foreground' : 'text-amber-600'}`} /> Sinkronkan Koordinasi
@@ -1916,11 +1911,10 @@ export default function SpjFinancePage() {
                   variant="outline"
                   disabled={isWisata}
                   onClick={() => navigate('/finance/coordination-fees')}
-                  className={`h-8 text-xs font-semibold gap-1.5 ${
-                    isWisata
+                  className={`h-8 text-xs font-semibold gap-1.5 ${isWisata
                       ? 'border-border text-muted-foreground opacity-60 cursor-not-allowed hover:bg-transparent'
                       : 'border-amber-500/60 text-amber-700 dark:text-amber-300 bg-amber-50/50 dark:bg-amber-950/20 hover:bg-amber-100'
-                  }`}
+                    }`}
                   title={isWisata ? 'Khusus Layanan AKAP (Tidak ada biaya koordinasi pengurus jalur terminal pada bus pariwisata)' : undefined}
                 >
                   Kelola Transfer Gelondongan ➔
@@ -2017,11 +2011,10 @@ export default function SpjFinancePage() {
                               variant="ghost"
                               disabled={isWisata}
                               onClick={() => handleDeleteCoordinationFee(cf.id)}
-                              className={`h-7 w-7 p-0 ${
-                                isWisata
+                              className={`h-7 w-7 p-0 ${isWisata
                                   ? 'text-muted-foreground opacity-40 cursor-not-allowed'
                                   : 'text-muted-foreground hover:text-destructive hover:bg-destructive/10'
-                              }`}
+                                }`}
                               title={isWisata ? 'Khusus Layanan AKAP' : 'Hapus Kewajiban Koordinasi'}
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -2098,11 +2091,10 @@ export default function SpjFinancePage() {
                     }
                     setFullSeatModalOpen(true);
                   }}
-                  className={`h-8 text-xs font-semibold gap-1.5 ${
-                    isWisata
+                  className={`h-8 text-xs font-semibold gap-1.5 ${isWisata
                       ? 'bg-muted text-muted-foreground opacity-60 cursor-not-allowed hover:bg-muted'
                       : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
-                  }`}
+                    }`}
                   title={isWisata ? 'Khusus Layanan AKAP (Bonus Full Seat tidak berlaku untuk charter wisata sesuai Blueprint Addendum v1.8 & v1.10)' : undefined}
                 >
                   <Sparkles className="w-3.5 h-3.5" /> + Klaim Bonus Full Seat
@@ -2267,22 +2259,20 @@ export default function SpjFinancePage() {
                   <button
                     type="button"
                     onClick={() => handleToggleFilterByLeg(true)}
-                    className={`text-[10px] px-2.5 py-0.5 rounded-full font-medium transition-colors ${
-                      filterByLeg
+                    className={`text-[10px] px-2.5 py-0.5 rounded-full font-medium transition-colors ${filterByLeg
                         ? 'bg-emerald-600 text-white font-bold shadow-2xs'
                         : 'bg-muted text-muted-foreground hover:text-foreground'
-                    }`}
+                      }`}
                   >
                     🎯 Sesuai Leg ({filteredAgents.length})
                   </button>
                   <button
                     type="button"
                     onClick={() => handleToggleFilterByLeg(false)}
-                    className={`text-[10px] px-2.5 py-0.5 rounded-full font-medium transition-colors ${
-                      !filterByLeg
+                    className={`text-[10px] px-2.5 py-0.5 rounded-full font-medium transition-colors ${!filterByLeg
                         ? 'bg-indigo-600 text-white font-bold shadow-2xs'
                         : 'bg-muted text-muted-foreground hover:text-foreground'
-                    }`}
+                      }`}
                   >
                     🌐 Semua Agen ({allAgents.length})
                   </button>
@@ -3250,11 +3240,10 @@ export default function SpjFinancePage() {
                           const comm = (gross * Number(pct)) / 100;
                           setRevCargoCommissionAmount(String(Math.round(comm)));
                         }}
-                        className={`h-6 text-[11px] font-mono flex-1 px-1.5 ${
-                          Number(revCargoCommissionPct).toFixed(2) === pct
+                        className={`h-6 text-[11px] font-mono flex-1 px-1.5 ${Number(revCargoCommissionPct).toFixed(2) === pct
                             ? 'bg-amber-600 hover:bg-amber-700 text-white font-bold'
                             : 'border-slate-300 dark:border-zinc-700'
-                        }`}
+                          }`}
                       >
                         {Number(pct)}%
                       </Button>
@@ -3647,21 +3636,19 @@ export default function SpjFinancePage() {
                       <div
                         key={crewAss.id}
                         onClick={() => togglePerpalCrew(crewAss.id)}
-                        className={`flex items-center justify-between p-2.5 rounded-lg border cursor-pointer transition-colors text-xs select-none ${
-                          isChecked
+                        className={`flex items-center justify-between p-2.5 rounded-lg border cursor-pointer transition-colors text-xs select-none ${isChecked
                             ? 'bg-indigo-50/70 dark:bg-indigo-950/30 border-indigo-300 dark:border-indigo-800 font-semibold'
                             : 'bg-background border-border/50 text-muted-foreground hover:bg-muted/30'
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center gap-2.5">
                           <div
-                            className={`w-4 h-4 rounded flex items-center justify-center border transition-colors ${
-                              isChecked
+                            className={`w-4 h-4 rounded flex items-center justify-center border transition-colors ${isChecked
                                 ? 'bg-indigo-600 border-indigo-600 text-white'
                                 : 'border-slate-300 dark:border-zinc-700 bg-background'
-                            }`}
+                              }`}
                           >
-                            {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                            {isChecked && <Check className="w-3 h-3 stroke-3" />}
                           </div>
                           <span>
                             👤 {crewAss.crew?.name || 'Kru'} ({crewAss.role})
@@ -3716,8 +3703,8 @@ export default function SpjFinancePage() {
               <span className="font-mono font-bold text-sm text-indigo-700 dark:text-indigo-300">
                 {formatRupiah(
                   perpalSelectedCrew.length *
-                    (Number(perpalDays) || 1) *
-                    (Number(cleanDots(perpalRatePerDay)) || 0),
+                  (Number(perpalDays) || 1) *
+                  (Number(cleanDots(perpalRatePerDay)) || 0),
                 )}
               </span>
             </div>
@@ -3814,21 +3801,19 @@ export default function SpjFinancePage() {
                       <div
                         key={crewAss.id}
                         onClick={() => toggleFullSeatCrew(crewAss.id)}
-                        className={`flex items-center justify-between p-2.5 rounded-lg border cursor-pointer transition-colors text-xs select-none ${
-                          isChecked
+                        className={`flex items-center justify-between p-2.5 rounded-lg border cursor-pointer transition-colors text-xs select-none ${isChecked
                             ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 font-semibold'
                             : 'bg-background border-border/50 text-muted-foreground hover:bg-muted/30'
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center gap-2.5">
                           <div
-                            className={`w-4 h-4 rounded flex items-center justify-center border transition-colors ${
-                              isChecked
+                            className={`w-4 h-4 rounded flex items-center justify-center border transition-colors ${isChecked
                                 ? 'bg-emerald-600 border-emerald-600 text-white'
                                 : 'border-slate-300 dark:border-zinc-700 bg-background'
-                            }`}
+                              }`}
                           >
-                            {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                            {isChecked && <Check className="w-3 h-3 stroke-3" />}
                           </div>
                           <span>
                             👤 {crewAss.crew?.name || 'Kru'} ({crewAss.role})

@@ -26,40 +26,25 @@ export class DocumentSequenceService {
     entityManager?: EntityManager,
   ): Promise<string> {
     const executeLogic = async (manager: EntityManager): Promise<string> => {
-      let sequence = await manager.findOne(DocumentSequenceEntity, {
-        where: {
-          documentType,
-          periodKey,
-        },
-        lock: { mode: 'pessimistic_write' },
-      });
-
-      if (!sequence) {
-        sequence = manager.create(DocumentSequenceEntity, {
-          documentType,
-          periodKey,
-          prefix,
-          lastNumber: 1,
-          padding,
-          companyId,
-          isActive: true,
-        });
-        await manager.save(sequence);
-        return `${prefix}/${String(1).padStart(padding, '0')}`;
-      }
-
-      if (prefix && sequence.prefix !== prefix) {
-        sequence.prefix = prefix;
-      }
-
-      sequence.lastNumber += 1;
-      await manager.save(sequence);
-
-      const formattedNumber = String(sequence.lastNumber).padStart(
-        sequence.padding || padding,
-        '0',
+      const rows = await manager.query(
+        `INSERT INTO "document_sequences" ("id", "document_type", "period_key", "prefix", "last_number", "padding", "company_id", "is_active", "createdAt", "updatedAt")
+         VALUES (gen_random_uuid(), $1, $2, $3, 1, $4, $5, true, NOW(), NOW())
+         ON CONFLICT ("document_type", "period_key")
+         DO UPDATE SET 
+           "last_number" = "document_sequences"."last_number" + 1,
+           "prefix" = CASE WHEN $3 != '' THEN $3 ELSE "document_sequences"."prefix" END,
+           "updatedAt" = NOW()
+         RETURNING "last_number", "prefix", "padding"`,
+        [documentType, periodKey, prefix, padding, companyId || null],
       );
-      return `${sequence.prefix}/${formattedNumber}`;
+
+      const row = rows[0];
+      const nextNumber = Number(row.last_number ?? row.lastNumber);
+      const rowPrefix = row.prefix || prefix;
+      const rowPadding = Number(row.padding) || padding;
+
+      const formattedNumber = String(nextNumber).padStart(rowPadding, '0');
+      return `${rowPrefix}/${formattedNumber}`;
     };
 
     if (entityManager) {
