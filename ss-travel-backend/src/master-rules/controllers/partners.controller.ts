@@ -19,6 +19,9 @@ import { PartnersService } from '../services/partners.service';
 import {
   CreateRestaurantDto,
   UpdateRestaurantDto,
+  CreateCoordinatorDto,
+  UpdateCoordinatorDto,
+  CoordinatorFilterDto,
   CreateCoordinatorFeeRuleDto,
   UpdateCoordinatorFeeRuleDto,
   CalculateMealExpenseQueryDto,
@@ -113,6 +116,76 @@ export class PartnersController {
   @ApiOperation({ summary: 'Menghapus rumah makan mitra' })
   async deleteRestaurant(@Param('id') id: string): Promise<ResponseInterface> {
     const result = await this.partnersService.deleteRestaurant(id);
+    return {
+      status: true,
+      message: result.message,
+    };
+  }
+
+  // ==========================================
+  // MASTER FIELD COORDINATORS (KORLAP)
+  // ==========================================
+
+  @Get('coordinators')
+  @RequirePermissions('Partners:read')
+  @ApiOperation({ summary: 'Mendapatkan seluruh daftar master koordinator lapangan eksternal' })
+  async findAllCoordinators(
+    @Query() filter: CoordinatorFilterDto,
+  ): Promise<ResponseInterface> {
+    const data = await this.partnersService.findAllCoordinators(filter);
+    return {
+      status: true,
+      message: 'Daftar master koordinator lapangan berhasil diambil.',
+      data,
+    };
+  }
+
+  @Get('coordinators/:id')
+  @RequirePermissions('Partners:read')
+  @ApiOperation({ summary: 'Mendapatkan detail profil master koordinator lapangan' })
+  async findOneCoordinator(@Param('id') id: string): Promise<ResponseInterface> {
+    const data = await this.partnersService.findOneCoordinator(id);
+    return {
+      status: true,
+      message: 'Detail koordinator lapangan berhasil diambil.',
+      data,
+    };
+  }
+
+  @Post('coordinators')
+  @RequirePermissions('Partners:create')
+  @ApiOperation({ summary: 'Mendaftarkan koordinator lapangan baru' })
+  async createCoordinator(
+    @Body() dto: CreateCoordinatorDto,
+  ): Promise<ResponseInterface> {
+    const data = await this.partnersService.createCoordinator(dto);
+    return {
+      status: true,
+      message: `Koordinator lapangan '${data.name}' berhasil ditambahkan.`,
+      data,
+    };
+  }
+
+  @Put('coordinators/:id')
+  @RequirePermissions('Partners:update')
+  @ApiOperation({ summary: 'Memperbarui profil koordinator lapangan & info rekening' })
+  async updateCoordinator(
+    @Param('id') id: string,
+    @Body() dto: UpdateCoordinatorDto,
+  ): Promise<ResponseInterface> {
+    const data = await this.partnersService.updateCoordinator(id, dto);
+    return {
+      status: true,
+      message: `Data koordinator '${data.name}' berhasil diperbarui.`,
+      data,
+    };
+  }
+
+  @Delete('coordinators/:id')
+  @RequirePermissions('Partners:delete')
+  @ApiOperation({ summary: 'Menghapus koordinator lapangan' })
+  async deleteCoordinator(@Param('id') id: string): Promise<ResponseInterface> {
+    const result = await this.partnersService.deleteCoordinator(id);
     return {
       status: true,
       message: result.message,

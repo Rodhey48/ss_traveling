@@ -6,6 +6,7 @@ import { AgentEntity } from '../@models/master-rules/agent.entity';
 import { AgentCommissionRuleEntity } from '../@models/master-rules/agent-commission-rule.entity';
 import { CrewRateRuleEntity } from '../@models/master-rules/crew-rate-rule.entity';
 import { RestaurantEntity } from '../@models/master-rules/restaurant.entity';
+import { CoordinatorEntity } from '../@models/master-rules/coordinator.entity';
 import { CoordinatorFeeRuleEntity } from '../@models/master-rules/coordinator-fee-rule.entity';
 import { RouteEntity } from '../@models/master-rules/route.entity';
 import { SeatClassEntity } from '../@models/fleet/seat-class.entity';
@@ -33,6 +34,7 @@ import { JWTService } from '../@services/jwt/jwt.service';
       AgentCommissionRuleEntity,
       CrewRateRuleEntity,
       RestaurantEntity,
+      CoordinatorEntity,
       CoordinatorFeeRuleEntity,
       RouteEntity,
       SeatClassEntity,

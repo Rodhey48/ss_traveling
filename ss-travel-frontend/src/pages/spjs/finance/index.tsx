@@ -1981,7 +1981,18 @@ export default function SpjFinancePage() {
                           {formatRupiah(cf.totalFee)}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
-                          👤 {cf.coordinatorUser?.name || 'Umum (Semua SPJ)'}
+                          {cf.coordinator ? (
+                            <div>
+                              <span className="font-bold text-foreground">[{cf.coordinator.code}] {cf.coordinator.name}</span>
+                              {cf.coordinator.organizationName && (
+                                <span className="block text-[11px] text-muted-foreground">{cf.coordinator.organizationName}</span>
+                              )}
+                            </div>
+                          ) : cf.coordinatorUser ? (
+                            <span>👤 {cf.coordinatorUser.name}</span>
+                          ) : (
+                            <span>Umum (Semua SPJ)</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-center">
                           {cf.status === 'PAID' ? (

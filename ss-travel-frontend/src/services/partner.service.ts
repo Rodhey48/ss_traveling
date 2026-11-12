@@ -4,13 +4,17 @@ import type {
   Restaurant,
   RestaurantFormData,
   CalculatedMealResult,
+  Coordinator,
+  CoordinatorFormData,
   CoordinatorFeeRule,
   CoordinatorFeeRuleFormData,
   CalculatedCoordinatorFeeResult,
 } from '@/types';
 
 export const PartnerService = {
-  // Restaurants
+  // ==========================================
+  // RESTAURANTS
+  // ==========================================
   findAllRestaurants: async (): Promise<BaseResponse<Restaurant[]>> => {
     const response = await api.get<BaseResponse<Restaurant[]>>('api/v1/partners/restaurants');
     return response.data;
@@ -57,7 +61,54 @@ export const PartnerService = {
     return response.data;
   },
 
-  // Coordinator Fees
+  // ==========================================
+  // MASTER FIELD COORDINATORS (KORLAP)
+  // ==========================================
+  findAllCoordinators: async (params?: {
+    search?: string;
+    area?: string;
+    type?: string;
+    isActive?: boolean;
+  }): Promise<BaseResponse<Coordinator[]>> => {
+    const response = await api.get<BaseResponse<Coordinator[]>>('api/v1/partners/coordinators', {
+      params,
+    });
+    return response.data;
+  },
+
+  findOneCoordinator: async (id: string): Promise<BaseResponse<Coordinator>> => {
+    const response = await api.get<BaseResponse<Coordinator>>(`api/v1/partners/coordinators/${id}`);
+    return response.data;
+  },
+
+  createCoordinator: async (data: CoordinatorFormData): Promise<BaseResponse<Coordinator>> => {
+    const response = await api.post<BaseResponse<Coordinator>>('api/v1/partners/coordinators', data);
+    return response.data;
+  },
+
+  updateCoordinator: async (
+    id: string,
+    data: Partial<CoordinatorFormData>,
+  ): Promise<BaseResponse<Coordinator>> => {
+    const response = await api.put<BaseResponse<Coordinator>>(
+      `api/v1/partners/coordinators/${id}`,
+      data,
+    );
+    return response.data;
+  },
+
+  deleteCoordinator: async (
+    id: string,
+  ): Promise<BaseResponse<{ success: boolean; message: string }>> => {
+    const response = await api.delete<BaseResponse<{ success: boolean; message: string }>>(
+      `api/v1/partners/coordinators/${id}`,
+    );
+    return response.data;
+  },
+
+  // ==========================================
+  // COORDINATOR FEE RULES
+  // ==========================================
   findAllCoordinatorFees: async (): Promise<BaseResponse<CoordinatorFeeRule[]>> => {
     const response = await api.get<BaseResponse<CoordinatorFeeRule[]>>(
       'api/v1/partners/coordinator-fees',

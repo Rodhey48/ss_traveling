@@ -2,6 +2,29 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-11-12: Rework Master Koordinator Lapangan (Mitra Eksternal) & Integrasi Filter Finansial Dinamis Completed
+- **Pemisahan Identitas Master Koordinator dari User Internal (`coordinators`)**:
+  - Dibuat entitas independen `CoordinatorEntity` (`master-rules/coordinator.entity.ts`) dengan atribut: `code`, `name`, `type` (`INDIVIDUAL`/`ORGANIZATION`), `organizationName` (nama paguyuban pengurus jalur), `phone` (nomor WhatsApp), `email`, `area` (basis terminal), `address`, `bankName`, `bankAccountNumber`, `bankAccountHolder`, `notes`, dan `isActive`.
+  - Migrasi TypeORM `1794390000000-CreateCoordinatorsMasterTableAndLinkRules.ts` berhasil dieksekusi: membuat tabel `coordinators`, menambahkan FK `coordinator_id` ke tabel `coordinator_fee_rules`, `spj_coordination_fees`, dan `coordination_fee_batches`, serta melakukan seeding data master pengurus jalur (`KOR-BRT-01` H. Ahmad Sodik - Paguyuban Jalur Barat, `KOR-TMR-01` Bambang Triyono - Paguyuban Jalur Timur, `KOR-TGH-01` Sutrisno Widodo - Korlap Jalur Tengah) dan backfill otomatis.
+  - Snapshot data perbankan penerima pada entitas `CoordinationFeeBatchEntity` (`coordinatorBankName`, `coordinatorBankAccountNo`, `coordinatorBankAccountHolder`, `coordinatorPhone`) untuk audit immutability settlement gelondongan.
+- **Backend API & Service Layer (`/api/v1/partners`, `/api/v1/finance/coordination-fees`)**:
+  - Endpoint CRUD Master Koordinator di `PartnersController`: `GET /partners/coordinators`, `GET /partners/coordinators/:id`, `POST /partners/coordinators`, `PUT /partners/coordinators/:id`, `DELETE /partners/coordinators/:id`.
+  - Pembaruan `PartnersService` & `CoordinationFeesService`: kalkulasi fee rute menyertakan relasi dan snapshot perbankan koordinator (`bankName`, `bankAccountNumber`, `bankAccountHolder`, `phone`).
+  - Filter pencarian siap bayar gelondongan mendukung parameter `routeId` (Master Rute dinamis) dan `coordinatorId`.
+  - Format pesan rincian WhatsApp (`whatsappRemittanceText`) otomatis memuat data rekening penerima, nomor WhatsApp, nomor batch, rincian per SPJ, dan total transfer.
+  - Seluruh test suite backend lulus 100% (36 test suites, 276 tests) serta penambahan suite E2E baru `test/coordinators.e2e-spec.ts` (6 tests passed 100%).
+- **Frontend Master Data & Manajemen Keuangan UI**:
+  - Halaman `/partners` diperkaya dengan subtab tersegmentasi:
+    - **Daftar Master Koordinator**: Tabel profil pengurus jalur, tipe entitas (Paguyuban/Personal), link WhatsApp langsung (`wa.me`), badge bank dan nomor rekening, status aktif, serta modal pendaftaran/edit `CoordinatorModal`.
+    - **Aturan Tarif Fee per Rute**: Tabel rute trayek yang terikat ke Master Rute dan Master Koordinator penerima fee.
+  - Komponen `CoordinatorFeeModal` diperbarui dengan dropdown pilihan Master Koordinator eksternal.
+  - Halaman `/finance/coordination-fees` disempurnakan:
+    - **Filter Rute Dinamis**: Lookup otomatis dari data Master Rute (`routes`) menggantikan filter hardcoded.
+    - **Filter Koordinator Dinamis**: Lookup otomatis dari entitas Master Koordinator (`coordinators`).
+    - **Detail Rekening & Callout Card**: Kolom nomor rekening bank dan kontak WhatsApp di tabel tagihan siap bayar gelondongan.
+    - **Modal Eksekusi Transfer Gelondongan**: Menampilkan Callout Box informatif berisi nama bank, nomor rekening penerima, atas nama pemilik rekening, tombol 1-klik "Salin No. Rekening", tombol 1-klik "Salin Nominal", serta tombol langsung kirim rincian via WhatsApp Web.
+  - Frontend production build (`yarn build`) bersih dan sukses 100%.
+
 ### 2026-11-11: Implementasi Master Rute (Trayek) & Integrasi Matriks Tarif Tiket Dinamis Completed
 - **Entitas & Arsitektur Master Rute (`routes`)**:
   - Dibuat entitas `RouteEntity` (`master-rules/route.entity.ts`) dengan atribut `code`, `name`, `origin`, `destination`, `via`, `distanceKm`, `estimatedHours`, `serviceType` (`AKAP`/`WISATA`/`SHUTTLE`), dan `isActive`.

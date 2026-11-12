@@ -11,6 +11,7 @@ import { SpjLegEntity } from './spj-leg.entity';
 import { UsersEntity } from '../user/user.entity';
 import { JournalEntryEntity } from '../finance/journal-entry.entity';
 import { CoordinationFeeBatchEntity } from '../finance/coordination-fee-batch.entity';
+import { CoordinatorEntity } from '../master-rules/coordinator.entity';
 
 export enum SpjCoordinationFeeStatus {
   UNPAID = 'UNPAID',
@@ -82,6 +83,13 @@ export class SpjCoordinationFeeEntity extends BaseEntity {
     },
   })
   totalFee!: number;
+
+  @Column({ type: 'uuid', name: 'coordinator_id', nullable: true })
+  coordinatorId?: string;
+
+  @ManyToOne(() => CoordinatorEntity, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'coordinator_id' })
+  coordinator?: CoordinatorEntity;
 
   @Column({ type: 'uuid', name: 'coordinator_user_id', nullable: true })
   coordinatorUserId?: string;

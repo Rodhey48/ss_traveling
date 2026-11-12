@@ -18,6 +18,7 @@ import {
   CoordinationFeeBatchEntity,
   CoordinationFeeBatchStatus,
 } from '../../@models/finance/coordination-fee-batch.entity';
+import { CoordinatorEntity } from '../../@models/master-rules/coordinator.entity';
 import { AccountingPostingService } from './accounting-posting.service';
 import { DocumentSequenceService } from './document-sequence.service';
 import { JournalReversalService } from './journal-reversal.service';
@@ -26,6 +27,7 @@ describe('CoordinationFeesService', () => {
   let service: CoordinationFeesService;
   let spjRepo: any;
   let legRepo: any;
+  let coordinatorRepo: any;
   let ruleRepo: any;
   let spjFeeRepo: any;
   let batchRepo: any;
@@ -41,6 +43,10 @@ describe('CoordinationFeesService', () => {
     };
     legRepo = {
       find: jest.fn(),
+    };
+    coordinatorRepo = {
+      find: jest.fn(),
+      findOne: jest.fn(),
     };
     ruleRepo = {
       find: jest.fn(),
@@ -90,6 +96,7 @@ describe('CoordinationFeesService', () => {
         CoordinationFeesService,
         { provide: getRepositoryToken(SpjEntity), useValue: spjRepo },
         { provide: getRepositoryToken(SpjLegEntity), useValue: legRepo },
+        { provide: getRepositoryToken(CoordinatorEntity), useValue: coordinatorRepo },
         { provide: getRepositoryToken(CoordinatorFeeRuleEntity), useValue: ruleRepo },
         { provide: getRepositoryToken(SpjCoordinationFeeEntity), useValue: spjFeeRepo },
         { provide: getRepositoryToken(CoordinationFeeBatchEntity), useValue: batchRepo },

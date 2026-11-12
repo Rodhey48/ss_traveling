@@ -17,11 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { UserCheck, Loader2, Route as RouteIcon } from 'lucide-react';
+import { UserCheck, Loader2, Route as RouteIcon, Landmark } from 'lucide-react';
 import type {
   CoordinatorFeeRule,
   CoordinatorFeeRuleFormData,
-  User,
+  Coordinator,
   Route,
 } from '@/types';
 import { RouteService } from '@/services/route.service';
@@ -32,7 +32,7 @@ interface CoordinatorFeeModalProps {
   onClose: () => void;
   onSubmit: (data: CoordinatorFeeRuleFormData) => Promise<void>;
   rule: CoordinatorFeeRule | null;
-  users: User[];
+  coordinators?: Coordinator[];
   loading: boolean;
 }
 
@@ -41,7 +41,7 @@ export default function CoordinatorFeeModal({
   onClose,
   onSubmit,
   rule,
-  users,
+  coordinators = [],
   loading,
 }: CoordinatorFeeModalProps) {
   const [availableRoutes, setAvailableRoutes] = useState<Route[]>([]);
@@ -49,6 +49,7 @@ export default function CoordinatorFeeModal({
     routeId: '',
     origin: 'ALL',
     destination: 'ALL',
+    coordinatorId: '',
     coordinatorUserId: '',
     feePerPax: 10000,
     isActive: true,
@@ -80,6 +81,7 @@ export default function CoordinatorFeeModal({
         routeId: rule.routeId || '',
         origin: rule.origin,
         destination: rule.destination,
+        coordinatorId: rule.coordinatorId || '',
         coordinatorUserId: rule.coordinatorUserId || '',
         feePerPax: Number(rule.feePerPax),
         isActive: rule.isActive ?? true,
@@ -89,6 +91,7 @@ export default function CoordinatorFeeModal({
         routeId: '',
         origin: 'ALL',
         destination: 'ALL',
+        coordinatorId: '',
         coordinatorUserId: '',
         feePerPax: 10000,
         isActive: true,
@@ -120,80 +123,86 @@ export default function CoordinatorFeeModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.feePerPax <= 0) {
-      toast.error('Besaran fee korlap per penumpang harus lebih dari Rp 0');
+    if (!formData.origin.trim() || !formData.destination.trim()) {
+      toast.error('Kota Asal dan Kota Tujuan wajib diisi');
       return;
     }
-
-    if (!formData.origin || !formData.destination) {
-      toast.error('Kota asal dan kota tujuan wajib diisi');
+    if (formData.feePerPax <= 0) {
+      toast.error('Tarif fee korlap per penumpang harus lebih dari Rp 0');
       return;
     }
 
     await onSubmit({
-      ...formData,
       routeId: formData.routeId || undefined,
-      origin: formData.origin.toUpperCase().trim(),
-      destination: formData.destination.toUpperCase().trim(),
+      origin: formData.origin.trim().toUpperCase(),
+      destination: formData.destination.trim().toUpperCase(),
+      coordinatorId: formData.coordinatorId || undefined,
+      coordinatorUserId: formData.coordinatorUserId || undefined,
       feePerPax: Number(formData.feePerPax),
-      coordinatorUserId:
-        formData.coordinatorUserId && formData.coordinatorUserId !== 'NONE'
-          ? formData.coordinatorUserId
-          : undefined,
+      isActive: formData.isActive,
     });
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg font-bold">
+          <div className="flex items-center gap-2">
             <div className="p-2 rounded-lg bg-primary/10 text-primary">
-              <UserCheck className="h-5 w-5" />
+              <UserCheck className="w-5 h-5" />
             </div>
             <div>
-              {rule ? 'Edit Aturan Fee Jasa Korlap' : 'Tambah Aturan Fee Jasa Korlap'}
+              <DialogTitle className="text-base font-semibold">
+                {rule ? 'Edit Aturan Fee Korlap' : 'Tambah Aturan Fee Korlap'}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground">
+                Tentukan besaran fee per pax untuk koordinator lapangan berdasarkan rute perjalanan.
+              </DialogDescription>
             </div>
-          </DialogTitle>
-          <DialogDescription className="text-xs">
-            {rule
-              ? 'Perbarui standar fee jasa penanganan penumpang untuk rute operasional ini.'
-              : 'Konfigurasikan besaran fee korlap per penumpang berdasarkan master rute trayek atau titik rute umum.'}
-          </DialogDescription>
+          </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 py-2">
-          {/* Pilihan Master Rute */}
-          {!rule && availableRoutes.length > 0 && (
-            <div className="space-y-1.5 p-3 rounded-lg border bg-muted/20">
-              <Label className="text-xs font-semibold flex items-center gap-1.5">
-                <RouteIcon className="h-3.5 w-3.5 text-indigo-600" />
-                Pilih Dari Master Rute Trayek (Otomatis)
+        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+          {/* Pilih Master Rute */}
+          <div className="space-y-1.5 p-3 rounded-lg border border-primary/20 bg-primary/5">
+            <div className="flex items-center gap-2">
+              <RouteIcon className="w-4 h-4 text-primary" />
+              <Label htmlFor="masterRouteSelect" className="text-xs font-semibold text-primary">
+                Pilih Dari Master Rute (Trayek)
               </Label>
-              <Select
-                value={formData.routeId || 'CUSTOM'}
-                onValueChange={handleRouteChange}
-                disabled={loading}
-              >
-                <SelectTrigger className="h-9 text-xs">
-                  <SelectValue placeholder="Pilih rute trayek..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="CUSTOM">
-                    -- Masukkan Manual / Rute Umum (ALL - ALL) --
-                  </SelectItem>
-                  {availableRoutes.map((r) => (
-                    <SelectItem key={r.id} value={r.id}>
-                      {r.code} - {r.name} ({r.origin} ➔ {r.destination})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-[11px] text-muted-foreground">
-                Memilih master rute akan langsung mengaitkan aturan tarif dan mengisi kota asal/tujuan secara otomatis.
-              </p>
             </div>
-          )}
+            <Select
+              value={formData.routeId || (formData.origin === 'ALL' && formData.destination === 'ALL' ? 'ALL' : 'CUSTOM')}
+              onValueChange={(val) => {
+                if (val === 'ALL') {
+                  setFormData((prev) => ({ ...prev, routeId: '', origin: 'ALL', destination: 'ALL' }));
+                } else {
+                  handleRouteChange(val);
+                }
+              }}
+              disabled={Boolean(rule) || loading}
+            >
+              <SelectTrigger id="masterRouteSelect" className="text-xs h-9 bg-white dark:bg-slate-900">
+                <SelectValue placeholder="-- Pilih Master Rute Trayek --" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL" className="text-xs font-medium">
+                  🌐 Semua Rute (Default Fallback: ALL ➔ ALL)
+                </SelectItem>
+                <SelectItem value="CUSTOM" className="text-xs font-medium">
+                  ✏️ Input Manual Asal - Tujuan
+                </SelectItem>
+                {availableRoutes.map((r) => (
+                  <SelectItem key={r.id} value={r.id} className="text-xs">
+                    [{r.code}] {r.name} ({r.origin} ➔ {r.destination})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-[11px] text-muted-foreground">
+              Memilih master rute akan otomatis mengunci nama rute, asal, dan tujuan.
+            </p>
+          </div>
 
           {/* Kota Asal (Origin) */}
           <div className="space-y-1.5">
@@ -237,35 +246,38 @@ export default function CoordinatorFeeModal({
             />
           </div>
 
-          {/* Personel Korlap Lapangan */}
+          {/* Master Koordinator Lapangan Eksternal */}
           <div className="space-y-1.5">
-            <Label htmlFor="coordinatorUser" className="text-xs font-semibold">
-              Personel Korlap Lapangan (Opsional)
+            <Label htmlFor="coordinatorSelect" className="text-xs font-semibold flex items-center gap-1.5">
+              <Landmark className="w-3.5 h-3.5 text-amber-500" /> Koordinator Lapangan / Pengurus Jalur
             </Label>
             <Select
-              value={formData.coordinatorUserId || 'NONE'}
+              value={formData.coordinatorId || 'NONE'}
               onValueChange={(val) =>
                 setFormData((prev) => ({
                   ...prev,
-                  coordinatorUserId: val === 'NONE' ? '' : val,
+                  coordinatorId: val === 'NONE' ? '' : val,
                 }))
               }
               disabled={loading}
             >
-              <SelectTrigger id="coordinatorUser" className="text-xs h-9">
-                <SelectValue placeholder="Pilih Korlap Penanggung Jawab" />
+              <SelectTrigger id="coordinatorSelect" className="text-xs h-9">
+                <SelectValue placeholder="Pilih Koordinator Lapangan" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="NONE" className="text-xs text-muted-foreground">
-                  -- Tanpa Korlap Spesifik (Umum) --
+                  -- Tanpa Koordinator Spesifik (Umum) --
                 </SelectItem>
-                {users.map((u) => (
-                  <SelectItem key={u.id} value={u.id} className="text-xs">
-                    {u.name} {u.phone ? `(${u.phone})` : ''}
+                {coordinators.map((c) => (
+                  <SelectItem key={c.id} value={c.id} className="text-xs">
+                    {c.code} - {c.name} {c.organizationName ? `(${c.organizationName})` : ''} [{c.bankName}]
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            <p className="text-[11px] text-muted-foreground">
+              Koordinator eksternal yang akan menerima pencairan transfer settlement fee ini.
+            </p>
           </div>
 
           {/* Besaran Fee Per Pax */}
@@ -281,9 +293,10 @@ export default function CoordinatorFeeModal({
             <Input
               id="feePerPax"
               type="number"
-              step="500"
-              min="0"
-              value={formData.feePerPax}
+              min={0}
+              step={500}
+              placeholder="Contoh: 10000"
+              value={formData.feePerPax || ''}
               onChange={(e) =>
                 setFormData((prev) => ({
                   ...prev,
@@ -294,25 +307,56 @@ export default function CoordinatorFeeModal({
               required
               disabled={loading}
             />
-            <p className="text-[11px] text-muted-foreground">
-              Tarif standar perintis: Rp 10.000 / tiket. Nilai ini menjadi dasar otomatisasi utang jasa pada SPJ.
-            </p>
           </div>
 
-          <DialogFooter className="pt-2 gap-2">
+          {/* Status Aturan */}
+          <div className="space-y-1.5">
+            <Label htmlFor="status" className="text-xs font-semibold">
+              Status Aturan
+            </Label>
+            <Select
+              value={formData.isActive ? 'true' : 'false'}
+              onValueChange={(val) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  isActive: val === 'true',
+                }))
+              }
+              disabled={loading}
+            >
+              <SelectTrigger id="status" className="text-xs h-9">
+                <SelectValue placeholder="Pilih Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="true" className="text-xs text-emerald-600 font-medium">
+                  Aktif Digunakan
+                </SelectItem>
+                <SelectItem value="false" className="text-xs text-muted-foreground">
+                  Non-Aktif (Diarsipkan)
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <DialogFooter className="pt-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={onClose}
               disabled={loading}
-              className="text-xs"
+              className="text-xs h-9"
             >
               Batal
             </Button>
-            <Button type="submit" size="sm" disabled={loading} className="text-xs gap-1.5">
-              {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {rule ? 'Simpan Perubahan' : 'Buat Aturan Fee'}
+            <Button
+              type="submit"
+              size="sm"
+              disabled={loading}
+              className="text-xs h-9"
+            >
+              {loading && <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />}
+              {rule ? 'Simpan Perubahan' : 'Buat Aturan'}
             </Button>
           </DialogFooter>
         </form>

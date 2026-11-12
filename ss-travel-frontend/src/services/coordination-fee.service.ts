@@ -8,6 +8,8 @@ import type {
 
 export const CoordinationFeeService = {
   getPendingFees: async (query?: {
+    routeId?: string;
+    coordinatorId?: string;
     origin?: string;
     destination?: string;
     search?: string;
@@ -47,7 +49,7 @@ export const CoordinationFeeService = {
 
   updateRule: async (
     ruleId: string,
-    data: { feePerPax: string; coordinatorUserId?: string },
+    data: { feePerPax: string; coordinatorId?: string; coordinatorUserId?: string },
   ): Promise<CoordinatorFeeRule> => {
     const response = await api.put(
       `api/v1/finance/coordination-fees/rules/${ruleId}`,

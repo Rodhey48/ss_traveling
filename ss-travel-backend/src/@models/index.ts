@@ -41,6 +41,7 @@ export * from './master-rules/agent.entity';
 export * from './master-rules/agent-commission-rule.entity';
 export * from './master-rules/crew-rate-rule.entity';
 export * from './master-rules/restaurant.entity';
+export * from './master-rules/coordinator.entity';
 export * from './master-rules/coordinator-fee-rule.entity';
 export * from './master-rules/route.entity';
 export * from './trips/trip-schedule.entity';

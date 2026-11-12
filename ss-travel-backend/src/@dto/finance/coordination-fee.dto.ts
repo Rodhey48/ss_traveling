@@ -28,6 +28,13 @@ export class CreateCoordinationFeeBatchDto {
   @IsString()
   destination!: string;
 
+  @ApiPropertyOptional({
+    description: 'ID Master Koordinator Lapangan penerima transfer',
+  })
+  @IsOptional()
+  @IsUUID()
+  coordinatorId?: string;
+
   @ApiProperty({
     type: [String],
     description: 'Daftar ID kewajiban koordinasi SPJ yang akan dibayar gelondongan',
@@ -79,6 +86,20 @@ export class CreateCoordinationFeeBatchDto {
 
 export class CoordinationFeeFilterDto {
   @ApiPropertyOptional({
+    description: 'Filter berdasarkan ID Master Rute',
+  })
+  @IsOptional()
+  @IsUUID()
+  routeId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter berdasarkan ID Master Koordinator Lapangan',
+  })
+  @IsOptional()
+  @IsUUID()
+  coordinatorId?: string;
+
+  @ApiPropertyOptional({
     description: 'Filter berdasarkan origin / rute asal',
   })
   @IsOptional()
@@ -110,7 +131,14 @@ export class UpdateCoordinatorFeeRuleDto {
   feePerPax!: string;
 
   @ApiPropertyOptional({
-    description: 'ID pengguna penanggung jawab koordinator wilayah',
+    description: 'ID Master Koordinator Lapangan Eksternal',
+  })
+  @IsOptional()
+  @IsUUID()
+  coordinatorId?: string;
+
+  @ApiPropertyOptional({
+    description: 'ID pengguna penanggung jawab koordinator wilayah - Deprecated',
   })
   @IsOptional()
   @IsUUID()

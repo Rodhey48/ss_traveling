@@ -13,6 +13,9 @@ import {
   JournalSourceType,
 } from '../../@models';
 import {
+  CoordinatorEntity,
+} from '../../@models/master-rules/coordinator.entity';
+import {
   CoordinatorFeeRuleEntity,
 } from '../../@models/master-rules/coordinator-fee-rule.entity';
 import {
@@ -41,6 +44,9 @@ export class CoordinationFeesService {
 
     @InjectRepository(SpjLegEntity)
     private readonly legRepo: Repository<SpjLegEntity>,
+
+    @InjectRepository(CoordinatorEntity)
+    private readonly coordinatorRepo: Repository<CoordinatorEntity>,
 
     @InjectRepository(CoordinatorFeeRuleEntity)
     private readonly ruleRepo: Repository<CoordinatorFeeRuleEntity>,
@@ -85,7 +91,7 @@ export class CoordinationFeesService {
 
     const rules = await this.ruleRepo.find({
       where: spj.companyId ? { companyId: spj.companyId, isActive: true } : { isActive: true },
-      relations: ['coordinatorUser'],
+      relations: ['coordinator', 'coordinatorUser'],
     });
 
     const ruleFallback = rules.find((r) => r.origin === 'ALL' && r.destination === 'ALL');
@@ -176,6 +182,7 @@ export class CoordinationFeesService {
           ticketCount,
           feePerPax,
           totalFee,
+          coordinatorId: rule?.coordinatorId,
           coordinatorUserId: rule?.coordinatorUserId,
           status: SpjCoordinationFeeStatus.UNPAID,
           notes: `Uang koordinasi Rute (${leg.origin} ➔ ${leg.destination})`,
@@ -186,6 +193,9 @@ export class CoordinationFeesService {
         feeEntity.ticketCount = ticketCount;
         feeEntity.feePerPax = feePerPax;
         feeEntity.totalFee = totalFee;
+        if (rule?.coordinatorId) {
+          feeEntity.coordinatorId = rule.coordinatorId;
+        }
         if (rule?.coordinatorUserId) {
           feeEntity.coordinatorUserId = rule.coordinatorUserId;
         }
@@ -311,7 +321,7 @@ export class CoordinationFeesService {
   async getSpjCoordinationFees(spjId: string): Promise<SpjCoordinationFeeEntity[]> {
     return this.spjFeeRepo.find({
       where: { spjId },
-      relations: ['spjLeg', 'settlementBatch', 'coordinatorUser'],
+      relations: ['spjLeg', 'settlementBatch', 'coordinator', 'coordinatorUser'],
       order: { createdAt: 'ASC' },
     });
   }
@@ -327,9 +337,20 @@ export class CoordinationFeesService {
       .leftJoinAndSelect('fee.spj', 'spj')
       .leftJoinAndSelect('spj.vehicle', 'vehicle')
       .leftJoinAndSelect('fee.spjLeg', 'leg')
+      .leftJoinAndSelect('fee.coordinator', 'coordinator')
       .leftJoinAndSelect('fee.coordinatorUser', 'coordinatorUser')
       .where('fee.status = :status', { status: SpjCoordinationFeeStatus.UNPAID })
       .andWhere('fee.total_fee > 0');
+
+    if (query?.routeId) {
+      qb.andWhere('spj.routeId = :routeId', { routeId: query.routeId });
+    }
+
+    if (query?.coordinatorId) {
+      qb.andWhere('(fee.coordinatorId = :coordinatorId OR coordinator.id = :coordinatorId)', {
+        coordinatorId: query.coordinatorId,
+      });
+    }
 
     if (query?.origin) {
       qb.andWhere('fee.origin ILIKE :origin', { origin: `%${query.origin}%` });
@@ -341,7 +362,7 @@ export class CoordinationFeesService {
 
     if (query?.search) {
       qb.andWhere(
-        '(spj.spjNo ILIKE :search OR leg.origin ILIKE :search OR leg.destination ILIKE :search OR coordinatorUser.name ILIKE :search)',
+        '(spj.spjNo ILIKE :search OR leg.origin ILIKE :search OR leg.destination ILIKE :search OR coordinator.name ILIKE :search OR coordinator.organizationName ILIKE :search OR coordinatorUser.name ILIKE :search)',
         { search: `%${query.search}%` },
       );
     }
@@ -366,7 +387,7 @@ export class CoordinationFeesService {
         id: In(dto.spjCoordinationFeeIds),
         status: SpjCoordinationFeeStatus.UNPAID,
       },
-      relations: ['spj', 'spjLeg', 'coordinatorUser'],
+      relations: ['spj', 'spjLeg', 'coordinator', 'coordinatorUser'],
     });
 
     if (fees.length === 0) {
@@ -399,8 +420,12 @@ export class CoordinationFeesService {
     const uniqueSpjIds = new Set(fees.map((f) => f.spjId));
     const totalSpjs = uniqueSpjIds.size;
 
+    let coordinator = fees.find((f) => f.coordinator)?.coordinator;
+    if (!coordinator && dto.coordinatorId) {
+      coordinator = (await this.coordinatorRepo.findOne({ where: { id: dto.coordinatorId } })) || undefined;
+    }
     const coordinatorUser = fees.find((f) => f.coordinatorUser)?.coordinatorUser;
-    const coordinatorName = coordinatorUser?.name || `Koordinator Rute ${dto.origin}-${dto.destination}`;
+    const coordinatorName = coordinator?.name || coordinatorUser?.name || `Koordinator Rute ${dto.origin}-${dto.destination}`;
 
     // Generate batch number
     const dateStr = dto.paymentDate.replace(/-/g, '').slice(0, 6);
@@ -432,14 +457,19 @@ export class CoordinationFeesService {
       userId,
     );
 
-    // Simpan data batch
+    // Simpan data batch beserta snapshot rekening penerima
     const batch = this.batchRepo.create({
       companyId: fees[0].companyId,
       batchNo,
       origin: dto.origin,
       destination: dto.destination,
+      coordinatorId: coordinator?.id,
       coordinatorUserId: coordinatorUser?.id,
       coordinatorName,
+      coordinatorBankName: coordinator?.bankName,
+      coordinatorBankAccountNo: coordinator?.bankAccountNumber,
+      coordinatorBankAccountHolder: coordinator?.bankAccountHolder,
+      coordinatorPhone: coordinator?.phone,
       totalSpjs,
       totalTickets,
       totalAmount,
@@ -470,7 +500,7 @@ export class CoordinationFeesService {
    */
   async getBatches(): Promise<CoordinationFeeBatchEntity[]> {
     return this.batchRepo.find({
-      relations: ['bankAccount', 'createdBy', 'coordinatorUser'],
+      relations: ['bankAccount', 'createdBy', 'coordinator', 'coordinatorUser'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -484,6 +514,7 @@ export class CoordinationFeesService {
       relations: [
         'bankAccount',
         'createdBy',
+        'coordinator',
         'coordinatorUser',
         'items',
         'items.spj',
@@ -503,8 +534,17 @@ export class CoordinationFeesService {
     waText += `No. Batch: ${batch.batchNo}\n`;
     waText += `Rute Korlap: ${batch.origin} ➔ ${batch.destination}\n`;
     waText += `Penerima: ${batch.coordinatorName}\n`;
+    if (batch.coordinator?.organizationName) {
+      waText += `Organisasi/Paguyuban: ${batch.coordinator.organizationName}\n`;
+    }
+    if (batch.coordinatorPhone) {
+      waText += `No. WhatsApp: ${batch.coordinatorPhone}\n`;
+    }
     waText += `Tanggal Transfer: ${batch.paymentDate}\n`;
-    waText += `Rekening Asal: ${batch.bankAccount?.name || 'Bank BCA'}\n`;
+    waText += `Rekening Asal: ${batch.bankAccount?.name || 'Bank Kantor'}\n`;
+    if (batch.coordinatorBankName) {
+      waText += `Rekening Tujuan: ${batch.coordinatorBankName} - ${batch.coordinatorBankAccountNo} (A.N. ${batch.coordinatorBankAccountHolder})\n`;
+    }
     waText += `Ref Transfer: ${batch.referenceNumber || '-'}\n`;
     waText += `Total SPJ: ${batch.totalSpjs} Trip Bus\n`;
     waText += `Total Penumpang: ${batch.totalTickets} Pax\n`;
@@ -522,7 +562,7 @@ export class CoordinationFeesService {
     }
 
     waText += `----------------------------------------\n`;
-    waText += `Terima kasih atas kerja samanya. Salam hangat, Finance PT SS Travelink Official.`;
+    waText += `Terima kasih atas kerja samanya mengawal kelancaran operasional bus PT SS Travelink Official.\nSalam hangat, Tim Keuangan & Operasional.`;
 
     return {
       ...batch,
@@ -535,7 +575,7 @@ export class CoordinationFeesService {
    */
   async getRules(): Promise<CoordinatorFeeRuleEntity[]> {
     return this.ruleRepo.find({
-      relations: ['coordinatorUser'],
+      relations: ['coordinator', 'coordinatorUser', 'route'],
       order: { origin: 'ASC', destination: 'ASC' },
     });
   }
@@ -554,6 +594,9 @@ export class CoordinationFeesService {
 
     if (dto.feePerPax !== undefined) {
       rule.feePerPax = Number(dto.feePerPax);
+    }
+    if (dto.coordinatorId !== undefined) {
+      rule.coordinatorId = dto.coordinatorId || undefined;
     }
     if (dto.coordinatorUserId !== undefined) {
       rule.coordinatorUserId = dto.coordinatorUserId;

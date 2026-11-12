@@ -11,6 +11,7 @@ import { UsersEntity } from '../user/user.entity';
 import { CashAccountEntity } from '../finance/cash-account.entity';
 import { JournalEntryEntity } from '../finance/journal-entry.entity';
 import { SpjCoordinationFeeEntity } from '../trips/spj-coordination-fee.entity';
+import { CoordinatorEntity } from '../master-rules/coordinator.entity';
 
 export enum CoordinationFeeBatchStatus {
   DRAFT = 'DRAFT',
@@ -43,6 +44,13 @@ export class CoordinationFeeBatchEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 100, default: 'ALL' })
   destination!: string;
 
+  @Column({ type: 'uuid', name: 'coordinator_id', nullable: true })
+  coordinatorId?: string;
+
+  @ManyToOne(() => CoordinatorEntity, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'coordinator_id' })
+  coordinator?: CoordinatorEntity;
+
   @Column({ type: 'uuid', name: 'coordinator_user_id', nullable: true })
   coordinatorUserId?: string;
 
@@ -52,6 +60,18 @@ export class CoordinationFeeBatchEntity extends BaseEntity {
 
   @Column({ type: 'varchar', length: 120, nullable: true, name: 'coordinator_name' })
   coordinatorName?: string;
+
+  @Column({ type: 'varchar', length: 50, nullable: true, name: 'coordinator_bank_name' })
+  coordinatorBankName?: string;
+
+  @Column({ type: 'varchar', length: 50, nullable: true, name: 'coordinator_bank_account_no' })
+  coordinatorBankAccountNo?: string;
+
+  @Column({ type: 'varchar', length: 150, nullable: true, name: 'coordinator_bank_account_holder' })
+  coordinatorBankAccountHolder?: string;
+
+  @Column({ type: 'varchar', length: 50, nullable: true, name: 'coordinator_phone' })
+  coordinatorPhone?: string;
 
   @Column({ type: 'int', name: 'total_spjs', default: 0 })
   totalSpjs!: number;

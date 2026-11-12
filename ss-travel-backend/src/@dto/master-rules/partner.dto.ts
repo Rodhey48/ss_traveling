@@ -12,6 +12,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { RestaurantSettlementType } from '../../@models/master-rules/restaurant.entity';
+import { CoordinatorType } from '../../@models/master-rules/coordinator.entity';
 
 export class CreateRestaurantDto {
   @ApiProperty({ example: 'RM-04', description: 'Kode unik rumah makan mitra' })
@@ -102,6 +103,165 @@ export class UpdateRestaurantDto {
   isActive?: boolean;
 }
 
+// ==========================================
+// MASTER FIELD COORDINATORS (KORLAP)
+// ==========================================
+
+export class CreateCoordinatorDto {
+  @ApiProperty({ example: 'KOR-BRT-02', description: 'Kode unik koordinator lapangan' })
+  @IsString()
+  @IsNotEmpty()
+  code!: string;
+
+  @ApiProperty({ example: 'H. Ahmad Sodik', description: 'Nama koordinator / PIC' })
+  @IsString()
+  @IsNotEmpty()
+  name!: string;
+
+  @ApiPropertyOptional({ enum: CoordinatorType, default: CoordinatorType.INDIVIDUAL })
+  @IsEnum(CoordinatorType)
+  @IsOptional()
+  type?: CoordinatorType;
+
+  @ApiPropertyOptional({ example: 'Paguyuban Pengurus Jalur Barat' })
+  @IsString()
+  @IsOptional()
+  organizationName?: string;
+
+  @ApiProperty({ example: '081298765432', description: 'Nomor WhatsApp / HP' })
+  @IsString()
+  @IsNotEmpty()
+  phone!: string;
+
+  @ApiPropertyOptional({ example: 'korlap@sstravelink.id' })
+  @IsString()
+  @IsOptional()
+  email?: string;
+
+  @ApiPropertyOptional({ example: 'JAKARTA - TERMINAL PULO GEBANG', default: 'ALL' })
+  @IsString()
+  @IsOptional()
+  area?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  address?: string;
+
+  @ApiProperty({ example: 'BCA', description: 'Nama Bank tujuan transfer settlement' })
+  @IsString()
+  @IsNotEmpty()
+  bankName!: string;
+
+  @ApiProperty({ example: '8830192847', description: 'Nomor rekening bank' })
+  @IsString()
+  @IsNotEmpty()
+  bankAccountNumber!: string;
+
+  @ApiProperty({ example: 'Ahmad Sodik', description: 'Atas nama pemilik rekening bank' })
+  @IsString()
+  @IsNotEmpty()
+  bankAccountHolder!: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  notes?: string;
+
+  @ApiPropertyOptional({ default: true })
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
+}
+
+export class UpdateCoordinatorDto {
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @ApiPropertyOptional({ enum: CoordinatorType })
+  @IsEnum(CoordinatorType)
+  @IsOptional()
+  type?: CoordinatorType;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  organizationName?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  phone?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  email?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  area?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  address?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  bankName?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  bankAccountNumber?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  bankAccountHolder?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  notes?: string;
+
+  @ApiPropertyOptional()
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
+}
+
+export class CoordinatorFilterDto {
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  search?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  area?: string;
+
+  @ApiPropertyOptional({ enum: CoordinatorType })
+  @IsEnum(CoordinatorType)
+  @IsOptional()
+  type?: CoordinatorType;
+
+  @ApiPropertyOptional()
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
+}
+
+// ==========================================
+// COORDINATOR FEE RULES
+// ==========================================
+
 export class CreateCoordinatorFeeRuleDto {
   @ApiPropertyOptional({ example: 'uuid-route', description: 'ID Master Rute Trayek' })
   @IsUUID()
@@ -118,7 +278,12 @@ export class CreateCoordinatorFeeRuleDto {
   @IsOptional()
   destination?: string;
 
-  @ApiPropertyOptional({ description: 'ID Pengguna Korlap Lapangan (users)' })
+  @ApiPropertyOptional({ description: 'ID Master Koordinator Lapangan Eksternal' })
+  @IsUUID()
+  @IsOptional()
+  coordinatorId?: string;
+
+  @ApiPropertyOptional({ description: 'ID Pengguna Korlap Lapangan (users) - Deprecated' })
   @IsUUID()
   @IsOptional()
   coordinatorUserId?: string;
@@ -160,7 +325,12 @@ export class UpdateCoordinatorFeeRuleDto {
   @IsOptional()
   destination?: string;
 
-  @ApiPropertyOptional({ description: 'ID Pengguna Korlap Lapangan' })
+  @ApiPropertyOptional({ description: 'ID Master Koordinator Lapangan Eksternal' })
+  @IsUUID()
+  @IsOptional()
+  coordinatorId?: string;
+
+  @ApiPropertyOptional({ description: 'ID Pengguna Korlap Lapangan (users) - Deprecated' })
   @IsUUID()
   @IsOptional()
   coordinatorUserId?: string;

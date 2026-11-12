@@ -745,6 +745,44 @@ export interface CalculatedMealResult {
   requiresCashFromCrewUJ: boolean;
 }
 
+export type CoordinatorType = 'INDIVIDUAL' | 'ORGANIZATION';
+
+export interface Coordinator {
+  id: string;
+  companyId?: string;
+  code: string;
+  name: string;
+  type: CoordinatorType;
+  organizationName?: string;
+  phone: string;
+  email?: string;
+  area: string;
+  address?: string;
+  bankName: string;
+  bankAccountNumber: string;
+  bankAccountHolder: string;
+  notes?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CoordinatorFormData {
+  code: string;
+  name: string;
+  type: CoordinatorType;
+  organizationName?: string;
+  phone: string;
+  email?: string;
+  area: string;
+  address?: string;
+  bankName: string;
+  bankAccountNumber: string;
+  bankAccountHolder: string;
+  notes?: string;
+  isActive?: boolean;
+}
+
 export interface CoordinatorFeeRule {
   id: string;
   companyId?: string;
@@ -752,6 +790,8 @@ export interface CoordinatorFeeRule {
   route?: Route;
   origin: string;
   destination: string;
+  coordinatorId?: string;
+  coordinator?: Coordinator;
   coordinatorUserId?: string;
   coordinatorUser?: User;
   feePerPax: number;
@@ -766,6 +806,7 @@ export interface CoordinatorFeeRuleFormData {
   routeId?: string;
   origin: string;
   destination: string;
+  coordinatorId?: string;
   coordinatorUserId?: string;
   feePerPax: number;
   effectiveFrom?: string;
@@ -779,8 +820,13 @@ export interface CalculatedCoordinatorFeeResult {
   feePerPax: number;
   paxCount: number;
   totalFee: number;
+  coordinatorId?: string;
   coordinatorUserId?: string;
   coordinatorName?: string;
+  bankName?: string;
+  bankAccountNumber?: string;
+  bankAccountHolder?: string;
+  phone?: string;
 }
 
 /**
@@ -1466,6 +1512,7 @@ export type CoordinationFeeBatchStatus = 'DRAFT' | 'COMPLETED' | 'CANCELLED';
 
 export interface SpjCoordinationFee {
   id: string;
+  companyId?: string;
   spjId: string;
   spj?: Spj;
   spjLegId?: string;
@@ -1475,6 +1522,8 @@ export interface SpjCoordinationFee {
   ticketCount: number;
   feePerPax: number;
   totalFee: number;
+  coordinatorId?: string;
+  coordinator?: Coordinator;
   coordinatorUserId?: string;
   coordinatorUser?: User;
   status: SpjCoordinationFeeStatus;
@@ -1491,9 +1540,15 @@ export interface CoordinationFeeBatch {
   batchNo: string;
   origin: string;
   destination: string;
+  coordinatorId?: string;
+  coordinator?: Coordinator;
   coordinatorUserId?: string;
   coordinatorUser?: User;
   coordinatorName?: string;
+  coordinatorBankName?: string;
+  coordinatorBankAccountNo?: string;
+  coordinatorBankAccountHolder?: string;
+  coordinatorPhone?: string;
   totalSpjs: number;
   totalTickets: number;
   totalAmount: number;
@@ -1516,6 +1571,7 @@ export interface CoordinationFeeBatch {
 export interface CreateCoordinationFeeBatchFormData {
   origin: string;
   destination: string;
+  coordinatorId?: string;
   spjCoordinationFeeIds: string[];
   paymentDate: string;
   bankAccountId: string;

@@ -3,6 +3,7 @@ import { BaseEntity } from '../base.entity';
 import { CompanyEntity } from '../organization/company.entity';
 import { UsersEntity } from '../user/user.entity';
 import { RouteEntity } from './route.entity';
+import { CoordinatorEntity } from './coordinator.entity';
 
 @Entity('coordinator_fee_rules')
 export class CoordinatorFeeRuleEntity extends BaseEntity {
@@ -32,6 +33,13 @@ export class CoordinatorFeeRuleEntity extends BaseEntity {
 
   @Column({ type: 'varchar', length: 100, default: 'ALL' })
   destination!: string;
+
+  @Column({ type: 'uuid', name: 'coordinator_id', nullable: true })
+  coordinatorId?: string;
+
+  @ManyToOne(() => CoordinatorEntity, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'coordinator_id' })
+  coordinator?: CoordinatorEntity;
 
   @Column({ type: 'uuid', name: 'coordinator_user_id', nullable: true })
   coordinatorUserId?: string;

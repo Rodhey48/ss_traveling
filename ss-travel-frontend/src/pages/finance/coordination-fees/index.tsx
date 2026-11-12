@@ -3,7 +3,6 @@ import { toast } from 'sonner';
 import {
   ShieldAlert,
   CheckCircle2,
-  Filter,
   Search,
   RefreshCw,
   Coins,
@@ -13,6 +12,13 @@ import {
   FileText,
   Info,
   MapPin,
+  Building2,
+  Phone,
+  Landmark,
+  ExternalLink,
+  RotateCcw,
+  Route as RouteIcon,
+  Users,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -56,11 +62,15 @@ import {
 } from '@/components/ui/select';
 import { CoordinationFeeService } from '@/services/coordination-fee.service';
 import { CashBankService } from '@/services/cash-bank.service';
+import { RouteService } from '@/services/route.service';
+import { PartnerService } from '@/services/partner.service';
 import type {
   SpjCoordinationFee,
   CoordinationFeeBatch,
   CoordinatorFeeRule,
   CashAccount,
+  Route,
+  Coordinator,
 } from '@/types';
 
 export default function CoordinationFeesPage() {
@@ -72,9 +82,12 @@ export default function CoordinationFeesPage() {
   const [batches, setBatches] = useState<CoordinationFeeBatch[]>([]);
   const [rules, setRules] = useState<CoordinatorFeeRule[]>([]);
   const [bankAccounts, setBankAccounts] = useState<CashAccount[]>([]);
+  const [availableRoutes, setAvailableRoutes] = useState<Route[]>([]);
+  const [availableCoordinators, setAvailableCoordinators] = useState<Coordinator[]>([]);
 
   // Filter states
-  const [routeFilter, setRouteFilter] = useState<'ALL' | 'JKT_YOGYA' | 'YOGYA_JKT'>('ALL');
+  const [selectedRouteId, setSelectedRouteId] = useState<string>('ALL');
+  const [selectedCoordinatorId, setSelectedCoordinatorId] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Selection states
@@ -89,6 +102,8 @@ export default function CoordinationFeesPage() {
   const [batchRefNumber, setBatchRefNumber] = useState('');
   const [batchNotes, setBatchNotes] = useState('');
   const [batchSubmitting, setBatchSubmitting] = useState(false);
+  const [copiedAccNumber, setCopiedAccNumber] = useState(false);
+  const [copiedAmount, setCopiedAmount] = useState(false);
 
   // Modal Batch Detail & WA states
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -99,6 +114,7 @@ export default function CoordinationFeesPage() {
   const [editRuleModalOpen, setEditRuleModalOpen] = useState(false);
   const [selectedRule, setSelectedRule] = useState<CoordinatorFeeRule | null>(null);
   const [inputRuleFeePerPax, setInputRuleFeePerPax] = useState('10000');
+  const [inputRuleCoordinatorId, setInputRuleCoordinatorId] = useState<string>('NONE');
 
   const formatRupiah = (val: number | string | undefined | null) => {
     return new Intl.NumberFormat('id-ID', {
@@ -111,25 +127,29 @@ export default function CoordinationFeesPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const origin = routeFilter === 'JKT_YOGYA' ? 'JAKARTA' : routeFilter === 'YOGYA_JKT' ? 'YOGYAKARTA' : undefined;
-      const destination = routeFilter === 'JKT_YOGYA' ? 'YOGYAKARTA' : routeFilter === 'YOGYA_JKT' ? 'JAKARTA' : undefined;
-
-      const [pendingRes, batchRes, ruleRes, accountsRes] = await Promise.all([
+      const [pendingRes, batchRes, ruleRes, accountsRes, routesRes, coordRes] = await Promise.all([
         CoordinationFeeService.getPendingFees({
-          origin,
-          destination,
+          routeId: selectedRouteId === 'ALL' ? undefined : selectedRouteId,
+          coordinatorId: selectedCoordinatorId === 'ALL' ? undefined : selectedCoordinatorId,
           search: searchQuery || undefined,
         }),
         CoordinationFeeService.getBatches(),
         CoordinationFeeService.getRules(),
         CashBankService.findAllCashAccounts({ includeInactive: false }),
+        RouteService.findAll(),
+        PartnerService.findAllCoordinators(),
       ]);
 
       setPendingFees(pendingRes || []);
       setBatches(batchRes || []);
       setRules(ruleRes || []);
-      // Filter hanya akun kas / bank
       setBankAccounts(accountsRes.data || []);
+      if (routesRes.status && Array.isArray(routesRes.data)) {
+        setAvailableRoutes(routesRes.data);
+      }
+      if (coordRes?.data && Array.isArray(coordRes.data)) {
+        setAvailableCoordinators(coordRes.data);
+      }
     } catch {
       toast.error('Gagal memuat data uang koordinasi lapangan.');
     } finally {
@@ -139,7 +159,16 @@ export default function CoordinationFeesPage() {
 
   useEffect(() => {
     loadData();
-  }, [routeFilter, searchQuery]);
+  }, [selectedRouteId, selectedCoordinatorId, searchQuery]);
+
+  const isFilterActive =
+    selectedRouteId !== 'ALL' || selectedCoordinatorId !== 'ALL' || searchQuery.trim() !== '';
+
+  const handleResetFilters = () => {
+    setSelectedRouteId('ALL');
+    setSelectedCoordinatorId('ALL');
+    setSearchQuery('');
+  };
 
   const toggleSelectFee = (id: string) => {
     setSelectedFeeIds((prev) =>
@@ -159,6 +188,26 @@ export default function CoordinationFeesPage() {
   const selectedTotalAmount = selectedFees.reduce((acc, f) => acc + Number(f.totalFee || 0), 0);
   const selectedTotalTickets = selectedFees.reduce((acc, f) => acc + (f.ticketCount || 0), 0);
 
+  // Target coordinator for the selected batch
+  const targetCoordinator =
+    selectedFees.find((f) => f.coordinator)?.coordinator ||
+    (selectedCoordinatorId !== 'ALL'
+      ? availableCoordinators.find((c) => c.id === selectedCoordinatorId)
+      : undefined);
+
+  const handleCopy = (text: string, type: 'acc' | 'amount') => {
+    navigator.clipboard.writeText(text);
+    if (type === 'acc') {
+      setCopiedAccNumber(true);
+      toast.success(`Nomor rekening ${text} berhasil disalin!`);
+      setTimeout(() => setCopiedAccNumber(false), 2500);
+    } else {
+      setCopiedAmount(true);
+      toast.success(`Nominal transfer Rp ${Number(text).toLocaleString('id-ID')} berhasil disalin!`);
+      setTimeout(() => setCopiedAmount(false), 2500);
+    }
+  };
+
   const handleExecuteBulkPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedFeeIds.length === 0) {
@@ -166,7 +215,7 @@ export default function CoordinationFeesPage() {
       return;
     }
     if (!batchBankAccountId) {
-      toast.error('Pilih rekening bank sumber pembayaran.');
+      toast.error('Pilih rekening bank kantor sumber pembayaran.');
       return;
     }
 
@@ -179,6 +228,7 @@ export default function CoordinationFeesPage() {
       const res = await CoordinationFeeService.createBatch({
         origin,
         destination,
+        coordinatorId: targetCoordinator?.id,
         spjCoordinationFeeIds: selectedFeeIds,
         paymentDate: batchPaymentDate,
         bankAccountId: batchBankAccountId,
@@ -226,8 +276,9 @@ export default function CoordinationFeesPage() {
     try {
       await CoordinationFeeService.updateRule(selectedRule.id, {
         feePerPax: inputRuleFeePerPax,
+        coordinatorId: inputRuleCoordinatorId === 'NONE' ? undefined : inputRuleCoordinatorId,
       });
-      toast.success('Tarif koordinasi zona berhasil diperbarui!');
+      toast.success('Aturan tarif koordinasi berhasil diperbarui!');
       setEditRuleModalOpen(false);
       loadData();
     } catch {
@@ -248,11 +299,11 @@ export default function CoordinationFeesPage() {
               Pembayaran Uang Koordinasi Lapangan
             </h1>
             <Badge variant="outline" className="font-mono text-xs border-amber-500/50 text-amber-700 dark:text-amber-300 bg-amber-50/50">
-              Pengurus Jalur Barat &amp; Timur
+              Pengurus Jalur &amp; Paguyuban Terminal
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Rekapitulasi snapshot kewajiban uang koordinasi per tiket terjual atas SPJ bus (Beban 52105) dan eksekusi pembayaran transfer bank gelondongan (Pelunasan Utang 22102).
+            Rekapitulasi snapshot kewajiban uang jasa koordinator per tiket terjual atas SPJ bus (Beban 52105) dan eksekusi pembayaran transfer bank gelondongan (Pelunasan Utang 22102).
           </p>
         </div>
 
@@ -282,7 +333,7 @@ export default function CoordinationFeesPage() {
           </TabsTrigger>
           <TabsTrigger value="rules" className="text-xs font-semibold gap-1.5">
             <ShieldAlert className="w-3.5 h-3.5" />
-            Pengaturan Tarif ({rules.length} Zona)
+            Pengaturan Tarif &amp; Koordinator ({rules.length} Aturan)
           </TabsTrigger>
         </TabsList>
 
@@ -290,45 +341,75 @@ export default function CoordinationFeesPage() {
         {/* TAB 1: TAGIHAN SIAP BAYAR GELONDONGAN (OUTSTANDING SPJ)   */}
         {/* ========================================================= */}
         <TabsContent value="pending" className="space-y-4">
-          {/* Filter Bar */}
+          {/* Dynamic Filter Bar */}
           <Card className="border border-slate-200/80 dark:border-white/10 shadow-2xs">
-            <CardContent className="p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                <div className="flex items-center gap-1.5">
-                  <Filter className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span className="text-xs font-semibold text-foreground">Filter Rute:</span>
+            <CardContent className="p-4 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2.5 flex-1">
+                {/* Filter Master Rute Dinamis */}
+                <div className="flex items-center gap-1.5 min-w-56">
+                  <RouteIcon className="w-4 h-4 text-primary shrink-0" />
+                  <Select value={selectedRouteId} onValueChange={setSelectedRouteId}>
+                    <SelectTrigger className="h-8.5 text-xs">
+                      <SelectValue placeholder="Pilih Master Rute Trayek" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL" className="text-xs font-semibold">
+                        Semua Rute Trayek
+                      </SelectItem>
+                      {availableRoutes.map((r) => (
+                        <SelectItem key={r.id} value={r.id} className="text-xs">
+                          [{r.code}] {r.name} ({r.origin} ➔ {r.destination})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="flex items-center gap-1">
-                  {[
-                    { key: 'ALL', label: 'Semua Rute' },
-                    { key: 'JKT_YOGYA', label: 'Jkt ➔ Yogya' },
-                    { key: 'YOGYA_JKT', label: 'Yogya ➔ Jkt' },
-                  ].map((r) => (
-                    <Button
-                      key={r.key}
-                      size="sm"
-                      variant={routeFilter === r.key ? 'default' : 'outline'}
-                      onClick={() => setRouteFilter(r.key as any)}
-                      className={`h-7 text-xs ${
-                        routeFilter === r.key
-                          ? 'bg-amber-600 hover:bg-amber-700 text-white font-semibold'
-                          : 'border-slate-300 dark:border-zinc-700'
-                      }`}
-                    >
-                      {r.label}
-                    </Button>
-                  ))}
+
+                {/* Filter Koordinator Lapangan Dinamis */}
+                <div className="flex items-center gap-1.5 min-w-56">
+                  <Users className="w-4 h-4 text-amber-500 shrink-0" />
+                  <Select value={selectedCoordinatorId} onValueChange={setSelectedCoordinatorId}>
+                    <SelectTrigger className="h-8.5 text-xs">
+                      <SelectValue placeholder="Pilih Koordinator" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL" className="text-xs font-semibold">
+                        Semua Koordinator Lapangan
+                      </SelectItem>
+                      {availableCoordinators.map((c) => (
+                        <SelectItem key={c.id} value={c.id} className="text-xs">
+                          [{c.code}] {c.name} {c.organizationName ? `(${c.organizationName})` : ''} - {c.bankName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
+
+                {/* Search Bar */}
+                <div className="relative w-full sm:w-60">
+                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-muted-foreground" />
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Cari No. SPJ / Plat Bus / Korlap..."
+                    className="pl-8 h-8.5 text-xs font-normal"
+                  />
+                </div>
+
+                {isFilterActive && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleResetFilters}
+                    className="h-8.5 px-2.5 text-xs text-muted-foreground hover:text-foreground gap-1"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" /> Reset
+                  </Button>
+                )}
               </div>
 
-              <div className="relative w-full sm:w-72">
-                <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-muted-foreground" />
-                <Input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Cari No. SPJ / Plat Bus / Rute..."
-                  className="pl-8 h-8 text-xs font-normal"
-                />
+              <div className="text-xs text-muted-foreground font-medium self-end lg:self-center">
+                Menampilkan <strong className="text-foreground">{pendingFees.length}</strong> SPJ siap bayar
               </div>
             </CardContent>
           </Card>
@@ -364,11 +445,11 @@ export default function CoordinationFeesPage() {
                     <TableHead className="w-10 text-center">Pilih</TableHead>
                     <TableHead className="text-xs font-semibold">No. SPJ &amp; Bus</TableHead>
                     <TableHead className="text-xs font-semibold">Rute Perjalanan</TableHead>
-                    <TableHead className="text-xs font-semibold">Rute Trayek</TableHead>
-                    <TableHead className="text-xs font-semibold text-center">Tiket Terjual</TableHead>
+                    <TableHead className="text-xs font-semibold min-w-56">Koordinator Lapangan &amp; Kontak</TableHead>
+                    <TableHead className="text-xs font-semibold min-w-56">Rekening Tujuan Transfer</TableHead>
+                    <TableHead className="text-xs font-semibold text-center">Tiket</TableHead>
                     <TableHead className="text-xs font-semibold text-right">Tarif / Pax</TableHead>
                     <TableHead className="text-xs font-semibold text-right">Total Kewajiban</TableHead>
-                    <TableHead className="text-xs font-semibold">Koordinator Wilayah</TableHead>
                     <TableHead className="text-xs font-semibold text-center">Status</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -389,6 +470,7 @@ export default function CoordinationFeesPage() {
                   ) : (
                     pendingFees.map((fee) => {
                       const isSelected = selectedFeeIds.includes(fee.id);
+                      const kor = fee.coordinator;
                       return (
                         <TableRow
                           key={fee.id}
@@ -419,19 +501,67 @@ export default function CoordinationFeesPage() {
                               🚌 {fee.spj?.vehicle?.plateNumber || 'Armada'} ({fee.spj?.vehicle?.nickname || fee.spj?.vehicle?.bodyModel || 'Bus'})
                             </span>
                           </TableCell>
-                          <TableCell className="text-xs font-medium">
-                            {fee.spjLeg ? (
-                              <span>
-                                {fee.spjLeg.origin} ➔ {fee.spjLeg.destination}
-                              </span>
+                          <TableCell className="text-xs">
+                            <div className="font-semibold text-foreground">
+                              {fee.origin} ➔ {fee.destination}
+                            </div>
+                            {fee.spjLeg && (
+                              <div className="text-[11px] text-muted-foreground">
+                                Leg: {fee.spjLeg.origin} ➔ {fee.spjLeg.destination}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            {kor ? (
+                              <div>
+                                <div className="font-bold text-foreground flex items-center gap-1.5">
+                                  <span className="text-amber-600 font-mono">[{kor.code}]</span> {kor.name}
+                                </div>
+                                {kor.organizationName && (
+                                  <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                                    <Building2 className="w-3 h-3 text-blue-500" />
+                                    {kor.organizationName}
+                                  </div>
+                                )}
+                                <a
+                                  href={`https://wa.me/${kor.phone.replace(/^0/, '62').replace(/\D/g, '')}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="font-mono text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline inline-flex items-center gap-1 font-semibold mt-0.5"
+                                >
+                                  <Phone className="w-3 h-3" />
+                                  {kor.phone}
+                                  <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                                </a>
+                              </div>
+                            ) : fee.coordinatorUser ? (
+                              <div className="font-semibold text-foreground">
+                                👤 {fee.coordinatorUser.name}
+                              </div>
                             ) : (
-                              <span className="text-muted-foreground">Rute Reguler</span>
+                              <span className="text-muted-foreground italic text-[11px]">
+                                Koordinator Umum
+                              </span>
                             )}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="text-[10px] font-mono border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-white/5">
-                              {fee.origin} &rarr; {fee.destination}
-                            </Badge>
+                            {kor ? (
+                              <div className="p-2 rounded-lg bg-amber-500/5 border border-amber-500/20 inline-block">
+                                <div className="flex items-center gap-1.5 font-bold text-xs text-amber-700 dark:text-amber-300">
+                                  <Landmark className="w-3.5 h-3.5" />
+                                  <span>{kor.bankName}</span>
+                                  <span className="font-mono tracking-wider text-foreground">
+                                    {kor.bankAccountNumber}
+                                  </span>
+                                </div>
+                                <div className="text-[11px] text-muted-foreground font-semibold mt-0.5">
+                                  A.N. {kor.bankAccountHolder}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground italic text-[11px]">-</span>
+                            )}
                           </TableCell>
                           <TableCell className="text-xs text-center font-mono font-bold text-foreground">
                             {fee.ticketCount} Pax
@@ -441,9 +571,6 @@ export default function CoordinationFeesPage() {
                           </TableCell>
                           <TableCell className="text-xs font-mono font-bold text-right text-amber-700 dark:text-amber-300">
                             {formatRupiah(fee.totalFee)}
-                          </TableCell>
-                          <TableCell className="text-xs text-muted-foreground">
-                            👤 {fee.coordinatorUser?.name || 'Umum (Semua SPJ)'}
                           </TableCell>
                           <TableCell className="text-center">
                             <Badge variant="outline" className="text-[10px] border-amber-400 text-amber-700 dark:text-amber-300 bg-amber-50/50 font-medium">
@@ -470,6 +597,11 @@ export default function CoordinationFeesPage() {
                   <div className="text-xs font-bold text-foreground flex items-center gap-2">
                     <span>Terpilih {selectedFeeIds.length} SPJ</span>
                     <span className="text-muted-foreground">({selectedTotalTickets} Pax Tiket)</span>
+                    {targetCoordinator && (
+                      <Badge variant="outline" className="text-[10px] font-semibold border-amber-400 text-amber-700 dark:text-amber-300">
+                        Penerima: {targetCoordinator.name}
+                      </Badge>
+                    )}
                   </div>
                   <div className="text-sm font-mono font-extrabold text-amber-600 dark:text-amber-400">
                     Total Transfer Gelondongan: {formatRupiah(selectedTotalAmount)}
@@ -508,7 +640,7 @@ export default function CoordinationFeesPage() {
                 Riwayat Pembayaran Gelondongan yang Telah Ditransfer
               </CardTitle>
               <CardDescription className="text-xs text-muted-foreground">
-                Setiap batch transfer bank langsung terhubung ke buku besar (Pelunasan Utang 22102) dan siap diekspor ke format chat WhatsApp.
+                Setiap batch transfer bank langsung terhubung ke buku besar (Pelunasan Utang 22102) dan siap dikirim via chat WhatsApp.
               </CardDescription>
             </CardHeader>
 
@@ -519,8 +651,8 @@ export default function CoordinationFeesPage() {
                     <TableHead className="text-xs font-semibold">Nomor Batch</TableHead>
                     <TableHead className="text-xs font-semibold">Tanggal Transfer</TableHead>
                     <TableHead className="text-xs font-semibold">Rute</TableHead>
-                    <TableHead className="text-xs font-semibold">Penerima / Koordinator</TableHead>
-                    <TableHead className="text-xs font-semibold">Rekening Asal Bank</TableHead>
+                    <TableHead className="text-xs font-semibold min-w-48">Penerima &amp; Rekening Tujuan</TableHead>
+                    <TableHead className="text-xs font-semibold">Rekening Asal Kantor</TableHead>
                     <TableHead className="text-xs font-semibold">Ref Transfer</TableHead>
                     <TableHead className="text-xs font-semibold text-center">Volume SPJ / Tiket</TableHead>
                     <TableHead className="text-xs font-semibold text-right">Total Transfer</TableHead>
@@ -550,7 +682,14 @@ export default function CoordinationFeesPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-xs font-medium text-foreground">
-                          👤 {batch.coordinatorName || 'Koordinator'}
+                          <div className="font-bold flex items-center gap-1.5">
+                            👤 {batch.coordinatorName || 'Koordinator Lapangan'}
+                          </div>
+                          {batch.coordinatorBankName && (
+                            <div className="text-[11px] text-muted-foreground font-mono mt-0.5">
+                              🏦 {batch.coordinatorBankName} - {batch.coordinatorBankAccountNo}
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           🏦 {batch.bankAccount?.name || 'Bank BCA'}
@@ -593,53 +732,72 @@ export default function CoordinationFeesPage() {
         {/* ========================================================= */}
         <TabsContent value="rules" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {rules.map((r) => (
-              <Card key={r.id} className="border border-slate-200/80 dark:border-white/10 shadow-2xs">
-                <CardHeader className="p-4 pb-2 border-b border-border/50 bg-slate-50/50 dark:bg-zinc-900/30 flex flex-row items-center justify-between">
-                  <div className="space-y-0.5">
-                    <CardTitle className="text-sm font-bold flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-amber-600" />
-                      Rute {r.origin} &rarr; {r.destination} {r.origin === 'ALL' && r.destination === 'ALL' ? '(Global Fallback)' : ''}
-                    </CardTitle>
-                    <CardDescription className="text-xs text-muted-foreground">
-                      Tarif koordinasi otomatis per lembar tiket penumpang bus rute {r.origin} ke {r.destination}.
-                    </CardDescription>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setSelectedRule(r);
-                      setInputRuleFeePerPax(String(r.feePerPax));
-                      setEditRuleModalOpen(true);
-                    }}
-                    className="h-7 text-xs font-medium border-slate-300 dark:border-zinc-700"
-                  >
-                    ✏️ Edit Tarif
-                  </Button>
-                </CardHeader>
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Tarif per Penumpang:</span>
-                    <span className="font-mono font-bold text-base text-foreground">
-                      {formatRupiah(r.feePerPax)} / Pax
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Koordinator Terdaftar:</span>
-                    <span className="font-semibold text-foreground">
-                      👤 {r.coordinatorUser?.name || 'Koordinator Belum Ditetapkan'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Masa Berlaku:</span>
-                    <span className="font-mono text-muted-foreground">
-                      {new Date(r.effectiveFrom).toLocaleDateString('id-ID')} s/d Sekarang
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {rules.map((r) => {
+              const kor = r.coordinator;
+              return (
+                <Card key={r.id} className="border border-slate-200/80 dark:border-white/10 shadow-2xs">
+                  <CardHeader className="p-4 pb-2 border-b border-border/50 bg-slate-50/50 dark:bg-zinc-900/30 flex flex-row items-center justify-between">
+                    <div className="space-y-0.5">
+                      <CardTitle className="text-sm font-bold flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-amber-600" />
+                        Rute {r.origin} &rarr; {r.destination} {r.origin === 'ALL' && r.destination === 'ALL' ? '(Global Fallback)' : ''}
+                      </CardTitle>
+                      <CardDescription className="text-xs text-muted-foreground">
+                        {r.route ? `Master Rute: [${r.route.code}] ${r.route.name}` : 'Aturan rute manual'}
+                      </CardDescription>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedRule(r);
+                        setInputRuleFeePerPax(String(r.feePerPax));
+                        setInputRuleCoordinatorId(r.coordinatorId || 'NONE');
+                        setEditRuleModalOpen(true);
+                      }}
+                      className="h-7 text-xs font-medium border-slate-300 dark:border-zinc-700"
+                    >
+                      ✏️ Edit Aturan
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Tarif per Penumpang:</span>
+                      <span className="font-mono font-bold text-base text-foreground">
+                        {formatRupiah(r.feePerPax)} / Pax
+                      </span>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-amber-500/5 border border-amber-500/20 space-y-1">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300 block">
+                        Koordinator Lapangan Penerima Transfer:
+                      </span>
+                      {kor ? (
+                        <div className="text-xs">
+                          <div className="font-bold text-foreground">
+                            [{kor.code}] {kor.name} {kor.organizationName ? `(${kor.organizationName})` : ''}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground font-mono mt-0.5">
+                            🏦 {kor.bankName} - {kor.bankAccountNumber} (A.N. {kor.bankAccountHolder}) | 📞 {kor.phone}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">
+                          Belum ditetapkan koordinator spesifik
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Masa Berlaku:</span>
+                      <span className="font-mono text-muted-foreground">
+                        {new Date(r.effectiveFrom).toLocaleDateString('id-ID')} s/d Sekarang
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </TabsContent>
       </Tabs>
@@ -648,7 +806,7 @@ export default function CoordinationFeesPage() {
       {/* MODAL 1: EKSEKUSI PEMBAYARAN GELONDONGAN (BULK TRANSFER)  */}
       {/* ========================================================= */}
       <Dialog open={batchModalOpen} onOpenChange={setBatchModalOpen}>
-        <DialogContent className="max-w-lg bg-background border border-border/70 rounded-2xl shadow-xl p-0 overflow-hidden">
+        <DialogContent className="max-w-xl bg-background border border-border/70 rounded-2xl shadow-xl p-0 overflow-hidden max-h-[90vh] flex flex-col">
           <DialogHeader className="p-5 pb-3 border-b border-border/50 bg-amber-50/50 dark:bg-amber-950/20">
             <DialogTitle className="text-base font-bold flex items-center gap-2 text-foreground">
               <Send className="w-5 h-5 text-amber-600 dark:text-amber-400" />
@@ -659,9 +817,82 @@ export default function CoordinationFeesPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleExecuteBulkPayment} className="p-5 space-y-4">
-            {/* Box Ringkasan Nilai Transfer */}
-            <div className="p-3.5 bg-amber-500/10 border border-amber-200 dark:border-amber-800/40 rounded-xl space-y-1.5">
+          <form onSubmit={handleExecuteBulkPayment} className="p-5 space-y-4 overflow-y-auto flex-1">
+            {/* CALLOUT INFO: DATA REKENING PENERIMA (POIN 2) */}
+            {targetCoordinator ? (
+              <div className="p-4 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border-2 border-amber-500/30 rounded-2xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Landmark className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300">
+                      Tujuan Transfer (Rekening Koordinator Lapangan)
+                    </span>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] font-mono border-amber-500/40 text-amber-700 bg-amber-50">
+                    {targetCoordinator.bankName}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
+                  <div>
+                    <span className="text-muted-foreground block text-[11px]">Nama Penerima / Paguyuban:</span>
+                    <span className="font-bold text-foreground block text-sm">
+                      {targetCoordinator.name}
+                    </span>
+                    {targetCoordinator.organizationName && (
+                      <span className="text-[11px] text-muted-foreground block">
+                        {targetCoordinator.organizationName}
+                      </span>
+                    )}
+                  </div>
+
+                  <div>
+                    <span className="text-muted-foreground block text-[11px]">Nomor WhatsApp:</span>
+                    <a
+                      href={`https://wa.me/${targetCoordinator.phone.replace(/^0/, '62').replace(/\D/g, '')}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-mono font-semibold text-emerald-600 dark:text-emerald-400 hover:underline inline-flex items-center gap-1"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      {targetCoordinator.phone}
+                    </a>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                  <div>
+                    <span className="text-[11px] text-muted-foreground block font-medium">Nomor Rekening Tujuan:</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-base font-black font-mono tracking-wider text-foreground">
+                        {targetCoordinator.bankAccountNumber}
+                      </span>
+                      <span className="text-xs font-semibold text-muted-foreground">
+                        (A.N. {targetCoordinator.bankAccountHolder})
+                      </span>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleCopy(targetCoordinator.bankAccountNumber, 'acc')}
+                    className="h-7 text-xs font-semibold border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30 gap-1.5"
+                  >
+                    {copiedAccNumber ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedAccNumber ? 'Tersalin!' : 'Salin No. Rek'}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 bg-muted/20 border border-border/60 rounded-xl text-xs text-muted-foreground">
+                ℹ️ Rute perjalanan ini belum terikat pada Master Koordinator spesifik. Anda tetap dapat melanjutkan transfer bank gelondongan.
+              </div>
+            )}
+
+            {/* Box Ringkasan Nilai Transfer & Tombol Salin Nominal */}
+            <div className="p-3.5 bg-amber-500/10 border border-amber-200 dark:border-amber-800/40 rounded-xl space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground font-medium">Volume Perjalanan Terpilih:</span>
                 <span className="font-mono font-bold text-foreground">
@@ -669,10 +900,22 @@ export default function CoordinationFeesPage() {
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs pt-1 border-t border-amber-200/50">
-                <span className="text-foreground font-semibold">Total Nilai Ditransfer:</span>
-                <span className="font-mono font-extrabold text-base text-amber-700 dark:text-amber-300">
-                  {formatRupiah(selectedTotalAmount)}
-                </span>
+                <div>
+                  <span className="text-foreground font-semibold block">Total Nominal Ditransfer:</span>
+                  <span className="font-mono font-extrabold text-lg text-amber-700 dark:text-amber-300">
+                    {formatRupiah(selectedTotalAmount)}
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleCopy(String(selectedTotalAmount), 'amount')}
+                  className="h-7 text-xs font-semibold border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30 gap-1.5"
+                >
+                  {copiedAmount ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copiedAmount ? 'Tersalin!' : 'Salin Nominal'}
+                </Button>
               </div>
             </div>
 
@@ -794,12 +1037,12 @@ export default function CoordinationFeesPage() {
                 <span className="font-mono font-semibold text-foreground">{selectedBatchDetail?.paymentDate}</span>
               </div>
               <div>
-                <span className="text-muted-foreground block text-[11px]">Koordinator:</span>
+                <span className="text-muted-foreground block text-[11px]">Penerima Korlap:</span>
                 <span className="font-semibold text-foreground">{selectedBatchDetail?.coordinatorName}</span>
               </div>
               <div>
-                <span className="text-muted-foreground block text-[11px]">Rekening Asal:</span>
-                <span className="text-foreground">{selectedBatchDetail?.bankAccount?.name || 'Bank BCA'}</span>
+                <span className="text-muted-foreground block text-[11px]">Rekening Asal Bank:</span>
+                <span className="text-foreground">{selectedBatchDetail?.bankAccount?.name || 'Bank Kantor'}</span>
               </div>
               <div>
                 <span className="text-muted-foreground block text-[11px]">Total Ditransfer:</span>
@@ -808,6 +1051,30 @@ export default function CoordinationFeesPage() {
                 </span>
               </div>
             </div>
+
+            {selectedBatchDetail?.coordinatorBankName && (
+              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs flex items-center justify-between">
+                <div>
+                  <span className="text-muted-foreground block text-[11px]">Rekening Bank Tujuan Penerima:</span>
+                  <span className="font-bold font-mono text-foreground">
+                    {selectedBatchDetail.coordinatorBankName} - {selectedBatchDetail.coordinatorBankAccountNo}
+                  </span>{' '}
+                  <span className="text-muted-foreground font-semibold">
+                    (A.N. {selectedBatchDetail.coordinatorBankAccountHolder})
+                  </span>
+                </div>
+                {selectedBatchDetail.coordinatorPhone && (
+                  <a
+                    href={`https://wa.me/${selectedBatchDetail.coordinatorPhone.replace(/^0/, '62').replace(/\D/g, '')}?text=${encodeURIComponent(selectedBatchDetail.whatsappRemittanceText || '')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs"
+                  >
+                    <Phone className="w-3.5 h-3.5" /> Kirim via WhatsApp
+                  </a>
+                )}
+              </div>
+            )}
 
             {/* Kotak Format Teks WhatsApp Siap Kirim */}
             <div className="space-y-1.5">
@@ -896,21 +1163,45 @@ export default function CoordinationFeesPage() {
       </Dialog>
 
       {/* ========================================================= */}
-      {/* MODAL 3: EDIT ATURAN TARIF KOORDINASI                     */}
+      {/* MODAL 3: EDIT ATURAN TARIF & KOORDINATOR                  */}
       {/* ========================================================= */}
       <Dialog open={editRuleModalOpen} onOpenChange={setEditRuleModalOpen}>
         <DialogContent className="max-w-md bg-background border border-border/70 rounded-2xl shadow-xl p-5">
           <DialogHeader className="pb-3 border-b border-border/50">
             <DialogTitle className="text-base font-bold flex items-center gap-2 text-foreground">
               <ShieldAlert className="w-5 h-5 text-amber-600" />
-              Edit Tarif Koordinasi Rute {selectedRule?.origin} &rarr; {selectedRule?.destination}
+              Edit Aturan Rute {selectedRule?.origin} &rarr; {selectedRule?.destination}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Ubah tarif rupiah per lembar tiket penumpang untuk rute {selectedRule?.origin} menuju {selectedRule?.destination}.
+              Ubah tarif rupiah per tiket dan tentukan koordinator lapangan penerima fee rute ini.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleUpdateRule} className="pt-3 space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-foreground">
+                Koordinator Lapangan Penerima Transfer
+              </Label>
+              <Select
+                value={inputRuleCoordinatorId}
+                onValueChange={setInputRuleCoordinatorId}
+              >
+                <SelectTrigger className="h-9 text-xs">
+                  <SelectValue placeholder="Pilih Koordinator" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="NONE" className="text-xs text-muted-foreground">
+                    -- Tanpa Koordinator Spesifik (Umum) --
+                  </SelectItem>
+                  {availableCoordinators.map((c) => (
+                    <SelectItem key={c.id} value={c.id} className="text-xs">
+                      [{c.code}] {c.name} {c.organizationName ? `(${c.organizationName})` : ''} - {c.bankName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-foreground">
                 Tarif Koordinasi per Tiket (Rp) <span className="text-destructive">*</span>
