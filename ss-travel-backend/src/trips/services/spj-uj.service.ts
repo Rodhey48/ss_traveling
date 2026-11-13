@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -19,6 +20,11 @@ import {
   SpjAdditionalRequestStatus,
   CrewAssignmentRole,
 } from '../../@models/trips';
+import { AccountEntity } from '../../@models/finance/account.entity';
+import { BankAccountEntity } from '../../@models/finance/bank-account.entity';
+import { CashAccountEntity } from '../../@models/finance/cash-account.entity';
+import { AccountingPostingService } from '../../finance/services/accounting-posting.service';
+import { JournalSourceType } from '../../@models/finance/journal-entry.entity';
 import {
   CreateSpjUjDisbursementDto,
   CreateSpjUjReturnDto,
@@ -45,6 +51,14 @@ export class SpjUjService {
     private readonly additionalReqRepo: Repository<SpjUjAdditionalRequestEntity>,
     @InjectRepository(SpjCrewAssignmentEntity)
     private readonly crewRepo: Repository<SpjCrewAssignmentEntity>,
+    @InjectRepository(AccountEntity)
+    private readonly accountRepo: Repository<AccountEntity>,
+    @InjectRepository(BankAccountEntity)
+    private readonly bankAccountRepo: Repository<BankAccountEntity>,
+    @InjectRepository(CashAccountEntity)
+    private readonly cashAccountRepo: Repository<CashAccountEntity>,
+    @Optional()
+    private readonly accountingPostingService?: AccountingPostingService,
   ) {}
 
   /**
@@ -146,7 +160,104 @@ export class SpjUjService {
       notes: dto.notes,
     });
 
-    await this.disbRepo.save(disbursement);
+    const savedDisbursement = await this.disbRepo.save(disbursement);
+
+    // Posting Jurnal Pengeluaran Modal UJ ke GL (Blueprint Skenario 1 Jurnal #1 / Skenario 2 Jurnal #2)
+    // (Debit) 13101 - Uang Jalan (UJ) Kru Perjalanan Bus
+    // (Kredit) Kas Tunai Pool / Rekening Bank Operasional Terkait
+    if (
+      this.accountingPostingService &&
+      typeof this.accountingPostingService.postJournal === 'function' &&
+      dto.paymentMethod !== SpjPaymentMethod.ROLLOVER
+    ) {
+      try {
+        let creditAccountId: string | undefined;
+        let paymentSourceLabel = 'Kas/Bank';
+
+        if (
+          dto.paymentMethod === SpjPaymentMethod.BANK_TRANSFER &&
+          dto.bankAccountId
+        ) {
+          const bank = await this.bankAccountRepo.findOne({
+            where: { id: dto.bankAccountId },
+          });
+          if (bank) {
+            creditAccountId = bank.accountId;
+            paymentSourceLabel = bank.bankName ? `Bank ${bank.bankName}` : 'Bank Transfer';
+          }
+        } else if (
+          dto.paymentMethod === SpjPaymentMethod.CASH &&
+          dto.cashAccountId
+        ) {
+          const cash = await this.cashAccountRepo.findOne({
+            where: { id: dto.cashAccountId },
+          });
+          if (cash) {
+            creditAccountId = cash.accountId;
+            paymentSourceLabel = cash.name || 'Kas Tunai Pool';
+          }
+        }
+
+        const ujExpenseAcc = await this.accountRepo.findOne({
+          where: { code: '13101' },
+        });
+
+        if (ujExpenseAcc && creditAccountId) {
+          const numAmount = parseFloat(amount);
+          if (numAmount > 0) {
+            const spj = await this.spjRepo.findOne({
+              where: { id: spjId },
+              relations: ['crewAssignments', 'crewAssignments.crew'],
+            });
+
+            const crewName =
+              disbursement.crewAssignment?.crew?.name ||
+              spj?.crewAssignments?.find((c) => c.role === CrewAssignmentRole.DRIVER)?.crew?.name ||
+              'Kru';
+
+            await this.accountingPostingService.postJournal(
+              {
+                journalDate: new Date().toISOString().split('T')[0],
+                sourceType:
+                  dto.paymentMethod === SpjPaymentMethod.BANK_TRANSFER
+                    ? JournalSourceType.BANK_TRANSACTION
+                    : JournalSourceType.CASH_TRANSACTION,
+                sourceId: savedDisbursement.id,
+                description: `Pencairan UJ (${dto.disbursementType || 'INITIAL'}) SPJ ${spj?.spjNo || spjId} - ${crewName} via ${paymentSourceLabel}`,
+                lines: [
+                  {
+                    accountId: ujExpenseAcc.id,
+                    debit: numAmount,
+                    credit: 0,
+                    description: `Uang Muka Operasional UJ SPJ ${spj?.spjNo || spjId}: ${crewName}`,
+                    tripId: spj?.id,
+                    vehicleId: spj?.vehicleId,
+                    businessUnitId: spj?.businessUnitId,
+                    profitCenterId: spj?.profitCenterId,
+                    costCenterId: spj?.costCenterId,
+                  },
+                  {
+                    accountId: creditAccountId,
+                    debit: 0,
+                    credit: numAmount,
+                    description: `Pengeluaran ${paymentSourceLabel} Modal UJ SPJ ${spj?.spjNo || spjId}`,
+                    tripId: spj?.id,
+                    vehicleId: spj?.vehicleId,
+                    businessUnitId: spj?.businessUnitId,
+                    profitCenterId: spj?.profitCenterId,
+                    costCenterId: spj?.costCenterId,
+                  },
+                ],
+                idempotencyKey: `UJ-DISBURSE-${savedDisbursement.id}`,
+              },
+              userId,
+            );
+          }
+        }
+      } catch (err) {
+        console.error('Gagal memposting jurnal pencairan UJ:', err);
+      }
+    }
 
     // Update akumulasi UJ
     uj.totalDisbursed = MoneyHelper.add(uj.totalDisbursed, amount);

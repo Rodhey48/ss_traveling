@@ -257,11 +257,11 @@ export default function CrewRatesPage() {
 
   return (
     <div className="space-y-6 p-6">
-      {/* Header Halaman */}
+      {/* Header Halaman  sesuai Addendum v1.8 & v1.19*/}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <Heading
           title="Standar Kompensasi & Tarif Kru Bus"
-          description="Konfigurasi harga acuan dasar (Base Rate) uang makan, premi ritase/harian, dan bonus full seat kru (AKAP per Leg vs Wisata per Hari) sesuai Addendum v1.8 & v1.19."
+          description="Konfigurasi harga acuan dasar (Base Rate) uang makan, premi ritase/harian, dan bonus full seat kru (AKAP per Leg vs Wisata per Hari)."
         />
         {isCreate && (
           <Button
@@ -579,7 +579,7 @@ export default function CrewRatesPage() {
                                   : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 text-[10px]'
                               }
                             >
-                              {r.serviceType}
+                              {r.serviceType === 'AKAP' ? 'AKAP Reguler' : 'Pariwisata'}
                             </Badge>
                             <span className="text-[11px] text-muted-foreground font-mono">
                               ({r.rateType === 'PER_TRIP' ? 'Per Rit PP' : 'Per Hari'})
@@ -657,7 +657,7 @@ export default function CrewRatesPage() {
           </Card>
         </TabsContent>
 
-        {/* ==================== TAB 2: SIMULATOR RATE SNAPSHOTTING SPJ ==================== */}
+        {/* ==================== TAB 2: SIMULATOR RATE SNAPSHOTTING SPJ (Addendum v1.8 & v1.19) ==================== */}
         <TabsContent value="snapshot" className="space-y-4 pt-1">
           <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs">
             <CardHeader className="p-4 pb-2 border-b border-slate-200/80 dark:border-white/10">
@@ -667,7 +667,7 @@ export default function CrewRatesPage() {
                 </div>
                 <div>
                   <CardTitle className="text-sm font-bold text-foreground">
-                    Simulator Engine Rate Snapshotting SPJ (Addendum v1.8 & v1.19)
+                    Simulator Engine Rate Snapshotting SPJ
                   </CardTitle>
                   <CardDescription className="text-[11px]">
                     Uji perhitungan otomatis hak kompensasi kru yang akan di-snapshot saat SPJ terbit berdasarkan durasi Leg/Hari.

@@ -105,6 +105,10 @@ export class UpdateTripScheduleDto {
 
   @IsUUID()
   @IsOptional()
+  routeId?: string;
+
+  @IsUUID()
+  @IsOptional()
   vehicleId?: string;
 
   @IsDateString()

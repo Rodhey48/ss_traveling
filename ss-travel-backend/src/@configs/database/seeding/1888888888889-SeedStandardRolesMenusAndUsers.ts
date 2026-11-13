@@ -868,6 +868,23 @@ export class SeedStandardRolesMenusAndUsers1888888888889 implements MigrationInt
         AND m."url" = '/treasury'
         AND r."name" IN ('SUPER_ADMIN', 'DIRECTOR', 'FINANCE_MANAGER')
     `);
+
+    // 8. Konfigurasi custom availableActions & hak pencairan UJ untuk menu /spjs
+    await queryRunner.query(`
+      UPDATE "menus"
+      SET "availableActions" = '["disburse_uj"]'::jsonb
+      WHERE "url" = '/spjs'
+    `);
+
+    await queryRunner.query(`
+      UPDATE "role-menus" rm
+      SET "actions" = COALESCE(rm."actions", '{}'::jsonb) || '{"disburse_uj": true}'::jsonb
+      FROM "menus" m, "roles" r
+      WHERE rm."menuId" = m."id"
+        AND rm."roleId" = r."id"
+        AND m."url" = '/spjs'
+        AND r."name" IN ('SUPER_ADMIN', 'DIRECTOR', 'FINANCE_MANAGER', 'POOL_CASHIER', 'ACCOUNTANT', 'OPS_ADMIN')
+    `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

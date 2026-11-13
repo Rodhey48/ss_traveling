@@ -63,10 +63,10 @@ export class CreateVehicleSeatClassDto {
   @IsUUID()
   seatClassId?: string;
 
-  @ApiProperty({ enum: SeatClassName, example: SeatClassName.LUXURY_2_1 })
-  @IsEnum(SeatClassName)
+  @ApiProperty({ example: 'LUXURY_2_1', description: 'Kode Master Kelas Kursi' })
+  @IsString()
   @IsNotEmpty()
-  className: SeatClassName;
+  className: string;
 
   @ApiProperty({ example: 20 })
   @IsInt()

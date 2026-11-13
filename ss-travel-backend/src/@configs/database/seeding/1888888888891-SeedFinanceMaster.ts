@@ -143,6 +143,7 @@ export class SeedFinanceMaster1888888888891 implements MigrationInterface {
       { code: '52102', name: 'Beban Parkir, TPR, & Penyeberangan Ferry', type: 'EXPENSE', normalBalance: 'DEBIT', parentCode: '52', isPostable: true },
       { code: '52103', name: 'Beban Cuci Bus & Perlengkapan Armada', type: 'EXPENSE', normalBalance: 'DEBIT', parentCode: '52', isPostable: true },
       { code: '52104', name: 'Beban Snack, Amenity, & Fasilitas Onboard Bus', type: 'EXPENSE', normalBalance: 'DEBIT', parentCode: '52', isPostable: true, description: 'Snack, air mineral, teh, kopi, parfum kabin, kuota Wi-Fi' },
+      { code: '52105', name: 'Beban Koordinasi Lapangan & Pengurus Jalur', type: 'EXPENSE', normalBalance: 'DEBIT', parentCode: '52', isPostable: true, description: 'Fee koordinasi per tiket terjual pengurus wilayah Barat & Timur' },
 
       { code: '53', name: 'Beban Kompensasi & Hak Kru Operasional', type: 'EXPENSE', normalBalance: 'DEBIT', parentCode: '5', isPostable: false },
       { code: '53101', name: 'Beban Uang Makan Kru Bus (SPJ)', type: 'EXPENSE', normalBalance: 'DEBIT', parentCode: '53', isPostable: true },
@@ -216,7 +217,8 @@ export class SeedFinanceMaster1888888888891 implements MigrationInterface {
          ON CONFLICT ("code") DO UPDATE SET
           "name" = EXCLUDED."name",
           "is_postable" = EXCLUDED."is_postable",
-          "description" = EXCLUDED."description"`,
+          "description" = EXCLUDED."description",
+          "parent_id" = EXCLUDED."parent_id"`,
         [
           id,
           companyId,

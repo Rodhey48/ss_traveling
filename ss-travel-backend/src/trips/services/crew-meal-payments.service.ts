@@ -169,38 +169,40 @@ export class CrewMealPaymentsService {
 
         if (debitAccountId && creditAccountId) {
           const numAmount = parseFloat(payment.amount);
-          await this.accountingPostingService.postJournal(
-            {
-              journalDate: new Date().toISOString().split('T')[0],
-              sourceType: JournalSourceType.BANK_TRANSACTION,
-              sourceId: saved.id,
-              description: `Pencairan di Muka Kompensasi Kru (${payment.paymentCategory}) SPJ ${payment.spj?.spjNo || payment.spjId} - ${payment.crew?.name || 'Kru'}`,
-              lines: [
-                {
-                  accountId: debitAccountId,
-                  debit: numAmount,
-                  credit: 0,
-                  description: `Beban ${targetAccCode} Mid-Trip Payout: ${payment.crew?.name || 'Kru'}`,
-                  tripId: payment.spjId,
-                  vehicleId: payment.spj?.vehicleId,
-                  costCenterId: payment.spj?.costCenterId,
-                  businessUnitId: payment.spj?.businessUnitId,
-                },
-                {
-                  accountId: creditAccountId,
-                  debit: 0,
-                  credit: numAmount,
-                  description: `Pencairan Bank/Kas Hak Kru: ${payment.crew?.name || 'Kru'}`,
-                  tripId: payment.spjId,
-                  vehicleId: payment.spj?.vehicleId,
-                  costCenterId: payment.spj?.costCenterId,
-                  businessUnitId: payment.spj?.businessUnitId,
-                },
-              ],
-              idempotencyKey: `CREW-EARLY-${saved.id}`,
-            },
-            userId,
-          );
+          if (numAmount > 0) {
+            await this.accountingPostingService.postJournal(
+              {
+                journalDate: new Date().toISOString().split('T')[0],
+                sourceType: JournalSourceType.BANK_TRANSACTION,
+                sourceId: saved.id,
+                description: `Pencairan di Muka Kompensasi Kru (${payment.paymentCategory}) SPJ ${payment.spj?.spjNo || payment.spjId} - ${payment.crew?.name || 'Kru'}`,
+                lines: [
+                  {
+                    accountId: debitAccountId,
+                    debit: numAmount,
+                    credit: 0,
+                    description: `Beban ${targetAccCode} Mid-Trip Payout: ${payment.crew?.name || 'Kru'}`,
+                    tripId: payment.spjId,
+                    vehicleId: payment.spj?.vehicleId,
+                    costCenterId: payment.spj?.costCenterId,
+                    businessUnitId: payment.spj?.businessUnitId,
+                  },
+                  {
+                    accountId: creditAccountId,
+                    debit: 0,
+                    credit: numAmount,
+                    description: `Pencairan Bank/Kas Hak Kru: ${payment.crew?.name || 'Kru'}`,
+                    tripId: payment.spjId,
+                    vehicleId: payment.spj?.vehicleId,
+                    costCenterId: payment.spj?.costCenterId,
+                    businessUnitId: payment.spj?.businessUnitId,
+                  },
+                ],
+                idempotencyKey: `CREW-EARLY-${saved.id}`,
+              },
+              userId,
+            );
+          }
         }
       } catch (err) {
         // Abaikan jika posting gagal agar tidak memblokir operasional di jalan

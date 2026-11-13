@@ -726,7 +726,17 @@ export default function SchedulesPage() {
                         </TableCell>
 
                         <TableCell>
-                          <div className="text-xs font-semibold">{s.origin} ➔ {s.destination}</div>
+                          <div className="text-xs font-semibold flex items-center gap-1.5 flex-wrap">
+                            {s.route && (
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] font-mono px-1.5 py-0 h-4 bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950 dark:text-indigo-300"
+                              >
+                                {s.route.code}
+                              </Badge>
+                            )}
+                            <span>{s.origin} ➔ {s.destination}</span>
+                          </div>
                           <div className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
                             <Clock className="w-3 h-3 shrink-0" />
                             {new Date(s.plannedDepartureAt).toLocaleString('id-ID', {

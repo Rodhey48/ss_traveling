@@ -39,11 +39,11 @@ export class VehicleSeatClassEntity extends BaseEntity {
   seatClass?: SeatClassEntity;
 
   @Column({
-    type: 'enum',
-    enum: SeatClassName,
+    type: 'varchar',
+    length: 50,
     name: 'class_name',
   })
-  className!: SeatClassName;
+  className!: string;
 
   @Column({ type: 'int', name: 'seat_capacity' })
   seatCapacity!: number;

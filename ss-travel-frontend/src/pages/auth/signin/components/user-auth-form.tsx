@@ -8,7 +8,6 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
 
-import { BrandLoader } from '@/components/shared/brand-loader';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -35,16 +34,8 @@ type UserFormValue = z.infer<typeof formSchema>;
 
 export default function UserAuthForm() {
   const router = useRouter();
-  const { setAuthData } = useAuth();
+  const { completeLoginWithAnimation } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [isSuccessLoading, setIsSuccessLoading] = useState(false);
-  const [pendingAuth, setPendingAuth] = useState<{
-    user: UserLoginInfo;
-    menus: any[];
-    company?: any;
-    token?: string;
-    refreshToken?: string;
-  } | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [errorFields, setErrorFields] = useState<{
     identifier?: string;
@@ -55,16 +46,6 @@ export default function UserAuthForm() {
     resolver: zodResolver(formSchema),
     defaultValues: { identifier: '', password: '', type: 'admin' }
   });
-
-  const handleLoadingFinished = () => {
-    if (pendingAuth) {
-      setAuthData(pendingAuth);
-    }
-    toast.success('Login Berhasil', {
-      description: 'Selamat datang di SS Travelink ERP.'
-    });
-    router.push('/');
-  };
 
   const onSubmit = async (data: UserFormValue) => {
     setLoading(true);
@@ -92,9 +73,8 @@ export default function UserAuthForm() {
         roles: payload.user.roles
       };
 
-      // Simpan data autentikasi sementara, jangan panggil setAuthData sekarang
-      // agar GuestRoute tidak langsung me-redirect sebelum animasi 2 detik tuntas!
-      setPendingAuth({
+      // Aktifkan transisi mulus ke dashboard via level AuthProvider
+      completeLoginWithAnimation({
         user,
         menus: payload.menus,
         company: payload.company,
@@ -102,8 +82,8 @@ export default function UserAuthForm() {
         refreshToken: payload.refreshToken
       });
 
-      // Tampilkan BrandLoader khusus SS Travelink minimal 2 detik sebelum masuk ke dashboard
-      setIsSuccessLoading(true);
+      // Langsung alihkan rute ke dashboard (halaman login langsung unmount di balik BrandLoader level root)
+      router.replace('/');
     } catch (error: any) {
       if (error.response) {
         const { status } = error.response;
@@ -131,14 +111,6 @@ export default function UserAuthForm() {
 
   return (
     <>
-      {isSuccessLoading && (
-        <BrandLoader
-          message="Login Berhasil"
-          subMessage="Menyiapkan hak akses & mengalihkan ke dashboard..."
-          minDuration={2200}
-          onFinished={handleLoadingFinished}
-        />
-      )}
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}

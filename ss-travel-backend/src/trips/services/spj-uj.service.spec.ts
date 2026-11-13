@@ -16,6 +16,10 @@ import {
   SpjAdditionalRequestStatus,
   CrewAssignmentRole,
 } from '../../@models/trips';
+import { AccountEntity } from '../../@models/finance/account.entity';
+import { BankAccountEntity } from '../../@models/finance/bank-account.entity';
+import { CashAccountEntity } from '../../@models/finance/cash-account.entity';
+import { AccountingPostingService } from '../../finance/services/accounting-posting.service';
 
 describe('SpjUjService', () => {
   let service: SpjUjService;
@@ -26,6 +30,10 @@ describe('SpjUjService', () => {
   let returnRepo: any;
   let additionalReqRepo: any;
   let crewRepo: any;
+  let accountRepo: any;
+  let bankAccountRepo: any;
+  let cashAccountRepo: any;
+  let accountingPostingService: any;
 
   beforeEach(async () => {
     spjRepo = {
@@ -65,6 +73,22 @@ describe('SpjUjService', () => {
       findOne: jest.fn(),
     };
 
+    accountRepo = {
+      findOne: jest.fn().mockResolvedValue({ id: 'acc-13101', code: '13101', name: 'Uang Jalan Kru' }),
+    };
+
+    bankAccountRepo = {
+      findOne: jest.fn().mockResolvedValue({ id: 'bank-1', accountId: 'acc-bank-1', bankName: 'BCA' }),
+    };
+
+    cashAccountRepo = {
+      findOne: jest.fn().mockResolvedValue({ id: 'cash-1', accountId: 'acc-cash-1', name: 'Kas Pool Ciputat' }),
+    };
+
+    accountingPostingService = {
+      postJournal: jest.fn().mockResolvedValue({ id: 'jv-1' }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SpjUjService,
@@ -80,6 +104,22 @@ describe('SpjUjService', () => {
         {
           provide: getRepositoryToken(SpjCrewAssignmentEntity),
           useValue: crewRepo,
+        },
+        {
+          provide: getRepositoryToken(AccountEntity),
+          useValue: accountRepo,
+        },
+        {
+          provide: getRepositoryToken(BankAccountEntity),
+          useValue: bankAccountRepo,
+        },
+        {
+          provide: getRepositoryToken(CashAccountEntity),
+          useValue: cashAccountRepo,
+        },
+        {
+          provide: AccountingPostingService,
+          useValue: accountingPostingService,
         },
       ],
     }).compile();

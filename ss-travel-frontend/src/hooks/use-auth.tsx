@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useMemo, useState, useCall
 import type { UserLoginInfo, BackendMenu, Company } from '@/types';
 import { storage } from '@/lib/storage';
 import { AuthService } from '@/services/auth.service';
+import { BrandLoader } from '@/components/shared/brand-loader';
+import { toast } from 'sonner';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -10,6 +12,13 @@ interface AuthContextType {
   menus: BackendMenu[];
   company: Company | null;
   setAuthData: (data: { 
+    user: UserLoginInfo; 
+    menus: BackendMenu[]; 
+    company?: Company;
+    token?: string; 
+    refreshToken?: string 
+  }) => void;
+  completeLoginWithAnimation: (data: { 
     user: UserLoginInfo; 
     menus: BackendMenu[]; 
     company?: Company;
@@ -28,6 +37,7 @@ const AuthContext = createContext<AuthContextType>({
   menus: [],
   company: null,
   setAuthData: () => {},
+  completeLoginWithAnimation: () => {},
   setCompany: () => {},
   refreshCompany: async () => null,
   logout: async () => {},
@@ -41,6 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [company, setCompanyState] = useState<Company | null>(() => {
     return storage.get('company') || null;
   });
+  const [isLoginTransitioning, setIsLoginTransitioning] = useState<boolean>(false);
 
   const setCompany = useCallback((comp: Company) => {
     setCompanyState(comp);
@@ -140,6 +151,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     storage.set('menus', data.menus);
   }, []);
 
+  const completeLoginWithAnimation = useCallback((data: { 
+    user: UserLoginInfo; 
+    menus: BackendMenu[]; 
+    company?: Company;
+    token?: string; 
+    refreshToken?: string 
+  }) => {
+    setIsLoginTransitioning(true);
+    setUser(data.user);
+    setMenus(data.menus);
+    if (data.company) {
+      setCompanyState(data.company);
+      storage.set('company', data.company);
+    }
+    setIsAuthenticated(true);
+    
+    if (data.token) storage.set('token', data.token);
+    if (data.refreshToken) storage.set('refreshToken', data.refreshToken);
+    
+    storage.set('user', data.user);
+    storage.set('menus', data.menus);
+  }, []);
+
   const logout = useCallback(async () => {
     setIsAuthenticated(false);
     setUser(null);
@@ -155,14 +189,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       menus,
       company,
       setAuthData,
+      completeLoginWithAnimation,
       setCompany,
       refreshCompany,
       logout,
     }),
-    [isAuthenticated, loading, user, menus, company, setAuthData, setCompany, refreshCompany, logout]
+    [isAuthenticated, loading, user, menus, company, setAuthData, completeLoginWithAnimation, setCompany, refreshCompany, logout]
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      {isLoginTransitioning && (
+        <BrandLoader
+          message="Login Berhasil"
+          subMessage="Menyiapkan hak akses & mengalihkan ke dashboard..."
+          minDuration={1800}
+          onFinished={() => {
+            setIsLoginTransitioning(false);
+            toast.success('Login Berhasil', {
+              description: 'Selamat datang di SS Travelink ERP.'
+            });
+          }}
+        />
+      )}
+    </AuthContext.Provider>
+  );
 };
 
 export function useAuth() {

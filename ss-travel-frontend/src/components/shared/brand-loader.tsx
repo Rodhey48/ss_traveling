@@ -57,6 +57,8 @@ export const BrandLoader: React.FC<BrandLoaderProps> = ({
   useEffect(() => {
     setMounted(true);
 
+    let exitTimer: ReturnType<typeof setTimeout> | null = null;
+
     // 1. Progress percentage bar berjalan mulus dari 0% hingga 100% tepat selama minDuration
     const startTime = Date.now();
     const interval = setInterval(() => {
@@ -71,18 +73,19 @@ export const BrandLoader: React.FC<BrandLoaderProps> = ({
       setIsFadingOut(true);
 
       // 3. Jeda animasi fade-out sebelum memanggil onFinished
-      const exitTimer = setTimeout(() => {
+      exitTimer = setTimeout(() => {
         if (onFinished) {
           onFinished();
         }
       }, 500);
-
-      return () => clearTimeout(exitTimer);
     }, minDuration);
 
     return () => {
       clearInterval(interval);
       clearTimeout(timer);
+      if (exitTimer) {
+        clearTimeout(exitTimer);
+      }
     };
   }, [minDuration, onFinished]);
 
@@ -93,7 +96,7 @@ export const BrandLoader: React.FC<BrandLoaderProps> = ({
       className={cn(
         'select-none transition-all duration-500 ease-out',
         fullScreen
-          ? 'fixed inset-0 z-99999999 h-screen w-screen flex flex-col items-center justify-center bg-white/95 dark:bg-zinc-950/95 backdrop-blur-2xl'
+          ? 'fixed inset-0 z-99999999 h-screen w-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-zinc-950 backdrop-blur-2xl'
           : 'min-h-100 w-full flex flex-col items-center justify-center p-8',
         isFadingOut && 'opacity-0 scale-[0.98] pointer-events-none',
         className

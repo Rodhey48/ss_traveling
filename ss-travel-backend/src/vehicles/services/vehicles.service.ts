@@ -12,6 +12,7 @@ import {
   SeatClassEntity,
   VehicleImageEntity,
   CompanyEntity,
+  OwnershipStatus,
 } from '@models';
 import {
   CreateVehicleDto,
@@ -195,11 +196,17 @@ export class VehiclesService {
 
     queryBuilder
       .orderBy('vehicle.code', 'ASC')
-      .addOrderBy('images.sequence', 'ASC')
       .skip(skip)
       .take(limit);
 
     const [vehicles, total] = await queryBuilder.getManyAndCount();
+
+    // Sort images per vehicle by sequence in memory so SQL pagination is unaffected
+    vehicles.forEach((v) => {
+      if (v.images && v.images.length > 1) {
+        v.images.sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0));
+      }
+    });
 
     return {
       status: true,
@@ -210,6 +217,36 @@ export class VehiclesService {
         page,
         limit,
         totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getStats(): Promise<ResponseInterface> {
+    const total = await this.vehicleRepo.count();
+    const active = await this.vehicleRepo.count({ where: { isActive: true } });
+    const owned = await this.vehicleRepo.count({
+      where: { ownershipStatus: OwnershipStatus.OWNED_PAID_OFF },
+    });
+    const leasing = await this.vehicleRepo.count({
+      where: { ownershipStatus: OwnershipStatus.LEASING },
+    });
+
+    const sumResult = await this.vehicleRepo
+      .createQueryBuilder('vehicle')
+      .select('SUM(vehicle.capacity)', 'totalCapacity')
+      .getRawOne();
+
+    const totalSeats = Number(sumResult?.totalCapacity || 0);
+
+    return {
+      status: true,
+      message: 'Statistik armada bus berhasil dimuat',
+      data: {
+        total,
+        active,
+        totalSeats,
+        owned,
+        leasing,
       },
     };
   }

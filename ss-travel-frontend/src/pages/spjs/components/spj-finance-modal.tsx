@@ -49,6 +49,7 @@ import {
   TrendingDown,
   ArrowDownLeft,
   CircleDollarSign,
+  CheckCircle2,
 } from 'lucide-react';
 import { SpjFinanceService } from '@/services/spj-finance.service';
 import { CashBankService } from '@/services/cash-bank.service';
@@ -67,6 +68,9 @@ import type {
   SpjPaymentMethod,
 } from '@/types';
 import { toast } from 'sonner';
+import ConfirmDialog from '@/components/shared/confirm-dialog';
+import { useAuth } from '@/hooks/use-auth';
+import { usePermission } from '@/hooks/use-permission';
 
 interface SpjFinanceModalProps {
   open: boolean;
@@ -81,6 +85,20 @@ export default function SpjFinanceModal({
   spj,
   onSuccess,
 }: SpjFinanceModalProps) {
+  const { user } = useAuth();
+  const { actions } = usePermission('/spjs');
+  const isSuperAdmin =
+    user?.role === 'SUPER_ADMIN' ||
+    user?.role?.toUpperCase() === 'SUPER_ADMIN' ||
+    Boolean(
+      user?.roles?.some(
+        (r: any) =>
+          r.name === 'SUPER_ADMIN' ||
+          r.name?.toUpperCase() === 'SUPER_ADMIN',
+      ),
+    );
+  const canDisburseUj = isSuperAdmin || Boolean((actions as any)?.disburse_uj);
+
   const [activeTab, setActiveTab] = useState<
     'uj' | 'expenses' | 'revenues' | 'crew_payments'
   >('uj');
@@ -97,6 +115,8 @@ export default function SpjFinanceModal({
 
   // Sub-dialogs
   const [disburseOpen, setDisburseOpen] = useState(false);
+  const [confirmDisburseOpen, setConfirmDisburseOpen] = useState(false);
+  const [disburseLoading, setDisburseLoading] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
   const [additionalReqOpen, setAdditionalReqOpen] = useState(false);
   const [rolloverOpen, setRolloverOpen] = useState(false);
@@ -233,9 +253,28 @@ export default function SpjFinanceModal({
   // HANDLERS
   // -------------------------------------------------------------
 
-  const handleDisburseSubmit = async (e: React.FormEvent) => {
+  const handleDisburseSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!spj) return;
+    const cleanAmount = cleanDots(disburseAmount);
+    if (!cleanAmount || Number(cleanAmount) <= 0) {
+      toast.error('Masukkan nominal pencairan UJ yang valid.');
+      return;
+    }
+    if (disburseMethod === 'CASH' && !disburseCashAcc) {
+      toast.error('Pilih akun kas sumber pencairan.');
+      return;
+    }
+    if (disburseMethod === 'BANK_TRANSFER' && !disburseBankAcc) {
+      toast.error('Pilih rekening bank sumber pencairan.');
+      return;
+    }
+    setConfirmDisburseOpen(true);
+  };
+
+  const executeDisburse = async () => {
+    if (!spj) return;
+    setDisburseLoading(true);
     try {
       await SpjFinanceService.disburseUj(spj.id, {
         amount: cleanDots(disburseAmount),
@@ -247,7 +286,8 @@ export default function SpjFinanceModal({
         receiptRef: disburseRef,
         notes: disburseNotes,
       });
-      toast.success('Pencairan dana UJ berhasil dicatat!');
+      toast.success('Pencairan dana UJ berhasil dicatat & jurnal GL telah terposting!');
+      setConfirmDisburseOpen(false);
       setDisburseOpen(false);
       setDisburseAmount('');
       setDisburseRef('');
@@ -256,6 +296,8 @@ export default function SpjFinanceModal({
       onSuccess?.();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Gagal mencairkan UJ.');
+    } finally {
+      setDisburseLoading(false);
     }
   };
 
@@ -692,8 +734,22 @@ export default function SpjFinanceModal({
                   <div className="flex flex-wrap items-center gap-2">
                     <Button
                       size="sm"
-                      onClick={() => setDisburseOpen(true)}
-                      className="h-8 text-xs font-semibold"
+                      onClick={() => {
+                        if (!canDisburseUj) {
+                          toast.error(
+                            'Akses ditolak: Anda tidak memiliki wewenang untuk mencairkan UJ (memerlukan izin SPJ:disburse_uj).',
+                          );
+                          return;
+                        }
+                        setDisburseOpen(true);
+                      }}
+                      disabled={!canDisburseUj}
+                      title={
+                        !canDisburseUj
+                          ? 'Anda tidak memiliki hak otorisasi untuk mencairkan UJ (memerlukan izin disburse_uj)'
+                          : 'Cairkan uang jalan operasional'
+                      }
+                      className="h-8 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <PlusCircle className="w-3.5 h-3.5 mr-1" /> Cairkan UJ
                     </Button>
@@ -1466,6 +1522,18 @@ export default function SpjFinanceModal({
               perjalanan supir.
             </DialogDescription>
           </DialogHeader>
+
+          {/* Informational Banner */}
+          <div className="p-3 mx-1 mt-1 rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50/60 dark:bg-blue-950/20 text-xs text-blue-900 dark:text-blue-200 flex items-start gap-2.5">
+            <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+            <div className="space-y-0.5 leading-relaxed">
+              <span className="font-bold">Informasi Finansial &amp; Akuntansi:</span>
+              <p className="text-[11px] text-blue-800 dark:text-blue-300">
+                Pencairan dana UJ ini akan <strong>langsung memotong saldo kas/bank</strong> sumber dan membukukan mutasi Debit ke akun <strong>13101 (Uang Jalan Kru)</strong> di Buku Besar GL.
+              </p>
+            </div>
+          </div>
+
           <form onSubmit={handleDisburseSubmit} className="space-y-3.5 pt-2">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-foreground">
@@ -1586,13 +1654,31 @@ export default function SpjFinanceModal({
               >
                 Batal
               </Button>
-              <Button type="submit" size="sm" className="font-semibold">
-                Simpan Pencairan
+              <Button type="submit" size="sm" className="font-semibold bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Lanjut Konfirmasi Pencairan
               </Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* ConfirmDialog for UJ Disbursement */}
+      <ConfirmDialog
+        open={confirmDisburseOpen}
+        onOpenChange={setConfirmDisburseOpen}
+        title="Konfirmasi Pencairan Uang Jalan (UJ)"
+        description={`Anda akan mencairkan modal UJ sebesar Rp ${disburseAmount} untuk ${spj?.spjNo || 'SPJ'} melalui ${
+          disburseMethod === 'BANK_TRANSFER'
+            ? 'Transfer ' + (bankAccounts.find((b) => b.id === disburseBankAcc)?.bankName || 'Bank') + ' No. Rek ' + (bankAccounts.find((b) => b.id === disburseBankAcc)?.accountNumber || '') + ' (' + (bankAccounts.find((b) => b.id === disburseBankAcc)?.accountName || '') + ')'
+            : 'Kas Tunai ' + (cashAccounts.find((c) => c.id === disburseCashAcc)?.name || 'Pool')
+        }. Tindakan ini akan LANGSUNG MEMOTONG saldo kas/bank terkait dan membukukan mutasi Debit ke akun 13101 (Uang Jalan Kru) di Buku Besar GL.`}
+        variant="primary"
+        confirmText="Ya, Cairkan & Posting Jurnal"
+        cancelText="Periksa Kembali"
+        isLoading={disburseLoading}
+        onConfirm={executeDisburse}
+      />
+
 
       {/* ========================================================= */}
       {/* DIALOG 2: PENGEMBALIAN SISA UJ */}

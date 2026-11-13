@@ -114,11 +114,11 @@ export class SpjService {
         fullSeatBonus: snapshot.fullSeatBonus,
       };
     } catch {
-      // Fallback jika tidak ada master rate khusus
+      // Fallback jika tidak ada master rate khusus di database (default 0)
       return {
-        mealAllowance: 100000,
-        incentive: 150000,
-        fullSeatBonus: serviceType === TripServiceType.AKAP ? 50000 : 0,
+        mealAllowance: 0,
+        incentive: 0,
+        fullSeatBonus: 0,
       };
     }
   }

@@ -491,7 +491,7 @@ export default function FaresPage() {
           </TabsList>
         </div>
 
-        {/* ==================== TAB 1: MATRIKS TARIF TIKET ==================== */}
+        {/* ==================== TAB 1: MATRIKS TARIF TIKET (Formula Addendum v1.6 & v1.17) ==================== */}
         <TabsContent value="matrix" className="space-y-6 pt-1">
           {/* Kalkulator Simulasi Dinamis Widget */}
           <Card className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xs">
@@ -502,7 +502,7 @@ export default function FaresPage() {
                 </div>
                 <div>
                   <CardTitle className="text-sm font-bold text-foreground">
-                    Simulator Engine Dynamic Pricing (Formula Addendum v1.6 & v1.17)
+                    Simulator Engine Dynamic Pricing
                   </CardTitle>
                   <CardDescription className="text-[11px]">
                     Uji perhitungan tarif tiket real-time: f(Rute, Tanggal Musim, Kelas Kursi)

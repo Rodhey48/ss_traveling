@@ -27,6 +27,7 @@ describe('VehiclesService', () => {
     vehicleRepo = {
       findOne: jest.fn(),
       find: jest.fn(),
+      count: jest.fn(),
       createQueryBuilder: jest.fn(),
       create: jest.fn(),
       save: jest.fn(),
@@ -138,6 +139,32 @@ describe('VehiclesService', () => {
       expect(result.status).toBe(true);
       expect(result.data.data.length).toBe(1);
       expect(result.data.total).toBe(1);
+    });
+  });
+
+  describe('getStats', () => {
+    it('should return global fleet statistics', async () => {
+      vehicleRepo.count
+        .mockResolvedValueOnce(10) // total
+        .mockResolvedValueOnce(10) // active
+        .mockResolvedValueOnce(7)  // owned
+        .mockResolvedValueOnce(3); // leasing
+
+      const mockQueryBuilder: any = {
+        select: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ totalCapacity: '272' }),
+      };
+      vehicleRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+
+      const result = await service.getStats();
+      expect(result.status).toBe(true);
+      expect(result.data).toEqual({
+        total: 10,
+        active: 10,
+        totalSeats: 272,
+        owned: 7,
+        leasing: 3,
+      });
     });
   });
 

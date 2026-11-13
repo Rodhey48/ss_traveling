@@ -48,6 +48,27 @@ export const VehicleService = {
   },
 
   // --- VEHICLES ---
+  getStats: async (): Promise<
+    BaseResponse<{
+      total: number;
+      active: number;
+      totalSeats: number;
+      owned: number;
+      leasing: number;
+    }>
+  > => {
+    const response = await api.get<
+      BaseResponse<{
+        total: number;
+        active: number;
+        totalSeats: number;
+        owned: number;
+        leasing: number;
+      }>
+    >('api/v1/vehicles/stats');
+    return response.data;
+  },
+
   findAll: async (params?: {
     page?: number;
     limit?: number;

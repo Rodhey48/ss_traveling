@@ -674,6 +674,96 @@ Response error autentikasi menggunakan struktur terstandar:
     *   **Defensive DTO & Whitelist Pipeline**: `UpdateFareMatrixDto` dan `UpdateRouteDto` mendeklarasikan kolom-kolom opsional (`code`, `fareSeasonId`, `seatClassId`) sehingga request dari form edit tidak ditolak oleh NestJS `ValidationPipe` (`forbidNonWhitelisted: true`).
 
     ---
+
+    ## 22. Master Koordinator Lapangan (Mitra Eksternal) & Aturan Fee Korlap
+
+    ### A. Entitas Independen `coordinators`
+    *   Pemisahan entitas pengurus jalur terminal / paguyuban dari user internal aplikasi via `CoordinatorEntity` (`src/@models/master-rules/coordinator.entity.ts`).
+    *   Atribut: `code`, `name`, `type` (`INDIVIDUAL`/`ORGANIZATION`), `organizationName`, `phone`, `email`, `area`, `address`, `bankName`, `bankAccountNumber`, `bankAccountHolder`, `notes`, `isActive`.
+    *   Relasi One-to-Many ke `CoordinatorFeeRuleEntity` via `coordinator_id`.
+
+    ### B. Evaluasi Aturan Fee Jalur Fleksibel
+    *   Sistem menghitung kewajiban fee koordinator jalur berdasarkan hierarki prioritas:
+        1. Trayek spesifik (`route_id`).
+        2. Pasangan kota Asal & Tujuan (`origin` & `destination`).
+        3. Fallback umum (`ALL`).
+
+    ---
+
+    ## 23. Tata Kelola Armada Bus: Global Fleet Statistics, Paginasi & Kelas Kursi Dinamis
+
+    ### A. Arsitektur Global Fleet Statistics (`GET /api/v1/vehicles/stats`)
+    *   Menghitung metrik armada secara menyeluruh di tingkat pool (tidak terdistorsi oleh filter paginasi lokal):
+        *   `total`: Akumulasi unit armada bus terdata.
+        *   `active`: Total armada siap dinas operasional.
+        *   `totalSeats`: Akumulasi kapasitas kursi penumpang seluruh armada.
+        *   `owned`: Jumlah bus berstatus lunas / milik sendiri.
+        *   `leasing`: Jumlah bus dalam pembiayaan leasing aktif.
+    *   Frontend mengintegrasikan `VehicleService.getStats()` pada 4 kartu metrik di atas halaman `/vehicles` dengan re-fetch otomatis pada mutasi data.
+
+    ### B. Resolusi Paginasi Relasi One-to-Many TypeORM
+    *   **Akar Masalah**: Penggunaan `.addOrderBy('images.sequence', 'ASC')` pada relasi One-to-Many `images` dalam query paginasi `skip()` & `take()` menyebabkan `DISTINCT` subquery TypeORM memecah ID bus per baris foto galeri.
+    *   **Solusi**: Pengurutan foto galeri dialihkan menjadi in-memory sorting pada service layer setelah entity utama di-load, menjamin pagination limit (6, 12, dst.) mengembalikan jumlah bus unik yang presisi.
+
+    ### C. Master Kelas Kursi Dinamis (`character varying(50)`)
+    *   Migrasi skema database `1794400000000-AlterVehicleSeatClassesClassNameToVarchar.ts` mengubah kolom `vehicle_seat_classes.class_name` dari enum PostgreSQL statis menjadi `character varying(50)`.
+    *   Memungkinkan operator mendaftarkan kelas kursi kustom baru (misal: `EXECUTIVE_PLUS`, `SUITES_CLASS`) tanpa batasan enum hardcode.
+
+    ---
+
+    ## 24. Standardisasi Global Notifikasi Toast High-Contrast (Sonner)
+
+    *   **Penyelarasan Rasio Kontras (WCAG AAA > 13:1)**:
+        *   Mengeliminasi teks putih di atas background pastel transparan yang tidak terbaca pada Light Mode.
+        *   Membuat pemetaan warna semantik terpisah untuk tema Light dan Dark pada `toast.error`, `toast.success`, `toast.warning`, dan `toast.info`.
+        *   Menyediakan tombol penutup mandiri (`closeButton: true`) untuk fleksibilitas dismissal.
+
+    ---
+
+    ## 25. Audit Hirarki Bagan Akun (COA): Penautan Parent ID Permanen
+
+    *   **Akun Bank (`11111` - `11124`)**: Ditautkan secara permanen ke Akun Induk `11 — Kas dan Bank`.
+    *   **Akun Utang Korlap (`22102`)**: Ditautkan ke Akun Induk `22 — Utang Pihak Ketiga & Keagenan`.
+    *   **Akun Beban Korlap (`52105`)**: Ditautkan ke Akun Induk `52 — Beban Operasional Tidak Langsung`.
+    *   **Pencegahan Regresi Seeding**: Klausa `ON CONFLICT ("code") DO UPDATE SET "parent_id" = EXCLUDED."parent_id"` disematkan di seeder dasar `SeedFinanceMaster1888888888891`.
+
+    ---
+
+    ## 26. Integrasi Master Trayek pada Rencana Jadwal, Review SPJ & Gantt Timeline
+
+    *   **Pemilihan Trayek Terikat (`routeId`)**: Dropdown master rute resmi disematkan pada `ScheduleModal`. Pemilihan rute otomatis mengisi (*auto-populate*) field Kota Asal dan Tujuan serta mengikat `routeId` pada `TripScheduleEntity`.
+    *   **Backward Compatibility**: Opsi *Rute Bebas / Kustom* tetap tersedia untuk charter wisata atau rute insidentil non-reguler.
+    *   **Penyelarasan Tampilan**: Badge kode trayek (misal: `[RUT-JKT-YOG-MGL]`) ditampilkan seragam pada tabel daftar jadwal, balok bar Gantt timeline, dan modal review SPJ.
+
+    ---
+
+    ## 27. Standardisasi Kompensasi Kru di Review SPJ & Pencegahan Jurnal Beban Nol
+
+    *   **Peniadaan Angka Acuan Dummy**: Mengeliminasi nilai hardcoded (Rp 250.000 uang makan dan Rp 400.000 premi). Kompensasi kru di-load langsung secara dinamis dari database (`crew_rate_rules`).
+    *   **Kebijakan Perusahaan (Base Meal = Rp 0)**: Standar dasar uang makan adalah Rp 0, namun tetap dapat diisi fleksibel oleh dispatcher jika terdapat kondisi situasional di jalan.
+    *   **Proteksi Zero-Amount GL Posting**: Guard `if (numAmount > 0)` dipasang ketat di `CrewMealPaymentsService` dan `CashierSettlementService` untuk mencegah baris jurnal beban uang makan (`53101`) diposting ke GL jika bernilai Rp 0.
+
+    ---
+
+    ## 28. Otomasi Jurnal Pencairan Uang Jalan (UJ), Permission `disburse_uj` & Dialog Finansial
+
+    ### A. Otomasi Jurnal Pengeluaran Modal UJ
+    *   Pencairan UJ melalui `SpjUjService.disburse` otomatis memanggil `AccountingPostingService.postJournal`:
+        *   **(Debit) Akun `13101`**: *Uang Jalan (UJ) Kru Perjalanan Bus* (modal kerja operasional).
+        *   **(Kredit) Akun Kas/Bank**: Rekening Bank Operasional terkait (misal: `11121` Bank BCA Ops AKAP) atau Kas Tunai Pool (`11101`).
+        *   Idempotency key: `UJ-DISBURSE-${savedDisbursement.id}` mencegah mutasi ganda.
+
+    ### B. Custom Action Permission Menu `disburse_uj`
+    *   Menu action `disburse_uj` terdaftar pada menu `/spjs` (Migrasi `1794420000000`).
+    *   Endpoint backend `POST /api/v1/spjs/:id/uj/disburse` dilindungi guard `@RequirePermissions('SPJ:disburse_uj')`.
+    *   Dibatasi khusus untuk peran pemegang otoritas finansial pool: `SUPER_ADMIN`, `DIRECTOR`, `FINANCE_MANAGER`, `POOL_CASHIER`, `ACCOUNTANT`, `OPS_ADMIN`.
+
+    ### C. Dialog Konfirmasi Finansial Operasional (`ConfirmDialog`)
+    *   Tombol "Cairkan UJ" terproteksi permission `canDisburseUj`.
+    *   Banner edukasi akuntansi terpasang di modal pencairan.
+    *   Submisi pencairan UJ memicu `ConfirmDialog` dengan ringkasan nominal, nomor SPJ, akun sumber pencairan, dan peringatan akuntansi sebelum mutasi dieksekusi.
+
+    ---
     *Gunakan dokumen ini sebagai referensi saat melakukan pengembangan fitur baru atau debugging sistem otorisasi.*
 
 

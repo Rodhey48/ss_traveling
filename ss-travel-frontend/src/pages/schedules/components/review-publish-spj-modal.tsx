@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -8,11 +8,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -20,24 +17,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  FileText,
-  Bus,
-  Clock,
-  MapPin,
-  CheckCircle2,
-  Users,
-  ShieldCheck,
-  Building2,
-  ArrowRight,
-  Route,
-  Info,
-  Coins,
-  RotateCcw,
-} from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { CrewRateService } from '@/services/crew-rate.service';
 import { TripScheduleService, type CustomCrewRatePayload } from '@/services/trip-schedule.service';
 import { UserService } from '@/services/user.service';
-import type { TripSchedule, Vehicle, User } from '@/types';
+import type { CrewRateRule, TripSchedule, User, Vehicle } from '@/types';
+import {
+  ArrowRight,
+  Building2,
+  Bus,
+  CheckCircle2,
+  Coins,
+  FileText,
+  Info,
+  MapPin,
+  RotateCcw,
+  Route,
+  ShieldCheck,
+  Users
+} from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 interface ReviewPublishSpjModalProps {
@@ -58,6 +58,7 @@ export default function ReviewPublishSpjModal({
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
+  const [crewRules, setCrewRules] = useState<CrewRateRule[]>([]);
 
   // State yang dapat diedit sebelum SPJ diterbitkan resmi
   const [vehicleId, setVehicleId] = useState('');
@@ -100,44 +101,70 @@ export default function ReviewPublishSpjModal({
     }
   }, [schedule, isRoundTrip]);
 
-  // Kalkulasi Rekomendasi Tarif Dasar berdasarkan Tipe Armada & Satuan
+  // Kalkulasi Rekomendasi Tarif Dasar berdasarkan Database (crew_rate_rules)
   const systemRecommendedRates = useMemo(() => {
-    const isLuxuryOrSleeper =
-      selectedBus &&
-      (selectedBus.vehicleType?.toLowerCase().includes('sleeper') ||
-        selectedBus.vehicleType?.toLowerCase().includes('luxury') ||
-        selectedBus.vehicleType?.toLowerCase().includes('combi') ||
-        selectedBus.nickname?.toLowerCase().includes('luxury') ||
-        selectedBus.nickname?.toLowerCase().includes('sleeper'));
-
-    if (schedule?.serviceType === 'AKAP') {
-      // Tarif dasar harian/per-leg AKAP
-      const baseDriverMeal = isLuxuryOrSleeper ? 150000 : 125000;
-      const baseDriverInc = isLuxuryOrSleeper ? 250000 : 200000;
-      const baseCondMeal = 100000;
-      const baseCondInc = 150000;
-
+    if (!schedule) {
       return {
-        driverMeal: baseDriverMeal * multiplier,
-        driverInc: baseDriverInc * multiplier,
-        condMeal: baseCondMeal * multiplier,
-        condInc: baseCondInc * multiplier,
-      };
-    } else {
-      // Tarif dasar harian Wisata
-      const baseDriverMeal = 100000;
-      const baseDriverInc = isLuxuryOrSleeper ? 200000 : 150000;
-      const baseCondMeal = 75000;
-      const baseCondInc = 100000;
-
-      return {
-        driverMeal: baseDriverMeal * multiplier,
-        driverInc: baseDriverInc * multiplier,
-        condMeal: baseCondMeal * multiplier,
-        condInc: baseCondInc * multiplier,
+        driverMeal: 0,
+        driverInc: 0,
+        coDriverMeal: 0,
+        coDriverInc: 0,
+        condMeal: 0,
+        condInc: 0,
       };
     }
-  }, [schedule, selectedBus, multiplier]);
+
+    const serviceTypeKey = schedule.serviceType === 'WISATA' ? 'TOURISM' : 'AKAP';
+
+    const driverRule = crewRules.find(
+      (r) => r.serviceType === serviceTypeKey && r.role === 'DRIVER' && r.isActive,
+    );
+    const coDriverRule =
+      crewRules.find(
+        (r) => r.serviceType === serviceTypeKey && r.role === 'CO_DRIVER' && r.isActive,
+      ) || driverRule;
+    const conductorRule = crewRules.find(
+      (r) =>
+        r.serviceType === serviceTypeKey &&
+        (r.role === 'CONDUCTOR' || r.role === 'STEWARDESS') &&
+        r.isActive,
+    );
+
+    // Ambil nilai murni dari database (default 0 jika tidak disetup di DB)
+    const rawDriverMeal = Number(driverRule?.mealAllowance || 0);
+    const rawDriverInc = Number(driverRule?.tripIncentive || 0);
+
+    const rawCoDriverMeal = Number(coDriverRule?.mealAllowance || 0);
+    const rawCoDriverInc = Number(coDriverRule?.tripIncentive || 0);
+
+    const rawCondMeal = Number(conductorRule?.mealAllowance || 0);
+    const rawCondInc = Number(conductorRule?.tripIncentive || 0);
+
+    if (schedule.serviceType === 'AKAP') {
+      // Di AKAP tarif master berjenis PER_TRIP (1 rit PP)
+      // Jika 2 Leg (PP), gunakan nilai master utuh dari DB (misal premi 250k, makan 0)
+      // Jika 1 Leg (Engkel), gunakan separuh tarif (50%)
+      const akapMultiplier = isRoundTrip ? 1 : 0.5;
+      return {
+        driverMeal: Math.round(rawDriverMeal * akapMultiplier),
+        driverInc: Math.round(rawDriverInc * akapMultiplier),
+        coDriverMeal: Math.round(rawCoDriverMeal * akapMultiplier),
+        coDriverInc: Math.round(rawCoDriverInc * akapMultiplier),
+        condMeal: Math.round(rawCondMeal * akapMultiplier),
+        condInc: Math.round(rawCondInc * akapMultiplier),
+      };
+    } else {
+      // Di Wisata tarif master berjenis PER_DAY (harian), kalikan dengan durasi hari sewa
+      return {
+        driverMeal: rawDriverMeal * multiplier,
+        driverInc: rawDriverInc * multiplier,
+        coDriverMeal: rawCoDriverMeal * multiplier,
+        coDriverInc: rawCoDriverInc * multiplier,
+        condMeal: rawCondMeal * multiplier,
+        condInc: rawCondInc * multiplier,
+      };
+    }
+  }, [schedule, crewRules, isRoundTrip, multiplier]);
 
   // Terapkan kalkulasi otomatis jika belum di-override manual
   useEffect(() => {
@@ -145,8 +172,8 @@ export default function ReviewPublishSpjModal({
       setDriver1Meal(systemRecommendedRates.driverMeal);
       setDriver1Incentive(systemRecommendedRates.driverInc);
 
-      setDriver2Meal(systemRecommendedRates.driverMeal);
-      setDriver2Incentive(systemRecommendedRates.driverInc);
+      setDriver2Meal(systemRecommendedRates.coDriverMeal);
+      setDriver2Incentive(systemRecommendedRates.coDriverInc);
 
       setConductorMeal(systemRecommendedRates.condMeal);
       setConductorIncentive(systemRecommendedRates.condInc);
@@ -162,16 +189,20 @@ export default function ReviewPublishSpjModal({
       setNotes(schedule.notes || '');
       setIsRoundTrip(schedule.serviceType === 'AKAP');
       setIsUserOverridden(false);
-      loadUsers();
+      loadMasterData();
     }
   }, [open, schedule]);
 
-  const loadUsers = async () => {
+  const loadMasterData = async () => {
     try {
-      const res = await UserService.findAll({ limit: 100 });
-      setAvailableUsers(res.data?.data || []);
+      const [usersRes, ratesRes] = await Promise.all([
+        UserService.findAll({ limit: 100 }),
+        CrewRateService.findAll(),
+      ]);
+      setAvailableUsers(usersRes.data?.data || []);
+      setCrewRules(ratesRes.data || []);
     } catch {
-      toast.error('Gagal memuat master kru.');
+      toast.error('Gagal memuat master kru dan tarif.');
     }
   };
 
@@ -179,8 +210,8 @@ export default function ReviewPublishSpjModal({
     setIsUserOverridden(false);
     setDriver1Meal(systemRecommendedRates.driverMeal);
     setDriver1Incentive(systemRecommendedRates.driverInc);
-    setDriver2Meal(systemRecommendedRates.driverMeal);
-    setDriver2Incentive(systemRecommendedRates.driverInc);
+    setDriver2Meal(systemRecommendedRates.coDriverMeal);
+    setDriver2Incentive(systemRecommendedRates.coDriverInc);
     setConductorMeal(systemRecommendedRates.condMeal);
     setConductorIncentive(systemRecommendedRates.condInc);
     toast.info('Nilai kompensasi kru telah di-reset ke rekomendasi standar sistem.');
@@ -277,7 +308,7 @@ export default function ReviewPublishSpjModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[880px] max-h-[92vh] overflow-y-auto">
+      <DialogContent className="max-w-220 max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-3">
             <div className="flex items-center gap-2.5">
@@ -343,11 +374,10 @@ export default function ReviewPublishSpjModal({
                       setIsRoundTrip(true);
                       setIsUserOverridden(false);
                     }}
-                    className={`text-[11px] px-2.5 py-1 rounded-md font-semibold transition-colors ${
-                      isRoundTrip
-                        ? 'bg-background text-foreground shadow-2xs'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
+                    className={`text-[11px] px-2.5 py-1 rounded-md font-semibold transition-colors ${isRoundTrip
+                      ? 'bg-background text-foreground shadow-2xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                      }`}
                   >
                     2 Leg (PP Pulang-Pergi)
                   </button>
@@ -357,11 +387,10 @@ export default function ReviewPublishSpjModal({
                       setIsRoundTrip(false);
                       setIsUserOverridden(false);
                     }}
-                    className={`text-[11px] px-2.5 py-1 rounded-md font-semibold transition-colors ${
-                      !isRoundTrip
-                        ? 'bg-background text-foreground shadow-2xs'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
+                    className={`text-[11px] px-2.5 py-1 rounded-md font-semibold transition-colors ${!isRoundTrip
+                      ? 'bg-background text-foreground shadow-2xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                      }`}
                   >
                     1 Leg (Satu Arah)
                   </button>
@@ -373,6 +402,22 @@ export default function ReviewPublishSpjModal({
               )}
             </div>
 
+            {/* Trayek Resmi Terpilih */}
+            {schedule.route && (
+              <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-lg bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-800/80 text-xs">
+                <div className="flex items-center gap-1.5 font-bold text-indigo-950 dark:text-indigo-200">
+                  <Badge variant="outline" className="bg-indigo-100 text-indigo-800 border-indigo-300 font-mono text-[10px]">
+                    {schedule.route.code}
+                  </Badge>
+                  <span>Trayek: {schedule.route.name}</span>
+                </div>
+                <div className="flex items-center gap-2 text-[11px] text-indigo-700 dark:text-indigo-300">
+                  {schedule.route.via && <span>Via: {schedule.route.via}</span>}
+                  {schedule.route.distanceKm && <span>• ~{schedule.route.distanceKm} km</span>}
+                </div>
+              </div>
+            )}
+
             {/* Visualisasi Kartu Segmen Leg 1 & Leg 2 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
               {/* Leg 1: Arah Berangkat */}
@@ -381,10 +426,10 @@ export default function ReviewPublishSpjModal({
                   <Badge variant="outline" className="bg-indigo-100/70 text-indigo-800 border-indigo-300 dark:bg-indigo-900/60 dark:text-indigo-200 font-bold text-[10px]">
                     Leg 1: Keberangkatan {isRoundTrip ? '(Arah Timur / DEPARTURE)' : '(ONE WAY)'}
                   </Badge>
-                  <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                  {/* <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                     <Clock className="w-3 h-3 text-sky-600" />
                     {new Date(schedule.plannedDepartureAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
-                  </span>
+                  </span> */}
                 </div>
 
                 <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
@@ -413,10 +458,10 @@ export default function ReviewPublishSpjModal({
                     <Badge variant="outline" className="bg-amber-100/70 text-amber-800 border-amber-300 dark:bg-amber-900/60 dark:text-amber-200 font-bold text-[10px]">
                       Leg 2: Kepulangan (Arah Barat / RETURN)
                     </Badge>
-                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                    {/* <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                       <Clock className="w-3 h-3 text-sky-600" />
                       {new Date(schedule.plannedReturnAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
-                    </span>
+                    </span> */}
                   </div>
 
                   <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
@@ -600,22 +645,20 @@ export default function ReviewPublishSpjModal({
                     <button
                       type="button"
                       onClick={() => setDriver1Timing('AT_SETTLEMENT')}
-                      className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                        driver1Timing === 'AT_SETTLEMENT'
-                          ? 'bg-indigo-600 text-white font-bold'
-                          : 'bg-muted text-muted-foreground hover:text-foreground'
-                      }`}
+                      className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${driver1Timing === 'AT_SETTLEMENT'
+                        ? 'bg-indigo-600 text-white font-bold'
+                        : 'bg-muted text-muted-foreground hover:text-foreground'
+                        }`}
                     >
                       Kasir Pool (Pulang)
                     </button>
                     <button
                       type="button"
                       onClick={() => setDriver1Timing('EARLY_DISBURSEMENT')}
-                      className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                        driver1Timing === 'EARLY_DISBURSEMENT'
-                          ? 'bg-amber-600 text-white font-bold'
-                          : 'bg-muted text-muted-foreground hover:text-foreground'
-                      }`}
+                      className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${driver1Timing === 'EARLY_DISBURSEMENT'
+                        ? 'bg-amber-600 text-white font-bold'
+                        : 'bg-muted text-muted-foreground hover:text-foreground'
+                        }`}
                     >
                       Bayar di Awal (Transfer)
                     </button>
@@ -670,22 +713,20 @@ export default function ReviewPublishSpjModal({
                     <button
                       type="button"
                       onClick={() => setDriver2Timing('AT_SETTLEMENT')}
-                      className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                        driver2Timing === 'AT_SETTLEMENT'
-                          ? 'bg-indigo-600 text-white font-bold'
-                          : 'bg-muted text-muted-foreground hover:text-foreground'
-                      }`}
+                      className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${driver2Timing === 'AT_SETTLEMENT'
+                        ? 'bg-indigo-600 text-white font-bold'
+                        : 'bg-muted text-muted-foreground hover:text-foreground'
+                        }`}
                     >
                       Kasir Pool (Pulang)
                     </button>
                     <button
                       type="button"
                       onClick={() => setDriver2Timing('EARLY_DISBURSEMENT')}
-                      className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                        driver2Timing === 'EARLY_DISBURSEMENT'
-                          ? 'bg-amber-600 text-white font-bold'
-                          : 'bg-muted text-muted-foreground hover:text-foreground'
-                      }`}
+                      className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${driver2Timing === 'EARLY_DISBURSEMENT'
+                        ? 'bg-amber-600 text-white font-bold'
+                        : 'bg-muted text-muted-foreground hover:text-foreground'
+                        }`}
                     >
                       Bayar di Awal (Transfer)
                     </button>
@@ -740,22 +781,20 @@ export default function ReviewPublishSpjModal({
                     <button
                       type="button"
                       onClick={() => setConductorTiming('AT_SETTLEMENT')}
-                      className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                        conductorTiming === 'AT_SETTLEMENT'
-                          ? 'bg-indigo-600 text-white font-bold'
-                          : 'bg-muted text-muted-foreground hover:text-foreground'
-                      }`}
+                      className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${conductorTiming === 'AT_SETTLEMENT'
+                        ? 'bg-indigo-600 text-white font-bold'
+                        : 'bg-muted text-muted-foreground hover:text-foreground'
+                        }`}
                     >
                       Kasir Pool (Pulang)
                     </button>
                     <button
                       type="button"
                       onClick={() => setConductorTiming('EARLY_DISBURSEMENT')}
-                      className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                        conductorTiming === 'EARLY_DISBURSEMENT'
-                          ? 'bg-amber-600 text-white font-bold'
-                          : 'bg-muted text-muted-foreground hover:text-foreground'
-                      }`}
+                      className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${conductorTiming === 'EARLY_DISBURSEMENT'
+                        ? 'bg-amber-600 text-white font-bold'
+                        : 'bg-muted text-muted-foreground hover:text-foreground'
+                        }`}
                     >
                       Bayar di Awal (Transfer)
                     </button>
@@ -802,7 +841,7 @@ export default function ReviewPublishSpjModal({
           <div className="p-3.5 rounded-xl border border-indigo-200/80 bg-indigo-50/40 dark:border-indigo-900/40 dark:bg-indigo-950/20 text-xs text-foreground space-y-1 shadow-2xs">
             <div className="font-bold flex items-center gap-1.5 text-xs text-indigo-950 dark:text-indigo-200">
               <Info className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-              <span>SOP Penugasan Kru & Fleksibilitas Revisi Leg 2 (Skenario 1):</span>
+              <span>SOP Penugasan Kru & Fleksibilitas Revisi Leg 2</span>
             </div>
             <p className="text-muted-foreground text-[11px] leading-relaxed">
               Kru yang ditugaskan di atas otomatis aktif untuk rute awal (Leg 1). Sesuai Blueprint operasional, jika terjadi <strong>pergantian supir di kota transit (Yogyakarta)</strong> atau ada kru yang sakit saat istirahat pool cabang, personel pada <strong>Leg 2</strong> dapat direvisi langsung di perjalanan melalui tombol <strong>[Ganti Kru]</strong> pada dokumen SPJ tanpa membatalkan perjalanan.
@@ -816,7 +855,7 @@ export default function ReviewPublishSpjModal({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Contoh: Wajib servis makan di RM Raos Eco Gringsing, cek kelayakan ban di Rest Area KM 379, bawa dokumen izin trayek lengkap."
-              className="mt-1.5 text-xs min-h-[60px]"
+              className="mt-1.5 text-xs min-h-15"
             />
           </div>
 
@@ -844,7 +883,7 @@ export default function ReviewPublishSpjModal({
               type="submit"
               size="sm"
               disabled={loading || !vehicleId || (!driver1Id && !driver2Id)}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs h-9 shadow-xs min-w-[170px]"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs h-9 shadow-xs min-w-42.5"
             >
               <CheckCircle2 className="w-4 h-4 mr-1.5" />
               {loading ? 'Menerbitkan...' : `Konfirmasi & Terbitkan SPJ (${isRoundTrip ? '2 Leg' : '1 Leg'})`}

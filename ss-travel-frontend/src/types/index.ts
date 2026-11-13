@@ -218,7 +218,7 @@ export interface ProfitCenter {
  */
 export type VehicleType = 'BIG_BUS' | 'MEDIUM_BUS' | 'MINIBUS';
 export type OwnershipStatus = 'OWNED_PAID_OFF' | 'LEASING' | 'RENTAL';
-export type SeatClassName = 'SLEEPER' | 'LUXURY_2_1' | 'EXECUTIVE' | 'STANDARD';
+export type SeatClassName = 'SLEEPER' | 'LUXURY_2_1' | 'EXECUTIVE' | 'STANDARD' | (string & {});
 
 export interface SeatClass {
   id: string;

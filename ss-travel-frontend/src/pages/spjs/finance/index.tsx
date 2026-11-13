@@ -86,10 +86,27 @@ import {
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
+import ConfirmDialog from '@/components/shared/confirm-dialog';
+import { useAuth } from '@/hooks/use-auth';
+import { usePermission } from '@/hooks/use-permission';
 
 export default function SpjFinancePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+
+  const { user } = useAuth();
+  const { actions } = usePermission('/spjs');
+  const isSuperAdmin =
+    user?.role === 'SUPER_ADMIN' ||
+    user?.role?.toUpperCase() === 'SUPER_ADMIN' ||
+    Boolean(
+      user?.roles?.some(
+        (r: any) =>
+          r.name === 'SUPER_ADMIN' ||
+          r.name?.toUpperCase() === 'SUPER_ADMIN',
+      ),
+    );
+  const canDisburseUj = isSuperAdmin || Boolean((actions as any)?.disburse_uj);
 
   const [spj, setSpj] = useState<Spj | null>(null);
   const [loading, setLoading] = useState(true);
@@ -110,6 +127,8 @@ export default function SpjFinancePage() {
 
   // Sub-dialogs
   const [disburseOpen, setDisburseOpen] = useState(false);
+  const [confirmDisburseOpen, setConfirmDisburseOpen] = useState(false);
+  const [disburseLoading, setDisburseLoading] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
   const [additionalReqOpen, setAdditionalReqOpen] = useState(false);
   const [rolloverOpen, setRolloverOpen] = useState(false);
@@ -508,9 +527,28 @@ export default function SpjFinancePage() {
   // HANDLERS
   // -------------------------------------------------------------
 
-  const handleDisburseSubmit = async (e: React.FormEvent) => {
+  const handleDisburseSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
+    const cleanAmount = cleanDots(disburseAmount);
+    if (!cleanAmount || Number(cleanAmount) <= 0) {
+      toast.error('Masukkan nominal pencairan UJ yang valid.');
+      return;
+    }
+    if (disburseMethod === 'CASH' && !disburseCashAcc) {
+      toast.error('Pilih akun kas sumber pencairan.');
+      return;
+    }
+    if (disburseMethod === 'BANK_TRANSFER' && !disburseBankAcc) {
+      toast.error('Pilih rekening bank sumber pencairan.');
+      return;
+    }
+    setConfirmDisburseOpen(true);
+  };
+
+  const executeDisburse = async () => {
+    if (!id) return;
+    setDisburseLoading(true);
     try {
       await SpjFinanceService.disburseUj(id, {
         amount: cleanDots(disburseAmount),
@@ -520,7 +558,8 @@ export default function SpjFinancePage() {
         receiptRef: disburseRef,
         notes: disburseNotes,
       });
-      toast.success('Pencairan dana UJ berhasil dicatat!');
+      toast.success('Pencairan dana UJ berhasil dicatat & jurnal GL telah terposting!');
+      setConfirmDisburseOpen(false);
       setDisburseOpen(false);
       setDisburseAmount('');
       setDisburseRef('');
@@ -528,6 +567,8 @@ export default function SpjFinancePage() {
       loadFinanceData(id);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Gagal mencairkan UJ.');
+    } finally {
+      setDisburseLoading(false);
     }
   };
 
@@ -1136,8 +1177,16 @@ export default function SpjFinancePage() {
               <div className="flex flex-wrap items-center gap-2">
                 <Button
                   size="sm"
-                  onClick={() => setDisburseOpen(true)}
-                  className="h-8 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs gap-1.5"
+                  onClick={() => {
+                    if (!canDisburseUj) {
+                      toast.error('Akses ditolak: Anda tidak memiliki wewenang untuk mencairkan UJ (memerlukan izin SPJ:disburse_uj).');
+                      return;
+                    }
+                    setDisburseOpen(true);
+                  }}
+                  disabled={!canDisburseUj}
+                  title={!canDisburseUj ? 'Anda tidak memiliki hak otorisasi untuk mencairkan UJ (memerlukan izin disburse_uj)' : 'Cairkan uang jalan operasional'}
+                  className="h-8 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <PlusCircle className="w-3.5 h-3.5" /> Cairkan UJ
                 </Button>
@@ -1499,8 +1548,8 @@ export default function SpjFinancePage() {
                     setAgentTicketModalOpen(true);
                   }}
                   className={`h-8 text-xs font-semibold gap-1.5 ${isWisata
-                      ? 'bg-muted text-muted-foreground opacity-60 cursor-not-allowed hover:bg-muted'
-                      : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs'
+                    ? 'bg-muted text-muted-foreground opacity-60 cursor-not-allowed hover:bg-muted'
+                    : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs'
                     }`}
                   title={isWisata ? 'Khusus Layanan AKAP (Layanan Wisata berbasis kontrak charter rombongan)' : undefined}
                 >
@@ -1699,8 +1748,8 @@ export default function SpjFinancePage() {
                   disabled={isWisata}
                   onClick={() => navigate('/finance/restaurant-settlements')}
                   className={`h-8 text-xs font-semibold gap-1.5 ${isWisata
-                      ? 'border-border text-muted-foreground opacity-60 cursor-not-allowed hover:bg-transparent'
-                      : 'border-amber-500/60 text-amber-700 dark:text-amber-300 bg-amber-50/50 dark:bg-amber-950/20 hover:bg-amber-100'
+                    ? 'border-border text-muted-foreground opacity-60 cursor-not-allowed hover:bg-transparent'
+                    : 'border-amber-500/60 text-amber-700 dark:text-amber-300 bg-amber-50/50 dark:bg-amber-950/20 hover:bg-amber-100'
                     }`}
                   title={isWisata ? 'Khusus Layanan AKAP (Layanan Wisata tidak menggunakan kupon restoran mitra)' : undefined}
                 >
@@ -1830,8 +1879,8 @@ export default function SpjFinancePage() {
                                 setMealCouponModalOpen(true);
                               }}
                               className={`h-7 text-[11px] font-medium gap-1 ${isWisata
-                                  ? 'border-border text-muted-foreground opacity-60 cursor-not-allowed hover:bg-transparent'
-                                  : 'border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800'
+                                ? 'border-border text-muted-foreground opacity-60 cursor-not-allowed hover:bg-transparent'
+                                : 'border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800'
                                 }`}
                               title={isWisata ? 'Khusus Layanan AKAP (Konsumsi wisata dikelola panitia rombongan)' : undefined}
                             >
@@ -1844,8 +1893,8 @@ export default function SpjFinancePage() {
                                 disabled={isWisata}
                                 onClick={() => handleDeleteMealRecord(mealRec.id)}
                                 className={`h-7 w-7 p-0 ${isWisata
-                                    ? 'text-muted-foreground opacity-40 cursor-not-allowed'
-                                    : 'text-muted-foreground hover:text-destructive hover:bg-destructive/10'
+                                  ? 'text-muted-foreground opacity-40 cursor-not-allowed'
+                                  : 'text-muted-foreground hover:text-destructive hover:bg-destructive/10'
                                   }`}
                                 title={isWisata ? 'Khusus Layanan AKAP' : 'Hapus Kupon Makan'}
                               >
@@ -1899,8 +1948,8 @@ export default function SpjFinancePage() {
                   disabled={isWisata}
                   onClick={handleSyncCoordinationFees}
                   className={`h-8 text-xs font-medium gap-1.5 ${isWisata
-                      ? 'border-border text-muted-foreground opacity-60 cursor-not-allowed hover:bg-transparent'
-                      : 'border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800'
+                    ? 'border-border text-muted-foreground opacity-60 cursor-not-allowed hover:bg-transparent'
+                    : 'border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800'
                     }`}
                   title={isWisata ? 'Khusus Layanan AKAP (Tidak ada biaya koordinasi pengurus jalur terminal pada bus pariwisata)' : undefined}
                 >
@@ -1912,8 +1961,8 @@ export default function SpjFinancePage() {
                   disabled={isWisata}
                   onClick={() => navigate('/finance/coordination-fees')}
                   className={`h-8 text-xs font-semibold gap-1.5 ${isWisata
-                      ? 'border-border text-muted-foreground opacity-60 cursor-not-allowed hover:bg-transparent'
-                      : 'border-amber-500/60 text-amber-700 dark:text-amber-300 bg-amber-50/50 dark:bg-amber-950/20 hover:bg-amber-100'
+                    ? 'border-border text-muted-foreground opacity-60 cursor-not-allowed hover:bg-transparent'
+                    : 'border-amber-500/60 text-amber-700 dark:text-amber-300 bg-amber-50/50 dark:bg-amber-950/20 hover:bg-amber-100'
                     }`}
                   title={isWisata ? 'Khusus Layanan AKAP (Tidak ada biaya koordinasi pengurus jalur terminal pada bus pariwisata)' : undefined}
                 >
@@ -2012,8 +2061,8 @@ export default function SpjFinancePage() {
                               disabled={isWisata}
                               onClick={() => handleDeleteCoordinationFee(cf.id)}
                               className={`h-7 w-7 p-0 ${isWisata
-                                  ? 'text-muted-foreground opacity-40 cursor-not-allowed'
-                                  : 'text-muted-foreground hover:text-destructive hover:bg-destructive/10'
+                                ? 'text-muted-foreground opacity-40 cursor-not-allowed'
+                                : 'text-muted-foreground hover:text-destructive hover:bg-destructive/10'
                                 }`}
                               title={isWisata ? 'Khusus Layanan AKAP' : 'Hapus Kewajiban Koordinasi'}
                             >
@@ -2092,10 +2141,10 @@ export default function SpjFinancePage() {
                     setFullSeatModalOpen(true);
                   }}
                   className={`h-8 text-xs font-semibold gap-1.5 ${isWisata
-                      ? 'bg-muted text-muted-foreground opacity-60 cursor-not-allowed hover:bg-muted'
-                      : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                    ? 'bg-muted text-muted-foreground opacity-60 cursor-not-allowed hover:bg-muted'
+                    : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
                     }`}
-                  title={isWisata ? 'Khusus Layanan AKAP (Bonus Full Seat tidak berlaku untuk charter wisata sesuai Blueprint Addendum v1.8 & v1.10)' : undefined}
+                  title={isWisata ? 'Khusus Layanan AKAP (Bonus Full Seat tidak berlaku untuk charter wisata)' : undefined}
                 >
                   <Sparkles className="w-3.5 h-3.5" /> + Klaim Bonus Full Seat
                 </Button>
@@ -2260,8 +2309,8 @@ export default function SpjFinancePage() {
                     type="button"
                     onClick={() => handleToggleFilterByLeg(true)}
                     className={`text-[10px] px-2.5 py-0.5 rounded-full font-medium transition-colors ${filterByLeg
-                        ? 'bg-emerald-600 text-white font-bold shadow-2xs'
-                        : 'bg-muted text-muted-foreground hover:text-foreground'
+                      ? 'bg-emerald-600 text-white font-bold shadow-2xs'
+                      : 'bg-muted text-muted-foreground hover:text-foreground'
                       }`}
                   >
                     🎯 Sesuai Leg ({filteredAgents.length})
@@ -2270,8 +2319,8 @@ export default function SpjFinancePage() {
                     type="button"
                     onClick={() => handleToggleFilterByLeg(false)}
                     className={`text-[10px] px-2.5 py-0.5 rounded-full font-medium transition-colors ${!filterByLeg
-                        ? 'bg-indigo-600 text-white font-bold shadow-2xs'
-                        : 'bg-muted text-muted-foreground hover:text-foreground'
+                      ? 'bg-indigo-600 text-white font-bold shadow-2xs'
+                      : 'bg-muted text-muted-foreground hover:text-foreground'
                       }`}
                   >
                     🌐 Semua Agen ({allAgents.length})
@@ -2649,6 +2698,18 @@ export default function SpjFinancePage() {
               Mencatat pengeluaran uang tunai pool atau transfer bank untuk modal perjalanan supir.
             </DialogDescription>
           </DialogHeader>
+
+          {/* Informational Banner */}
+          <div className="p-3 mx-1 mt-1 rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50/60 dark:bg-blue-950/20 text-xs text-blue-900 dark:text-blue-200 flex items-start gap-2.5">
+            <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+            <div className="space-y-0.5 leading-relaxed">
+              <span className="font-bold">Informasi Finansial &amp; Akuntansi:</span>
+              <p className="text-[11px] text-blue-800 dark:text-blue-300">
+                Pencairan dana UJ ini akan <strong>langsung memotong saldo kas/bank</strong> sumber dan membukukan mutasi Debit ke akun <strong>13101 (Uang Jalan Kru)</strong> di Buku Besar GL.
+              </p>
+            </div>
+          </div>
+
           <form onSubmit={handleDisburseSubmit} className="space-y-3.5 pt-2">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-foreground">Nominal Pencairan</Label>
@@ -2737,13 +2798,30 @@ export default function SpjFinancePage() {
               <Button type="button" variant="outline" size="sm" onClick={() => setDisburseOpen(false)}>
                 Batal
               </Button>
-              <Button type="submit" size="sm" className="font-semibold bg-emerald-600 hover:bg-emerald-700 text-white">
-                Simpan Pencairan
+              <Button type="submit" size="sm" className="font-semibold bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Lanjut Konfirmasi Pencairan
               </Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* ConfirmDialog for UJ Disbursement */}
+      <ConfirmDialog
+        open={confirmDisburseOpen}
+        onOpenChange={setConfirmDisburseOpen}
+        title="Konfirmasi Pencairan Uang Jalan (UJ)"
+        description={`Anda akan mencairkan modal UJ sebesar Rp ${disburseAmount} untuk ${spj?.spjNo || 'SPJ'} melalui ${
+          disburseMethod === 'BANK_TRANSFER'
+            ? 'Transfer ' + (bankAccounts.find((b) => b.id === disburseBankAcc)?.bankName || 'Bank') + ' No. Rek ' + (bankAccounts.find((b) => b.id === disburseBankAcc)?.accountNumber || '') + ' (' + (bankAccounts.find((b) => b.id === disburseBankAcc)?.accountName || '') + ')'
+            : 'Kas Tunai ' + (cashAccounts.find((c) => c.id === disburseCashAcc)?.name || 'Pool')
+        }. Tindakan ini akan LANGSUNG MEMOTONG saldo kas/bank terkait dan membukukan mutasi Debit ke akun 13101 (Uang Jalan Kru) di Buku Besar GL.`}
+        variant="primary"
+        confirmText="Ya, Cairkan & Posting Jurnal"
+        cancelText="Periksa Kembali"
+        isLoading={disburseLoading}
+        onConfirm={executeDisburse}
+      />
 
       {/* ========================================================= */}
       {/* DIALOG 2: PENGEMBALIAN SISA UJ                           */}
@@ -3241,8 +3319,8 @@ export default function SpjFinancePage() {
                           setRevCargoCommissionAmount(String(Math.round(comm)));
                         }}
                         className={`h-6 text-[11px] font-mono flex-1 px-1.5 ${Number(revCargoCommissionPct).toFixed(2) === pct
-                            ? 'bg-amber-600 hover:bg-amber-700 text-white font-bold'
-                            : 'border-slate-300 dark:border-zinc-700'
+                          ? 'bg-amber-600 hover:bg-amber-700 text-white font-bold'
+                          : 'border-slate-300 dark:border-zinc-700'
                           }`}
                       >
                         {Number(pct)}%
@@ -3637,15 +3715,15 @@ export default function SpjFinancePage() {
                         key={crewAss.id}
                         onClick={() => togglePerpalCrew(crewAss.id)}
                         className={`flex items-center justify-between p-2.5 rounded-lg border cursor-pointer transition-colors text-xs select-none ${isChecked
-                            ? 'bg-indigo-50/70 dark:bg-indigo-950/30 border-indigo-300 dark:border-indigo-800 font-semibold'
-                            : 'bg-background border-border/50 text-muted-foreground hover:bg-muted/30'
+                          ? 'bg-indigo-50/70 dark:bg-indigo-950/30 border-indigo-300 dark:border-indigo-800 font-semibold'
+                          : 'bg-background border-border/50 text-muted-foreground hover:bg-muted/30'
                           }`}
                       >
                         <div className="flex items-center gap-2.5">
                           <div
                             className={`w-4 h-4 rounded flex items-center justify-center border transition-colors ${isChecked
-                                ? 'bg-indigo-600 border-indigo-600 text-white'
-                                : 'border-slate-300 dark:border-zinc-700 bg-background'
+                              ? 'bg-indigo-600 border-indigo-600 text-white'
+                              : 'border-slate-300 dark:border-zinc-700 bg-background'
                               }`}
                           >
                             {isChecked && <Check className="w-3 h-3 stroke-3" />}
@@ -3802,15 +3880,15 @@ export default function SpjFinancePage() {
                         key={crewAss.id}
                         onClick={() => toggleFullSeatCrew(crewAss.id)}
                         className={`flex items-center justify-between p-2.5 rounded-lg border cursor-pointer transition-colors text-xs select-none ${isChecked
-                            ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 font-semibold'
-                            : 'bg-background border-border/50 text-muted-foreground hover:bg-muted/30'
+                          ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 font-semibold'
+                          : 'bg-background border-border/50 text-muted-foreground hover:bg-muted/30'
                           }`}
                       >
                         <div className="flex items-center gap-2.5">
                           <div
                             className={`w-4 h-4 rounded flex items-center justify-center border transition-colors ${isChecked
-                                ? 'bg-emerald-600 border-emerald-600 text-white'
-                                : 'border-slate-300 dark:border-zinc-700 bg-background'
+                              ? 'bg-emerald-600 border-emerald-600 text-white'
+                              : 'border-slate-300 dark:border-zinc-700 bg-background'
                               }`}
                           >
                             {isChecked && <Check className="w-3 h-3 stroke-3" />}

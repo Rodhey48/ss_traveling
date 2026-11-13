@@ -2,6 +2,130 @@
 
 ## Phase 3: Core Implementation (In Progress)
 
+### 2026-11-13: Otomasi Jurnal Pencairan Uang Jalan (UJ), Menu Custom Action Permission & Proteksi Konfirmasi Finansial Completed
+- **Otomasi Jurnal Akuntansi Pengeluaran Modal UJ (Debit 13101 vs Kredit Kas/Bank)**:
+  - Mengintegrasikan `AccountingPostingService.postJournal` ke dalam `SpjUjService.disburse`:
+    * **(Debit) Akun 13101**: *Uang Jalan (UJ) Kru Perjalanan Bus* (modal uang muka jalan supir).
+    * **(Kredit) Akun Kas/Bank**: Rekening Bank Operasional terkait (misal: `11121` Bank BCA Operasional Bus AKAP) atau Kas Tunai Pool (`11101`).
+    * Dimensi lengkap tercatat di baris jurnal: `tripId`, `vehicleId`, `businessUnitId`, `profitCenterId`, `costCenterId`.
+    * Idempotency key: `UJ-DISBURSE-${disbursement.id}` mencegah mutasi ganda.
+  - Siklus penutupan UJ di kasir pool: saat rekonsiliasi SPJ, saldo UJ yang kembali didebit ke `11101` dan seluruh UJ yang dicairkan dikreditkan tuntas dari `13101`, menjaga saldo UJ tetap seimbang dan akurat sesuai Blueprint Akuntansi Skenario 1 dan 2.
+- **Menu Custom Action Permission (`disburse_uj`) & RBAC Guard**:
+  - Menambahkan custom action `disburse_uj` ke tabel `menus` untuk URL `/spjs` dan mengonfigurasi migration `1794420000000-AddSpjDisburseUjCustomAction.ts`.
+  - Memberikan hak akses `actions: {"disburse_uj": true}` khusus untuk peran pengelola keuangan & kasir: `SUPER_ADMIN`, `DIRECTOR`, `FINANCE_MANAGER`, `POOL_CASHIER`, `ACCOUNTANT`, `OPS_ADMIN`.
+  - Melindungi endpoint `POST /api/v1/spjs/:id/uj/disburse` dengan `@RequirePermissions('SPJ:disburse_uj')`.
+  - Memperbarui hook `usePermission` di frontend untuk mendukung pencocokan path turunan/sub-routes (seperti `/spjs/:id/finance`).
+- **Kotak Informasi Finansial & Konfirmasi Dialog Operasional**:
+  - Tombol **"Cairkan UJ"** di halaman Keuangan SPJ (`/spjs/:id/finance`) dan modal (`SpjFinanceModal`) kini diproteksi hak akses `canDisburseUj` dengan visual disabled dan tooltip informatif.
+  - Menambahkan banner informasi finansial di modal pencairan UJ: *"Pencairan dana UJ ini akan langsung memotong saldo kas/bank sumber dan membukukan mutasi Debit ke akun 13101 (Uang Jalan Kru) di Buku Besar GL."*
+  - Saat tombol disubmit, sistem menampilkan modal `ConfirmDialog` yang memuat rincian nominal, nomor SPJ, metode pencairan kas/bank, dan peringatan akuntansi sebelum mutasi dieksekusi.
+- **Verifikasi Kualitas Penuh**:
+  - Seluruh 36 unit test suites backend (279 unit tests) lulus 100%.
+  - Seluruh 6 E2E test suites (43 tests), termasuk `spj-finance-lifecycle.e2e-spec.ts` dan `spj-wisata-lifecycle.e2e-spec.ts`, lulus 100%.
+  - Backend NestJS build `yarn build` sukses 100%.
+  - Frontend Vite React build `yarn build` sukses 100%.
+
+### 2026-11-13: Standardisasi Dinamis Kompensasi Kru di Modal Review SPJ (Base Meal = 0, Dinamis dari DB) & Proteksi Mutlak Beban Nol Jurnal Completed
+- **Penyelarasan Dinamis Kompensasi Kru pada `ReviewPublishSpjModal`**:
+  - Mengeliminasi total angka acuan dummy yang sebelumnya di-hardcode (`baseDriverMeal = 125.000 * 2 = 250.000` dan `baseDriverInc = 200.000 * 2 = 400.000`).
+  - Menghubungkan pemanggilan `CrewRateService.findAll()` saat inisialisasi modal `ReviewPublishSpjModal`:
+    * Mengambil standar tarif murni dari database (`crew_rate_rules`).
+    * **Uang Makan (Meal Allowance)**: Mengikuti kebijakan perusahaan di mana default/standar adalah **Rp 0** (karena tidak ada uang makan reguler di luar kondisi tertentu). Field input tetap fleksibel jika dispatcher ingin mengisi uang makan secara situasional.
+    * **Premi Ritase (Trip Incentive)**: Diambil langsung dari database (`tripIncentive` = Rp 250.000 untuk Driver AKAP PP, Rp 150.000 untuk Kondektur AKAP PP). Jika tidak di-setup di database, acuan dasar otomatis **Rp 0**.
+- **Proteksi Akuntansi & Pencegahan Jurnal Nominal Nol (`53101`)**:
+  - `CrewMealPaymentsService.syncFromCrewAssignments`: Telah memverifikasi guard `if (MoneyHelper.toDecimal(mealAmount).gt(0))`, sehingga jika uang makan = 0, record pembayaran uang makan tidak dibuat sama sekali.
+  - `CrewMealPaymentsService.disburseEarly`: Menambahkan guard `if (numAmount > 0)` sebelum pemanggilan `postJournal()` guna mencegah posting jurnal ke GL dengan nominal nol.
+  - `CashierSettlementService.postSettlementReconciliationJournal`: Guard `if (acc && MoneyHelper.isGreaterThan(pay.amount, 0))` menjamin baris jurnal beban uang makan (`53101`) tidak akan pernah diposting ke GL jika bernilai 0.
+  - `SpjService.getRateSnapshotForCrew`: Menghapus fallback hardcoded `100.000 / 150.000` dan menyelaraskan fallback menjadi `0` jika aturan tidak ditemukan di database.
+- **Verifikasi Kualitas Penuh**:
+  - Frontend TypeScript `yarn build` sukses 100% (`✓ built in 2.62s`).
+  - Backend NestJS `yarn build` sukses 100% (`nest build` selesai 7.31s).
+  - Seluruh 36 test suites backend (279 unit tests) lulus 100%.
+
+### 2026-11-13: Integrasi Pemilihan Master Trayek (Rute Perjalanan) pada Rencana Jadwal Bus (`ScheduleModal`), Review SPJ & Gantt Timeline Completed
+- **Integrasi Master Trayek pada Modal Pembuatan & Edit Jadwal (`ScheduleModal`)**:
+  - Menghubungkan layanan `RouteService.findAll()` ke dalam siklus hidup `loadMasterData()` pada `ScheduleModal`.
+  - Menambahkan dropdown **Master Trayek (Rute Perjalanan)** di atas input kota asal dan kota tujuan:
+    * Pada pemilihan jenis layanan **AKAP Reguler**, sistem menyaring dan menampilkan daftar rute resmi AKAP (`RUT-JKT-YOG-MGL`, `RUT-JKT-YOG-SLO`, `RUT-YOG-JKT-MGL`, `RUT-YOG-JKT-SLO`) lengkap dengan kota asal, tujuan, via, jarak KM, dan estimasi jam dinas.
+    * Pemilihan trayek otomatis mengisi (*auto-populate*) field **Kota Asal (Origin)** dan **Kota Tujuan (Destination)** secara presisi sekaligus mengikat `routeId` ke dokumen jadwal.
+    * Menyediakan opsi fleksibel `Rute Bebas / Kustom (Tanpa Master Trayek)` serta tombol satu sentuhan `Reset ke Input Bebas` untuk kebutuhan rute khusus di luar trayek reguler.
+  - Memperbarui payload pembuatan (`createSchedule`) dan pembaruan (`updateSchedule`) agar mengirimkan `routeId` ke backend.
+- **Backend DTO Reliability (`UpdateTripScheduleDto`)**:
+  - Menambahkan deklarasi `@IsUUID() @IsOptional() routeId?: string;` pada `UpdateTripScheduleDto` agar perubahan trayek pada jadwal tersimpan tanpa terhambat validasi whitelist pipe.
+- **Penyelarasan Tampilan & Sinkronisasi Ekosistem Jadwal (`index.tsx`, `review-publish-spj-modal.tsx`, `timeline-gantt.tsx`)**:
+  - **Tabel Daftar Jadwal (`/schedules`)**: Menampilkan badge kode trayek (misal: `[RUT-JKT-YOG-MGL]`) dengan styling indigo lembut di samping rute asal dan tujuan.
+  - **Gantt Chart Timeline (`timeline-gantt.tsx`)**: Tooltip detail jadwal pada balok bar timeline kini menyertakan badge kode trayek dan keterangan kota lintasan (*Via*).
+  - **Review & Terbitkan SPJ (`review-publish-spj-modal.tsx`)**: Banner informasi trayek resmi tampil di header segmen leg perjalanan, menjamin kelancaran otomasi tarif tiket dinamis (`/fares`) dan fee koordinator lapangan (`/finance/coordination-fees`) saat SPJ diterbitkan.
+- **Verifikasi Kualitas Penuh**:
+  - Kompilasi TypeScript frontend `yarn build` sukses 100% (`✓ built in 2.56s`).
+  - Kompilasi TypeScript backend `yarn build` sukses 100% (`nest build` selesai 7.35s).
+  - Seluruh 36 unit test suites backend (279 unit tests) lulus 100%.
+
+### 2026-11-13: Audit Struktur Hirarki Bagan Akun (COA) & Perbaikan Penautan Parent ID untuk Akun Bank, Utang Korlap, dan Beban Korlap Completed
+- **Identifikasi & Investigasi Akun Yatim (*Orphaned COA Accounts*)**:
+  - Berdasarkan laporan audit tampilan pohon (*Tree View*) di halaman `/accounts`, ditemukan 8 akun buku besar yang berdiri sebagai *root* sejajar dengan kepala akun `1 ASET`, `2 LIABILITAS`, dan `5 BEBAN` karena `parent_id` bernilai `NULL`:
+    1. `11111` (Bank BCA Induk - Pusat Penerimaan)
+    2. `11112` (Bank Mandiri Induk - Pusat Penerimaan)
+    3. `11121` (Bank BCA Operasional Bus AKAP)
+    4. `11122` (Bank BCA Operasional Wisata)
+    5. `11123` (Bank Mandiri Operasional Bus AKAP Induk)
+    6. `11124` (Bank Mandiri Operasional Wisata Induk)
+    7. `22102` (Utang Jasa Koordinator Lapangan Barat & Timur)
+    8. `52105` (Beban Koordinasi Lapangan & Pengurus Jalur)
+  - **Akar Masalah**:
+    * Akun Bank `11111`-`11124` dibuat pada migrasi `1782500000000-create-fund-transfers.ts` sebelum akun `11` di-seed, sehingga `parentId` bernilai `null`. Pada seeding berikutnya `SeedFinanceMaster1888888888891`, klausa `ON CONFLICT ("code")` tidak memperbarui kolom `parent_id`.
+    * Akun `22102` dan `52105` dibuat pada migrasi `1783200000000-create-coordination-fee-system.ts` tanpa menyertakan kolom `parent_id` dalam pernyataan `INSERT`.
+- **Implementasi Perbaikan Database & Seeding**:
+  - **Migrasi TypeORM `1794410000000-FixCoaParentHierarchyForOrphanedAccounts.ts`**:
+    * Menautkan `11111`, `11112`, `11121`, `11122`, `11123`, `11124` ke akun induk `11` (*Kas dan Bank*).
+    * Menautkan `22102` ke akun induk `22` (*Utang Pihak Ketiga & Keagenan*).
+    * Menautkan `52105` ke akun induk `52` (*Beban Tol, Parkir, & Fasilitas Perjalanan*).
+    * Migrasi berhasil dieksekusi 100% pada database aktif PostgreSQL.
+  - **Penyelarasan Seeder & Migrasi Dasar**:
+    * Memperbarui `SeedFinanceMaster1888888888891`: Menambahkan `52105` ke daftar `coaList` dan menambahkan `"parent_id" = EXCLUDED."parent_id"` pada klausa `ON CONFLICT ("code") DO UPDATE SET` agar setiap proses re-seed selalu menjaga keutuhan relasi parent.
+    * Memperbarui `CreateCoordinationFeeSystem1783200000000`: Menyertakan subquery `parent_id` langsung saat pembuatan akun `52105` (ke `52`) dan `22102` (ke `22`).
+- **Verifikasi Kualitas Penuh**:
+  - Audit database membuktikan hanya 6 kepala akun resmi (`1`, `2`, `3`, `4`, `5`, `8`) yang memiliki `parent_id IS NULL`. Seluruh 8 akun di atas kini 100% terhubung ke parent masing-masing dan tersusun rapi di pohon hierarki COA.
+  - Unit test backend lulus 100% (36 test suites, 279 tests passed).
+
+### 2026-11-13: Optimalisasi Kontras & Keterbacaan Global Notifikasi Toast (Sonner) Light & Dark Mode Completed
+- **Penyelesaian Masalah Teks Menabrak Latar Belakang (*Unreadable Toast Text*)**:
+  - Mengidentifikasi akar masalah keterbacaan notifikasi `toast.error` (serta `success`, `warning`, dan `info`): sebelumnya, kelas CSS `toastOptions` di `src/components/ui/sonner.tsx` memaksakan warna teks putih (`!text-white`) di atas latar belakang beropasitas 30% (`!bg-red-400/30`). Pada tema terang (*Light Mode*), latar belakang berubah menjadi merah muda pastel sangat muda, sehingga teks putih tidak terbaca (rasio kontras anjlok hingga ~1.3:1).
+  - Melakukan restrukturisasi styling terpusat berstandar Glassmorphism kontras tinggi (WCAG AAA compliant > 13:1):
+    1. **`toast.error`**: Latar belakang pastel merah `!bg-red-50/95` (Light) vs merah marun gelap `dark:!bg-red-950/95` (Dark), judul tebal merah pekat `!text-red-950` (Light) vs putih merah muda terang `dark:!text-red-50` (Dark), deskripsi `!text-red-800` vs `dark:!text-red-200`, serta ikon `!text-red-600` vs `dark:!text-red-400`.
+    2. **`toast.success`**: Latar belakang zamrud `!bg-emerald-50/95` vs `dark:!bg-emerald-950/95`, judul zamrud gelap `!text-emerald-950` vs putih zamrud `dark:!text-emerald-50`, serta deskripsi `!text-emerald-800` vs `dark:!text-emerald-200`.
+    3. **`toast.warning`**: Latar belakang kuning amber `!bg-amber-50/95` vs `dark:!bg-amber-950/95`, judul amber tua `!text-amber-950` vs putih amber `dark:!text-amber-50`, serta deskripsi `!text-amber-800` vs `dark:!text-amber-200`.
+    4. **`toast.info`**: Latar belakang biru `!bg-blue-50/95` vs `dark:!bg-blue-950/95`, judul biru tua `!text-blue-950` vs putih biru `dark:!text-blue-50`, serta deskripsi `!text-blue-800` vs `dark:!text-blue-200`.
+    5. **Dukungan Tombol Tutup Toast (`closeButton`)**: Mengaktifkan tombol X penutup mandiri pada setiap toast dengan warna terkoordinasi agar pengguna dapat menutup notifikasi kapan saja.
+- **Verifikasi Kualitas Penuh**:
+  - Pengecekan tipe TypeScript `tsc --noEmit` sukses 0 error.
+  - Kompilasi production build frontend `yarn build` sukses 100% (`✓ built in 2.42s`).
+
+### 2026-11-13: Penyempurnaan Transisi Login (Root-Level BrandLoader), Perbaikan Bug Paginasi Armada Bus & Integrasi Global Fleet Statistics Completed
+- **Eliminasi Flicker Transisi Login (`/login` -> `/dashboard`)**:
+  - Memindahkan orkestrasi `<BrandLoader>` dari dalam komponen form (`UserAuthForm`) ke provider utama aplikasi (`AuthProvider` via `useAuth.completeLoginWithAnimation`).
+  - Menjadikan transisi navigasi bersifat atomik (`router.replace('/')` di balik layar). Halaman login langsung di-*unmount* saat loader aktif dengan latar solid (`bg-slate-50 dark:bg-zinc-950`), sehingga saat progress 100% dan animasi *fade-out* (500ms) berjalan, loader memudar langsung ke dashboard yang telah siap tanpa pernah memperlihatkan kembali form login.
+  - Memperbaiki penanganan timer `exitTimer` di dalam `useEffect` `<BrandLoader>` untuk mencegah *dangling timer* dan *memory leak*.
+- **Perbaikan Bug Paginasi TypeORM pada Master Armada Bus (`/vehicles`)**:
+  - Mengidentifikasi akar masalah paginasi di mana pemilihan limit `6` hanya mengembalikan `3` bus: penyertaan `.addOrderBy('images.sequence', 'ASC')` pada relasi One-to-Many `images` dalam kueri paginasi `skip()` & `take()` menyebabkan subquery `DISTINCT` TypeORM menganggap setiap foto galeri bus sebagai baris unik (sehingga limit 6 baris SQL hanya menghasilkan 3 ID bus unik).
+  - Menghapus klausa order by tabel anak (`images.sequence`) dari `VehiclesService.findAll()` query builder dan mengurutkan galeri foto bus secara in-memory sebelum di-return.
+  - Hasil: Menampilkan 6 armada bus utuh (SS-01 s.d. SS-06) pada limit 6, total 10 armada bus terdata, total 2 halaman, dan tombol paginasi "Selanjutnya" berfungsi normal menuju halaman 2 (SS-07 s.d. SS-10).
+- **Arsitektur Global Fleet Statistics (`GET /api/v1/vehicles/stats`)**:
+  - Menambahkan endpoint terdedikasi `GET /api/v1/vehicles/stats` pada `VehiclesController` dan `VehiclesService.getStats()`. Menghitung metrik armada bus secara global (keseluruhan pool):
+    - `total`: Total unit armada bus (10 bus).
+    - `active`: Total unit armada siap dinas (10 unit).
+    - `totalSeats`: Akumulasi kapasitas kursi penumpang (272 kursi).
+    - `owned`: Total armada bus lunas/milik sendiri (7 unit).
+    - `leasing`: Total armada bus dalam pembiayaan leasing (3 unit).
+  - Menghubungkan layanan frontend `VehicleService.getStats()` dan memperbarui 4 kartu metrik di atas halaman `/vehicles` agar menampilkan statistik armada global perusahaan, tidak terpotong oleh filter paginasi lokal.
+  - Re-fetch otomatis statistik saat ada penambahan, pengubahan, atau penghapusan armada bus.
+- **Dukungan Penuh Master Kelas Kursi Dinamis (`seatClasses.className`) pada Armada Bus**:
+  - Menyelesaikan error validasi HTTP 400 Bad Request (`seatClasses.X.className must be one of the following values: SLEEPER, LUXURY_2_1, EXECUTIVE, STANDARD`) saat pengguna menambahkan kelas kursi kustom baru dari Master Kelas Kursi (seperti `EXECUIVE_PLUS` / Executive plus+).
+  - Migrasi skema database `1794400000000-AlterVehicleSeatClassesClassNameToVarchar.ts`: Mengubah tipe kolom `vehicle_seat_classes.class_name` dari enum PostgreSQL statis menjadi `character varying(50)`.
+  - Memperbarui `CreateVehicleSeatClassDto` dari `@IsEnum(SeatClassName)` menjadi `@IsString()`, serta memperbarui entitas `VehicleSeatClassEntity` dan TypeScript types frontend agar menerima kode kelas kursi dinamis apapun.
+  - Verifikasi: Berhasil menyimpan kombinasi 3 kelas kursi pada bus `SS-01` (`SLEEPER: 4`, `LUXURY_2_1: 20`, `EXECUIVE_PLUS: 4` = total kapasitas 28 kursi) dengan status 200 OK.
+  - Unit test backend lulus 100% (36 test suites, 279 tests passed) dan build frontend Vite bersih 100%.
+
 ### 2026-11-12: Rework Master Koordinator Lapangan (Mitra Eksternal), Integrasi Filter Finansial Dinamis & Standardisasi Kota Operasional Completed
 - **Pemisahan Identitas Master Koordinator dari User Internal (`coordinators`)**:
   - Dibuat entitas independen `CoordinatorEntity` (`master-rules/coordinator.entity.ts`) dengan atribut: `code`, `name`, `type` (`INDIVIDUAL`/`ORGANIZATION`), `organizationName` (nama paguyuban pengurus jalur), `phone` (nomor WhatsApp), `email`, `area` (basis terminal), `address`, `bankName`, `bankAccountNumber`, `bankAccountHolder`, `notes`, dan `isActive`.

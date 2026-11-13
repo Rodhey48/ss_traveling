@@ -51,7 +51,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import SeatClassMasterModal from './components/seat-class-master-modal';
 import VehicleDetailModal from './components/vehicle-detail-modal';
@@ -61,6 +61,16 @@ export default function VehiclesPage() {
   const { isCreate, isUpdate, isDelete } = usePermission();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Global Fleet Statistics
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    totalSeats: 0,
+    owned: 0,
+    leasing: 0,
+  });
+  const [statsLoading, setStatsLoading] = useState(false);
 
   // Search & Debounce
   const [searchInput, setSearchInput] = useState('');
@@ -133,6 +143,24 @@ export default function VehiclesPage() {
     }
   };
 
+  const fetchStats = useCallback(async () => {
+    setStatsLoading(true);
+    try {
+      const res = await VehicleService.getStats();
+      if (res?.data) {
+        setStats(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch vehicle stats', err);
+    } finally {
+      setStatsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
   useEffect(() => {
     fetchVehicles();
   }, [
@@ -184,6 +212,7 @@ export default function VehiclesPage() {
       );
       setVehicleToDelete(null);
       fetchVehicles();
+      fetchStats();
     } catch (error: any) {
       toast.error('Gagal menghapus armada', {
         description: error.response?.data?.message,
@@ -205,6 +234,7 @@ export default function VehiclesPage() {
       }
       setIsModalOpen(false);
       fetchVehicles();
+      fetchStats();
     } catch (error: any) {
       toast.error('Gagal menyimpan armada bus', {
         description: error.response?.data?.message,
@@ -213,26 +243,6 @@ export default function VehiclesPage() {
       setSubmitting(false);
     }
   };
-
-  // Metrik Ringkas Armada
-  const totalBus = total || vehicles.length;
-  const activeCount = useMemo(
-    () => vehicles.filter((v) => v.isActive !== false).length,
-    [vehicles],
-  );
-  const totalSeats = useMemo(
-    () =>
-      vehicles.reduce((acc, v) => acc + (v.capacity || 0), 0),
-    [vehicles],
-  );
-  const totalOwned = useMemo(
-    () => vehicles.filter((v) => v.ownershipStatus === 'OWNED_PAID_OFF').length,
-    [vehicles],
-  );
-  const totalLeasing = useMemo(
-    () => vehicles.filter((v) => v.ownershipStatus === 'LEASING').length,
-    [vehicles],
-  );
 
   return (
     <div className="space-y-6 p-6">
@@ -258,8 +268,8 @@ export default function VehiclesPage() {
         </div>
       </div>
 
-      {/* Kartu Statistik Armada */}
-      {loading && vehicles.length === 0 ? (
+      {/* Kartu Statistik Armada (Global Fleet Metrics) */}
+      {statsLoading && stats.total === 0 ? (
         <MetricCardGridSkeleton count={4} />
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -269,12 +279,12 @@ export default function VehiclesPage() {
                 Total Unit Armada Terdata
               </CardDescription>
               <CardTitle className="text-2xl font-black text-primary flex items-center justify-between">
-                <span>{totalBus} <span className="text-sm font-semibold text-muted-foreground">Bus</span></span>
+                <span>{stats.total} <span className="text-sm font-semibold text-muted-foreground">Bus</span></span>
                 <Bus className="h-6 w-6 opacity-40 text-primary" />
               </CardTitle>
               <p className="text-[11px] text-muted-foreground mt-1">
                 <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                  {activeCount} unit
+                  {stats.active} unit
                 </span>{' '}
                 siap operasi dinas
               </p>
@@ -287,7 +297,7 @@ export default function VehiclesPage() {
                 Total Kapasitas Angkut
               </CardDescription>
               <CardTitle className="text-2xl font-bold flex items-center justify-between text-foreground">
-                <span>{totalSeats} <span className="text-sm font-semibold text-muted-foreground">Kursi</span></span>
+                <span>{stats.totalSeats} <span className="text-sm font-semibold text-muted-foreground">Kursi</span></span>
                 <Users className="h-6 w-6 text-amber-500 opacity-60" />
               </CardTitle>
               <p className="text-[11px] text-muted-foreground mt-1">
@@ -302,7 +312,7 @@ export default function VehiclesPage() {
                 Aset Milik Sendiri (Lunas)
               </CardDescription>
               <CardTitle className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
-                <span>{totalOwned} <span className="text-sm font-semibold text-muted-foreground">Unit</span></span>
+                <span>{stats.owned} <span className="text-sm font-semibold text-muted-foreground">Unit</span></span>
                 <CheckCircle2 className="h-6 w-6 opacity-60" />
               </CardTitle>
               <p className="text-[11px] text-muted-foreground mt-1">
@@ -317,7 +327,7 @@ export default function VehiclesPage() {
                 Cicilan Bank / Leasing
               </CardDescription>
               <CardTitle className="text-2xl font-bold text-blue-600 dark:text-blue-400 flex items-center justify-between">
-                <span>{totalLeasing} <span className="text-sm font-semibold text-muted-foreground">Unit</span></span>
+                <span>{stats.leasing} <span className="text-sm font-semibold text-muted-foreground">Unit</span></span>
                 <Clock className="h-6 w-6 opacity-60" />
               </CardTitle>
               <p className="text-[11px] text-muted-foreground mt-1">

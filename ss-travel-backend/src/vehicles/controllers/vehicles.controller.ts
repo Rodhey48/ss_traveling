@@ -39,6 +39,13 @@ export class VehiclesController {
     return this.vehiclesService.findAll(query);
   }
 
+  @Get('stats')
+  @RequirePermissions('vehicles:read')
+  @ApiOperation({ summary: 'Get global vehicle fleet statistics' })
+  async getStats(): Promise<ResponseInterface> {
+    return this.vehiclesService.getStats();
+  }
+
   @Get(':id')
   @RequirePermissions('vehicles:read')
   @ApiOperation({ summary: 'Get single vehicle details' })

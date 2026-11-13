@@ -70,7 +70,7 @@ export class SpjFinanceController {
   }
 
   @Post(':id/uj/disburse')
-  @RequirePermissions('SPJ:update')
+  @RequirePermissions('SPJ:disburse_uj')
   @ApiOperation({ summary: 'Cairkan dana UJ (Initial pool atau Tambahan bank di jalan)' })
   async disburseUj(
     @Param('id') id: string,

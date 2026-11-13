@@ -591,9 +591,20 @@ export default function TimelineGantt({
                                     </div>
 
                                     <div className="text-xs space-y-1.5 text-foreground">
-                                      <p>
-                                        <strong>Rute:</strong> {s.origin} ➔ {s.destination}
+                                      <p className="flex items-center gap-1.5 flex-wrap">
+                                        <strong>Rute:</strong>
+                                        {s.route && (
+                                          <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0 h-4 bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950 dark:text-indigo-300">
+                                            {s.route.code}
+                                          </Badge>
+                                        )}
+                                        <span>{s.origin} ➔ {s.destination}</span>
                                       </p>
+                                      {s.route?.via && (
+                                        <p className="text-[11px] text-muted-foreground">
+                                          Via: {s.route.via}
+                                        </p>
+                                      )}
                                       <div className="p-2 rounded-lg bg-muted/60 text-[11px] space-y-1">
                                         <p className="flex items-center gap-1.5 text-muted-foreground">
                                           <Clock className="w-3.5 h-3.5 text-indigo-600 shrink-0" />

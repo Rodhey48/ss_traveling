@@ -41,4 +41,15 @@ SS Travelink ERP (PT SS Travelink Official) adalah sistem ERP manajemen transpor
 - [x] SPJ Full-Page Finance Layout (`/spjs/:id/finance`) with 6 stacked sections, real-time metric headers, smart route agent ticket sales with atomic journal preview (100% Gross), crew perpal & full-seat allowances, and dynamic cargo commission.
 - [x] Field Coordination Fees Module (`/finance/coordination-fees`) & Restaurant Settlements Module (`/finance/restaurant-settlements`) with ticket/coupon snapshotting, COA 52105/22102 and 51102/21101, bulk bank transfer settlement, WhatsApp remittance text generator, and automatic journal reversals.
 - [x] COA hierarchy fix for account 52105 under account 52 (Beban Operasional Tidak Langsung) / Head 5 BEBAN.
-- [x] Backend unit test coverage: 35 test suites, 264 tests passed 100%.
+- [x] Master Trayek (Rute Perjalanan `routes`) & Smart Route Dynamic Fare Matrix Engine.
+- [x] Master Koordinator Lapangan Eksternal (`coordinators`) & Field Coordination Fee Rules.
+- [x] Full Financial E2E Test Suites for AKAP & Wisata lifecycle (43 tests, 6 suites passed 100%).
+- [x] Root-Level BrandLoader navigation transition, Fleet pagination bug fix & Global Fleet Statistics (`GET /api/v1/vehicles/stats`).
+- [x] Dynamic Seat Class Name support (`character varying(50)`) on fleet vehicles.
+- [x] High-Contrast Sonner Toast notification system (WCAG AAA compliant Glassmorphism).
+- [x] Permanent COA Parent Hierarchy repair for Bank Accounts (11111-11124), Utang Korlap (22102), and Beban Korlap (52105).
+- [x] Dynamic Route Selector in ScheduleModal, SPJ Review & Gantt Timeline.
+- [x] Dynamic Crew Compensation Standardization (Base Meal = 0, dynamic from DB) & Zero Amount GL Guard.
+- [x] Automatic Uang Jalan (UJ) Disbursement Journal Posting (Debit 13101 vs Kredit Kas/Bank).
+- [x] Menu Custom Action Permission `disburse_uj` & Financial Confirmation Dialog with accounting warning banner.
+- [x] 100% Quality Assurance: 36 backend test suites (279 unit tests) & 6 E2E test suites (43 tests) passed.

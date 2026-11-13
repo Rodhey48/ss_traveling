@@ -8,15 +8,15 @@ export class CreateCoordinationFeeSystem1783200000000
   public async up(queryRunner: QueryRunner): Promise<void> {
     // 1. Tambahkan akun COA 52105 (Beban) dan 22102 (Utang) jika belum ada
     await queryRunner.query(`
-      INSERT INTO accounts (id, code, name, type, normal_balance, is_postable, description, company_id)
-      SELECT gen_random_uuid(), '52105', 'Beban Koordinasi Lapangan & Pengurus Jalur', 'EXPENSE'::"public"."accounts_type_enum", 'DEBIT'::"public"."accounts_normal_balance_enum", true, 'Fee koordinasi per tiket terjual pengurus wilayah Barat & Timur', c.id
+      INSERT INTO accounts (id, code, name, type, normal_balance, is_postable, description, company_id, parent_id)
+      SELECT gen_random_uuid(), '52105', 'Beban Koordinasi Lapangan & Pengurus Jalur', 'EXPENSE'::"public"."accounts_type_enum", 'DEBIT'::"public"."accounts_normal_balance_enum", true, 'Fee koordinasi per tiket terjual pengurus wilayah Barat & Timur', c.id, (SELECT id FROM accounts WHERE code = '52' LIMIT 1)
       FROM companies c
       WHERE NOT EXISTS (SELECT 1 FROM accounts WHERE code = '52105');
     `);
 
     await queryRunner.query(`
-      INSERT INTO accounts (id, code, name, type, normal_balance, is_postable, description, company_id)
-      SELECT gen_random_uuid(), '22102', 'Utang Jasa Koordinator Lapangan (Barat & Timur)', 'LIABILITY'::"public"."accounts_type_enum", 'CREDIT'::"public"."accounts_normal_balance_enum", true, 'Kewajiban utang fee koordinasi tiket pengurus wilayah', c.id
+      INSERT INTO accounts (id, code, name, type, normal_balance, is_postable, description, company_id, parent_id)
+      SELECT gen_random_uuid(), '22102', 'Utang Jasa Koordinator Lapangan (Barat & Timur)', 'LIABILITY'::"public"."accounts_type_enum", 'CREDIT'::"public"."accounts_normal_balance_enum", true, 'Kewajiban utang fee koordinasi tiket pengurus wilayah', c.id, (SELECT id FROM accounts WHERE code = '22' LIMIT 1)
       FROM companies c
       WHERE NOT EXISTS (SELECT 1 FROM accounts WHERE code = '22102');
     `);

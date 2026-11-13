@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -7,9 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -18,23 +17,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { AlertCircle, CheckCircle2, Clock, ShieldAlert, Sparkles, UserPlus, X } from 'lucide-react';
-import QuickCustomerModal from './quick-customer-modal';
-import { TripScheduleService } from '@/services/trip-schedule.service';
-import { VehicleService } from '@/services/vehicle.service';
+import { Textarea } from '@/components/ui/textarea';
 import { CustomerService } from '@/services/customer.service';
+import { RouteService } from '@/services/route.service';
+import { TripScheduleService } from '@/services/trip-schedule.service';
 import { UserService } from '@/services/user.service';
+import { VehicleService } from '@/services/vehicle.service';
 import type {
-  TripSchedule,
-  CreateTripScheduleFormData,
-  TripServiceType,
-  Vehicle,
-  Customer,
-  User,
   ConflictCheckResult,
+  CreateTripScheduleFormData,
+  Customer,
+  Route,
+  TripSchedule,
+  TripServiceType,
+  User,
+  Vehicle,
 } from '@/types';
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  Route as RouteIcon,
+  ShieldAlert,
+  Sparkles,
+  UserPlus,
+  X,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import QuickCustomerModal from './quick-customer-modal';
 
 interface ScheduleModalProps {
   open: boolean;
@@ -61,9 +72,11 @@ export default function ScheduleModal({
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [drivers, setDrivers] = useState<User[]>([]);
   const [conductors, setConductors] = useState<User[]>([]);
+  const [routes, setRoutes] = useState<Route[]>([]);
 
   // Form State
   const [serviceType, setServiceType] = useState<TripServiceType>('AKAP');
+  const [routeId, setRouteId] = useState<string>('');
   const [vehicleId, setVehicleId] = useState<string>('');
 
   // Tanggal & Jam Terpisah (24-Jam Format)
@@ -72,8 +85,8 @@ export default function ScheduleModal({
   const [returnDate, setReturnDate] = useState<string>('');
   const [returnTime, setReturnTime] = useState<string>('19:00');
 
-  const [origin, setOrigin] = useState<string>('Pool Ciputat / Jakarta');
-  const [destination, setDestination] = useState<string>('Terminal Giwangan Yogyakarta');
+  const [origin, setOrigin] = useState<string>('');
+  const [destination, setDestination] = useState<string>('');
   const [customerId, setCustomerId] = useState<string>('');
   const [picName, setPicName] = useState<string>('');
   const [picPhone, setPicPhone] = useState<string>('');
@@ -108,6 +121,7 @@ export default function ScheduleModal({
       loadMasterData();
       if (schedule) {
         setServiceType(schedule.serviceType);
+        setRouteId(schedule.routeId || '');
         setVehicleId(schedule.vehicleId || '');
 
         const dep = splitIsoToDateAndTime(schedule.plannedDepartureAt);
@@ -138,6 +152,7 @@ export default function ScheduleModal({
 
   const resetForm = () => {
     setServiceType('AKAP');
+    setRouteId('');
     setVehicleId('');
     const now = new Date();
     const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
@@ -150,8 +165,8 @@ export default function ScheduleModal({
     setReturnDate(ret.date);
     setReturnTime('19:00');
 
-    setOrigin('Pool Ciputat / Jakarta');
-    setDestination('Terminal Giwangan Yogyakarta');
+    setOrigin('');
+    setDestination('');
     setCustomerId('');
     setPicName('');
     setPicPhone('');
@@ -166,14 +181,16 @@ export default function ScheduleModal({
 
   const loadMasterData = async () => {
     try {
-      const [vehRes, custRes, usersRes] = await Promise.all([
+      const [vehRes, custRes, usersRes, routesRes] = await Promise.all([
         VehicleService.findAll({ limit: 50 }),
         CustomerService.findAll({ limit: 100 }),
         UserService.findAll({ limit: 100 }),
+        RouteService.findAll(),
       ]);
 
       setVehicles(vehRes.data?.data || []);
       setCustomers(custRes.data?.data || []);
+      setRoutes(routesRes.data || []);
 
       const allUsers = usersRes.data?.data || [];
       const drvs = allUsers.filter(
@@ -191,7 +208,22 @@ export default function ScheduleModal({
       setDrivers(drvs.length > 0 ? drvs : allUsers);
       setConductors(conds.length > 0 ? conds : allUsers);
     } catch {
-      toast.error('Gagal memuat master data armada dan kru.');
+      toast.error('Gagal memuat master data armada, rute, dan kru.');
+    }
+  };
+
+  const selectedRoute = routes.find((r) => r.id === routeId);
+
+  const handleRouteChange = (rId: string) => {
+    if (rId === 'NONE' || rId === 'CUSTOM') {
+      setRouteId('');
+      return;
+    }
+    setRouteId(rId);
+    const matched = routes.find((r) => r.id === rId);
+    if (matched) {
+      setOrigin(matched.origin);
+      setDestination(matched.destination);
     }
   };
 
@@ -221,18 +253,28 @@ export default function ScheduleModal({
     setServiceType(st);
     setConflictResult(null);
     if (st === 'AKAP') {
-      setOrigin('Pool Ciputat / Jakarta');
-      setDestination('Terminal Giwangan Yogyakarta');
+      const akapRoute = routes.find((r) => r.serviceType === 'AKAP' && r.isActive);
+      if (akapRoute) {
+        setRouteId(akapRoute.id);
+        setOrigin(akapRoute.origin);
+        setDestination(akapRoute.destination);
+      } else {
+        setRouteId('');
+        setOrigin('Pool Ciputat / Jakarta');
+        setDestination('Terminal Giwangan Yogyakarta');
+      }
       setTotalPackagePrice(0);
       setDepartureTime('07:30');
       setReturnTime('19:00');
     } else if (st === 'WISATA') {
+      setRouteId('');
       setOrigin('Pool Ciputat / Tangerang');
       setDestination('Yogyakarta & Jawa Tengah');
       setTotalPackagePrice(17500000);
       setDepartureTime('06:00');
       setReturnTime('21:00');
     } else {
+      setRouteId('');
       setOrigin('Bandara Soekarno-Hatta (CGK)');
       setDestination('Hotel / Stasiun Gambir');
       setTotalPackagePrice(3000000);
@@ -350,6 +392,7 @@ export default function ScheduleModal({
     try {
       const payload: CreateTripScheduleFormData = {
         serviceType,
+        routeId: routeId && routeId !== 'CUSTOM' && routeId !== 'NONE' ? routeId : undefined,
         vehicleId: vehicleId || undefined,
         plannedDepartureAt: departureDateTime.toISOString(),
         plannedReturnAt: returnDateTime.toISOString(),
@@ -391,6 +434,7 @@ export default function ScheduleModal({
     try {
       const payload: CreateTripScheduleFormData = {
         serviceType,
+        routeId: routeId && routeId !== 'CUSTOM' && routeId !== 'NONE' ? routeId : undefined,
         vehicleId: vehicleId || undefined,
         plannedDepartureAt: departureDateTime.toISOString(),
         plannedReturnAt: returnDateTime.toISOString(),
@@ -458,7 +502,7 @@ export default function ScheduleModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-[1000px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-250 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex items-center gap-2">
               <span className="p-2 rounded-lg bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
@@ -494,7 +538,7 @@ export default function ScheduleModal({
                     <SelectContent>
                       <SelectItem value="AKAP">AKAP Reguler (Trayek PP)</SelectItem>
                       <SelectItem value="WISATA">Pariwisata / Charter Wisata</SelectItem>
-                      <SelectItem value="SHUTTLE">Shuttle / Komuter Bandara</SelectItem>
+                      {/* <SelectItem value="SHUTTLE">Shuttle / Komuter Bandara</SelectItem> */}
                     </SelectContent>
                   </Select>
                 </div>
@@ -523,7 +567,7 @@ export default function ScheduleModal({
                         setDepartureTime(e.target.value);
                         setConflictResult(null);
                       }}
-                      className="h-10 text-xs w-[115px] shrink-0 font-medium px-3 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:mr-1"
+                      className="h-10 text-xs w-28.75 shrink-0 font-medium px-3 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:mr-1"
                       required
                     />
                   </div>
@@ -554,7 +598,7 @@ export default function ScheduleModal({
                         setReturnTime(e.target.value);
                         setConflictResult(null);
                       }}
-                      className="h-10 text-xs w-[115px] shrink-0 font-medium px-3 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:mr-1"
+                      className="h-10 text-xs w-28.75 shrink-0 font-medium px-3 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:mr-1"
                       required
                     />
                   </div>
@@ -631,27 +675,111 @@ export default function ScheduleModal({
               )}
             </div>
 
-            {/* Rute & Tujuan */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label className="text-xs font-semibold">Kota Asal (Origin) *</Label>
-                <Input
-                  value={origin}
-                  onChange={(e) => setOrigin(e.target.value)}
-                  placeholder="Contoh: Pool Ciputat / Jakarta"
-                  className="mt-1.5 h-10 text-xs"
-                  required
-                />
+            {/* Master Trayek / Rute Perjalanan */}
+            <div className="p-4 rounded-xl border bg-muted/30 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                    <RouteIcon className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-bold text-foreground">
+                      Master Trayek (Rute Perjalanan) {serviceType === 'AKAP' ? '*' : '(Opsional)'}
+                    </Label>
+                    <p className="text-[11px] text-muted-foreground">
+                      {serviceType === 'AKAP'
+                        ? 'Pilih trayek resmi AKAP untuk integrasi otomatis ke tarif tiket dinamis dan fee korlap.'
+                        : 'Pilih trayek resmi jika sesuai, atau gunakan opsi Rute Bebas / Kustom.'}
+                    </p>
+                  </div>
+                </div>
+                {routeId && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRouteChange('CUSTOM')}
+                    className="h-7 text-[11px] text-muted-foreground hover:text-foreground self-end sm:self-auto"
+                  >
+                    Reset ke Input Bebas
+                  </Button>
+                )}
               </div>
-              <div>
-                <Label className="text-xs font-semibold">Kota Tujuan (Destination) *</Label>
-                <Input
-                  value={destination}
-                  onChange={(e) => setDestination(e.target.value)}
-                  placeholder="Contoh: Terminal Giwangan Yogyakarta"
-                  className="mt-1.5 h-10 text-xs"
-                  required
-                />
+
+              <Select value={routeId || 'CUSTOM'} onValueChange={handleRouteChange}>
+                <SelectTrigger className="h-10 text-xs bg-background">
+                  <SelectValue placeholder="-- Pilih Master Trayek Resmi --" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CUSTOM">
+                    <span className="font-medium text-muted-foreground">-- Rute Bebas / Kustom (Tanpa Master Trayek) --</span>
+                  </SelectItem>
+                  {routes
+                    .filter((r) => (serviceType === 'AKAP' ? r.serviceType === 'AKAP' : true))
+                    .map((r) => (
+                      <SelectItem key={r.id} value={r.id}>
+                        <span className="font-bold text-indigo-600 dark:text-indigo-400 font-mono mr-2">
+                          [{r.code}]
+                        </span>
+                        <span className="font-semibold">{r.name}</span>
+                        {r.via && (
+                          <span className="text-muted-foreground text-[11px] ml-2 font-normal">
+                            (Via: {r.via})
+                          </span>
+                        )}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+
+              {/* Detail Banner Trayek Terpilih */}
+              {selectedRoute && (
+                <div className="p-3 rounded-lg bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-800/80 text-xs space-y-1.5">
+                  <div className="flex flex-wrap items-center justify-between gap-1.5">
+                    <div className="flex items-center gap-2 font-bold text-indigo-950 dark:text-indigo-200">
+                      <Badge
+                        variant="outline"
+                        className="bg-indigo-100 text-indigo-800 border-indigo-300 font-mono text-[10px]"
+                      >
+                        {selectedRoute.code}
+                      </Badge>
+                      <span>{selectedRoute.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] text-indigo-700 dark:text-indigo-300 font-medium">
+                      {selectedRoute.distanceKm && <span>Jarak: ±{selectedRoute.distanceKm} km</span>}
+                      {selectedRoute.estimatedHours && <span>• Estimasi: ±{selectedRoute.estimatedHours} jam</span>}
+                    </div>
+                  </div>
+                  {selectedRoute.via && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Lintasan / Jalur Singgah: <span className="text-foreground font-semibold">{selectedRoute.via}</span>
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Rute & Tujuan Asal */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                <div>
+                  <Label className="text-xs font-semibold">Kota Asal (Origin) *</Label>
+                  <Input
+                    value={origin}
+                    onChange={(e) => setOrigin(e.target.value)}
+                    placeholder="Contoh: Jakarta"
+                    className="mt-1.5 h-10 text-xs"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold">Kota Tujuan (Destination) *</Label>
+                  <Input
+                    value={destination}
+                    onChange={(e) => setDestination(e.target.value)}
+                    placeholder="Contoh: Yogyakarta"
+                    className="mt-1.5 h-10 text-xs"
+                    required
+                  />
+                </div>
               </div>
             </div>
 
@@ -1038,7 +1166,7 @@ export default function ScheduleModal({
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Tuliskan rincian itinerary wisata (hari ke-1 s/d selesai), titik henti/transit, permintaan fasilitas armada (bantal, selimut, wireless mic, dispenser), permintaan khusus rombongan, atau catatan rute..."
                 rows={4}
-                className="mt-1.5 text-xs resize-y min-h-[90px] leading-relaxed"
+                className="mt-1.5 text-xs resize-y min-h-22.5 leading-relaxed"
               />
             </div>
 
@@ -1083,7 +1211,7 @@ export default function ScheduleModal({
                 <Button
                   type="submit"
                   disabled={loading || isTimeInvalid}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[130px] text-xs h-9 font-semibold"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-32.5 text-xs h-9 font-semibold"
                 >
                   {loading ? 'Menyimpan...' : schedule ? 'Simpan Perubahan' : 'Buat Rencana Jadwal'}
                 </Button>

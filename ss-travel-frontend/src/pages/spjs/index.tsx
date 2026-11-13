@@ -1,5 +1,3 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import ConfirmDialog from '@/components/shared/confirm-dialog';
 import Heading from '@/components/shared/heading';
 import {
@@ -44,6 +42,8 @@ import {
   Bus,
   Calendar,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Eye,
   FileText,
@@ -54,9 +54,9 @@ import {
   Wallet,
   Wrench,
   X,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import EmergencyReplaceBusModal from './components/emergency-replace-bus-modal';
 import ReplaceCrewModal from './components/replace-crew-modal';
@@ -102,7 +102,7 @@ export default function SpjsPage() {
     title: '',
     description: '',
     variant: 'primary',
-    onConfirm: () => {},
+    onConfirm: () => { },
   });
 
   // Debounced search (300ms)
@@ -412,7 +412,7 @@ export default function SpjsPage() {
         </div>
         <div className="space-y-1">
           <p className="font-bold text-sm">
-            Prinsip Status Ganda Independen SPJ (Blueprint Bab 8.2)
+            Prinsip Status Ganda Independen SPJ
           </p>
           <p className="leading-relaxed">
             Sistem memisahkan secara independen antara <strong>Status Operasional</strong> (<code>DRAFT</code> ➔ <code>ISSUED</code> ➔ <code>IN_PROGRESS</code> ➔ <code>COMPLETED</code>) dan <strong>Status Finansial</strong> (<code>PENDING_SETTLEMENT</code> ➔ <code>UNDER_REVIEW</code> ➔ <code>SETTLED</code>). Armada yang telah tiba di pool tidak otomatis lunas sebelum kasir memverifikasi nota pengeluaran dan setoran kas bruto tiket/kargo.
